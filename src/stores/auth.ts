@@ -45,52 +45,45 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(credentials: { username: string; password: string }): Promise<void> {
-    try {
-      const res: any = await httpClient.post('/auth/login', credentials);
-      // Backend may return { accessToken, user } or { token, user }
-      const accessToken = res.accessToken || res.token || 'mock_dev_token';
-      const userProfile: UserProfile = res.user || {
-        id: res.id || 'usr-1',
-        username: credentials.username,
-        fullName: res.fullName || credentials.username,
-        roles: res.roles || ['admin'],
-        permissions: res.permissions || ['*'],
-      };
-
-      setAuthData(accessToken, userProfile);
-    } catch (err: any) {
-      // In dev mode or standalone mock support:
-      if (import.meta.env.DEV && (!err.response || err.response.status >= 500 || err.code === 'ERR_NETWORK')) {
-        console.warn('[AuthStore] Backend API offline. Enabling dev mock session.');
-        setAuthData('dev_mock_jwt_token', {
-          id: 'admin-01',
-          username: credentials.username || 'admin',
-          fullName: 'System Administrator (Dev)',
-          roles: ['admin', 'operator'],
-          permissions: ['*'],
-        });
-        return;
-      }
-      throw err;
+    const res: any = await httpClient.post('/auth/login', credentials);
+    const accessToken = res.access_token || res.accessToken || res.token;
+    if (!accessToken) {
+      throw new Error('Máy chủ không trả về access token hợp lệ.');
     }
+
+    const userProfile: UserProfile = res.user || {
+      id: res.id || 'usr-current',
+      username: res.username || credentials.username,
+      email: res.email || `${credentials.username}@itest.local`,
+      fullName: res.fullName || res.name || credentials.username,
+      roles: Array.isArray(res.roles) ? res.roles : (res.role ? [res.role] : ['admin']),
+      permissions: Array.isArray(res.permissions) ? res.permissions : ['*'],
+    };
+
+    setAuthData(accessToken, userProfile);
   }
 
   async function logout(): Promise<void> {
     try {
-      if (token.value) {
-        await httpClient.post('/auth/logout').catch(() => {});
-      }
+      // Send logout to backend. If backend returns 404/redirect/error, client state still clears cleanly.
+      await httpClient.post('/auth/logout').catch(() => {});
     } finally {
       clearAuth();
+      // Clear legacy cookie if present
+      document.cookie = 'access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     }
   }
 
   function hasPermission(permission: string): boolean {
-    if (permissions.value.includes('*') || roles.value.includes('admin')) return true;
+    if (!user.value) return false;
+    if (permissions.value.includes('*') || roles.value.includes('admin')) {
+      return true;
+    }
     return permissions.value.includes(permission);
   }
 
   function hasRole(role: string): boolean {
+    if (!user.value) return false;
     return roles.value.includes(role);
   }
 
@@ -102,8 +95,6 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     login,
     logout,
-    setAuthData,
-    clearAuth,
     hasPermission,
     hasRole,
   };

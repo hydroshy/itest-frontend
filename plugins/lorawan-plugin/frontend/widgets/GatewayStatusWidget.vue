@@ -3,15 +3,15 @@
     <div class="gw-summary">
       <div class="summary-box">
         <span class="label">Hoạt động</span>
-        <span class="val green">2</span>
+        <span class="val green">{{ onlineCount }}</span>
       </div>
       <div class="summary-box">
-        <span class="label">Mất kết nối</span>
-        <span class="val gray">0</span>
+        <span class="label">Ngoại tuyến</span>
+        <span class="val gray">{{ offlineCount }}</span>
       </div>
       <div class="summary-box">
-        <span class="label">Tỷ lệ SNR TB</span>
-        <span class="val blue">+9.4 dB</span>
+        <span class="label">Tổng thiết bị</span>
+        <span class="val blue">{{ totalCount }}</span>
       </div>
     </div>
     <div class="gw-quick-link">
@@ -21,6 +21,31 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { httpClient } from '@/api/client';
+
+const $router = useRouter();
+const onlineCount = ref(0);
+const offlineCount = ref(0);
+const totalCount = ref(0);
+
+onMounted(async () => {
+  try {
+    const res: any = await httpClient.get('/lorawan/gateways');
+    const list = Array.isArray(res) ? res : (res?.data || []);
+    totalCount.value = list.length;
+    onlineCount.value = list.filter((item: any) => item.status === 'online').length;
+    offlineCount.value = totalCount.value - onlineCount.value;
+  } catch {
+    onlineCount.value = 0;
+    offlineCount.value = 0;
+    totalCount.value = 0;
+  }
+});
+</script>
 
 <style scoped>
 .gw-widget-content {
@@ -60,6 +85,7 @@
 .blue { color: #3b82f6; }
 
 .gw-quick-link {
-  text-align: right;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

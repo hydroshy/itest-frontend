@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import { ElMessage } from 'element-plus';
 import type { FrontendApiClient } from '@itest/frontend-sdk';
 
@@ -9,6 +9,7 @@ export const httpClient: AxiosInstance = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 
@@ -33,15 +34,37 @@ httpClient.interceptors.response.use(
   },
   (error) => {
     const status = error?.response?.status;
-    const message = error?.response?.data?.message || error.message || 'Lỗi hệ thống';
+    const url = error?.config?.url || '';
+    const responseData = error?.response?.data;
+    const backendMessage = responseData?.message;
+
+    // Is this an authentication attempt (login)?
+    const isLoginRequest = url.includes('/auth/login');
 
     if (status === 401) {
-      // Per Team Operating Doctrine: inform user rather than harsh auto-redirect or wipe
-      console.warn('[HTTP 401] Phiên làm việc đã hết hạn hoặc chưa đăng nhập');
-      ElMessage.warning('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      if (isLoginRequest) {
+        // Explicitly handle invalid login credentials without "session expired" warning
+        const message = typeof backendMessage === 'string'
+          ? (backendMessage === 'Invalid credentials' ? 'Tài khoản hoặc mật khẩu không chính xác.' : backendMessage)
+          : 'Tài khoản hoặc mật khẩu không chính xác.';
+        ElMessage.error(message);
+      } else {
+        // Authenticated request failed with 401: session truly expired
+        console.warn('[HTTP 401] Phiên làm việc đã hết hạn hoặc chưa đăng nhập:', url);
+        ElMessage.warning('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
     } else if (status === 403) {
       ElMessage.error('Bạn không có quyền thực hiện thao tác này.');
-    } else {
+    } else if (status === 404) {
+      // 404 handled specifically or surfaced cleanly
+      const message = typeof backendMessage === 'string' ? backendMessage : 'Tài nguyên không tồn tại (404).';
+      if (!isLoginRequest) {
+        ElMessage.error(message);
+      }
+    } else if (!isLoginRequest) {
+      const message = typeof backendMessage === 'string'
+        ? backendMessage
+        : (error.message || 'Lỗi hệ thống');
       ElMessage.error(message);
     }
 
@@ -52,18 +75,18 @@ httpClient.interceptors.response.use(
 // Adapter implementing FrontendApiClient for Plugins
 export const pluginApiAdapter: FrontendApiClient = {
   get: async <T = any>(url: string, config?: any): Promise<T> => {
-    return httpClient.get(url, config) as unknown as T;
+    return httpClient.get(url, config) as Promise<T>;
   },
   post: async <T = any>(url: string, data?: any, config?: any): Promise<T> => {
-    return httpClient.post(url, data, config) as unknown as T;
+    return httpClient.post(url, data, config) as Promise<T>;
   },
   put: async <T = any>(url: string, data?: any, config?: any): Promise<T> => {
-    return httpClient.put(url, data, config) as unknown as T;
-  },
-  delete: async <T = any>(url: string, config?: any): Promise<T> => {
-    return httpClient.delete(url, config) as unknown as T;
+    return httpClient.put(url, data, config) as Promise<T>;
   },
   patch: async <T = any>(url: string, data?: any, config?: any): Promise<T> => {
-    return httpClient.patch(url, data, config) as unknown as T;
+    return httpClient.patch(url, data, config) as Promise<T>;
+  },
+  delete: async <T = any>(url: string, config?: any): Promise<T> => {
+    return httpClient.delete(url, config) as Promise<T>;
   },
 };

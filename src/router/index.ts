@@ -17,6 +17,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Bảng điều khiển', icon: 'Odometer', requiresAuth: true },
       },
       {
+        path: 'users',
+        name: 'Users',
+        component: () => import('@/views/users/UserListView.vue'),
+        meta: { title: 'Quản lý Người dùng', icon: 'User', requiresAuth: true },
+      },
+      {
+        path: 'roles',
+        name: 'Roles',
+        component: () => import('@/views/roles/RoleListView.vue'),
+        meta: { title: 'Quản lý Phân quyền', icon: 'Lock', requiresAuth: true },
+      },
+      {
         path: 'plugins',
         name: 'Plugins',
         component: () => import('@/views/plugins/PluginListView.vue'),
@@ -55,35 +67,27 @@ router.beforeEach((to, from) => {
   console.info('[Router] navigation', {
     from: from.fullPath,
     to: to.fullPath,
-    matched: to.matched.map((record) => record.name),
+    matched: to.matched.map((m) => m.path),
+    requiresAuth: to.meta.requiresAuth,
+    authenticated: authStore.isAuthenticated,
   });
 
-  // Plugins are initialized by main.ts before app.use(router); never initialize here.
-  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth === true);
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth !== false);
+
   if (requiresAuth && !authStore.isAuthenticated) {
-    console.info('[Router] redirect unauthenticated navigation to login.', { to: to.fullPath });
-    return { path: '/auth/login', query: { redirect: to.fullPath } };
+    console.warn('[Router] unauthenticated access, redirecting to login', { target: to.fullPath });
+    return { name: 'Login', query: { redirect: to.fullPath } };
   }
 
-  if (to.path === '/auth/login' && authStore.isAuthenticated) {
-    return { path: '/dashboard' };
-  }
-
-  const requiredPermissions = to.meta?.permissions as string[] | undefined;
-  if (requiredPermissions?.length && !requiredPermissions.some((permission) => authStore.hasPermission(permission))) {
-    console.warn('[Router] access denied.', { path: to.path, requiredPermissions });
-    return { path: '/dashboard' };
+  if (to.name === 'Login' && authStore.isAuthenticated) {
+    console.info('[Router] authenticated user on login route, redirecting to dashboard');
+    return { name: 'Dashboard' };
   }
 
   return true;
 });
 
-router.afterEach((to, from, failure) => {
-  console.info('[Router] navigation resolved', {
-    from: from.fullPath,
-    to: to.fullPath,
-    failure: failure ? failure.type : null,
-  });
+router.afterEach((to) => {
+  const title = (to.meta.title as string) || 'ITEST';
+  document.title = `${title} - ITEST Platform`;
 });
-
-export default router;

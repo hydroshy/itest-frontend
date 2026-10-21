@@ -24,6 +24,16 @@
             <template #title>Bảng điều khiển</template>
           </el-menu-item>
 
+          <el-menu-item index="/users">
+            <el-icon><User /></el-icon>
+            <template #title>Quản lý Người dùng</template>
+          </el-menu-item>
+
+          <el-menu-item index="/roles">
+            <el-icon><Lock /></el-icon>
+            <template #title>Quản lý Phân quyền</template>
+          </el-menu-item>
+
           <el-menu-item index="/plugins">
             <el-icon><SetUp /></el-icon>
             <template #title>Quản lý Plugin</template>
@@ -150,6 +160,8 @@ import {
   Platform,
   Odometer,
   SetUp,
+  User,
+  Lock,
   Fold,
   Expand,
   ArrowDown,
