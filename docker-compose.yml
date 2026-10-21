@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: itest_frontend_shell
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    environment:
+      - BACKEND_API_URL=${BACKEND_API_URL:-http://itest_core_backend:3000/api}
+    networks:
+      - itest-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  itest-network:
+    name: itest-network
+    external: true

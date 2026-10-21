@@ -1,0 +1,37 @@
+{
+  "name": "itest-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx scripts/generate-plugin-registry.ts && vite",
+    "build": "tsx scripts/generate-plugin-registry.ts && vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "plugins:sync": "tsx scripts/sync-plugins.ts",
+    "plugins:generate": "tsx scripts/generate-plugin-registry.ts",
+    "plugins:update": "tsx scripts/sync-plugins.ts && tsx scripts/generate-plugin-registry.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "vue-demi"
+    ]
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@itest/frontend-sdk": "file:./packages/frontend-sdk",
+    "axios": "^1.7.9",
+    "element-plus": "^2.9.3",
+    "pinia": "^2.3.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

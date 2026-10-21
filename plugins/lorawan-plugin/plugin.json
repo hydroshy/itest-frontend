@@ -1,0 +1,18 @@
+{
+  "id": "lorawan-plugin",
+  "name": "LoRaWAN Gateway & Telemetry",
+  "version": "1.0.0",
+  "sdkVersion": "^1.0.0",
+  "description": "Quản lý Gateway LoRaWAN, giám sát tín hiệu SNR/RSSI và dữ liệu cảm biến thời gian thực.",
+  "author": "ITEST IoT Platform Team",
+  "entry": "backend/dist/index.js",
+  "frontend": "frontend/index.ts",
+  "enabledByDefault": true,
+  "permissions": [
+    {
+      "namespace": "lorawan",
+      "resource": "gateway",
+      "action": "read"
+    }
+  ]
+}
