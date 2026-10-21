@@ -3,28 +3,28 @@
     <div class="cs-widget-stats">
       <div class="stat-cell">
         <span class="cell-label">Máy chủ</span>
-        <span class="cell-value text-green">Online</span>
+        <span class="cell-value" :class="isOnline ? 'text-green' : 'text-gray'">{{ serverStatusText }}</span>
         <span class="cell-sub">ChirpStack v4</span>
       </div>
       <div class="stat-cell">
         <span class="cell-label">Gateways</span>
-        <span class="cell-value text-blue">{{ gatewayCount }}</span>
-        <span class="cell-sub">Đang đồng bộ</span>
+        <span class="cell-value text-blue">{{ gatewayCount !== null ? gatewayCount : '—' }}</span>
+        <span class="cell-sub">{{ isOnline ? 'Đang hoạt động' : 'Chưa kết nối' }}</span>
       </div>
       <div class="stat-cell">
         <span class="cell-label">Thiết bị</span>
-        <span class="cell-value text-purple">{{ deviceCount }}</span>
-        <span class="cell-sub">OTAA / ABP</span>
+        <span class="cell-value text-purple">{{ deviceCount !== null ? deviceCount : '—' }}</span>
+        <span class="cell-sub">{{ isOnline ? 'Đã đăng ký' : 'Chưa kết nối' }}</span>
       </div>
       <div class="stat-cell">
-        <span class="cell-label">SNR TB</span>
-        <span class="cell-value text-teal">+8.8 dB</span>
-        <span class="cell-sub">RSSI: -78 dBm</span>
+        <span class="cell-label">Server</span>
+        <span class="cell-value text-teal">{{ serverCount }}</span>
+        <span class="cell-sub">Đã cấu hình</span>
       </div>
     </div>
 
     <div class="cs-widget-footer">
-      <span class="sync-time">Cập nhật: {{ lastSyncTime }}</span>
+      <span class="sync-time">{{ lastSyncTime }}</span>
       <el-button link type="primary" size="small" @click="$router.push('/plugins/lorawan-chirpstack')">
         Mở Console ChirpStack →
       </el-button>
@@ -33,14 +33,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
-const gatewayCount = ref(2);
-const deviceCount = ref(2);
-const lastSyncTime = ref('Vừa xong');
+const API_BASE = '/api/plugins/lorawan-chirpstack';
+const serverCount = ref(0);
+const gatewayCount = ref<number | null>(null);
+const deviceCount = ref<number | null>(null);
+const isOnline = ref(false);
+const lastSyncTime = ref('');
+
+const serverStatusText = computed(() => {
+  if (serverCount.value === 0) return 'Chưa có';
+  return isOnline.value ? 'Online' : 'Offline';
+});
+
+async function fetchStats() {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(`${API_BASE}/servers`, { headers: { Accept: 'application/json' }, signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const servers = await res.json();
+    if (Array.isArray(servers)) {
+      serverCount.value = servers.length;
+      isOnline.value = servers.some((s: any) => s.status === 'online');
+      gatewayCount.value = servers.reduce((acc: number, s: any) => acc + (s.gatewayCount || 0), 0);
+      deviceCount.value = servers.reduce((acc: number, s: any) => acc + (s.deviceCount || 0), 0);
+      lastSyncTime.value = `Cập nhật: ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+  } catch {
+    isOnline.value = false;
+    lastSyncTime.value = 'Chưa thể kết nối backend';
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
 
 onMounted(() => {
-  lastSyncTime.value = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  fetchStats();
 });
 </script>
 
@@ -89,6 +119,7 @@ onMounted(() => {
 .text-blue { color: #3b82f6; }
 .text-purple { color: #8b5cf6; }
 .text-teal { color: #0d9488; }
+.text-gray { color: #94a3b8; }
 
 .cs-widget-footer {
   display: flex;

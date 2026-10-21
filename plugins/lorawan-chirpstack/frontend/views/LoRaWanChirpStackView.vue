@@ -47,6 +47,18 @@
         </el-card>
       </el-tab-pane>
 
+      <el-tab-pane label="Tenants" name="tenants">
+        <div class="tab-toolbar"><span>{{ tenants.length }} tenant</span><el-button type="primary" plain size="small" :icon="Plus" @click="tenantDialogVisible = true">Thêm Tenant</el-button></div>
+        <el-card shadow="never">
+          <el-table :data="tenants" v-loading="tenantsLoading" empty-text="Chưa có Tenant hoặc chưa chọn Network Server">
+            <el-table-column prop="name" label="Tên Tenant" min-width="240" />
+            <el-table-column prop="id" label="Tenant ID" min-width="260"><template #default="{ row }"><code>{{ row.id }}</code></template></el-table-column>
+            <el-table-column prop="description" label="Mô tả" min-width="220"><template #default="{ row }">{{ row.description || '—' }}</template></el-table-column>
+            <el-table-column label="" width="70"><template #default="{ row }"><el-popconfirm title="Xóa Tenant này?" @confirm="removeTenant(row.id)"><template #reference><el-button link type="danger">Xóa</el-button></template></el-popconfirm></template></el-table-column>
+          </el-table>
+        </el-card>
+      </el-tab-pane>
+
       <el-tab-pane label="Gateways" name="gateways">
         <div class="tab-toolbar"><span>{{ gateways.length }} gateway đã đăng ký</span><el-button type="primary" plain size="small" :icon="Plus" @click="gatewayDialogVisible = true">Thêm Gateway</el-button></div>
         <el-card shadow="never">
@@ -94,9 +106,16 @@
         <el-form-item label="Tên hiển thị" prop="name"><el-input v-model="serverForm.name" placeholder="ChirpStack Production" /></el-form-item>
         <el-form-item label="ChirpStack REST API URL" prop="apiUrl"><el-input v-model="serverForm.apiUrl" placeholder="http://localhost:8080" /></el-form-item>
         <el-form-item label="API Token" prop="apiToken"><el-input v-model="serverForm.apiToken" type="password" show-password placeholder="JWT token" /></el-form-item>
-        <el-form-item label="Tenant ID" prop="tenantId"><el-input v-model="serverForm.tenantId" placeholder="UUID tenant" /></el-form-item>
       </el-form>
       <template #footer><el-button @click="serverDialogVisible = false">Hủy</el-button><el-button type="primary" :loading="submitting" @click="submitServer">Lưu & kiểm tra kết nối</el-button></template>
+    </el-dialog>
+
+    <el-dialog v-model="tenantDialogVisible" title="Thêm ChirpStack Tenant" width="min(480px, 92vw)" @closed="resetTenantForm">
+      <el-form ref="tenantFormRef" :model="tenantForm" :rules="tenantRules" label-position="top">
+        <el-form-item label="Tên Tenant" prop="name"><el-input v-model="tenantForm.name" placeholder="Ví dụ: Công ty A" /></el-form-item>
+        <el-form-item label="Mô tả" prop="description"><el-input v-model="tenantForm.description" type="textarea" :rows="3" placeholder="Không bắt buộc" /></el-form-item>
+      </el-form>
+      <template #footer><el-button @click="tenantDialogVisible = false">Hủy</el-button><el-button type="primary" :loading="submitting" @click="submitTenant">Lưu Tenant</el-button></template>
     </el-dialog>
 
     <el-dialog v-model="gatewayDialogVisible" title="Thêm Gateway" width="min(540px, 92vw)" @closed="resetGatewayForm">
@@ -127,7 +146,8 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 
-interface NetworkServer { id: string; name: string; apiUrl: string; apiToken?: string; tenantId: string; version?: string; status: string; gatewayCount?: number; deviceCount?: number; }
+interface NetworkServer { id: string; name: string; apiUrl: string; apiToken?: string; version?: string; status: string; gatewayCount?: number; deviceCount?: number; }
+interface Tenant { id: string; name: string; description?: string; }
 interface Gateway { gatewayId: string; name: string; description?: string; networkServerId: string; status: string; rxPackets?: number; txPackets?: number; rxPacketsPerMinute?: number; }
 interface Device { devEui: string; name: string; applicationId: string; applicationName?: string; networkServerId: string; status: string; batteryLevel?: number; rssi?: number; snr?: number; }
 interface Uplink { time: string; devEui: string; deviceName?: string; fPort: number; fCnt: number; rssi: number; snr: number; decodedPayload?: Record<string, unknown>; }
@@ -140,23 +160,29 @@ const submitting = ref(false);
 const testingId = ref('');
 const loadError = ref('');
 const servers = ref<NetworkServer[]>([]);
+const tenants = ref<Tenant[]>([]);
+const tenantsLoading = ref(false);
 const gateways = ref<Gateway[]>([]);
 const devices = ref<Device[]>([]);
 const uplinks = ref<Uplink[]>([]);
 const applications = ref<Option[]>([]);
 const profiles = ref<Option[]>([]);
 const serverDialogVisible = ref(false);
+const tenantDialogVisible = ref(false);
 const gatewayDialogVisible = ref(false);
 const deviceDialogVisible = ref(false);
 const serverFormRef = ref();
+const tenantFormRef = ref();
 const gatewayFormRef = ref();
 const deviceFormRef = ref();
 
-const serverForm = reactive({ name: '', apiUrl: '', apiToken: '', tenantId: '' });
+const serverForm = reactive({ name: '', apiUrl: '', apiToken: '' });
+const tenantForm = reactive({ name: '', description: '' });
 const gatewayForm = reactive({ gatewayId: '', name: '', description: '', networkServerId: '' });
 const deviceForm = reactive({ devEui: '', name: '', description: '', applicationId: '', deviceProfileId: '', networkServerId: '' });
 const required = (message: string) => [{ required: true, message, trigger: 'blur' }];
-const serverRules = { name: required('Nhập tên Network Server'), apiUrl: [...required('Nhập API URL'), { type: 'url', message: 'API URL không hợp lệ', trigger: 'blur' }], apiToken: required('Nhập API token'), tenantId: required('Nhập Tenant ID') };
+const serverRules = { name: required('Nhập tên Network Server'), apiUrl: [...required('Nhập API URL'), { type: 'url', message: 'API URL không hợp lệ', trigger: 'blur' }], apiToken: required('Nhập API token') };
+const tenantRules = { name: required('Nhập tên Tenant') };
 const gatewayRules = { gatewayId: [...required('Nhập Gateway EUI'), { pattern: /^[0-9a-fA-F]{16}$/, message: 'Gateway EUI phải có 16 ký tự hex', trigger: 'blur' }], name: required('Nhập tên Gateway'), networkServerId: required('Chọn Network Server') };
 const deviceRules = { devEui: [...required('Nhập DevEUI'), { pattern: /^[0-9a-fA-F]{16}$/, message: 'DevEUI phải có 16 ký tự hex', trigger: 'blur' }], name: required('Nhập tên thiết bị'), applicationId: required('Chọn Application'), deviceProfileId: required('Chọn Device Profile'), networkServerId: required('Chọn Network Server') };
 
@@ -187,6 +213,7 @@ async function refreshAll() {
       request<NetworkServer[]>('/servers'), request<Gateway[]>('/gateways'), request<Device[]>('/devices'), request<Uplink[]>('/uplinks?limit=50'),
     ]);
     servers.value = serverData;
+    await fetchTenants();
     gateways.value = gatewayData;
     devices.value = deviceData;
     uplinks.value = uplinkData;
@@ -202,6 +229,49 @@ async function refreshAll() {
   }
 }
 
+async function fetchTenants() {
+  const serverId = servers.value[0]?.id;
+  if (!serverId) { tenants.value = []; return; }
+  tenantsLoading.value = true;
+  try {
+    tenants.value = await request<Tenant[]>(`/tenants?serverId=${encodeURIComponent(serverId)}`);
+  } catch (error) {
+    tenants.value = [];
+    loadError.value = error instanceof Error ? error.message : 'Không thể tải Tenant.';
+  } finally {
+    tenantsLoading.value = false;
+  }
+}
+
+function resetTenantForm() { Object.assign(tenantForm, { name: '', description: '' }); tenantFormRef.value?.clearValidate(); }
+async function submitTenant() {
+  const valid = await tenantFormRef.value?.validate().catch(() => false);
+  const serverId = servers.value[0]?.id;
+  if (!valid || !serverId) { if (!serverId) ElMessage.error('Hãy thêm Network Server trước'); return; }
+  submitting.value = true;
+  try {
+    await request('/tenants', { method: 'POST', body: JSON.stringify({ ...tenantForm, serverId }) });
+    ElMessage.success('Đã tạo Tenant');
+    tenantDialogVisible.value = false;
+    await fetchTenants();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Không thể tạo Tenant');
+  } finally {
+    submitting.value = false;
+  }
+}
+async function removeTenant(id: string) {
+  const serverId = servers.value[0]?.id;
+  if (!serverId) return;
+  try {
+    await request(`/tenants/${id}?serverId=${encodeURIComponent(serverId)}`, { method: 'DELETE' });
+    ElMessage.success('Đã xóa Tenant');
+    await fetchTenants();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Không thể xóa Tenant');
+  }
+}
+
 async function testServer(id: string) { testingId.value = id; try { const result = await request<{ success: boolean; message: string }>(`/servers/${id}/test`, { method: 'POST' }); ElMessage[result.success ? 'success' : 'error'](result.message); await refreshAll(); } catch (error) { ElMessage.error(error instanceof Error ? error.message : 'Không kiểm tra được kết nối'); } finally { testingId.value = ''; } }
 async function removeServer(id: string) { try { await request(`/servers/${id}`, { method: 'DELETE' }); ElMessage.success('Đã xóa Network Server'); await refreshAll(); } catch (error) { ElMessage.error(error instanceof Error ? error.message : 'Không thể xóa'); } }
 async function removeGateway(id: string, serverId: string) { try { await request(`/gateways/${id}?serverId=${serverId}`, { method: 'DELETE' }); ElMessage.success('Đã xóa Gateway'); await refreshAll(); } catch (error) { ElMessage.error(error instanceof Error ? error.message : 'Không thể xóa'); } }
@@ -209,7 +279,7 @@ async function removeDevice(id: string, serverId: string) { try { await request(
 async function submitServer() { const valid = await serverFormRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { await request('/servers', { method: 'POST', body: JSON.stringify(serverForm) }); ElMessage.success('Đã thêm Network Server'); serverDialogVisible.value = false; await refreshAll(); } catch (error) { ElMessage.error(error instanceof Error ? error.message : 'Không thể lưu'); } finally { submitting.value = false; } }
 async function submitGateway() { const valid = await gatewayFormRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { await request('/gateways', { method: 'POST', body: JSON.stringify(gatewayForm) }); ElMessage.success('Đã đăng ký Gateway'); gatewayDialogVisible.value = false; await refreshAll(); } catch (error) { ElMessage.error(error instanceof Error ? error.message : 'Không thể lưu'); } finally { submitting.value = false; } }
 async function submitDevice() { const valid = await deviceFormRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { await request('/devices', { method: 'POST', body: JSON.stringify(deviceForm) }); ElMessage.success('Đã đăng ký Device'); deviceDialogVisible.value = false; await refreshAll(); } catch (error) { ElMessage.error(error instanceof Error ? error.message : 'Không thể lưu'); } finally { submitting.value = false; } }
-function resetServerForm() { Object.assign(serverForm, { name: '', apiUrl: '', apiToken: '', tenantId: '' }); serverFormRef.value?.clearValidate(); }
+function resetServerForm() { Object.assign(serverForm, { name: '', apiUrl: '', apiToken: '' }); serverFormRef.value?.clearValidate(); }
 function resetGatewayForm() { Object.assign(gatewayForm, { gatewayId: '', name: '', description: '', networkServerId: servers.value[0]?.id || '' }); gatewayFormRef.value?.clearValidate(); }
 function resetDeviceForm() { Object.assign(deviceForm, { devEui: '', name: '', description: '', applicationId: applications.value[0]?.id || '', deviceProfileId: profiles.value[0]?.id || '', networkServerId: servers.value[0]?.id || '' }); deviceFormRef.value?.clearValidate(); }
 function statusTagType(status: string) { return ['online', 'active'].includes(status) ? 'success' : status === 'offline' ? 'danger' : status === 'untested' ? 'warning' : 'info'; }
