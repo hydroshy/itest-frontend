@@ -39,6 +39,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/auth',
     component: AuthLayout,
+    meta: { requiresAuth: false },
     children: [
       {
         path: 'login',
@@ -64,17 +65,11 @@ export const router = createRouter({
 
 router.beforeEach((to, from) => {
   const authStore = useAuthStore();
-  console.info('[Router] navigation', {
-    from: from.fullPath,
-    to: to.fullPath,
-    matched: to.matched.map((m) => m.path),
-    requiresAuth: to.meta.requiresAuth,
-    authenticated: authStore.isAuthenticated,
-  });
 
-  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth !== false);
+  const isPublicRoute = to.matched.every((record) => record.meta.requiresAuth === false);
+  const requiresAuth = !isPublicRoute;
 
-  if (requiresAuth && !authStore.isAuthenticated) {
+  if (to.name !== 'Login' && requiresAuth && !authStore.isAuthenticated) {
     console.warn('[Router] unauthenticated access, redirecting to login', { target: to.fullPath });
     return { name: 'Login', query: { redirect: to.fullPath } };
   }
