@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export const httpClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -61,6 +61,10 @@ httpClient.interceptors.response.use(
       if (!isLoginRequest) {
         ElMessage.error(message);
       }
+    } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+      ElMessage.error('Không thể kết nối đến máy chủ backend (ERR_CONNECTION_REFUSED hoặc sai địa chỉ).');
+    } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      ElMessage.error('Yêu cầu tới máy chủ backend bị quá thời gian chờ (Timeout 10s).');
     } else if (!isLoginRequest) {
       const message = typeof backendMessage === 'string'
         ? backendMessage
