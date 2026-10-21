@@ -27,7 +27,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const isAuthenticated = computed(() => !!token.value);
-  const roles = computed(() => user.value?.roles || []);
+  const roles = computed(() => {
+    const raw = user.value?.roles || [];
+    return raw.map((r: any) => (typeof r === 'object' && r !== null ? (r.name || r.code || r.id) : String(r)));
+  });
   const permissions = computed(() => user.value?.permissions || []);
 
   function setAuthData(newToken: string, newUser: UserProfile) {
@@ -51,14 +54,27 @@ export const useAuthStore = defineStore('auth', () => {
       throw new Error('Máy chủ không trả về access token hợp lệ.');
     }
 
-    const userProfile: UserProfile = res.user || {
-      id: res.id || 'usr-current',
-      username: res.username || credentials.username,
-      email: res.email || `${credentials.username}@itest.local`,
-      fullName: res.fullName || res.name || credentials.username,
-      roles: Array.isArray(res.roles) ? res.roles : (res.role ? [res.role] : ['admin']),
-      permissions: Array.isArray(res.permissions) ? res.permissions : ['*'],
-    };
+    const rawRoles = res.user?.roles || res.roles || (res.role ? [res.role] : ['admin']);
+    const normalizedRoles = Array.isArray(rawRoles)
+      ? rawRoles.map((r: any) => (typeof r === 'object' && r !== null ? (r.name || r.code || r.id) : String(r)))
+      : [String(rawRoles)];
+
+    const userProfile: UserProfile = res.user
+      ? {
+          ...res.user,
+          roles: normalizedRoles,
+          permissions: Array.isArray(res.user.permissions)
+            ? res.user.permissions
+            : (Array.isArray(res.permissions) ? res.permissions : ['*']),
+        }
+      : {
+          id: res.id || 'usr-current',
+          username: res.username || credentials.username,
+          email: res.email || `${credentials.username}@itest.local`,
+          fullName: res.fullName || res.name || credentials.username,
+          roles: normalizedRoles,
+          permissions: Array.isArray(res.permissions) ? res.permissions : ['*'],
+        };
 
     setAuthData(accessToken, userProfile);
   }
