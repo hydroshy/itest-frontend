@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { usePluginStore } from '@/stores/plugin';
 import MainLayout from '@/layouts/MainLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 
@@ -38,6 +37,7 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    // Kept last so runtime plugin routes take precedence after bootstrap registration.
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/system/NotFoundView.vue'),
@@ -50,53 +50,40 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from) => {
   const authStore = useAuthStore();
-  const pluginStore = usePluginStore();
+  console.info('[Router] navigation', {
+    from: from.fullPath,
+    to: to.fullPath,
+    matched: to.matched.map((record) => record.name),
+  });
 
-  // Lazy initialize plugins and dynamic routes on first route transition
-  if (!pluginStore.isInitialized) {
-    try {
-      await pluginStore.initializePlugins(router);
-      // If navigating to a dynamically added route, redirect to self to resolve
-      if (to.matched.length === 0) {
-        return next({ ...to, replace: true });
-      }
-    } catch (e) {
-      console.error('[Router] Error initializing plugin routes:', e);
-    }
-  }
-
-  // Check auth requirement
-  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth !== false);
+  // Plugins are initialized by main.ts before app.use(router); never initialize here.
+  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth === true);
   if (requiresAuth && !authStore.isAuthenticated) {
-    return next({
-      path: '/auth/login',
-      query: { redirect: to.fullPath },
-    });
+    console.info('[Router] redirect unauthenticated navigation to login.', { to: to.fullPath });
+    return { path: '/auth/login', query: { redirect: to.fullPath } };
   }
 
-  // Already logged in trying to visit login
   if (to.path === '/auth/login' && authStore.isAuthenticated) {
-    return next({ path: '/dashboard' });
+    return { path: '/dashboard' };
   }
 
-  // Permission check
   const requiredPermissions = to.meta?.permissions as string[] | undefined;
-  if (requiredPermissions && requiredPermissions.length > 0) {
-    const hasAny = requiredPermissions.some((perm) => authStore.hasPermission(perm));
-    if (!hasAny) {
-      console.warn(`[Router] Access denied to "${to.path}". Required permissions:`, requiredPermissions);
-      return next({ path: '/dashboard' });
-    }
+  if (requiredPermissions?.length && !requiredPermissions.some((permission) => authStore.hasPermission(permission))) {
+    console.warn('[Router] access denied.', { path: to.path, requiredPermissions });
+    return { path: '/dashboard' };
   }
 
-  next();
+  return true;
 });
 
-router.afterEach((to) => {
-  const title = (to.meta?.title as string) || 'ITEST Platform';
-  document.title = `${title} | ITEST`;
+router.afterEach((to, from, failure) => {
+  console.info('[Router] navigation resolved', {
+    from: from.fullPath,
+    to: to.fullPath,
+    failure: failure ? failure.type : null,
+  });
 });
 
 export default router;

@@ -19,6 +19,7 @@ export const usePluginStore = defineStore('plugin', () => {
   const registry = new FrontendPluginRegistry(eventBus, pluginApiAdapter);
 
   const isInitialized = ref(false);
+  let initializationPromise: Promise<void> | null = null;
   const plugins = shallowRef<FrontendPluginInstance[]>([]);
   const dynamicRoutes = shallowRef<FrontendRouteDefinition[]>([]);
 
@@ -49,37 +50,39 @@ export const usePluginStore = defineStore('plugin', () => {
   /**
    * Initialize and register all build-time plugins into Shell & Router
    */
-  async function initializePlugins(router?: Router): Promise<void> {
-    if (isInitialized.value) return;
+  function initializePlugins(router?: Router): Promise<void> {
+    if (isInitialized.value) return Promise.resolve();
+    if (initializationPromise) return initializationPromise;
 
-    console.log(`[PluginStore] Initializing ${buildTimePlugins.length} build-time plugin(s)...`);
+    initializationPromise = (async () => {
+      console.info(`[PluginStore] Initializing ${buildTimePlugins.length} build-time plugin(s)...`);
 
-    for (const entry of buildTimePlugins) {
-      try {
-        if (!entry.plugin) {
-          console.warn(`[PluginStore] Plugin "${entry.id}" has no valid export.`);
-          continue;
+      for (const entry of buildTimePlugins) {
+        try {
+          if (!entry.plugin) {
+            console.warn(`[PluginStore] Plugin "${entry.id}" has no valid export.`);
+            continue;
+          }
+
+          await registry.register(entry.plugin);
+          if (entry.enabledByDefault !== false) {
+            await registry.enable(entry.id);
+          }
+        } catch (err) {
+          // Keep Shell bootstrap alive: one broken plugin is reflected in diagnostics only.
+          console.error(`[PluginStore] Error loading plugin "${entry.id}":`, err);
         }
-
-        await registry.register(entry.plugin);
-
-        // Auto-enable if configured
-        if (entry.enabledByDefault !== false) {
-          await registry.enable(entry.id);
-        }
-      } catch (err) {
-        console.error(`[PluginStore] Error loading plugin "${entry.id}":`, err);
       }
-    }
 
-    refreshState();
+      refreshState();
+      if (router) registerDynamicRoutes(router);
+      isInitialized.value = true;
+      console.info('[PluginStore] Plugin initialization completed.', registryDiagnostics);
+    })().finally(() => {
+      initializationPromise = null;
+    });
 
-    // Register routes into Vue Router if provided
-    if (router) {
-      registerDynamicRoutes(router);
-    }
-
-    isInitialized.value = true;
+    return initializationPromise;
   }
 
   /**

@@ -1,6 +1,8 @@
 <template>
   <el-config-provider>
-    <router-view />
+    <CModuleBoundary module-name="RouterView">
+      <router-view />
+    </CModuleBoundary>
   </el-config-provider>
 </template>
 
