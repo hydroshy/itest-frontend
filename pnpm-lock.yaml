@@ -13,7 +13,7 @@ importers:
         version: 2.3.2(vue@3.5.44(typescript@5.9.3))
       '@itest/frontend-sdk':
         specifier: file:./packages/frontend-sdk
-        version: file:packages/frontend-sdk
+        version: link:packages/frontend-sdk
       axios:
         specifier: ^1.7.9
         version: 1.20.0(debug@4.4.3)
@@ -23,6 +23,9 @@ importers:
       pinia:
         specifier: ^2.3.1
         version: 2.3.1(typescript@5.9.3)(vue@3.5.44(typescript@5.9.3))
+      tabulator-tables:
+        specifier: 6.5.0
+        version: 6.5.0
       vue:
         specifier: ^3.5.13
         version: 3.5.44(typescript@5.9.3)
@@ -403,9 +406,6 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
-
-  '@itest/frontend-sdk@file:packages/frontend-sdk':
-    resolution: {directory: packages/frontend-sdk, type: directory}
 
   '@jridgewell/sourcemap-codec@1.6.0':
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
@@ -892,6 +892,9 @@ packages:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
     engines: {node: '>=0.10.0'}
 
+  tabulator-tables@6.5.0:
+    resolution: {integrity: sha512-n0S4rvb2tGJnVBXoiB8ns1liGfSz+sgniG5a92vEY+Wqj3R4L2LB+bF29OeWmEJwo4KAsdhfeknW2S92s/mvMw==}
+
   tinyglobby@0.2.17:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
@@ -1172,8 +1175,6 @@ snapshots:
       '@floating-ui/utils': 0.2.12
 
   '@floating-ui/utils@0.2.12': {}
-
-  '@itest/frontend-sdk@file:packages/frontend-sdk': {}
 
   '@jridgewell/sourcemap-codec@1.6.0': {}
 
@@ -1681,6 +1682,8 @@ snapshots:
       fsevents: 2.3.3
 
   source-map-js@1.2.2: {}
+
+  tabulator-tables@6.5.0: {}
 
   tinyglobby@0.2.17:
     dependencies:
