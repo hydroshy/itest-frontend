@@ -29,6 +29,9 @@
           <div class="actions"><el-button @click="resetCreate">Đặt lại</el-button><el-button type="primary" :loading="saving" :disabled="!canCreate" @click="createProfile">Create Final Config</el-button></div>
         </el-card>
       </el-tab-pane>
+      <el-tab-pane label="FINAL CONFIG TOOL" name="tool">
+        <FinalConfigTool />
+      </el-tab-pane>
     </el-tabs>
 
     <el-dialog v-model="detailVisible" title="Chi tiết Final Config" width="90%" destroy-on-close><div v-loading="detailLoading"><div v-if="detail" class="details"><b>{{ detail.sku }}</b><span>SO: {{ detail.soNumber || detail.so_number }}</span><span>ITEM: {{ detail.itemCode || detail.item_code }}</span></div><div ref="detailTableEl" class="tabulator-host register-table" /></div></el-dialog>
@@ -41,6 +44,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
+import FinalConfigTool from '../components/FinalConfigTool.vue';
 import { validateRegisterConfig } from '../utils/validator';
 
 type Row = Record<string, any>;
