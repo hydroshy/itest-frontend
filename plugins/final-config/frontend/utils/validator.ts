@@ -18,13 +18,10 @@ export function validateRegisterConfig(
   const rawStr = fmt === 'hex' ? inputText.replace(/\s+/g, '') : inputText;
   const numRegs = numberOfRegisters > 0 ? numberOfRegisters : 1;
 
-  // If empty input:
-  // String or hex can be empty, numeric types require a valid number
+  // A blank End-user Default means no default is configured. It is valid for every
+  // format and must not prevent creating a Final Config.
   if (!rawStr) {
-    if (fmt === 'string' || fmt === 'ascii' || fmt === 'hex') {
-      return { valid: true };
-    }
-    return { valid: false, error: 'Giá trị cấu hình không được để trống' };
+    return { valid: true };
   }
 
   switch (fmt) {
