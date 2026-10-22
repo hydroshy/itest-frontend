@@ -1,0 +1,23 @@
+{
+  "id": "final-config",
+  "name": "FINAL CONFIG",
+  "version": "1.0.0",
+  "sdkVersion": "^1.0.0",
+  "type": "FRONTEND",
+  "description": "Quản lý và tạo cấu hình cuối (Final Config) cho thiết bị từ bản đồ bộ nhớ (Memmap Payload).",
+  "author": "ITEST IoT Platform Team",
+  "frontend": "frontend/index.ts",
+  "enabledByDefault": true,
+  "permissions": [
+    {
+      "namespace": "finalconfig",
+      "resource": "profile",
+      "action": "manage"
+    },
+    {
+      "namespace": "finalconfig",
+      "resource": "profile",
+      "action": "create"
+    }
+  ]
+}
