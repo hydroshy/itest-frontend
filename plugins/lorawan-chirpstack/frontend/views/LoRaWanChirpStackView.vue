@@ -121,7 +121,7 @@
     <el-dialog v-model="gatewayDialogVisible" title="Thêm Gateway" width="min(540px, 92vw)" @closed="resetGatewayForm">
       <el-form ref="gatewayFormRef" :model="gatewayForm" :rules="gatewayRules" label-position="top">
         <el-form-item label="Gateway EUI" prop="gatewayId"><el-input v-model="gatewayForm.gatewayId" placeholder="aa555a0000000003" /></el-form-item>
-        <el-form-item label="Tên Gateway" prop="name"><el-input v-model="gatewayForm.name" placeholder="Outdoor Gateway" /></el-form-item>
+        <el-form-item label="Tên Gateway" prop="name"><el-input v-model="gatewayForm.name" placeholder="Ví dụ: Gateway Khu A" /></el-form-item>
         <el-form-item label="Mô tả"><el-input v-model="gatewayForm.description" /></el-form-item>
         <el-form-item label="Network Server" prop="networkServerId"><el-select v-model="gatewayForm.networkServerId" class="full-width"><el-option v-for="server in servers" :key="server.id" :label="server.name" :value="server.id" /></el-select></el-form-item>
       </el-form>
