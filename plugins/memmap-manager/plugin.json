@@ -1,0 +1,23 @@
+{
+  "id": "memmap-manager",
+  "name": "MemMap Profile Manager",
+  "version": "1.0.0",
+  "sdkVersion": "^1.0.0",
+  "type": "FRONTEND",
+  "description": "Quản lý và nhập bản đồ bộ nhớ thiết bị (MemMap) từ file JSON/CSV vào cơ sở dữ liệu.",
+  "author": "ITEST IoT Platform Team",
+  "frontend": "frontend/index.ts",
+  "enabledByDefault": true,
+  "permissions": [
+    {
+      "namespace": "memmap",
+      "resource": "profile",
+      "action": "manage"
+    },
+    {
+      "namespace": "memmap",
+      "resource": "import",
+      "action": "create"
+    }
+  ]
+}
