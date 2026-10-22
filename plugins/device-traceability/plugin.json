@@ -1,0 +1,23 @@
+{
+  "id": "device-traceability",
+  "name": "DEVICE TRACEABILITY",
+  "version": "1.0.0",
+  "sdkVersion": "^1.0.0",
+  "type": "FRONTEND",
+  "description": "Quản lý truy xuất nguồn gốc thiết bị, lệnh sản xuất ERP, thông số phần cứng, viễn thông và lịch sử cấu hình kiểm định.",
+  "author": "ITEST IoT Platform Team",
+  "frontend": "frontend/index.ts",
+  "enabledByDefault": true,
+  "permissions": [
+    {
+      "namespace": "traceability",
+      "resource": "order",
+      "action": "manage"
+    },
+    {
+      "namespace": "traceability",
+      "resource": "device",
+      "action": "manage"
+    }
+  ]
+}
