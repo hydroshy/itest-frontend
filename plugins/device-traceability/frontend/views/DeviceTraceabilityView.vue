@@ -9,7 +9,7 @@
         <div>
           <h2 class="view-title">DEVICE TRACEABILITY</h2>
           <p class="view-subtitle">
-            Hệ thống quản lý truy xuất nguồn gốc thiết bị, lệnh sản xuất ERP, thông số phần cứng, viễn thông và lịch sử kiểm định cấu hình.
+            Hệ thống quản lý truy xuất nguồn gốc thiết bị, Sale Orders (SO), Work Authorizations (WA) và kết quả kiểm thử phần cứng.
           </p>
         </div>
       </div>
@@ -17,227 +17,151 @@
         <el-tag effect="dark" type="success" class="header-tag">
           <el-icon><Check /></el-icon> BI Metabase Ready
         </el-tag>
-        <el-tag effect="plain" type="info">v1.0.0</el-tag>
+        <el-tag effect="plain" type="info">v2.0.0</el-tag>
       </div>
     </div>
 
     <!-- Main Navigation Tabs -->
     <el-tabs v-model="activeTab" class="traceability-tabs" type="border-card">
-      <!-- TAB 1: WORK ORDERS -->
-      <el-tab-pane name="orders">
+      <!-- TAB 1: SALE ORDERS (SO & WA) -->
+      <el-tab-pane name="sale-orders">
         <template #label>
           <span class="tab-label">
-            <el-icon><List /></el-icon> Lô Sản Xuất (Work Orders)
+            <el-icon><List /></el-icon> Đơn Hàng (Sale Orders)
           </span>
         </template>
 
         <div class="tab-toolbar">
           <div class="search-filters">
             <el-input
-              v-model="orderSearchQuery"
-              placeholder="Tìm theo SO, WA hoặc Item Code..."
+              v-model="soSearchQuery"
+              placeholder="Tìm theo SO hoặc Khách hàng..."
               prefix-icon="Search"
               clearable
               style="width: 280px"
-              @input="filterOrders"
+              @input="filterSaleOrders"
             />
-            <el-select
-              v-model="orderConnectivityFilter"
-              placeholder="Loại kết nối"
-              clearable
-              style="width: 160px"
-              @change="fetchOrders"
-            >
-              <el-option label="Tất cả kết nối" value="" />
-              <el-option label="LoRaWAN" value="LoRaWAN" />
-              <el-option label="Sigfox" value="Sigfox" />
-              <el-option label="NB-IoT" value="NB-IoT" />
-              <el-option label="Others" value="Others" />
-            </el-select>
-            <el-button type="primary" plain icon="Refresh" @click="fetchOrders" :loading="loadingOrders">
-              Làm mới
+            <el-button @click="fetchSaleOrders" :loading="loadingSo">
+              <el-icon><Refresh /></el-icon> Làm mới
             </el-button>
           </div>
+
           <div class="action-buttons">
-            <el-button type="primary" icon="Plus" @click="openCreateOrderDialog">
-              Tạo Lô Lệnh Mới
+            <el-button type="primary" @click="openCreateSoDialog">
+              <el-icon><Plus /></el-icon> Tạo Mới Sale Order
             </el-button>
           </div>
         </div>
 
+        <!-- Sale Orders Table -->
         <el-table
-          v-loading="loadingOrders"
-          :data="filteredOrders"
+          :data="pagedSaleOrders"
+          v-loading="loadingSo"
           stripe
           border
           style="width: 100%"
           highlight-current-row
-          @current-change="handleOrderSelect"
+          @current-change="handleSoRowSelect"
         >
-          <el-table-column prop="soNumber" label="Số SO (Sales Order)" width="160" sortable>
+          <el-table-column prop="soNumber" label="Mã Sale Order (SO)" width="180">
             <template #default="{ row }">
-              <span class="font-bold text-primary">{{ row.soNumber || row.so_number }}</span>
+              <span class="font-bold font-mono text-primary">{{ row.soNumber }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="waNumber" label="Số WA (Work Auth)" width="160" sortable>
+          <el-table-column prop="customerName" label="Khách Hàng" min-width="160">
             <template #default="{ row }">
-              <span class="font-mono text-dark">{{ row.waNumber || row.wa_number }}</span>
+              {{ row.customerName || 'N/A' }}
             </template>
           </el-table-column>
-          <el-table-column prop="itemCode" label="Mã Sản Phẩm (Item Code)" min-width="180">
+          <el-table-column label="Số Lượng WA" width="130" align="center">
             <template #default="{ row }">
-              <el-tag size="small" type="info">{{ row.itemCode || row.item_code }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="connectivity" label="Kết Nối" width="130" align="center">
-            <template #default="{ row }">
-              <el-tag
-                :type="getConnectivityTagType(row.connectivity)"
-                effect="light"
-                class="font-semibold"
-              >
-                {{ row.connectivity }}
+              <el-tag size="small" type="info">
+                {{ row.workAuthorizations ? row.workAuthorizations.length : (row.waCount || 0) }} WAs
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="totalQuantity" label="Kế Hoạch" width="110" align="center">
-            <template #default="{ row }">
-              <span class="font-bold">{{ row.totalQuantity || row.total_quantity || 0 }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Tiến Độ / Đã Nhập" min-width="200">
+          <el-table-column label="Tiến Độ Thiết Bị" min-width="220">
             <template #default="{ row }">
               <div class="progress-cell">
                 <el-progress
-                  :percentage="calcOrderProgress(row)"
-                  :status="calcOrderProgress(row) >= 100 ? 'success' : undefined"
-                  :stroke-width="10"
+                  :percentage="calcSoProgress(row)"
+                  :status="calcSoProgress(row) === 100 ? 'success' : undefined"
+                  style="flex: 1"
                 />
                 <span class="progress-text">
-                  {{ row.deviceCount || row.device_count || 0 }} / {{ row.totalQuantity || row.total_quantity || 0 }}
+                  {{ (row.stats && row.stats.configPassCount) || 0 }}/{{ (row.stats && row.stats.totalDevices) || 0 }} Đạt
                 </span>
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="createdAt" label="Ngày Tạo" width="160" align="center">
+          <el-table-column prop="notes" label="Ghi Chú" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="createdAt" label="Ngày Tạo" width="160">
             <template #default="{ row }">
-              <span class="text-xs text-muted">{{ formatDate(row.createdAt || row.created_at) }}</span>
+              {{ formatDateTime(row.createdAt) }}
             </template>
           </el-table-column>
-          <el-table-column label="Thao Tác" width="220" fixed="right" align="center">
+          <el-table-column label="Thao Tác" width="180" fixed="right" align="center">
             <template #default="{ row }">
-              <el-button
-                size="small"
-                type="primary"
-                link
-                icon="View"
-                @click.stop="viewOrderDevices(row)"
-              >
-                Xem Thiết Bị
+              <el-button size="small" type="primary" link @click.stop="openCreateWaDialog(row)">
+                <el-icon><Plus /></el-icon> Thêm WA
               </el-button>
-              <el-button
-                size="small"
-                type="success"
-                link
-                icon="Upload"
-                @click.stop="quickImportForOrder(row)"
-              >
-                Import
+              <el-button size="small" type="success" link @click.stop="goToTestingTabWithSo(row)">
+                <el-icon><Upload /></el-icon> Import CSV
               </el-button>
-              <el-popconfirm
-                title="Bạn có chắc chắn muốn xóa lô lệnh này?"
-                confirm-button-text="Xóa"
-                cancel-button-text="Hủy"
-                @confirm="deleteOrder(row.id)"
-              >
-                <template #reference>
-                  <el-button size="small" type="danger" link icon="Delete">
-                    Xóa
-                  </el-button>
-                </template>
-              </el-popconfirm>
             </template>
           </el-table-column>
         </el-table>
 
-        <!-- Selected Order Devices Drawer / Subtable -->
-        <div v-if="selectedOrder" class="order-devices-panel">
+        <!-- Sub-panel: Work Authorizations under selected SO -->
+        <div v-if="selectedSo" class="order-devices-panel mt-4">
           <div class="panel-header">
             <div class="panel-title">
-              <el-icon><Cpu /></el-icon>
-              Danh Sách Thiết Bị Lô: <strong>{{ selectedOrder.soNumber || selectedOrder.so_number }}</strong> ({{ selectedOrder.waNumber || selectedOrder.wa_number }}) - {{ selectedOrder.itemCode || selectedOrder.item_code }}
+              <el-icon><FolderOpened /></el-icon>
+              Danh sách Work Authorizations (WA) thuộc SO: 
+              <span class="text-primary font-mono font-bold">{{ selectedSo.soNumber }}</span>
             </div>
             <div class="panel-actions">
-              <el-button size="small" type="primary" icon="Plus" @click="quickImportForOrder(selectedOrder)">
-                Đăng ký thiết bị vào lô
+              <el-button size="small" type="primary" @click="openCreateWaDialog(selectedSo)">
+                <el-icon><Plus /></el-icon> Tạo WA Mới
               </el-button>
-              <el-button size="small" icon="Close" @click="selectedOrder = null">
-                Đóng
+              <el-button size="small" @click="fetchSoDetail(selectedSo.id)">
+                <el-icon><Refresh /></el-icon> Cập nhật
               </el-button>
             </div>
           </div>
 
           <el-table
-            v-loading="loadingOrderDevices"
-            :data="selectedOrderDevices"
-            stripe
+            :data="selectedSo.workAuthorizations || []"
+            v-loading="loadingSoDetail"
             size="small"
             border
             style="width: 100%"
           >
-            <el-table-column prop="serialNumber" label="Serial Number (SN)" min-width="180">
+            <el-table-column prop="waNumber" label="Mã WA (WA/xxxx/xxxxx)" width="220">
               <template #default="{ row }">
-                <span class="font-bold text-primary font-mono">{{ row.serialNumber || row.serial_number }}</span>
+                <el-tag type="warning" effect="plain" class="font-mono font-bold">{{ row.waNumber }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="sku" label="SKU" width="140" />
-            <el-table-column prop="fwVersion" label="FW Version" width="130">
+            <el-table-column prop="itemCode" label="Item Code" min-width="180">
               <template #default="{ row }">
-                <span class="font-mono text-xs">{{ row.fwVersion || row.fw_version }}</span>
+                <span class="font-mono">{{ row.itemCode || 'Chưa gán' }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="hwVersion" label="HW" width="90">
+            <el-table-column prop="plannedQuantity" label="SL Kế Hoạch" width="120" align="center">
               <template #default="{ row }">
-                <span class="font-mono text-xs">{{ row.hwVersion || row.hw_version || '-' }}</span>
+                {{ row.plannedQuantity || 0 }}
               </template>
             </el-table-column>
-            <el-table-column label="Thông Số Viễn Thông" min-width="220">
+            <el-table-column prop="notes" label="Ghi Chú" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="createdAt" label="Ngày Tạo" width="160">
               <template #default="{ row }">
-                <div v-if="row.devEui || row.dev_eui" class="telecom-badge">
-                  <span class="label">DevEUI:</span>
-                  <span class="value font-mono">{{ row.devEui || row.dev_eui }}</span>
-                </div>
-                <div v-if="row.sigfoxId || row.sigfox_id" class="telecom-badge">
-                  <span class="label">Sigfox ID:</span>
-                  <span class="value font-mono">{{ row.sigfoxId || row.sigfox_id }}</span>
-                </div>
+                {{ formatDateTime(row.createdAt) }}
               </template>
             </el-table-column>
-            <el-table-column prop="configStatus" label="Final Config" width="140" align="center">
+            <el-table-column label="Thao Tác" width="160" align="center">
               <template #default="{ row }">
-                <el-tag
-                  :type="getConfigStatusTagType(row.configStatus || row.config_status)"
-                  size="small"
-                >
-                  {{ row.configStatus || row.config_status || 'PENDING' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="Trạng Thái QA" width="120" align="center">
-              <template #default="{ row }">
-                <el-tag size="small" effect="plain">{{ row.status || 'INITIAL' }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Tra cứu" width="100" align="center">
-              <template #default="{ row }">
-                <el-button
-                  size="small"
-                  type="primary"
-                  link
-                  icon="Search"
-                  @click="inspectDevice(row.serialNumber || row.serial_number)"
-                >
-                  Chi tiết
+                <el-button size="small" type="primary" link @click="goToTestingTabWithWa(selectedSo, row)">
+                  <el-icon><Upload /></el-icon> Import Thiết Bị
                 </el-button>
               </template>
             </el-table-column>
@@ -245,358 +169,344 @@
         </div>
       </el-tab-pane>
 
-      <!-- TAB 2: DEVICE LOOKUP & LIFECYCLE -->
-      <el-tab-pane name="lookup">
+      <!-- TAB 2: DEVICE TESTING LIST & CSV IMPORT -->
+      <el-tab-pane name="device-testing">
         <template #label>
           <span class="tab-label">
-            <el-icon><Search /></el-icon> Tra Cứu Thiết Bị (Device Lookup)
+            <el-icon><Checked /></el-icon> Danh Sách Thiết Bị Đã Test (Device Testing List)
           </span>
         </template>
 
-        <div class="lookup-card">
-          <div class="lookup-input-bar">
-            <el-input
-              v-model="lookupQuery"
-              placeholder="Nhập Serial Number, DevEUI (16 hex) hoặc Sigfox ID (8 hex)..."
-              size="large"
+        <div class="tab-toolbar">
+          <div class="search-filters">
+            <el-select
+              v-model="filterTestingSoId"
+              placeholder="Lọc theo Sale Order (SO)"
               clearable
-              @keyup.enter="handleDeviceLookup"
+              filterable
+              style="width: 220px"
+              @change="fetchDevices"
             >
-              <template #prepend>
-                <el-icon><Cpu /></el-icon>
-              </template>
-              <template #append>
-                <el-button type="primary" :loading="loadingLookup" @click="handleDeviceLookup">
-                  Tra Cứu Toàn Diện
-                </el-button>
-              </template>
-            </el-input>
+              <el-option
+                v-for="so in saleOrdersList"
+                :key="so.id"
+                :label="`${so.soNumber} (${so.customerName || 'N/A'})`"
+                :value="so.id"
+              />
+            </el-select>
+
+            <el-select
+              v-model="filterTestingWaId"
+              placeholder="Lọc theo WA"
+              clearable
+              filterable
+              style="width: 220px"
+              @change="fetchDevices"
+            >
+              <el-option
+                v-for="wa in availableWas"
+                :key="wa.id"
+                :label="`${wa.waNumber} (${wa.itemCode || 'N/A'})`"
+                :value="wa.id"
+              />
+            </el-select>
+
+            <el-input
+              v-model="searchDeviceSerial"
+              placeholder="Tìm theo Serial Number..."
+              prefix-icon="Search"
+              clearable
+              style="width: 200px"
+              @input="fetchDevices"
+            />
+
+            <el-select
+              v-model="filterTestResult"
+              placeholder="Kết quả test"
+              clearable
+              style="width: 140px"
+              @change="fetchDevices"
+            >
+              <el-option label="PASS" value="PASS" />
+              <el-option label="FAIL" value="FAIL" />
+              <el-option label="PENDING" value="PENDING" />
+            </el-select>
+
+            <el-button @click="fetchDevices" :loading="loadingDevices">
+              <el-icon><Refresh /></el-icon> Làm mới
+            </el-button>
           </div>
 
-          <div v-if="deviceLifecycle" class="lifecycle-result">
-            <!-- Summary Banner -->
-            <div class="device-summary-banner">
-              <div class="summary-left">
-                <div class="sn-title">
-                  <span class="sn-text">{{ deviceLifecycle.serialNumber || deviceLifecycle.serial_number }}</span>
-                  <el-tag :type="getConfigStatusTagType(deviceLifecycle.configStatus || deviceLifecycle.config_status)" size="small">
-                    {{ deviceLifecycle.configStatus || deviceLifecycle.config_status || 'CHƯA CẤU HÌNH' }}
-                  </el-tag>
-                  <el-tag effect="plain" size="small">{{ deviceLifecycle.status || 'INITIAL' }}</el-tag>
-                </div>
-                <div class="sn-sub">
-                  SKU: <strong>{{ deviceLifecycle.sku }}</strong> | FW: <strong>{{ deviceLifecycle.fwVersion || deviceLifecycle.fw_version }}</strong> | HW: <strong>{{ deviceLifecycle.hwVersion || deviceLifecycle.hw_version || 'N/A' }}</strong>
-                </div>
-              </div>
-              <div class="summary-right">
-                <div class="metric-box">
-                  <div class="metric-label">Lệnh Sản Xuất</div>
-                  <div class="metric-val text-primary">{{ deviceLifecycle.order?.soNumber || deviceLifecycle.order?.so_number || 'N/A' }}</div>
-                </div>
-                <div class="metric-box">
-                  <div class="metric-label">Work Authorization</div>
-                  <div class="metric-val">{{ deviceLifecycle.order?.waNumber || deviceLifecycle.order?.wa_number || 'N/A' }}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Detailed Grid -->
-            <el-row :gutter="16" class="mt-4">
-              <!-- ERP & Hardware Card -->
-              <el-col :span="8">
-                <el-card shadow="hover" header="Thông Tin ERP & Phần Cứng">
-                  <div class="detail-list">
-                    <div class="detail-item">
-                      <span class="label">Sales Order:</span>
-                      <span class="val font-bold">{{ deviceLifecycle.order?.soNumber || deviceLifecycle.order?.so_number || '-' }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">Work Auth:</span>
-                      <span class="val">{{ deviceLifecycle.order?.waNumber || deviceLifecycle.order?.wa_number || '-' }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">Item Code:</span>
-                      <span class="val">{{ deviceLifecycle.order?.itemCode || deviceLifecycle.order?.item_code || '-' }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">Loại Kết Nối:</span>
-                      <span class="val">
-                        <el-tag size="small" :type="getConnectivityTagType(deviceLifecycle.order?.connectivity)">
-                          {{ deviceLifecycle.order?.connectivity || 'LoRaWAN' }}
-                        </el-tag>
-                      </span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">Phiên Bản ME:</span>
-                      <span class="val font-mono">{{ deviceLifecycle.meVersion || deviceLifecycle.me_version || '-' }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">Ngày Tạo:</span>
-                      <span class="val text-xs text-muted">{{ formatDate(deviceLifecycle.createdAt || deviceLifecycle.created_at) }}</span>
-                    </div>
-                  </div>
-                </el-card>
-              </el-col>
-
-              <!-- Telecom & Keys Card -->
-              <el-col :span="8">
-                <el-card shadow="hover" header="Khóa Viễn Thông (Telecom Credentials)">
-                  <div class="detail-list">
-                    <div v-if="deviceLifecycle.devEui || deviceLifecycle.dev_eui" class="detail-item">
-                      <span class="label">DevEUI:</span>
-                      <span class="val font-mono font-bold">{{ deviceLifecycle.devEui || deviceLifecycle.dev_eui }}</span>
-                    </div>
-                    <div v-if="deviceLifecycle.appEui || deviceLifecycle.app_eui" class="detail-item">
-                      <span class="label">AppEUI / JoinEUI:</span>
-                      <span class="val font-mono">{{ deviceLifecycle.appEui || deviceLifecycle.app_eui }}</span>
-                    </div>
-                    <div v-if="deviceLifecycle.appKey || deviceLifecycle.app_key" class="detail-item">
-                      <span class="label">AppKey (Root):</span>
-                      <span class="val font-mono text-xs">{{ maskKey(deviceLifecycle.appKey || deviceLifecycle.app_key) }}</span>
-                    </div>
-                    <div v-if="deviceLifecycle.sigfoxId || deviceLifecycle.sigfox_id" class="detail-item">
-                      <span class="label">Sigfox ID:</span>
-                      <span class="val font-mono font-bold">{{ deviceLifecycle.sigfoxId || deviceLifecycle.sigfox_id }}</span>
-                    </div>
-                    <div v-if="deviceLifecycle.sigfoxPac || deviceLifecycle.sigfox_pac" class="detail-item">
-                      <span class="label">Sigfox PAC:</span>
-                      <span class="val font-mono text-xs">{{ maskKey(deviceLifecycle.sigfoxPac || deviceLifecycle.sigfox_pac) }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">ChirpStack Sync:</span>
-                      <span class="val">
-                        <el-tag size="small" :type="deviceLifecycle.chirpstackSynced ? 'success' : 'info'">
-                          {{ deviceLifecycle.chirpstackSynced ? 'Đã đồng bộ' : 'Chưa đồng bộ' }}
-                        </el-tag>
-                      </span>
-                    </div>
-                  </div>
-                </el-card>
-              </el-col>
-
-              <!-- Final Config & Audit Card -->
-              <el-col :span="8">
-                <el-card shadow="hover" header="Lịch Sử Kiểm Định (Final Config Session)">
-                  <div v-if="deviceLifecycle.finalConfigSession" class="detail-list">
-                    <div class="detail-item">
-                      <span class="label">Phiên Kiểm Tra:</span>
-                      <span class="val font-mono text-xs">{{ deviceLifecycle.finalConfigSession.id }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">Trạng Thái Phiên:</span>
-                      <span class="val">
-                        <el-tag size="small" :type="getConfigStatusTagType(deviceLifecycle.finalConfigSession.status)">
-                          {{ deviceLifecycle.finalConfigSession.status }}
-                        </el-tag>
-                      </span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">Kết Quả Bước:</span>
-                      <span class="val font-bold">
-                        PASS: {{ deviceLifecycle.finalConfigSession.passedSteps ?? deviceLifecycle.finalConfigSession.passed_steps ?? 0 }} /
-                        Tổng: {{ deviceLifecycle.finalConfigSession.totalSteps ?? deviceLifecycle.finalConfigSession.total_steps ?? 0 }}
-                      </span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">Thời Điểm Hoàn Tất:</span>
-                      <span class="val text-xs text-muted">
-                        {{ formatDate(deviceLifecycle.finalConfigSession.finishedAt || deviceLifecycle.finalConfigSession.finished_at) }}
-                      </span>
-                    </div>
-                  </div>
-                  <div v-else class="empty-notice">
-                    <el-empty description="Chưa có dữ liệu phiên Final Config nào được liên kết với Serial này." :image-size="60" />
-                  </div>
-                </el-card>
-              </el-col>
-            </el-row>
-
-            <!-- Execution Logs Table if available -->
-            <div v-if="deviceLifecycle.executionLogs && deviceLifecycle.executionLogs.length > 0" class="mt-4">
-              <el-card shadow="hover" header="Chi Tiết Checkpoint Các Thanh Ghi Kiểm Định (Execution Log)">
-                <el-table :data="deviceLifecycle.executionLogs" size="small" stripe border>
-                  <el-table-column prop="modbusRegisterDec" label="Register (Dec)" width="130" align="center" />
-                  <el-table-column prop="modbusRegisterHex" label="Register (Hex)" width="130" align="center" />
-                  <el-table-column prop="action" label="Hành Động" width="100" align="center" />
-                  <el-table-column prop="status" label="Kết Quả" width="100" align="center">
-                    <template #default="{ row }">
-                      <el-tag :type="row.status === 'PASS' ? 'success' : 'danger'" size="small">{{ row.status }}</el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="expectedValue" label="Giá Trị Kỳ Vọng" min-width="140" />
-                  <el-table-column prop="readValue" label="Giá Trị Đọc Thực Tế" min-width="140" />
-                  <el-table-column prop="rawHex" label="Raw Hex" min-width="150">
-                    <template #default="{ row }">
-                      <span class="font-mono text-xs">{{ row.rawHex }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="durationMs" label="Thời gian (ms)" width="110" align="right" />
-                </el-table>
-              </el-card>
-            </div>
+          <div class="action-buttons">
+            <el-button type="success" @click="openImportCsvDialog">
+              <el-icon><Upload /></el-icon> Import File CSV Đã Test
+            </el-button>
           </div>
         </div>
-      </el-tab-pane>
 
-      <!-- TAB 3: BATCH ENROLLMENT / IMPORT -->
-      <el-tab-pane name="enrollment">
-        <template #label>
-          <span class="tab-label">
-            <el-icon><Upload /></el-icon> Đăng Ký / Import Thiết Bị (Batch Enrollment)
-          </span>
-        </template>
-
-        <div class="enrollment-container">
-          <el-card shadow="hover" class="box-card">
-            <template #header>
-              <div class="card-header">
-                <span>Nhập Hàng Loạt Thiết Bị Vào Lệnh Sản Xuất</span>
-                <el-tag type="info">Hỗ trợ dán bảng từ Excel / TSV / CSV / JSON</el-tag>
+        <!-- Devices List Table -->
+        <el-table
+          :data="devicesList"
+          v-loading="loadingDevices"
+          stripe
+          border
+          style="width: 100%"
+        >
+          <el-table-column prop="serialNumber" label="Serial Number (S/N)" width="200" fixed>
+            <template #default="{ row }">
+              <span class="font-bold font-mono text-primary">{{ row.serialNumber }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="Gắn vào SO / WA" width="240">
+            <template #default="{ row }">
+              <div>
+                <span class="text-xs text-muted">SO: </span>
+                <span class="font-mono font-bold">{{ row.so?.so_number || row.soNumber || 'N/A' }}</span>
+              </div>
+              <div v-if="row.wa?.wa_number || row.waNumber">
+                <span class="text-xs text-muted">WA: </span>
+                <el-tag size="small" type="warning" effect="plain" class="font-mono">
+                  {{ row.wa?.wa_number || row.waNumber }}
+                </el-tag>
               </div>
             </template>
-
-            <el-form label-position="top">
-              <el-row :gutter="16">
-                <el-col :span="12">
-                  <el-form-item label="Chọn Lô Lệnh Sản Xuất Đích (Target Order)" required>
-                    <el-select
-                      v-model="batchForm.orderId"
-                      placeholder="Chọn SO / WA..."
-                      style="width: 100%"
-                      filterable
-                      @change="handleBatchOrderChange"
-                    >
-                      <el-option
-                        v-for="ord in ordersList"
-                        :key="ord.id"
-                        :label="`${ord.soNumber || ord.so_number} - ${ord.waNumber || ord.wa_number} (${ord.itemCode || ord.item_code} | ${ord.connectivity})`"
-                        :value="ord.id"
-                      />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-
-                <el-col :span="6">
-                  <el-form-item label="SKU Mặc Định">
-                    <el-input v-model="batchForm.defaultSku" placeholder="Ví dụ: WSLRW-ATH" />
-                  </el-form-item>
-                </el-col>
-
-                <el-col :span="6">
-                  <el-form-item label="Firmware Version Mặc Định">
-                    <el-input v-model="batchForm.defaultFw" placeholder="Ví dụ: FW_1.0.4" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-form-item
-                label="Dữ liệu danh sách thiết bị (Hàng: Serial Number, DevEUI / Sigfox ID, AppKey / Sigfox PAC, SKU, FW)"
-                required
+          </el-table-column>
+          <el-table-column prop="devEui" label="DevEUI / MAC" width="180">
+            <template #default="{ row }">
+              <span class="font-mono">{{ row.devEui || '—' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="itemCode" label="Item Code / SKU" width="180">
+            <template #default="{ row }">
+              <span>{{ row.itemCode || row.sku || '—' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="testResult" label="Kết Quả Test" width="130" align="center">
+            <template #default="{ row }">
+              <el-tag
+                :type="row.testResult === 'PASS' ? 'success' : row.testResult === 'FAIL' ? 'danger' : 'info'"
+                effect="dark"
+                class="font-bold"
               >
-                <el-input
-                  v-model="batchRawText"
-                  type="textarea"
-                  :rows="8"
-                  placeholder="Dán dữ liệu từ Excel/CSV tại đây. Ví dụ:
-SN202610220001	0011223344556677	00112233445566778899AABBCCDDEEFF	WSLRW-ATH	FW_1.0.4
-SN202610220002	0011223344556678	00112233445566778899AABBCCDDEEFF	WSLRW-ATH	FW_1.0.4"
-                  @input="parseBatchText"
-                />
-              </el-form-item>
-
-              <div class="batch-preview-header">
-                <span class="preview-title">Xem trước danh sách parse được ({{ parsedBatchDevices.length }} thiết bị)</span>
-                <el-button size="small" type="primary" plain @click="parseBatchText">
-                  Phân tích lại
-                </el-button>
-              </div>
-
-              <el-table
-                v-if="parsedBatchDevices.length > 0"
-                :data="parsedBatchDevices"
-                stripe
-                border
-                size="small"
-                max-height="300"
-                style="width: 100%; margin-top: 8px"
+                {{ row.testResult || 'PENDING' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="configStatus" label="Final Config" width="160" align="center">
+            <template #default="{ row }">
+              <el-tag
+                :type="getConfigStatusTagType(row.configStatus)"
+                effect="plain"
               >
-                <el-table-column type="index" width="50" align="center" />
-                <el-table-column prop="serialNumber" label="Serial Number" min-width="160">
-                  <template #default="{ row }">
-                    <span class="font-bold font-mono">{{ row.serialNumber }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="sku" label="SKU" width="130" />
-                <el-table-column prop="fwVersion" label="FW Version" width="130" />
-                <el-table-column prop="devEui" label="DevEUI / ID" min-width="160" />
-                <el-table-column prop="appKey" label="AppKey / PAC" min-width="160">
-                  <template #default="{ row }">
-                    <span class="font-mono text-xs">{{ maskKey(row.appKey) }}</span>
-                  </template>
-                </el-table-column>
-              </el-table>
+                {{ row.configStatus || 'PENDING' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="testStation" label="Trạm Test" width="120" />
+          <el-table-column prop="testPerson" label="Kỹ Thuật Viên" width="130" />
+          <el-table-column prop="testedAt" label="Thời Gian Test" width="170">
+            <template #default="{ row }">
+              {{ formatDateTime(row.testedAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="Chi Tiết Test" min-width="120" align="center">
+            <template #default="{ row }">
+              <el-button size="small" type="info" link @click="showRawTestDialog(row)">
+                <el-icon><View /></el-icon> Xem Raw Data
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
 
-              <div class="submit-action-bar mt-4">
-                <el-button
-                  type="primary"
-                  size="large"
-                  icon="Check"
-                  :disabled="parsedBatchDevices.length === 0 || !batchForm.orderId"
-                  :loading="submittingBatch"
-                  @click="submitBatchDevices"
-                >
-                  Xác Nhận Import {{ parsedBatchDevices.length }} Thiết Bị
-                </el-button>
-              </div>
-            </el-form>
-          </el-card>
+        <!-- Pagination -->
+        <div class="pagination-wrapper mt-4">
+          <el-pagination
+            v-model:current-page="devicePage"
+            v-model:page-size="deviceLimit"
+            :total="deviceTotal"
+            :page-sizes="[20, 50, 100, 200]"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="fetchDevices"
+            @current-change="fetchDevices"
+          />
         </div>
       </el-tab-pane>
     </el-tabs>
 
-    <!-- CREATE ORDER DIALOG -->
-    <el-dialog
-      v-model="createOrderDialogVisible"
-      title="Tạo Lô Lệnh Sản Xuất Mới (Work Order)"
-      width="560px"
-      destroy-on-close
-    >
-      <el-form label-position="top">
-        <el-form-item label="Số Đơn Bán Hàng ERP (SO Number)" required>
-          <el-input v-model="newOrderForm.soNumber" placeholder="Ví dụ: SO/2026/01850" />
+    <!-- DIALOG: TẠO MỚI SALE ORDER -->
+    <el-dialog v-model="createSoVisible" title="Tạo Mới Đơn Hàng (Sale Order)" width="500px">
+      <el-form :model="createSoForm" label-width="140px" label-position="left">
+        <el-form-item label="Mã Sale Order" required>
+          <el-input v-model="createSoForm.soNumber" placeholder="Ví dụ: SO-2026-001 hoặc SO/26/001" />
         </el-form-item>
-        <el-form-item label="Số Lệnh Sản Xuất (WA Number)" required>
-          <el-input v-model="newOrderForm.waNumber" placeholder="Ví dụ: WA/2026/00412" />
+        <el-form-item label="Tên Khách Hàng">
+          <el-input v-model="createSoForm.customerName" placeholder="Tên khách hàng / Đối tác" />
         </el-form-item>
-        <el-form-item label="Mã Sản Phẩm ERP (Item Code)" required>
-          <el-input v-model="newOrderForm.itemCode" placeholder="Ví dụ: WSLRW-ATH-11" />
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="Loại Kết Nối Viễn Thông" required>
-              <el-select v-model="newOrderForm.connectivity" style="width: 100%">
-                <el-option label="LoRaWAN" value="LoRaWAN" />
-                <el-option label="Sigfox" value="Sigfox" />
-                <el-option label="NB-IoT" value="NB-IoT" />
-                <el-option label="Others" value="Others" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Số Lượng Kế Hoạch" required>
-              <el-input-number v-model="newOrderForm.totalQuantity" :min="1" :max="100000" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="Ghi Chú Đơn Hàng">
-          <el-input v-model="newOrderForm.notes" type="textarea" :rows="2" placeholder="Ghi chú kỹ thuật..." />
+        <el-form-item label="Ghi Chú">
+          <el-input v-model="createSoForm.notes" type="textarea" :rows="3" placeholder="Ghi chú đơn hàng..." />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="createOrderDialogVisible = false">Hủy</el-button>
-        <el-button type="primary" :loading="creatingOrder" @click="submitCreateOrder">
-          Tạo Lệnh
+        <el-button @click="createSoVisible = false">Hủy</el-button>
+        <el-button type="primary" :loading="submittingSo" @click="submitCreateSo">Tạo Mới</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- DIALOG: TẠO MỚI WORK AUTHORIZATION (WA) -->
+    <el-dialog v-model="createWaVisible" title="Tạo Work Authorization (WA) Thuộc SO" width="550px">
+      <el-form :model="createWaForm" label-width="170px" label-position="left">
+        <el-form-item label="Sale Order">
+          <span class="font-bold text-primary">{{ createWaForm.soNumber }}</span>
+        </el-form-item>
+        <el-form-item label="Mã WA (WA/xxxx/xxxxx)" required>
+          <el-input
+            v-model="createWaForm.waNumber"
+            placeholder="Ví dụ: WA/2026/00001"
+            @blur="formatWaNumberInput"
+          />
+          <span class="text-xs text-muted">Cú pháp bắt buộc theo chuẩn: WA/xxxx/xxxxx</span>
+        </el-form-item>
+        <el-form-item label="Item Code / Mã SP">
+          <el-input v-model="createWaForm.itemCode" placeholder="Ví dụ: WSLRW-C-RS485-01" />
+        </el-form-item>
+        <el-form-item label="Số Lượng Kế Hoạch">
+          <el-input-number v-model="createWaForm.plannedQuantity" :min="1" :max="100000" />
+        </el-form-item>
+        <el-form-item label="Ghi Chú">
+          <el-input v-model="createWaForm.notes" type="textarea" :rows="2" placeholder="Ghi chú lệnh..." />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createWaVisible = false">Hủy</el-button>
+        <el-button type="primary" :loading="submittingWa" @click="submitCreateWa">Tạo WA</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- DIALOG: IMPORT CSV FILE ĐÃ TEST -->
+    <el-dialog v-model="importCsvVisible" title="Import Danh Sách Thiết Bị Đã Test (CSV)" width="780px">
+      <div class="import-stepper">
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="Quy định Import Dữ Liệu Kiểm Thử"
+          description="Hệ thống hỗ trợ cấu trúc file CSV kiểm thử phần cứng (ví dụ WSLRW-C-RS485-01_tested.csv). Có thể liên kết trực tiếp vào SO hoặc theo WA (nếu nhập WA hệ thống sẽ tự động gán vào SO tương ứng)."
+          class="mb-4"
+        />
+
+        <el-form label-width="160px" label-position="left" class="mt-4">
+          <el-form-item label="Phương thức gán" required>
+            <el-radio-group v-model="importAssignMode">
+              <el-radio-button label="WA">Gán theo WA (khuyên dùng)</el-radio-button>
+              <el-radio-button label="SO">Gán trực tiếp SO</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+
+          <el-form-item v-if="importAssignMode === 'WA'" label="Mã WA (WA/xxxx/xxxxx)" required>
+            <el-select
+              v-model="selectedImportWaId"
+              placeholder="Chọn hoặc nhập mã WA..."
+              filterable
+              allow-create
+              default-first-option
+              style="width: 100%"
+              @change="handleImportWaChanged"
+            >
+              <el-option
+                v-for="wa in allAvailableWas"
+                :key="wa.id"
+                :label="`${wa.waNumber} [SO: ${wa.soNumber || 'N/A'}] - ${wa.itemCode || ''}`"
+                :value="wa.id"
+              />
+            </el-select>
+            <span v-if="parsedAutoSo" class="text-xs text-primary mt-1">
+              ✓ Tự động nhận diện Sale Order: <b>{{ parsedAutoSo }}</b>
+            </span>
+          </el-form-item>
+
+          <el-form-item v-if="importAssignMode === 'SO'" label="Mã Sale Order (SO)" required>
+            <el-select
+              v-model="selectedImportSoId"
+              placeholder="Chọn hoặc nhập mã SO..."
+              filterable
+              allow-create
+              default-first-option
+              style="width: 100%"
+            >
+              <el-option
+                v-for="so in saleOrdersList"
+                :key="so.id"
+                :label="`${so.soNumber} (${so.customerName || 'N/A'})`"
+                :value="so.id"
+              />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="Chọn File CSV" required>
+            <input
+              type="file"
+              ref="csvFileInputRef"
+              accept=".csv,text/csv"
+              class="hidden-file-input"
+              @change="handleCsvFileSelected"
+            />
+            <el-button type="primary" plain @click="triggerFileInput">
+              <el-icon><UploadFilled /></el-icon> Tải File CSV Lên
+            </el-button>
+            <span v-if="selectedFileName" class="ml-3 font-mono font-bold">{{ selectedFileName }}</span>
+          </el-form-item>
+        </el-form>
+
+        <!-- Preview Table -->
+        <div v-if="parsedCsvDevices.length > 0" class="csv-preview mt-4">
+          <div class="panel-header">
+            <span class="preview-title">
+              Xem trước: <b>{{ parsedCsvDevices.length }}</b> bản ghi thiết bị được đọc từ file
+            </span>
+            <el-tag type="success">
+              {{ parsedCsvDevices.filter(d => d.testResult === 'PASS').length }} PASS / {{ parsedCsvDevices.filter(d => d.testResult === 'FAIL').length }} FAIL
+            </el-tag>
+          </div>
+
+          <el-table :data="parsedCsvDevices.slice(0, 5)" size="small" border style="width: 100%">
+            <el-table-column prop="serialNumber" label="S/N" width="160" />
+            <el-table-column prop="devEui" label="DevEUI" width="160" />
+            <el-table-column prop="testResult" label="Kết Quả" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" :type="row.testResult === 'PASS' ? 'success' : 'danger'">
+                  {{ row.testResult }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="itemCode" label="Item Code" min-width="140" />
+            <el-table-column prop="testStation" label="Trạm Test" width="100" />
+            <el-table-column prop="testedAt" label="Thời Gian" width="150" />
+          </el-table>
+          <div v-if="parsedCsvDevices.length > 5" class="text-xs text-muted mt-1 text-center">
+            (Hiển thị 5 / {{ parsedCsvDevices.length }} bản ghi)
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="importCsvVisible = false">Đóng</el-button>
+        <el-button
+          type="success"
+          :disabled="parsedCsvDevices.length === 0"
+          :loading="submittingImport"
+          @click="submitCsvImport"
+        >
+          Xác Nhận Import Vào Hệ Thống
         </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- DIALOG: RAW TEST DATA VIEWER -->
+    <el-dialog v-model="rawTestDialogVisible" title="Chi Tiết Dữ Liệu Kiểm Thử (Raw Test Data)" width="600px">
+      <pre v-if="viewingRawData" class="raw-data-box">{{ JSON.stringify(viewingRawData, null, 2) }}</pre>
+      <div v-else class="text-muted text-center py-4">Không có dữ liệu mở rộng.</div>
+      <template #footer>
+        <el-button @click="rawTestDialogVisible = false">Đóng</el-button>
       </template>
     </el-dialog>
   </div>
@@ -604,64 +514,82 @@ SN202610220002	0011223344556678	00112233445566778899AABBCCDDEEFF	WSLRW-ATH	FW_1.
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   Files,
   List,
-  Search,
-  Upload,
   Plus,
   Refresh,
+  FolderOpened,
+  Upload,
+  Checked,
   Check,
-  Close,
-  Cpu,
+  Search,
+  UploadFilled,
   View,
-  Delete,
 } from '@element-plus/icons-vue';
 
 // -----------------------------------------------------------------------------
-// STATE
+// STATE DECLARATION
 // -----------------------------------------------------------------------------
-const activeTab = ref<'orders' | 'lookup' | 'enrollment'>('orders');
+const activeTab = ref<'sale-orders' | 'device-testing'>('sale-orders');
 
-// Orders state
-const ordersList = ref<any[]>([]);
-const loadingOrders = ref(false);
-const orderSearchQuery = ref('');
-const orderConnectivityFilter = ref('');
-const selectedOrder = ref<any | null>(null);
-const selectedOrderDevices = ref<any[]>([]);
-const loadingOrderDevices = ref(false);
+// Sale Orders state
+const saleOrdersList = ref<any[]>([]);
+const loadingSo = ref(false);
+const soSearchQuery = ref('');
+const selectedSo = ref<any | null>(null);
+const loadingSoDetail = ref(false);
 
-// Create order dialog
-const createOrderDialogVisible = ref(false);
-const creatingOrder = ref(false);
-const newOrderForm = ref({
+// Create SO Dialog
+const createSoVisible = ref(false);
+const submittingSo = ref(false);
+const createSoForm = ref({
   soNumber: '',
-  waNumber: '',
-  itemCode: '',
-  connectivity: 'LoRaWAN',
-  totalQuantity: 100,
+  customerName: '',
   notes: '',
 });
 
-// Device lookup state
-const lookupQuery = ref('');
-const loadingLookup = ref(false);
-const deviceLifecycle = ref<any | null>(null);
-
-// Batch enrollment state
-const batchRawText = ref('');
-const batchForm = ref({
-  orderId: '',
-  defaultSku: '',
-  defaultFw: '',
+// Create WA Dialog
+const createWaVisible = ref(false);
+const submittingWa = ref(false);
+const createWaForm = ref({
+  soId: '',
+  soNumber: '',
+  waNumber: '',
+  itemCode: '',
+  plannedQuantity: 100,
+  notes: '',
 });
-const parsedBatchDevices = ref<any[]>([]);
-const submittingBatch = ref(false);
+
+// Device Testing state
+const devicesList = ref<any[]>([]);
+const loadingDevices = ref(false);
+const searchDeviceSerial = ref('');
+const filterTestingSoId = ref('');
+const filterTestingWaId = ref('');
+const filterTestResult = ref('');
+const devicePage = ref(1);
+const deviceLimit = ref(50);
+const deviceTotal = ref(0);
+
+// CSV Import state
+const importCsvVisible = ref(false);
+const importAssignMode = ref<'WA' | 'SO'>('WA');
+const selectedImportWaId = ref('');
+const selectedImportSoId = ref('');
+const parsedAutoSo = ref('');
+const csvFileInputRef = ref<HTMLInputElement | null>(null);
+const selectedFileName = ref('');
+const parsedCsvDevices = ref<any[]>([]);
+const submittingImport = ref(false);
+
+// Raw Test Data modal
+const rawTestDialogVisible = ref(false);
+const viewingRawData = ref<any | null>(null);
 
 // -----------------------------------------------------------------------------
-// API CLIENT HELPERS
+// AUTH HELPER
 // -----------------------------------------------------------------------------
 const getAuthHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -674,252 +602,428 @@ const getAuthHeaders = (): Record<string, string> => {
 };
 
 // -----------------------------------------------------------------------------
-// ORDERS WORKFLOW
+// COMPUTED
 // -----------------------------------------------------------------------------
-const fetchOrders = async () => {
-  loadingOrders.value = true;
-  try {
-    let url = '/api/plugins/device-traceability/orders';
-    if (orderConnectivityFilter.value) {
-      url += `?connectivity=${encodeURIComponent(orderConnectivityFilter.value)}`;
-    }
-    const res = await fetch(url, { headers: getAuthHeaders() });
-    if (!res.ok) {
-      // Fallback mock if backend not yet running in memory
-      throw new Error(`HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    ordersList.value = Array.isArray(data) ? data : (data.items || []);
-  } catch (err: any) {
-    console.warn('Orders API not yet active or error:', err.message);
-  } finally {
-    loadingOrders.value = false;
-  }
-};
-
-const filteredOrders = computed(() => {
-  const q = orderSearchQuery.value.trim().toLowerCase();
-  if (!q) return ordersList.value;
-  return ordersList.value.filter((o) => {
-    const so = (o.soNumber || o.so_number || '').toLowerCase();
-    const wa = (o.waNumber || o.wa_number || '').toLowerCase();
-    const item = (o.itemCode || o.item_code || '').toLowerCase();
-    return so.includes(q) || wa.includes(q) || item.includes(q);
-  });
+const pagedSaleOrders = computed(() => {
+  const q = soSearchQuery.value.trim().toLowerCase();
+  if (!q) return saleOrdersList.value;
+  return saleOrdersList.value.filter(
+    (so) =>
+      so.soNumber?.toLowerCase().includes(q) ||
+      so.customerName?.toLowerCase().includes(q) ||
+      so.notes?.toLowerCase().includes(q),
+  );
 });
 
-const filterOrders = () => {
-  // Triggered by input
-};
+const allAvailableWas = computed(() => {
+  const list: any[] = [];
+  saleOrdersList.value.forEach((so) => {
+    if (so.workAuthorizations && Array.isArray(so.workAuthorizations)) {
+      so.workAuthorizations.forEach((wa: any) => {
+        list.push({
+          ...wa,
+          soNumber: so.soNumber,
+          soId: so.id,
+        });
+      });
+    }
+  });
+  return list;
+});
 
-const handleOrderSelect = async (row: any) => {
-  if (!row) return;
-  selectedOrder.value = row;
-  await fetchOrderDevices(row.id);
-};
+const availableWas = computed(() => {
+  if (!filterTestingSoId.value) return allAvailableWas.value;
+  const targetSo = saleOrdersList.value.find((s) => s.id === filterTestingSoId.value);
+  if (!targetSo || !targetSo.workAuthorizations) return [];
+  return targetSo.workAuthorizations;
+});
 
-const viewOrderDevices = async (row: any) => {
-  selectedOrder.value = row;
-  await fetchOrderDevices(row.id);
-};
-
-const fetchOrderDevices = async (orderId: string) => {
-  loadingOrderDevices.value = true;
+// -----------------------------------------------------------------------------
+// SALE ORDERS LOGIC
+// -----------------------------------------------------------------------------
+const fetchSaleOrders = async () => {
+  loadingSo.value = true;
   try {
-    const res = await fetch(`/api/plugins/device-traceability/orders/${orderId}/devices`, {
+    const res = await fetch('/api/plugins/device-traceability/so?limit=100', {
       headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    selectedOrderDevices.value = Array.isArray(data) ? data : (data.items || []);
+    saleOrdersList.value = data.items || data || [];
+    if (selectedSo.value) {
+      const updated = saleOrdersList.value.find((s) => s.id === selectedSo.value.id);
+      if (updated) selectedSo.value = updated;
+    }
   } catch (err: any) {
-    console.warn(`Lỗi tải thiết bị cho Order ${orderId}:`, err.message);
-    selectedOrderDevices.value = [];
+    ElMessage.error(`Lỗi tải danh sách Sale Orders: ${err.message}`);
   } finally {
-    loadingOrderDevices.value = false;
+    loadingSo.value = false;
   }
 };
 
-const openCreateOrderDialog = () => {
-  newOrderForm.value = {
+const filterSaleOrders = () => {
+  // Handled by computed pagedSaleOrders
+};
+
+const handleSoRowSelect = async (row: any) => {
+  if (!row) {
+    selectedSo.value = null;
+    return;
+  }
+  selectedSo.value = row;
+  await fetchSoDetail(row.id);
+};
+
+const fetchSoDetail = async (soId: string) => {
+  loadingSoDetail.value = true;
+  try {
+    const res = await fetch(`/api/plugins/device-traceability/so/${soId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const detail = await res.json();
+    selectedSo.value = detail;
+    // Update item in list
+    const idx = saleOrdersList.value.findIndex((s) => s.id === soId);
+    if (idx !== -1) {
+      saleOrdersList.value[idx] = detail;
+    }
+  } catch (err: any) {
+    ElMessage.error(`Lỗi tải chi tiết SO: ${err.message}`);
+  } finally {
+    loadingSoDetail.value = false;
+  }
+};
+
+const openCreateSoDialog = () => {
+  createSoForm.value = {
     soNumber: '',
-    waNumber: '',
-    itemCode: '',
-    connectivity: 'LoRaWAN',
-    totalQuantity: 100,
+    customerName: '',
     notes: '',
   };
-  createOrderDialogVisible.value = true;
+  createSoVisible.value = true;
 };
 
-const submitCreateOrder = async () => {
-  if (!newOrderForm.value.soNumber || !newOrderForm.value.waNumber || !newOrderForm.value.itemCode) {
-    ElMessage.warning('Vui lòng điền đầy đủ SO, WA và Item Code.');
+const submitCreateSo = async () => {
+  if (!createSoForm.value.soNumber.trim()) {
+    ElMessage.warning('Vui lòng nhập Mã Sale Order (SO Number).');
     return;
   }
-  creatingOrder.value = true;
+
+  submittingSo.value = true;
   try {
-    const res = await fetch('/api/plugins/device-traceability/orders', {
+    const res = await fetch('/api/plugins/device-traceability/so', {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(newOrderForm.value),
+      body: JSON.stringify({
+        soNumber: createSoForm.value.soNumber.trim(),
+        customerName: createSoForm.value.customerName.trim() || undefined,
+        notes: createSoForm.value.notes.trim() || undefined,
+      }),
     });
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || `HTTP ${res.status}`);
     }
-    ElMessage.success('Tạo lô lệnh sản xuất thành công!');
-    createOrderDialogVisible.value = false;
-    await fetchOrders();
+
+    ElMessage.success('Tạo Sale Order thành công!');
+    createSoVisible.value = false;
+    await fetchSaleOrders();
   } catch (err: any) {
-    ElMessage.error(`Lỗi tạo lô lệnh: ${err.message}`);
+    ElMessage.error(`Lỗi tạo SO: ${err.message}`);
   } finally {
-    creatingOrder.value = false;
+    submittingSo.value = false;
   }
 };
 
-const deleteOrder = async (id: string) => {
+const openCreateWaDialog = (so: any) => {
+  createWaForm.value = {
+    soId: so.id,
+    soNumber: so.soNumber,
+    waNumber: '',
+    itemCode: '',
+    plannedQuantity: 100,
+    notes: '',
+  };
+  createWaVisible.value = true;
+};
+
+const formatWaNumberInput = () => {
+  let val = createWaForm.value.waNumber.trim();
+  if (val && !val.toUpperCase().startsWith('WA/')) {
+    // Auto-prefix if user just entered numbers or date
+    const parts = val.split('/');
+    if (parts.length === 2) {
+      val = `WA/${parts[0]}/${parts[1]}`;
+    }
+  }
+  createWaForm.value.waNumber = val;
+};
+
+const submitCreateWa = async () => {
+  const wa = createWaForm.value.waNumber.trim();
+  if (!wa) {
+    ElMessage.warning('Vui lòng nhập Mã WA.');
+    return;
+  }
+  // Validate syntax WA/xxxx/xxxxx
+  const waRegex = /^WA\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/;
+  if (!waRegex.test(wa)) {
+    ElMessage.warning('Mã WA không đúng định dạng. Cú pháp bắt buộc: WA/xxxx/xxxxx (Ví dụ: WA/2026/00001)');
+    return;
+  }
+
+  submittingWa.value = true;
   try {
-    const res = await fetch(`/api/plugins/device-traceability/orders/${id}`, {
-      method: 'DELETE',
+    const res = await fetch(`/api/plugins/device-traceability/so/${createWaForm.value.soId}/wa`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        waNumber: wa,
+        itemCode: createWaForm.value.itemCode.trim() || undefined,
+        plannedQuantity: Number(createWaForm.value.plannedQuantity) || 0,
+        notes: createWaForm.value.notes.trim() || undefined,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    ElMessage.success(`Tạo WA [${wa}] thành công!`);
+    createWaVisible.value = false;
+    await fetchSoDetail(createWaForm.value.soId);
+  } catch (err: any) {
+    ElMessage.error(`Lỗi tạo WA: ${err.message}`);
+  } finally {
+    submittingWa.value = false;
+  }
+};
+
+const goToTestingTabWithSo = (so: any) => {
+  filterTestingSoId.value = so.id;
+  filterTestingWaId.value = '';
+  activeTab.value = 'device-testing';
+  fetchDevices();
+};
+
+const goToTestingTabWithWa = (so: any, wa: any) => {
+  filterTestingSoId.value = so.id;
+  filterTestingWaId.value = wa.id;
+  activeTab.value = 'device-testing';
+  fetchDevices();
+};
+
+// -----------------------------------------------------------------------------
+// DEVICES & TESTING LOGIC
+// -----------------------------------------------------------------------------
+const fetchDevices = async () => {
+  loadingDevices.value = true;
+  try {
+    const params = new URLSearchParams({
+      page: String(devicePage.value),
+      limit: String(deviceLimit.value),
+    });
+    if (filterTestingSoId.value) params.append('soId', filterTestingSoId.value);
+    if (filterTestingWaId.value) params.append('waId', filterTestingWaId.value);
+    if (searchDeviceSerial.value.trim()) params.append('serialNumber', searchDeviceSerial.value.trim());
+    if (filterTestResult.value) params.append('testResult', filterTestResult.value);
+
+    const res = await fetch(`/api/plugins/device-traceability/devices?${params.toString()}`, {
       headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    ElMessage.success('Đã xóa lô lệnh thành công.');
-    if (selectedOrder.value?.id === id) {
-      selectedOrder.value = null;
-    }
-    await fetchOrders();
+    const data = await res.json();
+    devicesList.value = data.items || data || [];
+    deviceTotal.value = data.total || devicesList.value.length;
   } catch (err: any) {
-    ElMessage.error(`Lỗi xóa: ${err.message}`);
-  }
-};
-
-const quickImportForOrder = (order: any) => {
-  batchForm.value.orderId = order.id;
-  batchForm.value.defaultSku = order.itemCode || order.item_code || '';
-  activeTab.value = 'enrollment';
-};
-
-// -----------------------------------------------------------------------------
-// DEVICE LOOKUP WORKFLOW
-// -----------------------------------------------------------------------------
-const handleDeviceLookup = async () => {
-  const q = lookupQuery.value.trim();
-  if (!q) {
-    ElMessage.warning('Vui lòng nhập Serial Number, DevEUI hoặc Sigfox ID.');
-    return;
-  }
-  loadingLookup.value = true;
-  deviceLifecycle.value = null;
-  try {
-    let url = `/api/plugins/device-traceability/devices/lookup?serialNumber=${encodeURIComponent(q)}`;
-    if (q.length === 16 && /^[0-9a-fA-F]+$/.test(q)) {
-      url = `/api/plugins/device-traceability/devices/lookup?devEui=${encodeURIComponent(q)}`;
-    } else if (q.length === 8 && /^[0-9a-fA-F]+$/.test(q)) {
-      url = `/api/plugins/device-traceability/devices/lookup?sigfoxId=${encodeURIComponent(q)}`;
-    }
-
-    const res = await fetch(url, { headers: getAuthHeaders() });
-    if (!res.ok) {
-      if (res.status === 404) {
-        ElMessage.warning(`Không tìm thấy thiết bị nào khớp với [${q}]`);
-        return;
-      }
-      throw new Error(`HTTP ${res.status}`);
-    }
-    const device = await res.json();
-
-    // Fetch full lifecycle
-    const lifecycleRes = await fetch(`/api/plugins/device-traceability/devices/${device.id}/lifecycle`, {
-      headers: getAuthHeaders(),
-    });
-    if (lifecycleRes.ok) {
-      deviceLifecycle.value = await lifecycleRes.json();
-    } else {
-      deviceLifecycle.value = device;
-    }
-    ElMessage.success(`Đã tải hồ sơ thiết bị [${device.serialNumber || device.serial_number}]`);
-  } catch (err: any) {
-    ElMessage.error(`Lỗi tra cứu: ${err.message}`);
+    ElMessage.error(`Lỗi tải danh sách thiết bị: ${err.message}`);
   } finally {
-    loadingLookup.value = false;
+    loadingDevices.value = false;
   }
 };
 
-const inspectDevice = (serial: string) => {
-  lookupQuery.value = serial;
-  activeTab.value = 'lookup';
-  handleDeviceLookup();
+const showRawTestDialog = (row: any) => {
+  viewingRawData.value = row.testRawData || null;
+  rawTestDialogVisible.value = true;
 };
 
 // -----------------------------------------------------------------------------
-// BATCH ENROLLMENT WORKFLOW
+// CSV IMPORT LOGIC (WSLRW-C-RS485-01_tested.csv)
 // -----------------------------------------------------------------------------
-const handleBatchOrderChange = (orderId: string) => {
-  const found = ordersList.value.find((o) => o.id === orderId);
-  if (found) {
-    batchForm.value.defaultSku = found.itemCode || found.item_code || '';
+const openImportCsvDialog = () => {
+  importAssignMode.value = 'WA';
+  selectedImportWaId.value = filterTestingWaId.value || '';
+  selectedImportSoId.value = filterTestingSoId.value || '';
+  parsedAutoSo.value = '';
+  selectedFileName.value = '';
+  parsedCsvDevices.value = [];
+  if (selectedImportWaId.value) {
+    handleImportWaChanged(selectedImportWaId.value);
+  }
+  importCsvVisible.value = true;
+};
+
+const handleImportWaChanged = (val: string) => {
+  const match = allAvailableWas.value.find((w) => w.id === val || w.waNumber === val);
+  if (match) {
+    parsedAutoSo.value = match.soNumber || '';
+  } else {
+    parsedAutoSo.value = '';
   }
 };
 
-const parseBatchText = () => {
-  const text = batchRawText.value.trim();
-  if (!text) {
-    parsedBatchDevices.value = [];
+const triggerFileInput = () => {
+  if (csvFileInputRef.value) {
+    csvFileInputRef.value.value = '';
+    csvFileInputRef.value.click();
+  }
+};
+
+const parseCsvLine = (line: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (c === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += c;
+    }
+  }
+  result.push(current);
+  return result;
+};
+
+const handleCsvFileSelected = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  selectedFileName.value = file.name;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const text = (event.target?.result as string) || '';
+      processCsvText(text);
+    } catch (err: any) {
+      ElMessage.error(`Lỗi đọc file CSV: ${err.message}`);
+    }
+  };
+  reader.readAsText(file);
+};
+
+const processCsvText = (csvText: string) => {
+  const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) {
+    ElMessage.warning('File CSV không có dữ liệu hợp lệ.');
     return;
   }
 
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  const results: any[] = [];
+  const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+  const parsedItems: any[] = [];
 
-  for (const line of lines) {
-    const parts = line.split(/[\t,;]+/).map((p) => p.trim());
-    if (parts.length === 0 || !parts[0]) continue;
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCsvLine(lines[i]);
+    if (values.length === 0 || (values.length === 1 && !values[0])) continue;
 
-    const sn = parts[0];
-    const devId = parts[1] || '';
-    const key = parts[2] || '';
-    const sku = parts[3] || batchForm.value.defaultSku || 'DEFAULT-SKU';
-    const fw = parts[4] || batchForm.value.defaultFw || 'FW_1.0.0';
+    const rowObj: Record<string, string> = {};
+    headers.forEach((h, idx) => {
+      rowObj[h] = values[idx] ? values[idx].trim() : '';
+    });
 
-    const devObj: any = {
-      serialNumber: sn,
-      sku,
-      fwVersion: fw,
+    const serialNumber = rowObj['serial_number'] || rowObj['serialNumber'] || rowObj['S/N'] || '';
+    if (!serialNumber) continue;
+
+    const devEui = rowObj['dev_eui'] || rowObj['device_key'] || rowObj['devEui'] || '';
+    const rawResult = (rowObj['result'] || rowObj['testResult'] || '').toUpperCase();
+    let testResult = 'PENDING';
+    if (rawResult === 'PASS' || rawResult === 'PASSED') testResult = 'PASS';
+    else if (rawResult === 'FAIL' || rawResult === 'FAILED') testResult = 'FAIL';
+
+    parsedItems.push({
+      serialNumber,
+      devEui,
+      testResult,
+      itemCode: rowObj['item_code'] || rowObj['itemCode'] || rowObj['sku'] || '',
+      hwVersion: rowObj['hw_ver'] || rowObj['hw_version'] || '',
+      fwVersion: rowObj['fw_ver'] || rowObj['fw_version'] || '',
+      testId: rowObj['test_id'] || '',
+      testStation: rowObj['test_station'] || '',
+      testPerson: rowObj['test_person'] || '',
+      testedAt: rowObj['time_finish'] || rowObj['testedAt'] || '',
+      testRawData: rowObj,
+    });
+  }
+
+  parsedCsvDevices.value = parsedItems;
+  ElMessage.success(`Đã phân tích ${parsedItems.length} thiết bị từ CSV.`);
+};
+
+const submitCsvImport = async () => {
+  if (parsedCsvDevices.value.length === 0) {
+    ElMessage.warning('Không có bản ghi thiết bị nào để import.');
+    return;
+  }
+
+  let waId: string | undefined = undefined;
+  let waNumber: string | undefined = undefined;
+  let soId: string | undefined = undefined;
+  let soNumber: string | undefined = undefined;
+
+  if (importAssignMode.value === 'WA') {
+    const target = selectedImportWaId.value.trim();
+    if (!target) {
+      ElMessage.warning('Vui lòng chọn hoặc nhập Mã WA.');
+      return;
+    }
+    const match = allAvailableWas.value.find((w) => w.id === target || w.waNumber === target);
+    if (match) {
+      waId = match.id;
+      waNumber = match.waNumber;
+    } else {
+      waNumber = target;
+    }
+  } else {
+    const target = selectedImportSoId.value.trim();
+    if (!target) {
+      ElMessage.warning('Vui lòng chọn hoặc nhập Mã SO.');
+      return;
+    }
+    const match = saleOrdersList.value.find((s) => s.id === target || s.soNumber === target);
+    if (match) {
+      soId = match.id;
+      soNumber = match.soNumber;
+    } else {
+      soNumber = target;
+    }
+  }
+
+  submittingImport.value = true;
+  try {
+    const payload = {
+      waId,
+      waNumber,
+      soId,
+      soNumber,
+      devices: parsedCsvDevices.value,
     };
 
-    // Auto-detect telecom key format
-    if (devId.length === 16) {
-      devObj.devEui = devId;
-      devObj.appKey = key;
-    } else if (devId.length === 8) {
-      devObj.sigfoxId = devId;
-      devObj.sigfoxPac = key;
-    }
-
-    results.push(devObj);
-  }
-
-  parsedBatchDevices.value = results;
-};
-
-const submitBatchDevices = async () => {
-  if (!batchForm.value.orderId) {
-    ElMessage.warning('Vui lòng chọn lô lệnh đích.');
-    return;
-  }
-  if (parsedBatchDevices.value.length === 0) {
-    ElMessage.warning('Không có thiết bị hợp lệ nào để import.');
-    return;
-  }
-
-  submittingBatch.value = true;
-  try {
-    const res = await fetch(`/api/plugins/device-traceability/orders/${batchForm.value.orderId}/devices/batch`, {
+    const res = await fetch('/api/plugins/device-traceability/devices/import-test-results', {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ devices: parsedBatchDevices.value }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
@@ -927,92 +1031,82 @@ const submitBatchDevices = async () => {
       throw new Error(err.message || `HTTP ${res.status}`);
     }
 
-    const data = await res.json();
-    ElMessage.success(`Đã import thành công ${data.count || parsedBatchDevices.value.length} thiết bị vào lô!`);
-    batchRawText.value = '';
-    parsedBatchDevices.value = [];
-    await fetchOrders();
+    const resData = await res.json();
+    ElMessage.success(
+      `Đã import thành công: ${resData.totalImported || parsedCsvDevices.value.length} thiết bị (PASS: ${resData.passCount || 0}, FAIL: ${resData.failCount || 0})!`,
+    );
+
+    importCsvVisible.value = false;
+    parsedCsvDevices.value = [];
+    selectedFileName.value = '';
+
+    // Refresh views
+    await fetchDevices();
+    await fetchSaleOrders();
   } catch (err: any) {
-    ElMessage.error(`Lỗi import: ${err.message}`);
+    ElMessage.error(`Lỗi import kết quả test: ${err.message}`);
   } finally {
-    submittingBatch.value = false;
+    submittingImport.value = false;
   }
 };
 
 // -----------------------------------------------------------------------------
-// FORMATTERS & HELPERS
+// HELPERS
 // -----------------------------------------------------------------------------
-const getConnectivityTagType = (conn?: string) => {
-  switch (conn?.toUpperCase()) {
-    case 'LORAWAN':
-      return 'success';
-    case 'SIGFOX':
-      return 'warning';
-    case 'NB-IOT':
-      return 'primary';
-    default:
-      return 'info';
+const formatDateTime = (val?: string | Date) => {
+  if (!val) return '—';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    return d.toLocaleString('vi-VN', { hour12: false });
+  } catch {
+    return String(val);
   }
+};
+
+const calcSoProgress = (row: any) => {
+  const total = Number((row.stats && row.stats.totalDevices) || row.totalDevices || 0);
+  if (!total) return 0;
+  const pass = Number((row.stats && row.stats.configPassCount) || row.configPassCount || 0);
+  return Math.min(100, Math.round((pass / total) * 100));
 };
 
 const getConfigStatusTagType = (status?: string) => {
   switch (status?.toUpperCase()) {
     case 'CONFIGURED_PASS':
     case 'COMPLETED':
-    case 'PASS':
       return 'success';
     case 'CONFIGURED_FAIL':
     case 'FAILED':
-    case 'FAIL':
       return 'danger';
     case 'IN_PROGRESS':
-    case 'CONFIGURING':
       return 'warning';
     default:
       return 'info';
   }
 };
 
-const calcOrderProgress = (row: any) => {
-  const total = Number(row.totalQuantity || row.total_quantity || 0);
-  const current = Number(row.deviceCount || row.device_count || 0);
-  if (total <= 0) return 0;
-  return Math.min(100, Math.round((current / total) * 100));
-};
-
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return '-';
-  try {
-    const d = new Date(dateStr);
-    return `${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN')}`;
-  } catch {
-    return dateStr;
-  }
-};
-
-const maskKey = (key?: string) => {
-  if (!key) return '-';
-  if (key.length <= 8) return '****';
-  return `${key.slice(0, 4)}...${key.slice(-4)}`;
-};
-
-onMounted(() => {
-  fetchOrders();
+// -----------------------------------------------------------------------------
+// LIFECYCLE
+// -----------------------------------------------------------------------------
+onMounted(async () => {
+  await fetchSaleOrders();
+  await fetchDevices();
 });
 </script>
 
 <style scoped>
 .traceability-view {
-  padding: 16px;
-  background-color: #f8fafc;
-  min-height: calc(100vh - 60px);
+  padding: 20px;
+  background: #f8fafc;
+  min-height: calc(100vh - 64px);
 }
 
 .view-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 20px;
   background: #ffffff;
   padding: 16px 20px;
   border-radius: 8px;
@@ -1091,11 +1185,10 @@ onMounted(() => {
 .progress-text {
   font-size: 12px;
   color: #64748b;
-  min-width: 60px;
+  min-width: 70px;
 }
 
 .order-devices-panel {
-  margin-top: 20px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -1111,110 +1204,22 @@ onMounted(() => {
 
 .panel-title {
   font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-weight: 600;
   color: #1e293b;
-}
-
-.telecom-badge {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
 }
 
-.telecom-badge .label {
-  color: #64748b;
+.hidden-file-input {
+  display: none;
 }
 
-.lookup-card {
-  padding: 8px;
-}
-
-.lookup-input-bar {
-  max-width: 720px;
-  margin: 12px auto 24px auto;
-}
-
-.device-summary-banner {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.sn-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sn-text {
-  font-size: 18px;
-  font-weight: 700;
-  font-family: monospace;
-  color: #1e3a8a;
-}
-
-.sn-sub {
-  margin-top: 6px;
-  font-size: 13px;
-  color: #475569;
-}
-
-.summary-right {
-  display: flex;
-  gap: 20px;
-}
-
-.metric-box {
-  text-align: right;
-}
-
-.metric-label {
-  font-size: 11px;
-  color: #64748b;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.metric-val {
-  font-size: 15px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.detail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-}
-
-.detail-item .label {
-  color: #64748b;
-}
-
-.empty-notice {
-  padding: 16px 0;
-}
-
-.batch-preview-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 16px;
+.csv-preview {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 12px;
 }
 
 .preview-title {
@@ -1223,13 +1228,36 @@ onMounted(() => {
   color: #334155;
 }
 
-.submit-action-bar {
+.raw-data-box {
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.pagination-wrapper {
   display: flex;
   justify-content: flex-end;
 }
 
+.mt-1 {
+  margin-top: 4px;
+}
+
 .mt-4 {
   margin-top: 16px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.ml-3 {
+  margin-left: 12px;
 }
 
 .font-bold {
