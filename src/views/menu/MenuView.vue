@@ -193,7 +193,7 @@ async function fetchMenuCards() {
   try {
     const res: any = await httpClient.get('/menu/my-cards');
     const items = res?.data || res?.items || res;
-    if (Array.isArray(items) && items.length > 0) {
+    if (Array.isArray(items)) {
       cards.value = items.map((item: any) => ({
         ...item,
         path: item.route || item.path,
@@ -201,22 +201,32 @@ async function fetchMenuCards() {
       return;
     }
   } catch (err) {
-    console.warn('Backend /api/menu/my-cards not ready or failed, using role-filtered fallback cards', err);
+    console.warn('Backend /api/menu/my-cards request failed:', err);
   } finally {
     loading.value = false;
   }
 
-  // Fallback: Lấy danh sách thẻ mặc định, lọc theo role nếu cần
+  // Fallback phòng vệ (chỉ dùng khi API gặp sự cố mạng hoặc lỗi kết nối)
   const userRoles = authStore.roles.map((r: string) => r.toUpperCase());
-  const isAdmin = userRoles.includes('ADMIN') || userRoles.includes('SUPER_ADMIN') || userRoles.includes('ADMINISTRATOR') || userRoles.length === 0;
+  const isAdmin = userRoles.includes('ADMIN') || userRoles.includes('SUPER_ADMIN') || userRoles.includes('ADMINISTRATOR');
 
   if (isAdmin) {
     cards.value = [...defaultStaticCards];
-  } else {
-    // Với role END_USER hoặc USER thông thường: chỉ cấp Final Config Tool và Dashboard
+  } else if (userRoles.includes('OPERATOR')) {
     cards.value = defaultStaticCards.filter((card) => {
-      return card.id === 'final-config:tool' || card.id === 'dashboard';
+      return (
+        card.id === 'final-config:tool' ||
+        card.id === 'device-traceability:devices' ||
+        card.id === 'lorawan-chirpstack:integration'
+      );
     });
+  } else if (userRoles.includes('END_USER')) {
+    cards.value = defaultStaticCards.filter((card) => {
+      return card.id === 'final-config:tool';
+    });
+  } else {
+    // Không có role hoặc role không được cấp phép: tuyệt đối không hiển thị card trái phép
+    cards.value = [];
   }
 }
 

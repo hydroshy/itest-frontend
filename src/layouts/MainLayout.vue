@@ -24,22 +24,22 @@
             <template #title>Trung tâm Ứng dụng</template>
           </el-menu-item>
 
-          <el-menu-item index="/dashboard">
+          <el-menu-item v-if="canAccessDashboard" index="/dashboard">
             <el-icon><Odometer /></el-icon>
             <template #title>Bảng điều khiển</template>
           </el-menu-item>
 
-          <el-menu-item index="/users">
+          <el-menu-item v-if="canAccessAdmin" index="/users">
             <el-icon><User /></el-icon>
             <template #title>Quản lý Người dùng</template>
           </el-menu-item>
 
-          <el-menu-item index="/roles">
+          <el-menu-item v-if="canAccessAdmin" index="/roles">
             <el-icon><Lock /></el-icon>
             <template #title>Quản lý Phân quyền</template>
           </el-menu-item>
 
-          <el-menu-item index="/plugins">
+          <el-menu-item v-if="canAccessAdmin" index="/plugins">
             <el-icon><SetUp /></el-icon>
             <template #title>Quản lý Plugin</template>
           </el-menu-item>
@@ -188,6 +188,19 @@ const currentRouteTitle = computed(() => (route.meta?.title as string) || 'Trang
 const userInitial = computed(() => {
   const name = authStore.user?.fullName || authStore.user?.username || 'U';
   return name.charAt(0).toUpperCase();
+});
+
+const canAccessAdmin = computed(() => {
+  const roles = authStore.roles.map((r: string) => r.toUpperCase());
+  return roles.includes('ADMIN') || roles.includes('SUPER_ADMIN') || roles.includes('ADMINISTRATOR');
+});
+
+const canAccessDashboard = computed(() => {
+  const roles = authStore.roles.map((r: string) => r.toUpperCase());
+  if (roles.includes('ADMIN') || roles.includes('SUPER_ADMIN') || roles.includes('ADMINISTRATOR') || roles.includes('OPERATOR')) {
+    return true;
+  }
+  return authStore.hasPermission('dashboard:view');
 });
 
 const headerRightExtensions = computed(() => {
