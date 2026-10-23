@@ -258,7 +258,14 @@ const filteredCards = computed(() => {
 function navigateTo(card: MenuCardItem) {
   const target = card.route || card.path;
   if (target) {
-    router.push(target);
+    // Nếu điều hướng vào plugin từ /menu, đánh dấu viewMode=standalone hoặc from=menu
+    // để giao diện plugin chạy ở chế độ thao tác trực tiếp (không hiện sidebar)
+    if (target.startsWith('/plugins/')) {
+      const separator = target.includes('?') ? '&' : '?';
+      router.push(`${target}${separator}from=menu`);
+    } else {
+      router.push(target);
+    }
   }
 }
 

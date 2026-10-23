@@ -214,7 +214,19 @@ const pluginStore = usePluginStore();
 const isCollapse = ref(false);
 
 const activeRoute = computed(() => route.path);
-const showSidebar = computed(() => route.path !== '/menu');
+// Ẩn sidebar khi:
+// 1. Ở trang /menu (Launcher/Portal)
+// 2. Truy cập vào các plugin từ /menu (có query param from=menu hoặc điều hướng từ menu)
+// Khi truy cập plugin từ /dashboard hoặc thanh quản lý (không có from=menu), sidebar vẫn hiện bình thường.
+const showSidebar = computed(() => {
+  if (route.path === '/menu') {
+    return false;
+  }
+  if (route.path.startsWith('/plugins/') && route.query.from === 'menu') {
+    return false;
+  }
+  return true;
+});
 const currentRouteTitle = computed(() => (route.meta?.title as string) || 'Trang');
 
 const userInitial = computed(() => {
