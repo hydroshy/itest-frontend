@@ -123,10 +123,11 @@
           >
             <el-icon class="logo-icon"><Platform /></el-icon>
             <span class="brand-title">iTest 2.0</span>
+            <span class="cyber-badge cyan" style="margin-left: 6px; font-size: 10px;">SYS.HUD</span>
           </el-button>
 
-          <el-breadcrumb separator="/" class="breadcrumb">
-            <el-breadcrumb-item :to="{ path: '/menu' }">Menu</el-breadcrumb-item>
+          <el-breadcrumb separator="//" class="breadcrumb breadcrumb-cyber">
+            <el-breadcrumb-item :to="{ path: '/menu' }">MENU</el-breadcrumb-item>
             <el-breadcrumb-item v-if="route.path !== '/menu'">{{ currentRouteTitle }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
@@ -138,8 +139,8 @@
           </template>
 
           <el-dropdown trigger="click" @command="handleUserCommand" popper-class="user-dropdown-popper">
-            <div class="user-profile">
-              <el-avatar :size="30" class="user-avatar">
+            <div class="user-profile" data-augmented-ui="tl-clip br-clip border">
+              <el-avatar :size="28" class="user-avatar">
                 {{ userInitial }}
               </el-avatar>
               <div class="user-info-text">
@@ -149,24 +150,37 @@
               <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
-              <el-dropdown-menu class="cyber-dropdown-menu">
-                <div class="dropdown-header">
-                  <div class="dropdown-user-name">{{ authStore.user?.fullName || authStore.user?.username }}</div>
-                  <div class="dropdown-user-email">{{ authStore.user?.email || 'authenticated user' }}</div>
-                </div>
-                <el-dropdown-item command="profile">
-                  <el-icon><User /></el-icon>
-                  <span>Hồ sơ cá nhân</span>
-                </el-dropdown-item>
-                <el-dropdown-item v-if="canAccessAdmin" command="roles">
-                  <el-icon><Lock /></el-icon>
-                  <span>Phân quyền ({{ primaryRole }})</span>
-                </el-dropdown-item>
-                <el-dropdown-item divided command="logout" class="logout-item">
-                  <el-icon><SwitchButton /></el-icon>
-                  <span>Đăng xuất</span>
-                </el-dropdown-item>
-              </el-dropdown-menu>
+              <div class="cyber-dropdown-wrapper" data-augmented-ui="tl-clip br-clip border">
+                <el-dropdown-menu class="cyber-dropdown-menu">
+                  <div class="dropdown-header">
+                    <div class="dropdown-sys-tag">
+                      <span class="pulse-indicator"></span>
+                      <span class="sys-label">SYS.OPERATOR // ACTIVE</span>
+                    </div>
+                    <div class="dropdown-user-name">{{ authStore.user?.fullName || authStore.user?.username }}</div>
+                    <div class="dropdown-user-sub">
+                      <span class="sub-role">{{ primaryRole }}</span>
+                      <span class="sub-sep">•</span>
+                      <span class="sub-id">{{ authStore.user?.email || 'SYS_ID: 0x' + (authStore.user?.id || '409').slice(0, 8) }}</span>
+                    </div>
+                  </div>
+                  <el-dropdown-item command="profile">
+                    <el-icon><User /></el-icon>
+                    <span class="item-label">Hồ sơ cá nhân</span>
+                    <span class="item-code">01</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="canAccessAdmin" command="roles">
+                    <el-icon><Lock /></el-icon>
+                    <span class="item-label">Phân quyền ({{ primaryRole }})</span>
+                    <span class="item-code">02</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item divided command="logout" class="logout-item">
+                    <el-icon><SwitchButton /></el-icon>
+                    <span class="item-label">Đăng xuất</span>
+                    <span class="item-code">EXIT</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </div>
             </template>
           </el-dropdown>
         </div>
@@ -446,34 +460,14 @@ async function handleUserCommand(cmd: string) {
 }
 
 :deep(.user-dropdown-popper) {
-  padding: 4px;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-.dropdown-header {
-  padding: 8px 12px 10px;
-  border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 4px;
-}
-
-.dropdown-user-name {
-  font-weight: 600;
-  font-size: 13px;
-  color: #0f172a;
-}
-
-.dropdown-user-email {
-  font-size: 11px;
-  color: #64748b;
-  margin-top: 2px;
-}
-
-.logout-item {
-  color: #ef4444 !important;
-}
-
-.logout-item:hover {
-  background-color: #fef2f2 !important;
-  color: #dc2626 !important;
+:deep(.user-dropdown-popper .el-popper__arrow) {
+  display: none !important;
 }
 
 .layout-content {
