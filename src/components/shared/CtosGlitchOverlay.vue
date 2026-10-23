@@ -1,6 +1,6 @@
 <template>
   <div v-if="isTransitioning" class="ctos-dissolve-overlay">
-    <!-- Radial Exploding White ASCII Dust Particles -->
+    <!-- Bottom-right Exploding White ASCII Dust Particles -->
     <div class="ascii-particle-canvas">
       <span
         v-for="(p, idx) in particles"
@@ -20,7 +20,7 @@
       </span>
     </div>
 
-    <!-- Center Glitch Core: Pure White ASCII ITEST 2.0 with Radial Dissolve -->
+    <!-- Bottom-Right Glitch Core: Pure White ASCII ITEST 2.0 with Dissolve -->
     <div class="ctos-dissolve-core">
       <div class="ctos-meta-header">
         <span class="pulse-dot"></span>
@@ -67,15 +67,15 @@ const particles = ref<AsciiParticle[]>([]);
 const GLYPHS = '0123456789ABCDEF$#@%*+=-/\\:;<>[]{}ITEST2.0';
 
 function generateParticles() {
-  const count = 72; // Dense radial blast
+  const count = 64;
   const list: AsciiParticle[] = [];
   
   for (let i = 0; i < count; i++) {
     const glyph = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-    // Random angle from 0 to 2*PI (from center outward)
-    const angle = Math.random() * Math.PI * 2;
-    // Random radius distance between 120px to 520px
-    const distance = Math.floor(Math.random() * 400) + 120;
+    // Radiate upwards and leftwards from the bottom-right corner (angle roughly from PI to 1.5*PI, or wide cone)
+    // Angle between 160 deg (2.8 rad) and 290 deg (5.0 rad) pointing towards top-left screen
+    const angle = Math.random() * (Math.PI * 0.9) + (Math.PI * 0.95);
+    const distance = Math.floor(Math.random() * 380) + 80;
     const destX = Math.round(Math.cos(angle) * distance);
     const destY = Math.round(Math.sin(angle) * distance);
 
@@ -84,7 +84,7 @@ function generateParticles() {
       destX,
       destY,
       destScale: +(Math.random() * 0.4 + 0.2).toFixed(2),
-      size: Math.floor(Math.random() * 6) + 11, // 11px - 16px
+      size: Math.floor(Math.random() * 5) + 10, // 10px - 15px
       delay: Math.floor(Math.random() * 90),
       duration: Math.floor(Math.random() * 180) + 380, // 380ms - 560ms
       opacity: +(Math.random() * 0.5 + 0.5).toFixed(2), // 0.5 - 1.0
@@ -106,12 +106,13 @@ watch(isTransitioning, (val) => {
   inset: 0;
   z-index: 999999;
   pointer-events: none;
-  background: radial-gradient(circle at center, rgba(6, 9, 16, 0.75) 0%, rgba(2, 4, 8, 0.92) 100%);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: radial-gradient(circle at bottom right, rgba(6, 9, 16, 0.6) 0%, rgba(2, 4, 8, 0.75) 100%);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 40px 48px;
   animation: overlay-fade 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   overflow: hidden;
 }
@@ -128,17 +129,17 @@ watch(isTransitioning, (val) => {
   }
 }
 
-/* ASCII Canvas centered */
+/* ASCII Canvas anchored at bottom right */
 .ascii-particle-canvas {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  bottom: 80px;
+  right: 120px;
   width: 0;
   height: 0;
   pointer-events: none;
 }
 
-/* White ASCII Particle bursting from center outward */
+/* White ASCII Particle bursting towards upper-left */
 .ascii-particle {
   position: absolute;
   top: 0;
@@ -170,23 +171,23 @@ watch(isTransitioning, (val) => {
   }
 }
 
-/* Center Core with Pure White Monochrome Palette */
+/* Core anchored at bottom right with Pure White Palette */
 .ctos-dissolve-core {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-end;
+  text-align: right;
   user-select: none;
   animation: core-dissolve 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
 @keyframes core-dissolve {
   0% {
-    transform: scale(0.96) translateY(2px);
+    transform: scale(0.97) translateY(4px);
     opacity: 0;
     letter-spacing: 0.5px;
-    filter: blur(4px) brightness(1.8);
+    filter: blur(3px) brightness(1.6);
   }
   18% {
     transform: scale(1) translateY(0);
@@ -197,14 +198,14 @@ watch(isTransitioning, (val) => {
   60% {
     transform: scale(1.02);
     opacity: 0.95;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     filter: blur(0.5px);
   }
   100% {
-    transform: scale(1.08);
+    transform: scale(1.05) translateY(-6px);
     opacity: 0;
-    letter-spacing: 5px;
-    filter: blur(6px) brightness(1.5);
+    letter-spacing: 3.5px;
+    filter: blur(5px) brightness(1.4);
   }
 }
 
@@ -217,7 +218,7 @@ watch(isTransitioning, (val) => {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 2px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #ffffff;
 }
 
@@ -252,13 +253,13 @@ watch(isTransitioning, (val) => {
 
 /* Pure White ASCII Art */
 .ascii-title-white {
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
   font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.15;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 20px rgba(255, 255, 255, 0.5);
   animation: white-flicker 0.22s infinite;
 }
