@@ -1,83 +1,409 @@
-/* Cyber Watch Dogs 2 / Augmented-UI Theme for iTest 2.0 */
+/* ==========================================================================
+   Cyber Watch Dogs 2 / Augmented-UI Design System for iTest 2.0
+   Minimalist, implicit, high-tech HUD aesthetic with uniform field metrics
+   ========================================================================== */
 @import 'augmented-ui/augmented-ui.min.css';
 
 :root {
-  --cyber-bg-darkest: #0a0d14;
-  --cyber-bg-darker: #0f141f;
-  --cyber-bg-card: #151b28;
+  /* Cyber Palette */
+  --cyber-bg-darkest: #07090e;
+  --cyber-bg-darker: #0d121d;
+  --cyber-bg-panel: #111827;
+  --cyber-bg-card: #151d2f;
   --cyber-border: #1e293b;
   --cyber-border-highlight: #00f0ff;
   --cyber-cyan: #00f0ff;
+  --cyber-cyan-dim: rgba(0, 240, 255, 0.12);
+  --cyber-cyan-glow: 0 0 10px rgba(0, 240, 255, 0.35);
   --cyber-yellow: #fcee0a;
-  --cyber-text-main: #e2e8f0;
+  --cyber-yellow-dim: rgba(252, 238, 10, 0.12);
+  --cyber-pink: #ff0055;
+  --cyber-green: #00ff66;
+  --cyber-text-main: #f1f5f9;
+  --cyber-text-secondary: #cbd5e1;
   --cyber-text-muted: #64748b;
-  --cyber-font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  --cyber-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+
+  /* Form & Control Metrics */
+  --cyber-control-height: 38px;
+  --cyber-filter-width: 220px;
 }
 
-/* Cyber Form Inputs & Uniform Controls */
+/* ==========================================================================
+   1. UNIFORM FORM CONTROLS (Input, Select, Button, DatePicker)
+   All interactive fields share the exact 38px height and uniform metrics
+   ========================================================================== */
 .cyber-input,
 .el-input__wrapper,
-.el-select__wrapper {
-  height: 38px !important;
-  line-height: 38px !important;
+.el-select__wrapper,
+.p-inputtext,
+.p-select,
+.el-date-editor.el-input,
+.el-date-editor.el-input__wrapper {
+  height: var(--cyber-control-height) !important;
+  min-height: var(--cyber-control-height) !important;
+  max-height: var(--cyber-control-height) !important;
+  line-height: var(--cyber-control-height) !important;
+  box-sizing: border-box !important;
   font-family: inherit;
-  transition: all 0.2s ease-in-out;
+  border-radius: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.el-button {
-  height: 38px !important;
-  font-weight: 600;
+.el-input__inner,
+.el-select__placeholder,
+.p-inputtext,
+.p-select-label {
+  font-size: 13.5px !important;
+}
+
+/* Neon Focus Rings for Inputs */
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.p-inputtext:focus,
+.p-select:focus {
+  border-color: var(--cyber-cyan) !important;
+  box-shadow: 0 0 0 1px var(--cyber-cyan), 0 0 8px rgba(0, 240, 255, 0.25) !important;
+}
+
+/* Standard Buttons - Exactly 38px */
+.el-button,
+.p-button {
+  height: var(--cyber-control-height) !important;
+  min-height: var(--cyber-control-height) !important;
+  line-height: var(--cyber-control-height) !important;
+  padding: 0 18px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
   letter-spacing: 0.3px;
+  box-sizing: border-box !important;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
-.el-button--small {
+.el-button--small,
+.p-button-sm {
   height: 30px !important;
+  min-height: 30px !important;
+  line-height: 30px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
 }
 
-/* Standardized Uniform Filter Bar */
+.el-button--large,
+.p-button-lg {
+  height: 44px !important;
+  min-height: 44px !important;
+  line-height: 44px !important;
+  padding: 0 24px !important;
+}
+
+/* ==========================================================================
+   2. FILTER BARS & QUERY ROWS (All inputs/selects uniform 220px)
+   ========================================================================== */
+.filter-bar,
+.table-filter-bar,
+.query-bar,
+.filter-card .el-form,
+.filter-form,
+.el-form--inline {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+}
+
+.filter-card,
 .filter-bar,
 .table-filter-bar,
 .query-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
+  margin-bottom: 16px !important;
+  padding: 14px 18px !important;
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid #e2e8f0;
 }
 
+/* Equal width for all search/filter controls */
 .filter-bar .el-input,
 .filter-bar .el-select,
 .table-filter-bar .el-input,
 .table-filter-bar .el-select,
 .query-bar .el-input,
-.query-bar .el-select {
-  width: 220px !important;
+.query-bar .el-select,
+.filter-form .el-input,
+.filter-form .el-select,
+.el-form--inline .el-input,
+.el-form--inline .el-select {
+  width: var(--cyber-filter-width) !important;
+  max-width: var(--cyber-filter-width) !important;
 }
 
-/* Augmented Cyber Card / Panel utility */
-.cyber-card {
+.filter-form .el-form-item,
+.el-form--inline .el-form-item {
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.filter-form .el-form-item__label,
+.el-form--inline .el-form-item__label {
+  height: var(--cyber-control-height) !important;
+  line-height: var(--cyber-control-height) !important;
+  font-weight: 500;
+  color: #475569;
+  font-size: 13px;
+  margin-bottom: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Dialog / Modal Forms: Equal 100% width for all inputs in form rows */
+.el-dialog .el-form .el-input,
+.el-dialog .el-form .el-select,
+.el-dialog .el-form .el-date-editor,
+.el-dialog .el-form .el-input-number,
+.p-dialog .p-inputtext,
+.p-dialog .p-select {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* ==========================================================================
+   3. AUGMENTED-UI CYBER STYLING & HUD PRESETS
+   ========================================================================== */
+/* Augmented card / HUD panel */
+.cyber-card,
+.cyber-hud-panel,
+[data-augmented-ui~="tl-clip"][data-augmented-ui~="br-clip"] {
   --aug-border-all: 1px;
   --aug-border-bg: #cbd5e1;
   --aug-tl: 8px;
   --aug-br: 8px;
   background: #ffffff;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.cyber-card:hover {
-  --aug-border-bg: #0284c7;
-  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.12);
+.cyber-card:hover,
+.cyber-hud-panel:hover {
+  --aug-border-bg: var(--cyber-cyan);
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
 }
 
-/* Cyber Status Tag */
-.cyber-tag {
+/* Cyber Button with Chamfered Corners */
+.cyber-btn,
+.p-button.cyber-btn {
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--cyber-cyan);
+  --aug-tl: 6px;
+  --aug-br: 6px;
+  background: rgba(0, 240, 255, 0.08) !important;
+  color: var(--cyber-cyan) !important;
+  font-family: var(--cyber-font-mono) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+  border: none !important;
+}
+
+.cyber-btn:hover,
+.p-button.cyber-btn:hover {
+  background: var(--cyber-cyan) !important;
+  color: #07090e !important;
+  box-shadow: var(--cyber-cyan-glow) !important;
+}
+
+/* ==========================================================================
+   4. CYBER WATCH DOGS 2 USER DROPDOWN (HUD Style)
+   ========================================================================== */
+.user-profile[data-augmented-ui] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #e2e8f0;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+  background: #f8fafc;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-profile[data-augmented-ui]:hover {
+  --aug-border-bg: var(--cyber-cyan);
+  background: #f1f5f9;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.18);
+}
+
+.cyber-dropdown-wrapper {
+  --aug-border-all: 1px;
+  --aug-border-bg: #00f0ff;
+  --aug-tl: 10px;
+  --aug-br: 10px;
+  background: #0d131f;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 240, 255, 0.2);
+  min-width: 250px;
+  padding: 4px;
+}
+
+.cyber-dropdown-menu {
+  background: transparent !important;
+  border: none !important;
+  padding: 6px !important;
+}
+
+.dropdown-header {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+  margin-bottom: 6px;
+}
+
+.dropdown-sys-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.pulse-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyber-cyan);
+  box-shadow: 0 0 8px var(--cyber-cyan);
+  display: inline-block;
+  animation: cyber-pulse 2s infinite;
+}
+
+@keyframes cyber-pulse {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+.sys-label {
+  font-family: var(--cyber-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cyber-cyan);
+  letter-spacing: 0.8px;
+}
+
+.dropdown-user-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
+.dropdown-user-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
   font-family: var(--cyber-font-mono);
   font-size: 11px;
+}
+
+.dropdown-user-sub .sub-role {
+  color: var(--cyber-yellow);
+  font-weight: 600;
+}
+
+.dropdown-user-sub .sub-sep {
+  color: #475569;
+}
+
+.dropdown-user-sub .sub-id {
+  color: #94a3b8;
+}
+
+/* Cyber Menu Items */
+.cyber-dropdown-menu .el-dropdown-menu__item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  border-radius: 4px;
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+  font-weight: 500;
+  transition: all 0.15s ease !important;
+  background: transparent !important;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item .item-label {
+  flex: 1;
+  margin-left: 8px;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item .item-code {
+  font-family: var(--cyber-font-mono);
+  font-size: 10px;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item:hover {
+  background: rgba(0, 240, 255, 0.1) !important;
+  color: var(--cyber-cyan) !important;
+  transform: translateX(3px);
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item:hover .item-code {
+  color: var(--cyber-cyan);
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item.logout-item {
+  color: #f87171 !important;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item.logout-item:hover {
+  background: rgba(255, 0, 85, 0.12) !important;
+  color: var(--cyber-pink) !important;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item.logout-item:hover .item-code {
+  color: var(--cyber-pink);
+}
+
+.cyber-dropdown-menu :deep(.el-dropdown-menu__item--divided) {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-top: 6px !important;
+}
+
+/* ==========================================================================
+   5. MINIMALIST CYBER BADGES & BREADCRUMBS
+   ========================================================================== */
+.cyber-badge {
+  font-family: var(--cyber-font-mono);
+  font-size: 10.5px;
   font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 3px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cyber-badge.cyan {
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--cyber-cyan);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+}
+
+.cyber-badge.yellow {
+  background: rgba(252, 238, 10, 0.1);
+  color: #ca8a04;
+  border: 1px solid rgba(252, 238, 10, 0.4);
+}
+
+/* Breadcrumb Cyber Enhancements */
+.breadcrumb-cyber :deep(.el-breadcrumb__separator) {
+  font-family: var(--cyber-font-mono);
+  font-weight: 700;
+  color: #94a3b8;
 }
