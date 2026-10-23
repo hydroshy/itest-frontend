@@ -566,17 +566,18 @@ body {
   display: none !important;
 }
 
-/* Tabulator Dark Cyber Grid (Used in Plugins) */
+/* Tabulator Dark Cyber Grid & Popup / Context Menu (Used in Plugins) */
 .tabulator {
-  background-color: rgba(13, 20, 36, 0.6) !important;
-  border: 1px solid rgba(0, 240, 255, 0.2) !important;
+  background-color: rgba(13, 20, 36, 0.75) !important;
+  border: 1px solid rgba(0, 240, 255, 0.25) !important;
   color: #e2e8f0 !important;
   border-radius: 6px;
+  position: relative;
 }
 
 .tabulator .tabulator-header {
-  background-color: rgba(8, 12, 20, 0.9) !important;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.3) !important;
+  background-color: rgba(8, 12, 22, 0.95) !important;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.35) !important;
   color: var(--cyber-cyan) !important;
   font-family: var(--cyber-font-display) !important;
   font-weight: 700 !important;
@@ -584,25 +585,151 @@ body {
 
 .tabulator .tabulator-header .tabulator-col {
   background-color: transparent !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.tabulator .tabulator-header .tabulator-col .tabulator-col-content {
+  padding: 10px 12px !important;
+}
+
+.tabulator .tabulator-tableholder {
+  background-color: transparent !important;
+}
+
+.tabulator .tabulator-table {
+  background-color: transparent !important;
+  color: #cbd5e1 !important;
 }
 
 .tabulator .tabulator-row {
-  background-color: transparent !important;
+  background-color: rgba(15, 23, 42, 0.4) !important;
   color: #cbd5e1 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.tabulator .tabulator-row:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.02) !important;
+.tabulator .tabulator-row:nth-child(even),
+.tabulator .tabulator-row.tabulator-row-even {
+  background-color: rgba(11, 17, 33, 0.6) !important;
+}
+
+.tabulator .tabulator-row:nth-child(odd),
+.tabulator .tabulator-row.tabulator-row-odd {
+  background-color: rgba(15, 23, 42, 0.35) !important;
 }
 
 .tabulator .tabulator-row:hover {
-  background-color: rgba(0, 240, 255, 0.08) !important;
+  background-color: rgba(0, 240, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.tabulator .tabulator-row.tabulator-selected {
+  background-color: rgba(0, 240, 255, 0.18) !important;
+  color: #ffffff !important;
 }
 
 .tabulator .tabulator-cell {
-  border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 10px 12px !important;
+}
+
+.tabulator .tabulator-placeholder {
+  background-color: transparent !important;
+}
+
+.tabulator .tabulator-placeholder span {
+  color: rgba(255, 255, 255, 0.45) !important;
+  font-family: var(--cyber-font-mono, monospace) !important;
+}
+
+.tabulator .tabulator-footer {
+  background-color: rgba(8, 12, 22, 0.95) !important;
+  border-top: 1px solid rgba(0, 240, 255, 0.25) !important;
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================
+   Tabulator Context Menu & Popups (Directly attached to body)
+   Cyber Dark Glassmorphism Override
+   ========================================================== */
+.tabulator-popup-container {
+  background: rgba(11, 16, 28, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(0, 240, 255, 0.35) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 16px rgba(0, 240, 255, 0.15) !important;
+  padding: 4px !important;
+  z-index: 100000 !important;
+}
+
+.tabulator-popup {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 2px !important;
+}
+
+.tabulator-menu {
+  background: transparent !important;
+  border: none !important;
+  color: #e2e8f0 !important;
+  font-family: var(--cyber-font-body, inherit) !important;
+  font-size: 13px !important;
+  min-width: 150px !important;
+}
+
+.tabulator-menu .tabulator-menu-item {
+  color: #cbd5e1 !important;
+  padding: 8px 14px !important;
+  border-radius: 4px !important;
+  margin: 2px 0 !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  font-weight: 500 !important;
+}
+
+.tabulator-menu .tabulator-menu-item:hover,
+.tabulator-menu .tabulator-menu-item:not(.tabulator-menu-item-disabled):hover {
+  background: rgba(0, 240, 255, 0.16) !important;
+  color: var(--cyber-cyan, #00f0ff) !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2) !important;
+  cursor: pointer !important;
+}
+
+.tabulator-menu .tabulator-menu-item.tabulator-menu-item-disabled {
+  color: rgba(255, 255, 255, 0.3) !important;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+.tabulator-menu .tabulator-menu-separator {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin: 4px 0 !important;
+}
+
+/* Tabulator Edit Select / Auto-complete dropdowns */
+.tabulator-edit-select-list {
+  background: rgba(11, 16, 28, 0.96) !important;
+  border: 1px solid rgba(0, 240, 255, 0.3) !important;
+  border-radius: 6px !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7) !important;
+  padding: 4px !important;
+  z-index: 100000 !important;
+}
+
+.tabulator-edit-select-list .tabulator-edit-select-list-item {
+  color: #cbd5e1 !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+}
+
+.tabulator-edit-select-list .tabulator-edit-select-list-item:hover,
+.tabulator-edit-select-list .tabulator-edit-select-list-item.active {
+  background: rgba(0, 240, 255, 0.15) !important;
+  color: #00f0ff !important;
 }
 
 /* Modals & Dialogs (Element Plus & PrimeVue) */
