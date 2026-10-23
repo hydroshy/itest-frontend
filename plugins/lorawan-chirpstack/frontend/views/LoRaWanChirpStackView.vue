@@ -142,7 +142,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 
@@ -153,8 +154,19 @@ interface Device { devEui: string; name: string; applicationId: string; applicat
 interface Uplink { time: string; devEui: string; deviceName?: string; fPort: number; fCnt: number; rssi: number; snr: number; decodedPayload?: Record<string, unknown>; }
 interface Option { id: string; name: string; }
 
+const route = useRoute();
 const API_BASE = '/api/plugins/lorawan-chirpstack';
-const activeTab = ref('servers');
+const validTabs = ['servers', 'tenants', 'gateways', 'devices', 'telemetry'];
+const initialTab = computed(() => {
+  const t = route?.query?.tab as string;
+  return validTabs.includes(t) ? t : 'servers';
+});
+const activeTab = ref(initialTab.value);
+watch(() => route?.query?.tab, (t) => {
+  if (typeof t === 'string' && validTabs.includes(t)) {
+    activeTab.value = t;
+  }
+});
 const loading = ref(false);
 const submitting = ref(false);
 const testingId = ref('');

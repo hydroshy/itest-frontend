@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { Refresh, Upload, UploadFilled } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type UploadFile } from 'element-plus';
@@ -41,9 +42,11 @@ import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 const API_BASE = '/api/plugins/memmap-manager'; type RecordRow = Record<string, unknown>;
 interface PreviewResponse { valid: boolean; profile?: RecordRow; registers?: RecordRow[]; errors?: string[]; }
+const route = useRoute();
 const authStore = useAuthStore();
 const currentUsername = computed(() => authStore.user?.username || (localStorage.getItem('itest_user') ? (() => { try { return JSON.parse(localStorage.getItem('itest_user') || '{}')?.username || ''; } catch { return ''; } })() : ''));
-const activeTab = ref('manager'), loading = ref(false), errorMessage = ref(''), profiles = ref<RecordRow[]>([]), searchQuery = ref('');
+const activeTab = ref(route?.query?.tab === 'upload' ? 'upload' : 'manager'), loading = ref(false), errorMessage = ref(''), profiles = ref<RecordRow[]>([]), searchQuery = ref('');
+watch(() => route?.query?.tab, (t) => { if (t === 'upload' || t === 'manager') activeTab.value = t; });
 const selectedFile = ref<File | null>(null), previewLoading = ref(false), importing = ref(false), previewResult = ref<PreviewResponse | null>(null);
 const uploadForm = ref({ connectivity: 'LoRaWAN', skuSuffix: '', longFw: '' }); const skuPrefix = computed(() => uploadForm.value.connectivity === 'Sigfox' ? 'WSSFC-' : 'WSLRW-'); const sku = computed(() => `${skuPrefix.value}${uploadForm.value.skuSuffix.trim()}`); const detailDialogVisible = ref(false), detailLoading = ref(false), currentProfile = ref<RecordRow | null>(null);
 const profileTableEl = ref<HTMLElement>(), previewTableEl = ref<HTMLElement>(), detailTableEl = ref<HTMLElement>(); let profileTable: Tabulator | undefined, previewTable: Tabulator | undefined, detailTable: Tabulator | undefined;

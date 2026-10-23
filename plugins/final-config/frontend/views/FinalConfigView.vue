@@ -1,12 +1,48 @@
 <template>
   <section class="final-config-page">
-    <!-- Nếu ở chế độ Isolate Tab (ví dụ: chỉ mở Final Config Tool từ Menu Card) -->
-    <div v-if="isIsolatedTool" class="isolated-tool-wrapper">
+    <!-- Nếu ở chế độ Isolate Tab (chỉ mở 1 tab cụ thể, ví dụ từ Menu Launcher) -->
+    <div v-if="isIsolatedView" class="isolated-tool-wrapper">
       <div class="isolated-header">
         <el-button link :icon="ArrowLeft" @click="goBackToMenu">Trở về Menu</el-button>
-        <span class="isolated-title">Final Config Tool (Isolated View)</span>
+        <span class="isolated-title">{{ isolatedTitle }}</span>
       </div>
-      <FinalConfigTool />
+
+      <!-- Nội dung tương ứng với tab được phân lập -->
+      <FinalConfigTool v-if="currentIsolatedTab === 'tool'" />
+
+      <div v-else-if="currentIsolatedTab === 'manager'">
+        <el-card shadow="never">
+          <template #header>
+            <div class="card-header">
+              <span>Danh sách Final Config</span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <el-input v-model="searchQuery" clearable placeholder="Tìm SKU, SO Number, Item Code..." style="width:300px" />
+                <el-button :icon="Refresh" :loading="loading" @click="fetchProfiles">Làm mới</el-button>
+              </div>
+            </div>
+          </template>
+          <div ref="profileTableEl" v-loading="loading" class="tabulator-host profile-table" />
+        </el-card>
+      </div>
+
+      <div v-else-if="currentIsolatedTab === 'create'">
+        <el-card shadow="never">
+          <template #header><span>Tạo Final Config</span></template>
+          <el-form label-position="top" class="create-form">
+            <el-row :gutter="16">
+              <el-col :xs="24" :md="8"><el-form-item label="Sensor connectivity" required><el-select v-model="form.connectivity"><el-option label="LoRaWAN" value="LoRaWAN" /><el-option label="Sigfox" value="Sigfox" /></el-select></el-form-item></el-col>
+              <el-col :xs="24" :md="8"><el-form-item label="SKU" required><el-input v-model="form.skuSuffix" :prefix-icon="null"><template #prepend>{{ skuPrefix }}</template></el-input></el-form-item></el-col>
+              <el-col :xs="24" :md="8"><el-form-item label="LONG_FW (5FXXXX)" required :error="longFwError"><el-input v-model="form.longFw" maxlength="6" @input="normalizeLongFw" /></el-form-item></el-col>
+            </el-row>
+            <el-row :gutter="16"><el-col :xs="24" :md="12"><el-form-item label="SO_NUMBER" required :error="soError"><el-input v-model="form.soNumber" placeholder="SO/2026/12345" /></el-form-item></el-col><el-col :xs="24" :md="12"><el-form-item label="ITEM_CODE" required><el-input v-model="form.itemCode" placeholder="WSLRW-ATH-11" /></el-form-item></el-col></el-row>
+          </el-form>
+          <el-alert v-if="form.memmapId && !registers.length" title="Memmap Payload không có register hợp lệ từ địa chỉ 303 trở lên." type="warning" :closable="false" />
+          <div v-if="registers.length" class="register-heading"><span><strong>{{ selectedCount }}</strong> / {{ registers.length }} registers được chọn</span><el-tag :type="hasInvalidSelected ? 'danger' : 'success'">{{ hasInvalidSelected ? 'Có cấu hình không hợp lệ' : 'Tất cả cấu hình đã chọn hợp lệ' }}</el-tag></div>
+          <el-alert v-if="hasInvalidSelected" class="validation-alert" type="warning" :closable="false" show-icon :title="invalidSelectedMessage" />
+          <div ref="registerTableEl" class="tabulator-host register-table" />
+          <div class="actions"><el-button :disabled="saving" @click="resetCreate">Hủy</el-button><el-button type="primary" :disabled="!canCreate" :loading="saving" @click="createProfile">Tạo Final Config</el-button></div>
+        </el-card>
+      </div>
     </div>
 
     <!-- Chế độ đầy đủ với các Tab thông thường -->
@@ -64,9 +100,23 @@ type Row = Record<string, any>;
 const route = useRoute();
 const router = useRouter();
 
-// Isolated view check: khi url có ?tab=tool hoặc ?isolate=true
-const isIsolatedTool = computed(() => {
-  return route.query.tab === 'tool';
+// Isolated view check: khi url có ?tab=... hoặc ?from=menu hoặc ?isolate=true
+const isIsolatedView = computed(() => {
+  return !!route.query.tab || route.query.from === 'menu' || route.query.isolated === 'true';
+});
+
+const currentIsolatedTab = computed(() => {
+  const tab = route.query.tab as string;
+  if (tab === 'tool') return 'tool';
+  if (tab === 'create') return 'create';
+  if (tab === 'manager' || tab === 'history' || tab === 'batch') return 'manager';
+  return 'manager';
+});
+
+const isolatedTitle = computed(() => {
+  if (currentIsolatedTab.value === 'tool') return 'Final Config Tool';
+  if (currentIsolatedTab.value === 'create') return 'Tạo Final Config Mới';
+  return 'Quản Lý Final Config';
 });
 
 function goBackToMenu() {

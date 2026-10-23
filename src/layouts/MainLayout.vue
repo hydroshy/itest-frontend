@@ -173,7 +173,7 @@
       </el-header>
 
       <!-- Content Area protected by CModuleBoundary -->
-      <el-main class="layout-content">
+      <el-main class="layout-content" :class="{ 'from-menu': route.query.from === 'menu' || isFromMenu }">
         <CModuleBoundary moduleName="AppContent">
           <router-view v-slot="{ Component }">
             <transition name="fade-transform" mode="out-in">
@@ -214,6 +214,7 @@ const pluginStore = usePluginStore();
 const isCollapse = ref(false);
 
 const activeRoute = computed(() => route.path);
+const isFromMenu = computed(() => route.query.from === 'menu');
 // Ẩn sidebar khi:
 // 1. Ở trang /menu (Launcher/Portal)
 // 2. Truy cập vào các plugin từ /menu (có query param from=menu hoặc điều hướng từ menu)
@@ -222,7 +223,7 @@ const showSidebar = computed(() => {
   if (route.path === '/menu') {
     return false;
   }
-  if (route.path.startsWith('/plugins/') && route.query.from === 'menu') {
+  if (route.path.startsWith('/plugins/') && isFromMenu.value) {
     return false;
   }
   return true;
@@ -409,6 +410,12 @@ async function handleUserCommand(cmd: string) {
 .layout-content {
   padding: 20px;
   overflow-y: auto;
+}
+
+/* Khi truy cập plugin từ /menu (có query from=menu hoặc isolate), ẩn thanh tab header của plugin để mỗi mục hoạt động chuyên biệt */
+body:has([data-from-menu="true"]) .layout-content :deep(.el-tabs__header),
+.layout-content.from-menu :deep(.el-tabs__header) {
+  display: none !important;
 }
 
 .fade-transform-enter-active,
