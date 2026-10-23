@@ -2,7 +2,7 @@
   <div class="auth-layout-container">
     <div class="auth-card-wrapper">
       <div class="auth-header">
-        <h1 class="auth-title">ITEST Platform</h1>
+        <h1 class="auth-title">iTest 2.0</h1>
         <p class="auth-subtitle">Enterprise IoT & Automated Testing System</p>
       </div>
       <router-view />

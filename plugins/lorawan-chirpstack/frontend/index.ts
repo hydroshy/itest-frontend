@@ -43,13 +43,7 @@ export const lorawanChirpStackPlugin: FrontendPluginDefinition = {
       order: 11,
     });
 
-    context.registerExtension({
-      id: 'ext-chirpstack-header-badge',
-      slot: 'header-right',
-      component: ChirpStackHeaderBadge,
-      order: 6,
-    });
-
+    // extension 'ext-chirpstack-header-badge' on header-right removed per directive
     context.logger.info('ChirpStack LoRaWAN frontend plugin initialized');
   },
 };

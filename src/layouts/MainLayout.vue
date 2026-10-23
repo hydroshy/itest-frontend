@@ -8,7 +8,7 @@
   >
       <div class="logo-box">
         <el-icon class="logo-icon"><Platform /></el-icon>
-        <span v-show="!isCollapse" class="logo-text">ITEST Shell</span>
+        <span v-show="!isCollapse" class="logo-text">iTest 2.0</span>
       </div>
 
       <el-scrollbar>
@@ -114,7 +114,7 @@
             </el-icon>
           </el-button>
 
-          <!-- Nút truy cập nhanh về Trung tâm ứng dụng khi không ở trang /menu -->
+          <!-- Nút truy cập nhanh khi không ở trang /menu -->
           <el-button
             v-if="!showSidebar"
             link
@@ -122,49 +122,49 @@
             @click="router.push('/menu')"
           >
             <el-icon class="logo-icon"><Platform /></el-icon>
-            <span class="brand-title">ITEST Platform</span>
+            <span class="brand-title">iTest 2.0</span>
           </el-button>
 
           <el-breadcrumb separator="/" class="breadcrumb">
-            <el-breadcrumb-item :to="{ path: '/menu' }">Trung tâm Ứng dụng</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/menu' }">Menu</el-breadcrumb-item>
             <el-breadcrumb-item v-if="route.path !== '/menu'">{{ currentRouteTitle }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
 
         <div class="header-right">
-          <!-- Phím tắt quay lại Trung tâm Ứng dụng khi đang ở các trang con -->
-          <el-button
-            v-if="showSidebar"
-            size="small"
-            plain
-            type="primary"
-            class="back-menu-btn"
-            @click="router.push('/menu')"
-          >
-            <el-icon><Grid /></el-icon>
-            <span>Trung tâm Ứng dụng</span>
-          </el-button>
-
           <!-- Dynamic Header Extension Slot -->
           <template v-for="ext in headerRightExtensions" :key="ext.id">
             <component :is="ext.component" />
           </template>
 
-          <el-dropdown trigger="click" @command="handleUserCommand">
+          <el-dropdown trigger="click" @command="handleUserCommand" popper-class="user-dropdown-popper">
             <div class="user-profile">
-              <el-avatar :size="32" class="user-avatar">
+              <el-avatar :size="30" class="user-avatar">
                 {{ userInitial }}
               </el-avatar>
-              <span class="user-name">{{ authStore.user?.fullName || authStore.user?.username || 'Quản trị viên' }}</span>
-              <el-icon><ArrowDown /></el-icon>
+              <div class="user-info-text">
+                <span class="user-name">{{ authStore.user?.fullName || authStore.user?.username || 'User' }}</span>
+                <span class="user-role-badge">{{ primaryRole }}</span>
+              </div>
+              <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item disabled>
-                  Vai trò: {{ authStore.roles.join(', ') || 'user' }}
+              <el-dropdown-menu class="cyber-dropdown-menu">
+                <div class="dropdown-header">
+                  <div class="dropdown-user-name">{{ authStore.user?.fullName || authStore.user?.username }}</div>
+                  <div class="dropdown-user-email">{{ authStore.user?.email || 'authenticated user' }}</div>
+                </div>
+                <el-dropdown-item command="profile">
+                  <el-icon><User /></el-icon>
+                  <span>Hồ sơ cá nhân</span>
                 </el-dropdown-item>
-                <el-dropdown-item divided command="logout">
-                  Đăng xuất
+                <el-dropdown-item v-if="canAccessAdmin" command="roles">
+                  <el-icon><Lock /></el-icon>
+                  <span>Phân quyền ({{ primaryRole }})</span>
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout" class="logout-item">
+                  <el-icon><SwitchButton /></el-icon>
+                  <span>Đăng xuất</span>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -204,6 +204,7 @@ import {
   Cpu,
   Tools,
   Grid,
+  SwitchButton,
 } from '@element-plus/icons-vue';
 
 const route = useRoute();
@@ -233,6 +234,12 @@ const currentRouteTitle = computed(() => (route.meta?.title as string) || 'Trang
 const userInitial = computed(() => {
   const name = authStore.user?.fullName || authStore.user?.username || 'U';
   return name.charAt(0).toUpperCase();
+});
+
+const primaryRole = computed(() => {
+  const r = authStore.roles[0];
+  if (!r) return 'USER';
+  return r.toUpperCase();
 });
 
 const canAccessAdmin = computed(() => {
@@ -269,6 +276,10 @@ async function handleUserCommand(cmd: string) {
   if (cmd === 'logout') {
     await authStore.logout();
     router.push('/auth/login');
+  } else if (cmd === 'roles') {
+    router.push('/roles');
+  } else if (cmd === 'profile') {
+    router.push('/users');
   }
 }
 </script>
@@ -384,27 +395,85 @@ async function handleUserCommand(cmd: string) {
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 6px;
-  transition: background 0.2s;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .user-profile:hover {
-  background-color: #f3f4f6;
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
 }
 
 .user-avatar {
-  background-color: #409eff;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.user-info-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  text-align: left;
 }
 
 .user-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.user-role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #0284c7;
+  letter-spacing: 0.5px;
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  color: #94a3b8;
+  transition: transform 0.2s;
+}
+
+.user-profile:hover .dropdown-arrow {
+  color: #475569;
+}
+
+:deep(.user-dropdown-popper) {
+  padding: 4px;
+}
+
+.dropdown-header {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.dropdown-user-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.dropdown-user-email {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.logout-item {
+  color: #ef4444 !important;
+}
+
+.logout-item:hover {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
 }
 
 .layout-content {

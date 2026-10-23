@@ -90,5 +90,5 @@ router.beforeEach((to, from) => {
 
 router.afterEach((to) => {
   const title = (to.meta.title as string) || 'ITEST';
-  document.title = `${title} - ITEST Platform`;
+  document.title = `${title} - iTest 2.0`;
 });
