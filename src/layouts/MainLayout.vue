@@ -1,7 +1,11 @@
 <template>
   <el-container class="layout-container">
-    <!-- Sidebar -->
-    <el-aside :width="isCollapse ? '64px' : '240px'" class="layout-aside">
+  <!-- Sidebar (Ẩn hoàn toàn khi ở trang Launcher /menu, chỉ hiển thị khi chuyển sang dashboard/trang quản trị/plugin) -->
+  <el-aside
+    v-if="showSidebar"
+    :width="isCollapse ? '64px' : '240px'"
+    class="layout-aside"
+  >
       <div class="logo-box">
         <el-icon class="logo-icon"><Platform /></el-icon>
         <span v-show="!isCollapse" class="logo-text">ITEST Shell</span>
@@ -99,6 +103,7 @@
       <el-header class="layout-header">
         <div class="header-left">
           <el-button
+            v-if="showSidebar"
             link
             class="collapse-btn"
             @click="isCollapse = !isCollapse"
@@ -108,13 +113,38 @@
               <Expand v-else />
             </el-icon>
           </el-button>
+
+          <!-- Nút truy cập nhanh về Trung tâm ứng dụng khi không ở trang /menu -->
+          <el-button
+            v-if="!showSidebar"
+            link
+            class="app-center-brand"
+            @click="router.push('/menu')"
+          >
+            <el-icon class="logo-icon"><Platform /></el-icon>
+            <span class="brand-title">ITEST Platform</span>
+          </el-button>
+
           <el-breadcrumb separator="/" class="breadcrumb">
-            <el-breadcrumb-item :to="{ path: '/dashboard' }">Trang chủ</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ currentRouteTitle }}</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/menu' }">Trung tâm Ứng dụng</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="route.path !== '/menu'">{{ currentRouteTitle }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
 
         <div class="header-right">
+          <!-- Phím tắt quay lại Trung tâm Ứng dụng khi đang ở các trang con -->
+          <el-button
+            v-if="showSidebar"
+            size="small"
+            plain
+            type="primary"
+            class="back-menu-btn"
+            @click="router.push('/menu')"
+          >
+            <el-icon><Grid /></el-icon>
+            <span>Trung tâm Ứng dụng</span>
+          </el-button>
+
           <!-- Dynamic Header Extension Slot -->
           <template v-for="ext in headerRightExtensions" :key="ext.id">
             <component :is="ext.component" />
@@ -173,6 +203,7 @@ import {
   Monitor,
   Cpu,
   Tools,
+  Grid,
 } from '@element-plus/icons-vue';
 
 const route = useRoute();
@@ -183,6 +214,7 @@ const pluginStore = usePluginStore();
 const isCollapse = ref(false);
 
 const activeRoute = computed(() => route.path);
+const showSidebar = computed(() => route.path !== '/menu');
 const currentRouteTitle = computed(() => (route.meta?.title as string) || 'Trang');
 
 const userInitial = computed(() => {
@@ -302,6 +334,32 @@ async function handleUserCommand(cmd: string) {
 .collapse-btn {
   font-size: 18px;
   color: #4b5563;
+}
+
+.app-center-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  color: #1f2d3d;
+  padding: 0;
+}
+
+.app-center-brand .logo-icon {
+  font-size: 20px;
+  color: #409eff;
+}
+
+.brand-title {
+  letter-spacing: -0.2px;
+}
+
+.back-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
 }
 
 .header-right {
