@@ -1,7 +1,17 @@
 <template>
   <div class="traceability-container">
-    <!-- Page Header -->
-    <div class="page-header">
+    <!-- Page Header (hiển thị khi không phân lập hoặc isolated view header) -->
+    <div v-if="isIsolatedView" class="isolated-header-bar">
+      <el-button link :icon="ArrowLeft" @click="goBackToMenu">Trở về Menu</el-button>
+      <span class="isolated-title">{{ isolatedTitle }}</span>
+      <div class="header-actions" style="margin-left: auto;">
+        <el-button v-if="normalizedActiveTab === 'sale-orders'" type="primary" :icon="Plus" @click="openCreateSoDialog">Tạo Sale Order Mới</el-button>
+        <el-button v-if="normalizedActiveTab === 'sale-orders'" type="success" :icon="Upload" @click="openImportCsvDialog">Import CSV Thiết Bị</el-button>
+        <el-button :icon="Refresh" @click="refreshActiveTabData">Làm mới dữ liệu</el-button>
+      </div>
+    </div>
+
+    <div v-else class="page-header">
       <div class="header-title">
         <h2><el-icon><Files /></el-icon> Quản Lý Truy Xuất Nguồn Gốc (Traceability)</h2>
         <span class="subtitle">Quản lý Sale Order, Work Authorization, Thiết Bị Kiểm Thử &amp; Cấu Hình Cuối</span>
@@ -13,8 +23,168 @@
       </div>
     </div>
 
-    <!-- Main Navigation Tabs -->
-    <el-tabs v-model="activeTab" type="border-card" class="main-tabs" @tab-change="onTabChange">
+    <!-- Main Navigation Tabs: Ẩn thanh tab khi ở chế độ Isolated View -->
+    <div v-if="isIsolatedView" class="isolated-content-panel">
+      <!-- TAB 1: SALE ORDERS -->
+      <div v-if="normalizedActiveTab === 'sale-orders'" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-left">
+            <el-input
+              v-model="soSearchNumber"
+              placeholder="Tìm mã SO..."
+              clearable
+              style="width: 200px"
+              :prefix-icon="Search"
+              @clear="loadSoTreeData"
+              @keyup.enter="loadSoTreeData"
+            />
+            <el-input
+              v-model="soSearchCustomer"
+              placeholder="Tìm tên khách hàng..."
+              clearable
+              style="width: 220px"
+              :prefix-icon="Search"
+              @clear="loadSoTreeData"
+              @keyup.enter="loadSoTreeData"
+            />
+            <el-button type="primary" :icon="Search" @click="loadSoTreeData">Tìm kiếm</el-button>
+            <el-button @click="resetSoFilters">Đặt lại</el-button>
+          </div>
+          <div class="filter-right">
+            <el-button size="small" @click="expandAllSoTree">Mở rộng tất cả</el-button>
+            <el-button size="small" @click="collapseAllSoTree">Thu gọn tất cả</el-button>
+            <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải vào dòng để mở Menu Thao tác (Tạo WA, Đổi trạng thái, Xóa...)</span>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <div ref="soTableRef" class="tabulator-custom-theme"></div>
+          <div v-if="soTreeLoading" class="loading-overlay">
+            <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải cây dữ liệu Sale Order...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: DEVICE TESTING LIST -->
+      <div v-else-if="normalizedActiveTab === 'device-testing'" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-left">
+            <el-input
+              v-model="testingSearchSerial"
+              placeholder="Tìm S/N hoặc DevEUI..."
+              clearable
+              style="width: 220px"
+              :prefix-icon="Search"
+              @clear="loadTestingDevices"
+              @keyup.enter="loadTestingDevices"
+            />
+            <el-input
+              v-model="testingSearchSo"
+              placeholder="Lọc theo Mã SO..."
+              clearable
+              style="width: 180px"
+              :prefix-icon="Search"
+              @clear="loadTestingDevices"
+              @keyup.enter="loadTestingDevices"
+            />
+            <el-select
+              v-model="testingFilterResult"
+              placeholder="Kết quả Test"
+              clearable
+              style="width: 150px"
+              @change="loadTestingDevices"
+            >
+              <el-option label="Tất cả kết quả" value="" />
+              <el-option label="PASS" value="PASS" />
+              <el-option label="FAIL" value="FAIL" />
+              <el-option label="NONE / PENDING" value="NONE" />
+            </el-select>
+            <el-button type="primary" :icon="Search" @click="loadTestingDevices">Lọc danh sách</el-button>
+            <el-button @click="resetTestingFilters">Đặt lại</el-button>
+          </div>
+          <div class="filter-right">
+            <el-button :icon="Refresh" size="small" @click="loadTestingDevices">Làm mới</el-button>
+            <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Nhấp đúp dòng để xem dữ liệu JSON kiểm thử</span>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <div ref="testingTableRef" class="tabulator-custom-theme"></div>
+          <div v-if="testingLoading" class="loading-overlay">
+            <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải danh sách thiết bị kiểm thử...</span>
+          </div>
+        </div>
+
+        <div class="pagination-bar">
+          <el-pagination
+            v-model:current-page="testingPage"
+            v-model:page-size="testingLimit"
+            :page-sizes="[20, 50, 100, 200]"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="testingTotal"
+            @size-change="loadTestingDevices"
+            @current-change="loadTestingDevices"
+          />
+        </div>
+      </div>
+
+      <!-- TAB 3: DEVICE FINAL CONFIG LIST -->
+      <div v-else-if="normalizedActiveTab === 'device-final-config'" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-left">
+            <el-input
+              v-model="configSearchSerial"
+              placeholder="Tìm S/N hoặc DevEUI..."
+              clearable
+              style="width: 220px"
+              :prefix-icon="Search"
+              @clear="loadFinalConfigDevices"
+              @keyup.enter="loadFinalConfigDevices"
+            />
+            <el-select
+              v-model="configFilterStatus"
+              placeholder="Trạng thái Config"
+              clearable
+              style="width: 180px"
+              @change="loadFinalConfigDevices"
+            >
+              <el-option label="Tất cả trạng thái" value="" />
+              <el-option label="CONFIGURED_PASS" value="CONFIGURED_PASS" />
+              <el-option label="CONFIG_FAILED" value="CONFIG_FAILED" />
+              <el-option label="UNCONFIGURED / NONE" value="NONE" />
+            </el-select>
+            <el-button type="primary" :icon="Search" @click="loadFinalConfigDevices">Lọc danh sách</el-button>
+            <el-button @click="resetConfigFilters">Đặt lại</el-button>
+          </div>
+          <div class="filter-right">
+            <el-button :icon="Refresh" size="small" @click="loadFinalConfigDevices">Làm mới</el-button>
+            <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải để xem Session / Đổi trạng thái Config / Xóa</span>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <div ref="configTableRef" class="tabulator-custom-theme"></div>
+          <div v-if="configLoading" class="loading-overlay">
+            <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải danh sách thiết bị cấu hình cuối...</span>
+          </div>
+        </div>
+
+        <div class="pagination-bar">
+          <el-pagination
+            v-model:current-page="configPage"
+            v-model:page-size="configLimit"
+            :page-sizes="[20, 50, 100, 200]"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="configTotal"
+            @size-change="loadFinalConfigDevices"
+            @current-change="loadFinalConfigDevices"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Chế độ đầy đủ có el-tabs thông thường -->
+    <el-tabs v-else v-model="activeTab" type="border-card" class="main-tabs" @tab-change="onTabChange">
       <!-- TAB 1: SALE ORDERS (CÂY DỮ LIỆU SO -> WA -> DEVICE) -->
       <el-tab-pane label="SALE ORDERS (Cây SO -> WA -> Device)" name="sale-orders">
         <div class="tab-content">
@@ -392,8 +562,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   Files,
@@ -409,25 +579,49 @@ import {
   View,
   InfoFilled,
   Loading,
+  ArrowLeft,
 } from '@element-plus/icons-vue';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 
 const route = useRoute();
+const router = useRouter();
+
+// Isolated view check: khi url có ?tab=... hoặc ?from=menu hoặc ?isolated=true
+const isIsolatedView = computed(() => {
+  return !!route.query.tab || route.query.from === 'menu' || route.query.isolated === 'true';
+});
+
+const normalizedActiveTab = computed(() => {
+  const tab = (route?.query?.tab as string) || activeTab.value;
+  if (tab === 'devices' || tab === 'testing-devices' || tab === 'device-testing') return 'device-testing';
+  if (tab === 'config' || tab === 'config-devices' || tab === 'device-final-config') return 'device-final-config';
+  return 'sale-orders';
+});
+
+const isolatedTitle = computed(() => {
+  if (normalizedActiveTab.value === 'device-testing') return 'Tra Cứu Thiết Bị Kiểm Thử (Testing Devices)';
+  if (normalizedActiveTab.value === 'device-final-config') return 'Tra Cứu Cấu Hình Cuối (Final Config Devices)';
+  return 'Quản Lý Sale Order & Cây Dữ Liệu (Traceability)';
+});
+
+function goBackToMenu() {
+  router.push('/menu');
+}
 
 // Active Tab
 const activeTab = ref(
-  (route?.query?.tab === 'devices' || route?.query?.tab === 'testing-devices') ? 'testing-devices' :
-  (route?.query?.tab === 'config' || route?.query?.tab === 'config-devices') ? 'config-devices' :
-  (route?.query?.tab as string) || 'sale-orders'
+  (route?.query?.tab === 'devices' || route?.query?.tab === 'testing-devices' || route?.query?.tab === 'device-testing') ? 'device-testing' :
+  (route?.query?.tab === 'config' || route?.query?.tab === 'config-devices' || route?.query?.tab === 'device-final-config') ? 'device-final-config' :
+  'sale-orders'
 );
 
 watch(() => route?.query?.tab, (newTab) => {
   if (newTab) {
-    if (newTab === 'devices' || newTab === 'testing-devices') {
-      activeTab.value = 'testing-devices';
-    } else if (newTab === 'config' || newTab === 'config-devices') {
-      activeTab.value = 'config-devices';
+    if (newTab === 'devices' || newTab === 'testing-devices' || newTab === 'device-testing') {
+      activeTab.value = 'device-testing';
+    } else if (newTab === 'config' || newTab === 'config-devices' || newTab === 'device-final-config') {
+      activeTab.value = 'device-final-config';
     } else if (newTab === 'so' || newTab === 'sale-orders') {
       activeTab.value = 'sale-orders';
     } else {
@@ -1532,8 +1726,7 @@ const submitCsvImport = async () => {
 // Lifecycle
 onMounted(() => {
   nextTick(() => {
-    initSoTreeTable();
-    loadSoTreeData();
+    onTabChange(normalizedActiveTab.value);
   });
 });
 
@@ -1569,6 +1762,31 @@ onBeforeUnmount(() => {
   padding: 16px 20px;
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.isolated-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  background: #ffffff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.isolated-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2f3d;
+}
+
+.isolated-content-panel {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e4e7ed;
 }
 
 .header-title h2 {
