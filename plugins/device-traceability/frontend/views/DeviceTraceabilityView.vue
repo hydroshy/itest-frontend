@@ -550,6 +550,99 @@
       </template>
     </el-dialog>
 
+    <!-- DIALOG: CHI TIẾT & CHỈNH SỬA THÔNG TIN THIẾT BỊ / TEST -->
+    <el-dialog v-model="editDeviceDialogVisible" title="Chi Tiết & Chỉnh Sửa Thông Tin Thiết Bị" width="680px">
+      <el-form v-if="editingDeviceForm" :model="editingDeviceForm" label-width="150px" size="default">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Số Serial (S/N):">
+              <el-input :model-value="editingDeviceForm.serialNumber" disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="DevEUI:">
+              <el-input v-model="editingDeviceForm.devEui" placeholder="Nhập DevEUI (16 hex)" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Mã Sản Phẩm (Item):">
+              <el-input v-model="editingDeviceForm.itemCode" placeholder="Mã item..." />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="SKU:">
+              <el-input v-model="editingDeviceForm.sku" placeholder="SKU sản phẩm..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Kết Quả Test:">
+              <el-select v-model="editingDeviceForm.testResult" style="width: 100%">
+                <el-option label="PASS" value="PASS" />
+                <el-option label="FAIL" value="FAIL" />
+                <el-option label="NONE / PENDING" value="PENDING" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Trạng Thái Config:">
+              <el-select v-model="editingDeviceForm.configStatus" style="width: 100%">
+                <el-option label="CONFIGURED_PASS (Đã nạp)" value="CONFIGURED_PASS" />
+                <el-option label="CONFIG_FAILED (Lỗi cấu hình)" value="CONFIG_FAILED" />
+                <el-option label="PENDING / UNCONFIGURED" value="PENDING" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Trạm Kiểm Thử:">
+              <el-input v-model="editingDeviceForm.testStation" placeholder="Ví dụ: STATION_01" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Người Kiểm Thử:">
+              <el-input v-model="editingDeviceForm.testPerson" placeholder="Tên hoặc mã nhân viên..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="HW Version:">
+              <el-input v-model="editingDeviceForm.hwVersion" placeholder="Phiên bản phần cứng..." />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="FW Version:">
+              <el-input v-model="editingDeviceForm.fwVersion" placeholder="Phiên bản firmware..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="Dữ Liệu Raw Test (JSON):">
+          <el-input
+            v-model="editingDeviceForm.rawJsonText"
+            type="textarea"
+            :rows="5"
+            placeholder="{ ... }"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDeviceDialogVisible = false">Hủy Bỏ</el-button>
+        <el-button type="primary" :loading="savingDeviceDetails" @click="submitEditDeviceDetails">
+          Lưu Thay Đổi
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- DIALOG: RAW TEST DATA VIEWER -->
     <el-dialog v-model="rawTestDialogVisible" title="Chi Tiết Dữ Liệu Kiểm Thử (Raw Test Data)" width="600px">
       <pre v-if="viewingRawData" class="raw-data-box">{{ JSON.stringify(viewingRawData, null, 2) }}</pre>
@@ -663,6 +756,113 @@ const configLimit = ref(50);
 const configTotal = ref(0);
 
 // Dialog Data States
+const editDeviceDialogVisible = ref(false);
+const savingDeviceDetails = ref(false);
+const editingDeviceForm = reactive<{
+  id: string;
+  serialNumber: string;
+  devEui: string;
+  itemCode: string;
+  sku: string;
+  hwVersion: string;
+  fwVersion: string;
+  testResult: string;
+  configStatus: string;
+  testStation: string;
+  testPerson: string;
+  rawJsonText: string;
+}>({
+  id: '',
+  serialNumber: '',
+  devEui: '',
+  itemCode: '',
+  sku: '',
+  hwVersion: '',
+  fwVersion: '',
+  testResult: 'PENDING',
+  configStatus: 'PENDING',
+  testStation: '',
+  testPerson: '',
+  rawJsonText: '',
+});
+
+const openEditDeviceDialog = (device: any) => {
+  if (!device) return;
+  editingDeviceForm.id = device.id || '';
+  editingDeviceForm.serialNumber = device.serialNumber || device.serial_number || device.code || '';
+  editingDeviceForm.devEui = device.devEui || device.dev_eui || '';
+  editingDeviceForm.itemCode = device.itemCode || device.item_code || '';
+  editingDeviceForm.sku = device.sku || '';
+  editingDeviceForm.hwVersion = device.hwVersion || device.hw_version || '';
+  editingDeviceForm.fwVersion = device.fwVersion || device.fw_version || '';
+  editingDeviceForm.testResult = (device.testResult || device.test_result || 'PENDING').toUpperCase();
+  editingDeviceForm.configStatus = (device.configStatus || device.config_status || 'PENDING').toUpperCase();
+  editingDeviceForm.testStation = device.testStation || device.test_station || '';
+  editingDeviceForm.testPerson = device.testPerson || device.test_person || '';
+  
+  const rawData = device.testRawData || device.test_raw_data || null;
+  editingDeviceForm.rawJsonText = rawData ? JSON.stringify(rawData, null, 2) : '';
+  
+  editDeviceDialogVisible.value = true;
+};
+
+const submitEditDeviceDetails = async () => {
+  if (!editingDeviceForm.id && !editingDeviceForm.serialNumber) {
+    ElMessage.warning('Không tìm thấy thông tin định danh thiết bị');
+    return;
+  }
+
+  let parsedRaw: any = undefined;
+  if (editingDeviceForm.rawJsonText.trim()) {
+    try {
+      parsedRaw = JSON.parse(editingDeviceForm.rawJsonText.trim());
+    } catch (e: any) {
+      ElMessage.error(`Định dạng JSON Dữ liệu Raw Test không hợp lệ: ${e.message}`);
+      return;
+    }
+  }
+
+  savingDeviceDetails.value = true;
+  try {
+    const targetKey = editingDeviceForm.id || editingDeviceForm.serialNumber;
+    const url = `/api/plugins/device-traceability/devices/${encodeURIComponent(targetKey)}`;
+    
+    const payload: any = {
+      testResult: editingDeviceForm.testResult,
+      configStatus: editingDeviceForm.configStatus,
+      devEui: editingDeviceForm.devEui,
+      itemCode: editingDeviceForm.itemCode,
+      sku: editingDeviceForm.sku,
+      hwVersion: editingDeviceForm.hwVersion,
+      fwVersion: editingDeviceForm.fwVersion,
+      testStation: editingDeviceForm.testStation,
+      testPerson: editingDeviceForm.testPerson,
+    };
+    if (parsedRaw !== undefined) {
+      payload.testRawData = parsedRaw;
+    }
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    ElMessage.success(`Cập nhật thông tin thiết bị ${editingDeviceForm.serialNumber} thành công!`);
+    editDeviceDialogVisible.value = false;
+    refreshActiveTabData();
+  } catch (err: any) {
+    ElMessage.error(`Lỗi cập nhật chi tiết thiết bị: ${err.message}`);
+  } finally {
+    savingDeviceDetails.value = false;
+  }
+};
+
 const rawTestDialogVisible = ref(false);
 const selectedRawDevice = ref<any>(null);
 
@@ -917,40 +1117,47 @@ const initSoTreeTable = () => {
         });
       } else if (data.type === 'DEVICE') {
         menu.push({
+          label: '✏️ Xem Chi Tiết & Chỉnh Sửa Thông Tin...',
+          action: () => {
+            openEditDeviceDialog(data);
+          },
+        });
+        menu.push({ separator: true });
+        menu.push({
           label: '🧪 Đặt Test Status: PASS',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { testResult: 'PASS' });
+            handleUpdateDeviceStatus(data.id, { testResult: 'PASS', status: 'PASS', statusType: 'test_result' });
           },
         });
         menu.push({
           label: '❌ Đặt Test Status: FAIL',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { testResult: 'FAIL' });
+            handleUpdateDeviceStatus(data.id, { testResult: 'FAIL', status: 'FAIL', statusType: 'test_result' });
           },
         });
         menu.push({
           label: '⚪ Đặt Test Status: NONE',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { testResult: 'NONE' });
+            handleUpdateDeviceStatus(data.id, { testResult: 'NONE', status: 'NONE', statusType: 'test_result' });
           },
         });
         menu.push({ separator: true });
         menu.push({
           label: '⚙️ Đặt Final Config: CONFIGURED_PASS',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS' });
+            handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS', status: 'CONFIGURED_PASS', statusType: 'config_status' });
           },
         });
         menu.push({
           label: '⚙️ Đặt Final Config: CONFIG_FAILED',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED' });
+            handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED', status: 'CONFIG_FAILED', statusType: 'config_status' });
           },
         });
         menu.push({
           label: '⚙️ Đặt Final Config: UNCONFIGURED (NONE)',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED' });
+            handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED', status: 'UNCONFIGURED', statusType: 'config_status' });
           },
         });
         menu.push({ separator: true });
@@ -1119,16 +1326,21 @@ const initTestingTable = () => {
       const data = row.getData();
       return [
         {
+          label: '✏️ Xem Chi Tiết & Chỉnh Sửa Thông Tin...',
+          action: () => openEditDeviceDialog(data),
+        },
+        { separator: true },
+        {
           label: '🧪 Đặt Test Status: PASS',
-          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'PASS' }),
+          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'PASS', status: 'PASS', statusType: 'test_result' }),
         },
         {
           label: '❌ Đặt Test Status: FAIL',
-          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'FAIL' }),
+          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'FAIL', status: 'FAIL', statusType: 'test_result' }),
         },
         {
           label: '⚪ Đặt Test Status: NONE',
-          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'NONE' }),
+          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'NONE', status: 'NONE', statusType: 'test_result' }),
         },
         { separator: true },
         {
@@ -1265,16 +1477,21 @@ const initConfigTable = () => {
       const data = row.getData();
       return [
         {
+          label: '✏️ Xem Chi Tiết & Chỉnh Sửa Thông Tin...',
+          action: () => openEditDeviceDialog(data),
+        },
+        { separator: true },
+        {
           label: '⚙️ Đặt Config Status: CONFIGURED_PASS',
-          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS' }),
+          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS', status: 'CONFIGURED_PASS', statusType: 'config_status' }),
         },
         {
           label: '⚙️ Đặt Config Status: CONFIG_FAILED',
-          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED' }),
+          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED', status: 'CONFIG_FAILED', statusType: 'config_status' }),
         },
         {
           label: '⚙️ Đặt Config Status: UNCONFIGURED (NONE)',
-          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED' }),
+          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED', status: 'UNCONFIGURED', statusType: 'config_status' }),
         },
         { separator: true },
         {

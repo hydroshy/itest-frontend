@@ -38,8 +38,14 @@ httpClient.interceptors.response.use(
     const responseData = error?.response?.data;
     const backendMessage = responseData?.message;
 
-    // Is this an authentication attempt (login)?
+    // Is this an authentication attempt (login or logout)?
     const isLoginRequest = url.includes('/auth/login');
+    const isLogoutRequest = url.includes('/auth/logout');
+
+    if (isLogoutRequest) {
+      // Logout requests should fail silently on network or 404/500 errors to allow client-side cleanup
+      return Promise.resolve({ success: true });
+    }
 
     if (status === 401) {
       if (isLoginRequest) {
