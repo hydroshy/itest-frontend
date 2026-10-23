@@ -1,307 +1,317 @@
 <template>
-  <transition name="ctos-fade">
-    <div v-if="isTransitioning" class="ctos-glitch-overlay">
-      <div class="ctos-scanlines"></div>
-      <div class="ctos-vignette"></div>
+  <div v-if="isTransitioning" class="ctos-dissolve-overlay">
+    <!-- Matrix of drifting digital dust / ASCII particles -->
+    <div class="ascii-particle-cloud">
+      <span
+        v-for="(p, idx) in particles"
+        :key="idx"
+        class="ascii-particle"
+        :style="{
+          left: p.x + '%',
+          top: p.y + '%',
+          fontSize: p.size + 'px',
+          animationDelay: p.delay + 'ms',
+          animationDuration: p.duration + 'ms',
+          opacity: p.opacity,
+          color: p.color
+        }"
+      >
+        {{ p.char }}
+      </span>
+    </div>
 
-      <div class="ctos-frame" data-augmented-ui="tl-clip br-clip tr-clip bl-clip border">
-        <!-- ctOS Header Banner -->
-        <div class="ctos-banner">
-          <span class="ctos-tag">[ ctOS v2.0 // DIRECT_NODE_INTERFACE ]</span>
-          <span class="ctos-clock">SEC_LEVEL::RESTRICTED</span>
-        </div>
+    <!-- Center Glitch Core: Free-floating ASCII Title + Target & Status (NO BOX / NO FRAME) -->
+    <div class="ctos-dissolve-core">
+      <div class="ctos-meta-header">
+        <span class="pulse-dot"></span>
+        <span class="sys-label">iTEST 2.0 // SYSTEM_TRANSITION</span>
+        <span class="sec-label">STATUS::DISSOLVING</span>
+      </div>
 
-        <!-- ASCII Title Art -->
-        <pre class="ctos-ascii-art">
- _ _____ _____ ____ _____   ____    ___  
-(_) ____|_   _/ ___|_   _| |___ \  / _ \ 
+      <!-- Crisp Small ASCII Art for iTEST 2.0 -->
+      <pre class="ascii-title-small">
+ _ _____ _____ ____ _____   ____    ___
+(_) ____|_   _/ ___|_   _| |___ \  / _ \
 | |  _|   | | \___ \ | |     __) || | | |
 | | |___  | |  ___) || |    / __/ | |_| |
-|_|_____| |_| |____/ |_|   |_____(_)___/ 
-        </pre>
+|_|_____| |_| |____/ |_|   |_____(_)___/
+      </pre>
 
-        <!-- Dynamic Node Access Telemetry -->
-        <div class="ctos-telemetry">
-          <div class="telemetry-row">
-            <span class="t-label">TARGET_NODE:</span>
-            <span class="t-val glitch-text" :data-text="targetNode">[{{ targetNode }}]</span>
-          </div>
-          <div class="telemetry-row">
-            <span class="t-label">OPERATION:</span>
-            <span class="t-status">{{ asciiStatus }}</span>
-          </div>
+      <div class="ctos-target-line">
+        <span class="prompt-symbol">&gt;&gt;</span>
+        <span class="node-name">{{ targetNode }}</span>
+        <span class="divider">/</span>
+        <span class="status-name">{{ asciiStatus }}</span>
+      </div>
 
-          <div class="glitch-stream">
-            <div v-for="(line, idx) in glitchLines" :key="idx" class="stream-line">
-              <span class="stream-prefix">&gt;&gt;</span> {{ line }}
-            </div>
-          </div>
-
-          <!-- Progress Bar -->
-          <div class="ctos-progress-container">
-            <div class="progress-bar-fill"></div>
-            <span class="progress-pct">100% READY</span>
-          </div>
-        </div>
-
-        <!-- Bottom Grid Tickers -->
-        <div class="ctos-footer">
-          <span>MEM: 0x7FFF8A40</span>
-          <span>LINK: ENCRYPTED_TLS</span>
-          <span>SYS_LATENCY: 0.12ms</span>
+      <!-- Quick decoding glitch stream -->
+      <div class="ascii-subtext-stream">
+        <div v-for="(line, idx) in glitchLines" :key="idx" class="ascii-stream-line">
+          {{ line }}
         </div>
       </div>
     </div>
-  </transition>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue';
 import { useCtosTransition } from '@/composables/useCtosTransition';
 
 const { isTransitioning, targetNode, asciiStatus, glitchLines } = useCtosTransition();
+
+interface AsciiParticle {
+  char: string;
+  x: number;
+  y: number;
+  size: number;
+  delay: number;
+  duration: number;
+  opacity: number;
+  color: string;
+}
+
+const particles = ref<AsciiParticle[]>([]);
+const GLYPHS = '0123456789ABCDEF$#@%*+=-/\\:;<>[]{}iTEST2.0';
+const COLORS = ['#00f0ff', '#38bdf8', '#00ff66', '#e0f2fe', '#a855f7'];
+
+function generateParticles() {
+  const count = 56;
+  const list: AsciiParticle[] = [];
+  for (let i = 0; i < count; i++) {
+    const glyph = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    list.push({
+      char: glyph,
+      x: Math.random() * 96 + 2,
+      y: Math.random() * 90 + 5,
+      size: Math.floor(Math.random() * 8) + 11, // 11px - 18px
+      delay: Math.floor(Math.random() * 100),
+      duration: Math.floor(Math.random() * 200) + 380, // 380ms - 580ms
+      opacity: Math.random() * 0.75 + 0.25,
+      color,
+    });
+  }
+  particles.value = list;
+}
+
+watch(isTransitioning, (val) => {
+  if (val) {
+    generateParticles();
+  }
+});
 </script>
 
 <style scoped>
-.ctos-glitch-overlay {
+.ctos-dissolve-overlay {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: 999999;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(8, 14, 26, 0.7) 0%, rgba(3, 7, 14, 0.88) 100%);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(6, 9, 17, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  pointer-events: all;
-  user-select: none;
+  animation: overlay-fade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   overflow: hidden;
 }
 
-.ctos-scanlines {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.45) 50%
-  ),
-  linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.03),
-    rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.03)
-  );
-  background-size: 100% 3px, 6px 100%;
-  pointer-events: none;
-  animation: scanlines-scroll 8s linear infinite;
-  opacity: 0.8;
-}
-
-@keyframes scanlines-scroll {
-  0% { background-position: 0 0, 0 0; }
-  100% { background-position: 0 100%, 0 0; }
-}
-
-.ctos-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.8) 100%);
-  pointer-events: none;
-}
-
-.ctos-frame {
-  --aug-border-all: 2px;
-  --aug-border-bg: var(--cyber-cyan, #00f0ff);
-  --aug-tl: 18px;
-  --aug-br: 18px;
-  --aug-tr: 18px;
-  --aug-bl: 18px;
-  position: relative;
-  z-index: 2;
-  width: 90%;
-  max-width: 580px;
-  background: rgba(11, 16, 28, 0.94);
-  box-shadow: 0 0 40px rgba(0, 240, 255, 0.25), inset 0 0 20px rgba(0, 240, 255, 0.1);
-  padding: 24px 30px;
-  display: flex;
-  flex-direction: column;
-  animation: frame-glitch 0.45s ease-out;
-}
-
-@keyframes frame-glitch {
+@keyframes overlay-fade {
   0% {
-    transform: scale(0.97) skewX(-2deg);
-    opacity: 0;
-    filter: brightness(2) contrast(1.5);
-  }
-  20% {
-    transform: scale(1.02) skewX(2deg);
-    opacity: 0.9;
-  }
-  40% {
-    transform: scale(0.99) skewX(-1deg);
     opacity: 1;
   }
-  70% {
-    transform: scale(1.005) skewX(0.5deg);
+  60% {
+    opacity: 0.95;
   }
   100% {
-    transform: scale(1) skewX(0);
-    opacity: 1;
-    filter: brightness(1) contrast(1);
+    opacity: 0;
   }
 }
 
-.ctos-banner {
+/* ASCII Particle Cloud - Floating and dispersing */
+.ascii-particle-cloud {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.ascii-particle {
+  position: absolute;
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
+  font-weight: 700;
+  text-shadow: 0 0 8px currentColor;
+  user-select: none;
+  animation-name: particle-drift-disperse;
+  animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes particle-drift-disperse {
+  0% {
+    transform: translate(0, 0) scale(1.1);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  45% {
+    transform: translate(12px, -15px) scale(0.95);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(28px, -40px) scale(0.3);
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+/* Core Container without boxy card borders (Free-floating) */
+.ctos-dissolve-core {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  font-family: var(--cyber-font-mono, monospace);
+  text-align: center;
+  user-select: none;
+  animation: core-dissolve 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes core-dissolve {
+  0% {
+    transform: scale(0.97) translateY(4px);
+    opacity: 0;
+    letter-spacing: 0px;
+    filter: blur(4px) brightness(1.6);
+  }
+  18% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    letter-spacing: 0.5px;
+    filter: blur(0px) brightness(1.2);
+  }
+  60% {
+    transform: scale(1.02) translateY(-2px);
+    opacity: 0.95;
+    letter-spacing: 1.5px;
+    filter: blur(0.5px);
+  }
+  100% {
+    transform: scale(1.06) translateY(-8px);
+    opacity: 0;
+    letter-spacing: 4px;
+    filter: blur(6px) brightness(1.4);
+  }
+}
+
+/* Meta Header */
+.ctos-meta-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
   font-size: 11px;
   font-weight: 700;
-  color: var(--cyber-cyan, #00f0ff);
   letter-spacing: 1.5px;
-  border-bottom: 1px dashed rgba(0, 240, 255, 0.35);
-  padding-bottom: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-.ctos-clock {
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #00ff66;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00ff66;
+  animation: pulse-dot-glow 0.4s infinite alternate;
+}
+
+@keyframes pulse-dot-glow {
+  from { opacity: 0.4; }
+  to { opacity: 1; transform: scale(1.3); }
+}
+
+.sys-label {
+  color: #00f0ff;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.7);
+}
+
+.sec-label {
   color: #f59e0b;
+  font-size: 10px;
 }
 
-.ctos-ascii-art {
-  font-family: var(--cyber-font-mono, monospace);
+/* Small ASCII Art */
+.ascii-title-small {
+  margin: 0 0 10px 0;
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
   font-size: 11px;
   line-height: 1.15;
   font-weight: 800;
   color: #00f0ff;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
-  margin: 0 0 16px 0;
-  text-align: center;
-  user-select: none;
-  animation: ascii-flicker 0.4s infinite;
+  letter-spacing: 1px;
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.85), 0 0 24px rgba(0, 240, 255, 0.4);
+  animation: text-flicker 0.25s infinite;
 }
 
-@keyframes ascii-flicker {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.88; transform: translate(1px, -0.5px); }
-  75% { opacity: 0.95; transform: translate(-0.5px, 0.5px); }
+@keyframes text-flicker {
+  0%, 100% {
+    opacity: 1;
+    transform: none;
+  }
+  33% {
+    opacity: 0.88;
+    transform: translateX(1px);
+  }
+  66% {
+    opacity: 0.95;
+    transform: translateX(-1px);
+  }
 }
 
-.ctos-telemetry {
-  display: flex;
-  flex-direction: column;
+/* Target Line */
+.ctos-target-line {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-  font-family: var(--cyber-font-mono, monospace);
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
 }
 
-.telemetry-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
+.prompt-symbol {
+  color: #00ff66;
+  font-weight: 900;
 }
 
-.t-label {
-  color: #94a3b8;
-  font-weight: 600;
-  letter-spacing: 1px;
-}
-
-.t-val {
+.node-name {
   color: #ffffff;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
-.t-status {
-  color: #10b981;
-  font-weight: 700;
-  letter-spacing: 1px;
-  animation: pulse-glow 0.8s infinite alternate;
+.divider {
+  color: rgba(255, 255, 255, 0.35);
 }
 
-@keyframes pulse-glow {
-  from { opacity: 0.7; }
-  to { opacity: 1; text-shadow: 0 0 12px #10b981; }
-}
-
-.glitch-stream {
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  border-left: 3px solid var(--cyber-cyan, #00f0ff);
-  padding: 8px 12px;
-  margin: 6px 0;
+.status-name {
+  color: #38bdf8;
   font-size: 11px;
-  color: #cbd5e1;
+}
+
+/* Glitch Stream Lines */
+.ascii-subtext-stream {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  margin-top: 4px;
 }
 
-.stream-prefix {
-  color: var(--cyber-cyan, #00f0ff);
-  font-weight: 700;
-}
-
-.ctos-progress-container {
-  position: relative;
-  height: 18px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(0, 240, 255, 0.4);
-  margin-top: 6px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-}
-
-.progress-bar-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, rgba(0, 240, 255, 0.3) 0%, rgba(0, 240, 255, 0.9) 100%);
-  animation: fill-strip 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
-}
-
-@keyframes fill-strip {
-  0% { width: 0%; }
-  60% { width: 85%; }
-  100% { width: 100%; }
-}
-
-.progress-pct {
-  position: relative;
-  z-index: 2;
-  font-size: 10px;
-  font-weight: 800;
-  color: #0b101c;
-  padding-left: 8px;
-  letter-spacing: 1px;
-}
-
-.ctos-footer {
-  margin-top: 14px;
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--cyber-font-mono, monospace);
-  font-size: 9.5px;
-  color: #64748b;
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
-  padding-top: 8px;
-}
-
-/* Vue Transition */
-.ctos-fade-enter-active {
-  transition: opacity 0.15s ease-out;
-}
-.ctos-fade-leave-active {
-  transition: opacity 0.18s ease-in;
-}
-.ctos-fade-enter-from,
-.ctos-fade-leave-to {
-  opacity: 0;
+.ascii-stream-line {
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  color: rgba(0, 240, 255, 0.7);
+  letter-spacing: 0.8px;
+  text-shadow: 0 0 4px rgba(0, 240, 255, 0.4);
 }
 </style>
