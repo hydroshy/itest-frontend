@@ -786,6 +786,7 @@ const submitCreateWa = async () => {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({
+        soId: createWaForm.value.soId,
         waNumber: wa,
         itemCode: createWaForm.value.itemCode.trim() || undefined,
         plannedQuantity: Number(createWaForm.value.plannedQuantity) || 0,
