@@ -6,7 +6,7 @@
                 <!-- Title & Badges -->
                 <div class="flex items-center gap-3.5 flex-wrap">
                   <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl shadow-inner">
-                    <i class="fa-solid fa-sliders"></i>
+                    <el-icon :size="20"><Operation /></el-icon>
                   </div>
                   <div>
                     <div class="flex items-center gap-2 flex-wrap">
@@ -29,16 +29,16 @@
                 <!-- Packet & Communication Counters (Debug Mode only) -->
                 <div v-show="fcDebugMode" class="flex items-center gap-2 flex-wrap">
                   <div class="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-300 flex items-center gap-3">
-                    <span class="text-cyan-400 font-bold" title="Transmitted Packets">
-                      <i class="fa-solid fa-arrow-up text-[10px] mr-1"></i>TX: {{ fcSerialStats.txPackets }} ({{ fcFormatBytes(fcSerialStats.txBytes) }})
+                    <span class="text-cyan-400 font-bold flex items-center gap-1" title="Transmitted Packets">
+                      <el-icon :size="11"><Top /></el-icon>TX: {{ fcSerialStats.txPackets }} ({{ fcFormatBytes(fcSerialStats.txBytes) }})
                     </span>
                     <span class="text-slate-700">|</span>
-                    <span class="text-emerald-400 font-bold" title="Received Packets">
-                      <i class="fa-solid fa-arrow-down text-[10px] mr-1"></i>RX: {{ fcSerialStats.rxPackets }} ({{ fcFormatBytes(fcSerialStats.rxBytes) }})
+                    <span class="text-emerald-400 font-bold flex items-center gap-1" title="Received Packets">
+                      <el-icon :size="11"><Bottom /></el-icon>RX: {{ fcSerialStats.rxPackets }} ({{ fcFormatBytes(fcSerialStats.rxBytes) }})
                     </span>
                     <span class="text-slate-700">|</span>
-                    <span class="text-rose-400 font-bold" title="Communication Errors">
-                      <i class="fa-solid fa-circle-exclamation text-[10px] mr-1"></i>Err: {{ fcSerialStats.errCount }}
+                    <span class="text-rose-400 font-bold flex items-center gap-1" title="Communication Errors">
+                      <el-icon :size="11"><WarningFilled /></el-icon>Err: {{ fcSerialStats.errCount }}
                     </span>
                   </div>
                 </div>
@@ -50,11 +50,11 @@
             <div v-if="fcProgress >= 25" class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
               <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
                 <div class="flex items-center gap-2">
-                  <i class="fa-solid fa-clipboard-list text-cyan-400"></i>
+                  <el-icon :size="16" class="text-cyan-400"><Tickets /></el-icon>
                   <h3 class="text-xs font-bold text-white uppercase tracking-wider">WORK ORDER & SERIAL NUMBER</h3>
                 </div>
                 <div class="text-[11px] text-emerald-400 flex items-center gap-1.5 font-semibold">
-                  <i class="fa-solid fa-circle-check"></i>
+                  <el-icon :size="14"><CircleCheckFilled /></el-icon>
                   <span>Hardware identified & QA verified (Read-only)</span>
                 </div>
               </div>
@@ -102,7 +102,7 @@
                     @click="fcSelectSerialPort"
                     class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-xs shadow-lg shadow-cyan-900/20 flex items-center gap-1.5 cursor-pointer transition"
                   >
-                    <i class="fa-solid fa-plug"></i>
+                    <el-icon :size="13"><Cpu /></el-icon>
                     <span>Select Port</span>
                   </button>
 
@@ -114,7 +114,7 @@
                     :disabled="fcSerialConnecting || fcIsAutoReconnecting"
                     class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs shadow-lg shadow-emerald-900/20 flex items-center gap-1.5 cursor-pointer transition disabled:opacity-50"
                   >
-                    <i class="fa-solid fa-link" :class="{ 'animate-spin': fcSerialConnecting || fcIsAutoReconnecting }"></i>
+                    <el-icon :size="13" :class="{ 'animate-spin': fcSerialConnecting || fcIsAutoReconnecting }"><Link /></el-icon>
                     <span>{{ fcIsAutoReconnecting ? 'Reconnecting...' : 'Connect' }}</span>
                   </button>
 
@@ -125,7 +125,7 @@
                     @click="fcDisconnectSerial(true)"
                     class="px-3.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition"
                   >
-                    <i class="fa-solid fa-link-slash"></i>
+                    <el-icon :size="13"><SwitchButton /></el-icon>
                     <span>Disconnect</span>
                   </button>
 
@@ -137,7 +137,7 @@
                     :disabled="fcSerialConnected || isRunningFinalConfig"
                     class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition disabled:opacity-40"
                   >
-                    <i class="fa-solid fa-rotate"></i>
+                    <el-icon :size="13"><Refresh /></el-icon>
                     <span>Change Port</span>
                   </button>
 
@@ -197,7 +197,12 @@
                     class="w-2 h-2 rounded-full"
                     :class="fcSerialConnected ? 'bg-emerald-400 animate-ping' : (fcIsAutoReconnecting ? 'bg-amber-400 animate-ping' : (fcSerialPort ? 'bg-blue-400' : 'bg-slate-500'))"
                   ></span>
-                  <i :class="fcSerialConnected ? 'fa-solid fa-link' : (fcIsAutoReconnecting ? 'fa-solid fa-arrows-rotate animate-spin text-amber-400' : (fcSerialPort ? 'fa-solid fa-microchip' : 'fa-solid fa-plug-circle-xmark'))"></i>
+                  <el-icon :size="13">
+                    <Link v-if="fcSerialConnected" />
+                    <Refresh v-else-if="fcIsAutoReconnecting" class="animate-spin text-amber-400" />
+                    <Cpu v-else-if="fcSerialPort" />
+                    <CircleCloseFilled v-else />
+                  </el-icon>
                   <span class="font-mono text-xs">{{ fcSerialPortInfo || 'No Port Selected' }} {{ fcSerialConnected ? '(Connected)' : (fcIsAutoReconnecting ? '(Reconnecting...)' : (fcSerialPort ? '(Ready)' : '')) }}</span>
                 </div>
               </div>
@@ -212,7 +217,10 @@
                     :disabled="!fcSerialConnected || isRunningFinalConfig || finalVerdict === 'FAIL'"
                     class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-900/30 flex items-center gap-2 cursor-pointer transition disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <i class="fa-solid" :class="isRunningFinalConfig ? 'fa-spinner animate-spin' : 'fa-play'"></i>
+                    <el-icon :size="14" :class="{ 'animate-spin': isRunningFinalConfig }">
+                      <Loading v-if="isRunningFinalConfig" />
+                      <VideoPlay v-else />
+                    </el-icon>
                     <span>{{ isRunningFinalConfig ? 'EXECUTING...' : 'START' }}</span>
                   </button>
 
@@ -223,7 +231,7 @@
                     :disabled="isRunningFinalConfig"
                     class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs flex items-center gap-2 cursor-pointer transition disabled:opacity-40"
                   >
-                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <el-icon :size="14"><RefreshLeft /></el-icon>
                     <span>Reset</span>
                   </button>
 
@@ -234,7 +242,7 @@
                     @click="abortFinalConfig"
                     class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-bold text-xs flex items-center gap-2 cursor-pointer transition"
                   >
-                    <i class="fa-solid fa-hand"></i>
+                    <el-icon :size="14"><CloseBold /></el-icon>
                     <span>Abort</span>
                   </button>
 
@@ -257,8 +265,10 @@
                         ? 'bg-rose-500/20 border-rose-500/50 text-rose-300'
                         : 'bg-slate-950 border-slate-800 text-slate-400')"
                   >
-                    <div class="text-xl">
-                      <i :class="finalVerdict === 'PASS' ? 'fa-solid fa-circle-check text-emerald-400' : (finalVerdict === 'FAIL' ? 'fa-solid fa-circle-xmark text-rose-400' : 'fa-solid fa-circle-dot text-slate-600')"></i>
+                    <div class="text-xl flex items-center">
+                      <el-icon :size="22" v-if="finalVerdict === 'PASS'" class="text-emerald-400"><CircleCheckFilled /></el-icon>
+                      <el-icon :size="22" v-else-if="finalVerdict === 'FAIL'" class="text-rose-400"><CircleCloseFilled /></el-icon>
+                      <el-icon :size="22" v-else class="text-slate-600"><Clock /></el-icon>
                     </div>
                     <div>
                       <div class="text-xl font-black font-mono tracking-wider">
@@ -289,7 +299,7 @@
               </div>
 
               <!-- 4-Stage Step Cards Grid -->
-              <div v-show="fcDebugMode" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
                 <!-- STAGE 1: 0% -> 25% -->
                 <div
                   class="p-4 rounded-xl border transition-all"
@@ -496,12 +506,12 @@
             </div>
 
             <!-- 4. LIVE REGISTER AUDIT GRID (TABULATOR 6.X) -->
-            <div v-show="fcDebugMode" class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
               <!-- Grid Toolbar -->
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="flex items-center gap-3 flex-wrap">
                   <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-table-list text-cyan-400"></i>
+                    <el-icon :size="16" class="text-cyan-400"><Grid /></el-icon>
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider">LIVE REGISTER AUDIT GRID</h3>
                   </div>
                   <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
@@ -548,14 +558,14 @@
                 <!-- Export & Search Actions -->
                 <div class="flex items-center gap-2 flex-wrap">
                   <!-- Search input -->
-                  <div class="relative">
+                  <div class="relative flex items-center">
                     <input
                       type="text"
                       v-model="auditSearchQuery"
                       placeholder="Search register..."
                       class="px-3 py-1.5 pl-8 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:border-cyan-500 focus:outline-none transition w-44"
                     />
-                    <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-500 text-xs"></i>
+                    <el-icon :size="12" class="absolute left-2.5 text-slate-500 pointer-events-none"><Search /></el-icon>
                   </div>
 
                   <!-- Export CSV -->
@@ -565,7 +575,7 @@
                     :disabled="fcAuditRegisters.length === 0"
                     class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-40"
                   >
-                    <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                    <el-icon :size="13" class="text-emerald-400"><Document /></el-icon>
                     <span>Export CSV</span>
                   </button>
 
@@ -576,7 +586,7 @@
                     :disabled="fcAuditRegisters.length === 0"
                     class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-40"
                   >
-                    <i class="fa-solid fa-file-excel text-cyan-400"></i>
+                    <el-icon :size="13" class="text-cyan-400"><Document /></el-icon>
                     <span>Export XLSX</span>
                   </button>
                 </div>
@@ -588,27 +598,27 @@
               </div>
             </div>
 
-            <!-- 5. UART LOG TERMINAL DRAWER -->
+            <!-- 5. HARDWARE UART COMMUNICATION LOGS -->
             <div v-show="fcDebugMode" class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-xl">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <i class="fa-solid fa-terminal text-cyan-400"></i>
+                  <el-icon :size="16" class="text-cyan-400"><Monitor /></el-icon>
                   <h3 class="text-xs font-bold text-white uppercase tracking-wider">HARDWARE UART COMMUNICATION LOGS</h3>
                 </div>
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
                     @click="fcCopySerialLogs"
-                    class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                    class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition"
                   >
-                    <i class="fa-solid fa-copy mr-1"></i>Copy
+                    <el-icon :size="12"><CopyDocument /></el-icon>Copy
                   </button>
                   <button
                     type="button"
                     @click="fcClearSerialLogs"
-                    class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                    class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition"
                   >
-                    <i class="fa-solid fa-trash mr-1"></i>Clear
+                    <el-icon :size="12"><Delete /></el-icon>Clear
                   </button>
                 </div>
               </div>
@@ -640,7 +650,7 @@
     <div class="bg-slate-900 border border-amber-500/50 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+          <el-icon :size="20"><WarningFilled /></el-icon>
         </div>
         <div>
           <h3 class="text-sm font-bold text-white uppercase tracking-wider">Device Already Configured</h3>
@@ -672,8 +682,34 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { ElMessage } from 'element-plus';
+import {
+  Operation,
+  Top,
+  Bottom,
+  WarningFilled,
+  Tickets,
+  CircleCheckFilled,
+  Cpu,
+  Link,
+  SwitchButton,
+  Refresh,
+  CircleCloseFilled,
+  Loading,
+  VideoPlay,
+  RefreshLeft,
+  CloseBold,
+  Clock,
+  Grid,
+  Search,
+  Document,
+  Monitor,
+  CopyDocument,
+  Delete,
+} from '@element-plus/icons-vue';
+import { TabulatorFull as Tabulator } from 'tabulator-tables';
+import 'tabulator-tables/dist/css/tabulator.min.css';
 
-declare const Tabulator: any;
 declare const XLSX: any;
 
 interface NavigatorWithSerial extends Navigator {
@@ -691,7 +727,7 @@ const fcFormatBytes = (bytes: any): string => {
 };
 
 const showToast = (msg: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-  console.log('[Toast] [' + type + '] ' + msg);
+  ElMessage({ message: msg, type });
 };
 
 const authHeaders = () => {
