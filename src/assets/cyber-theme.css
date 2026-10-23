@@ -180,9 +180,11 @@ body {
 .query-bar {
   margin-bottom: 16px !important;
   padding: 14px 18px !important;
-  background: #ffffff;
+  background: rgba(13, 20, 36, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(0, 240, 255, 0.15) !important;
 }
 
 /* Equal width for all search/filter controls */
@@ -209,12 +211,22 @@ body {
   gap: 8px !important;
 }
 
+.el-card,
+.cyber-card,
+.p-card {
+  background: rgba(13, 20, 36, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 240, 255, 0.15) !important;
+  color: #f1f5f9 !important;
+}
+
 .filter-form .el-form-item__label,
 .el-form--inline .el-form-item__label {
   height: var(--cyber-control-height) !important;
   line-height: var(--cyber-control-height) !important;
   font-weight: 500;
-  color: #475569;
+  color: #94a3b8 !important;
   font-size: 13px;
   margin-bottom: 0 !important;
   padding-right: 0 !important;

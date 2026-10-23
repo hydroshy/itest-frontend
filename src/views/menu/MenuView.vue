@@ -325,23 +325,26 @@ onMounted(() => {
 
 .menu-card {
   --aug-border-all: 1px;
-  --aug-border-bg: #e2e8f0;
-  --aug-tl: 10px;
-  --aug-br: 10px;
-  background: #ffffff;
+  --aug-border-bg: rgba(0, 240, 255, 0.2);
+  --aug-tl: 12px;
+  --aug-br: 12px;
+  background: rgba(13, 20, 36, 0.65) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
   padding: 22px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 .menu-card:hover {
   --aug-border-bg: #00f0ff;
+  background: rgba(18, 27, 48, 0.85) !important;
   transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(0, 240, 255, 0.12);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.25);
 }
 
 .card-top {
@@ -354,24 +357,29 @@ onMounted(() => {
 .card-icon-box {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .menu-card:hover .card-icon-box {
-  transform: scale(1.05);
+  transform: scale(1.08);
+  border-color: rgba(0, 240, 255, 0.4);
 }
 
 .card-tag {
+  font-family: var(--cyber-font-mono, monospace);
   font-size: 11px;
   font-weight: 600;
-  color: #909399;
-  background: #f4f4f5;
+  color: var(--cyber-cyan, #00f0ff);
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.25);
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
 }
 
 .card-body {
@@ -380,17 +388,19 @@ onMounted(() => {
 }
 
 .card-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #303133;
+  font-family: var(--cyber-font-display, sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: #f1f5f9;
   margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
 }
 
 .card-desc {
   font-size: 13px;
-  color: #606266;
+  color: #94a3b8;
   margin: 0;
-  line-height: 1.45;
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -402,10 +412,12 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding-top: 14px;
-  border-top: 1px solid #f2f3f5;
-  color: #409eff;
-  font-size: 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--cyber-cyan, #00f0ff);
+  font-family: var(--cyber-font-mono, monospace);
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .arrow-icon {
