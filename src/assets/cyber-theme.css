@@ -1,0 +1,83 @@
+/* Cyber Watch Dogs 2 / Augmented-UI Theme for iTest 2.0 */
+@import 'augmented-ui/augmented-ui.min.css';
+
+:root {
+  --cyber-bg-darkest: #0a0d14;
+  --cyber-bg-darker: #0f141f;
+  --cyber-bg-card: #151b28;
+  --cyber-border: #1e293b;
+  --cyber-border-highlight: #00f0ff;
+  --cyber-cyan: #00f0ff;
+  --cyber-yellow: #fcee0a;
+  --cyber-text-main: #e2e8f0;
+  --cyber-text-muted: #64748b;
+  --cyber-font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+/* Cyber Form Inputs & Uniform Controls */
+.cyber-input,
+.el-input__wrapper,
+.el-select__wrapper {
+  height: 38px !important;
+  line-height: 38px !important;
+  font-family: inherit;
+  transition: all 0.2s ease-in-out;
+}
+
+.el-button {
+  height: 38px !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.el-button--small {
+  height: 30px !important;
+}
+
+/* Standardized Uniform Filter Bar */
+.filter-bar,
+.table-filter-bar,
+.query-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.filter-bar .el-input,
+.filter-bar .el-select,
+.table-filter-bar .el-input,
+.table-filter-bar .el-select,
+.query-bar .el-input,
+.query-bar .el-select {
+  width: 220px !important;
+}
+
+/* Augmented Cyber Card / Panel utility */
+.cyber-card {
+  --aug-border-all: 1px;
+  --aug-border-bg: #cbd5e1;
+  --aug-tl: 8px;
+  --aug-br: 8px;
+  background: #ffffff;
+  transition: all 0.25s ease;
+}
+
+.cyber-card:hover {
+  --aug-border-bg: #0284c7;
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.12);
+}
+
+/* Cyber Status Tag */
+.cyber-tag {
+  font-family: var(--cyber-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}

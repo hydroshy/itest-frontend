@@ -3,6 +3,9 @@ import { createPinia } from 'pinia';
 import ElementPlus, { ElMessage } from 'element-plus';
 import 'element-plus/dist/index.css';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
+import PrimeVue from 'primevue/config';
+import Aura from '@primevue/themes/aura';
+import './assets/cyber-theme.css';
 
 import App from './App.vue';
 import { router } from './router';
@@ -31,6 +34,14 @@ async function bootstrap(): Promise<void> {
 
   app.use(pinia);
   app.use(ElementPlus);
+  app.use(PrimeVue, {
+    theme: {
+      preset: Aura,
+      options: {
+        darkModeSelector: '.dark',
+      },
+    },
+  });
 
   // Dynamic plugin routes must exist before Vue Router starts its first navigation.
   // A plugin failure is isolated in the store and never prevents the Shell mounting.

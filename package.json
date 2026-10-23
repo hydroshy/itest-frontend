@@ -20,9 +20,12 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "@itest/frontend-sdk": "file:./packages/frontend-sdk",
+    "@primevue/themes": "^4.5.4",
+    "augmented-ui": "^2.0.0",
     "axios": "^1.7.9",
     "element-plus": "^2.9.3",
     "pinia": "^2.3.1",
+    "primevue": "^5.0.3",
     "tabulator-tables": "6.5.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"

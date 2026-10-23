@@ -47,6 +47,7 @@
         :key="card.id"
         class="menu-card"
         :class="{ 'card-highlight': card.id === 'dashboard' }"
+        data-augmented-ui="tl-clip br-clip border"
         @click="navigateTo(card)"
       >
         <div class="card-top">
@@ -348,9 +349,11 @@ onMounted(() => {
 }
 
 .menu-card {
+  --aug-border-all: 1px;
+  --aug-border-bg: #e2e8f0;
+  --aug-tl: 10px;
+  --aug-br: 10px;
   background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e4e7ed;
   padding: 22px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -361,9 +364,9 @@ onMounted(() => {
 }
 
 .menu-card:hover {
+  --aug-border-bg: #00f0ff;
   transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-  border-color: #409eff;
+  box-shadow: 0 10px 24px rgba(0, 240, 255, 0.12);
 }
 
 .card-top {
