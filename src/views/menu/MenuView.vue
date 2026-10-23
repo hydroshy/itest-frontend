@@ -72,6 +72,7 @@ import { useRouter } from 'vue-router';
 import { Refresh, ArrowRight } from '@element-plus/icons-vue';
 import { httpClient } from '@/api/client';
 import { useAuthStore } from '@/stores/auth';
+import { useCtosTransition } from '@/composables/useCtosTransition';
 
 export interface MenuCardItem {
   id: string;
@@ -252,6 +253,8 @@ const filteredCards = computed(() => {
 function navigateTo(card: MenuCardItem) {
   const target = card.route || card.path;
   if (target) {
+    const { triggerTransition } = useCtosTransition();
+    triggerTransition(card.title, 'LAUNCH_INTERFACE');
     // Nếu điều hướng vào plugin từ /menu, đánh dấu viewMode=standalone hoặc from=menu
     // để giao diện plugin chạy ở chế độ thao tác trực tiếp (không hiện sidebar)
     if (target.startsWith('/plugins/')) {

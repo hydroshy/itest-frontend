@@ -756,3 +756,81 @@ body {
   color: var(--cyber-cyan) !important;
   border-color: var(--cyber-cyan) !important;
 }
+
+/* ==========================================================================
+   11. UNIFIED PLUGIN LAYOUT & CONTAINER HARMONIZATION (from-menu & standalone)
+   ========================================================================== */
+.plugin-container,
+.view-container,
+.page-container,
+.isolated-tool-wrapper {
+  background: transparent !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.layout-content.from-menu {
+  padding: 16px 20px !important;
+}
+
+/* Standardized Plugin Header Across All Modules */
+.plugin-header,
+.page-header,
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+  background: transparent !important;
+}
+
+.plugin-header h2,
+.page-header h2,
+.view-header h2,
+.page-title {
+  font-family: var(--cyber-font-display, 'Rajdhani', sans-serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: #f1f5f9 !important;
+  letter-spacing: 0.8px;
+  margin: 0;
+}
+
+.plugin-header p,
+.page-header p,
+.view-header p,
+.page-subtitle {
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  color: #94a3b8 !important;
+  margin: 4px 0 0 0;
+  letter-spacing: 0.3px;
+}
+
+/* Plugin Card / Panel Uniformity */
+.plugin-container .el-card,
+.view-container .el-card,
+.page-container .el-card {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(0, 240, 255, 0.2);
+  --aug-tl: 8px;
+  --aug-br: 8px;
+  background: rgba(13, 20, 36, 0.65) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 240, 255, 0.18) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  margin-bottom: 20px;
+}
+
+.plugin-container .el-card__header,
+.view-container .el-card__header,
+.page-container .el-card__header {
+  border-bottom: 1px solid rgba(0, 240, 255, 0.15) !important;
+  padding: 12px 18px !important;
+  font-family: var(--cyber-font-display, sans-serif);
+  font-weight: 700;
+  color: #f1f5f9;
+}

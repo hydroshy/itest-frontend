@@ -7,7 +7,7 @@
     class="layout-aside"
   >
       <div class="logo-box">
-        <span v-show="!isCollapse" class="logo-text">iTest 2.0</span>
+        <span v-show="!isCollapse" class="logo-text">iTEST 2.0</span>
       </div>
 
       <el-scrollbar>
@@ -16,9 +16,9 @@
           :collapse="isCollapse"
           :collapse-transition="false"
           router
-          background-color="#1e222d"
-          text-color="#a6b2c2"
-          active-text-color="#409eff"
+          background-color="#0b101c"
+          text-color="#94a3b8"
+          active-text-color="#00f0ff"
           class="sidebar-menu"
         >
           <!-- Core Menu Group -->
@@ -120,7 +120,7 @@
             class="app-center-brand"
             @click="router.push('/menu')"
           >
-            <span class="brand-title">iTest 2.0</span>
+            <span class="brand-title">iTEST 2.0</span>
           </el-button>
 
           <el-breadcrumb separator="//" class="breadcrumb breadcrumb-cyber">
@@ -302,7 +302,8 @@ async function handleUserCommand(cmd: string) {
 }
 
 .layout-aside {
-  background-color: #1e222d;
+  background-color: #0b101c;
+  border-right: 1px solid rgba(0, 240, 255, 0.15);
   color: #fff;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -315,19 +316,23 @@ async function handleUserCommand(cmd: string) {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background-color: #161922;
-  font-weight: 700;
-  font-size: 16px;
-  color: #ffffff;
+  background-color: #080c14;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.18);
+  font-family: var(--cyber-font-display, sans-serif);
+  font-weight: 800;
+  font-size: 18px;
+  color: #f1f5f9;
+  letter-spacing: 1px;
 }
 
 .logo-icon {
   font-size: 22px;
-  color: #409eff;
+  color: var(--cyber-cyan, #00f0ff);
 }
 
 .sidebar-menu {
   border-right: none;
+  background-color: transparent !important;
 }
 
 .menu-divider {
@@ -343,7 +348,12 @@ async function handleUserCommand(cmd: string) {
 }
 
 .layout-main-wrapper {
-  background-color: #f3f4f6;
+  background-color: #080c14;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.05) 0%, transparent 70%),
+    linear-gradient(rgba(0, 240, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -351,12 +361,15 @@ async function handleUserCommand(cmd: string) {
 
 .layout-header {
   height: 56px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: rgba(11, 16, 28, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(0, 240, 255, 0.18);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .header-left {
@@ -367,22 +380,36 @@ async function handleUserCommand(cmd: string) {
 
 .collapse-btn {
   font-size: 18px;
-  color: #4b5563;
+  color: var(--cyber-cyan, #00f0ff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.collapse-btn:hover {
+  color: #ffffff;
+  text-shadow: 0 0 8px var(--cyber-cyan);
 }
 
 .app-center-brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
-  font-size: 16px;
-  color: #1f2d3d;
+  font-family: var(--cyber-font-display, sans-serif);
+  font-weight: 800;
+  font-size: 17px;
+  color: #f1f5f9;
   padding: 0;
+  letter-spacing: 0.5px;
+}
+
+.app-center-brand:hover {
+  color: var(--cyber-cyan);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
 }
 
 .app-center-brand .logo-icon {
   font-size: 20px;
-  color: #409eff;
+  color: var(--cyber-cyan, #00f0ff);
 }
 
 .brand-title {

@@ -88,7 +88,13 @@ router.beforeEach((to, from) => {
   return true;
 });
 
-router.afterEach((to) => {
-  const title = (to.meta.title as string) || 'ITEST';
-  document.title = `${title} - iTest 2.0`;
+import { useCtosTransition } from '@/composables/useCtosTransition';
+
+router.afterEach((to, from) => {
+  const title = (to.meta.title as string) || 'iTEST 2.0';
+  document.title = `${title} - iTEST 2.0`;
+  if (from.path && from.path !== to.path) {
+    const { triggerTransition } = useCtosTransition();
+    triggerTransition(title, 'BREACHING_SECTOR');
+  }
 });
