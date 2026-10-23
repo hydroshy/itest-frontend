@@ -1554,7 +1554,7 @@ const resetConfigFilters = () => {
 
 const handleUpdateDeviceStatus = async (
   deviceId: string,
-  updates: { testResult?: string; configStatus?: string; status?: string }
+  updates: { testResult?: string; configStatus?: string; status?: string; statusType?: string }
 ) => {
   try {
     const res = await fetch(`/api/plugins/device-traceability/devices/${deviceId}/status`, {
