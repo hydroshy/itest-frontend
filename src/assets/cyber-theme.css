@@ -251,17 +251,21 @@ body {
 .cyber-hud-panel,
 [data-augmented-ui~="tl-clip"][data-augmented-ui~="br-clip"] {
   --aug-border-all: 1px;
-  --aug-border-bg: #cbd5e1;
+  --aug-border-bg: rgba(0, 240, 255, 0.25);
   --aug-tl: 8px;
   --aug-br: 8px;
-  background: #ffffff;
+  background: rgba(13, 20, 36, 0.65) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  color: #f1f5f9;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .cyber-card:hover,
-.cyber-hud-panel:hover {
+.cyber-hud-panel:hover,
+[data-augmented-ui~="tl-clip"][data-augmented-ui~="br-clip"]:hover {
   --aug-border-bg: var(--cyber-cyan);
-  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.25);
 }
 
 /* Cyber Button with Chamfered Corners */
@@ -486,4 +490,269 @@ body {
   font-family: var(--cyber-font-mono);
   font-weight: 700;
   color: #94a3b8;
+}
+
+/* ==========================================================================
+   6. DARK HUD & GLASSMORPHISM FOR SYSTEM & PLUGINS
+   Comprehensive coverage for Tables, Modals, Cards, Forms, and Tabulator
+   ========================================================================== */
+
+/* Universal Dark HUD Card Containers across all views & plugins */
+.el-card,
+.cyber-card,
+.p-card,
+.box-card,
+.page-card,
+.panel-card {
+  background: rgba(13, 20, 36, 0.65) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(0, 240, 255, 0.18) !important;
+  border-radius: 6px !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.el-card__header {
+  background: rgba(8, 12, 20, 0.5) !important;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.15) !important;
+  color: var(--cyber-cyan) !important;
+  font-family: var(--cyber-font-display) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px;
+}
+
+.el-card__body {
+  color: #cbd5e1 !important;
+}
+
+/* Dark Cyber Tables (Element Plus & PrimeVue) */
+.el-table,
+.el-table__expanded-cell,
+.p-datatable,
+.p-datatable-table {
+  background: rgba(13, 20, 36, 0.55) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(0, 240, 255, 0.15) !important;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.el-table th.el-table__cell,
+.p-datatable-thead > tr > th {
+  background: rgba(8, 12, 20, 0.85) !important;
+  color: var(--cyber-cyan) !important;
+  font-family: var(--cyber-font-display) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.25) !important;
+}
+
+.el-table tr,
+.el-table td.el-table__cell,
+.p-datatable-tbody > tr > td {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #cbd5e1 !important;
+}
+
+.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell,
+.p-datatable-tbody > tr:hover > td {
+  background: rgba(0, 240, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.el-table__inner-wrapper::before {
+  display: none !important;
+}
+
+/* Tabulator Dark Cyber Grid (Used in Plugins) */
+.tabulator {
+  background-color: rgba(13, 20, 36, 0.6) !important;
+  border: 1px solid rgba(0, 240, 255, 0.2) !important;
+  color: #e2e8f0 !important;
+  border-radius: 6px;
+}
+
+.tabulator .tabulator-header {
+  background-color: rgba(8, 12, 20, 0.9) !important;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.3) !important;
+  color: var(--cyber-cyan) !important;
+  font-family: var(--cyber-font-display) !important;
+  font-weight: 700 !important;
+}
+
+.tabulator .tabulator-header .tabulator-col {
+  background-color: transparent !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.tabulator .tabulator-row {
+  background-color: transparent !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.tabulator .tabulator-row:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.tabulator .tabulator-row:hover {
+  background-color: rgba(0, 240, 255, 0.08) !important;
+}
+
+.tabulator .tabulator-cell {
+  border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Modals & Dialogs (Element Plus & PrimeVue) */
+.el-dialog,
+.p-dialog,
+.el-message-box,
+.el-drawer {
+  background: rgba(11, 16, 28, 0.96) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(0, 240, 255, 0.35) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 24px rgba(0, 240, 255, 0.15) !important;
+  color: #f1f5f9 !important;
+}
+
+.el-dialog__header,
+.p-dialog-header {
+  border-bottom: 1px solid rgba(0, 240, 255, 0.2) !important;
+  padding: 16px 20px !important;
+  margin-right: 0 !important;
+}
+
+.el-dialog__title,
+.p-dialog-title {
+  color: var(--cyber-cyan) !important;
+  font-family: var(--cyber-font-display) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+  font-size: 16px !important;
+}
+
+.el-dialog__body,
+.p-dialog-content {
+  color: #cbd5e1 !important;
+  padding: 20px !important;
+}
+
+.el-dialog__footer,
+.p-dialog-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 14px 20px !important;
+}
+
+/* Form Descriptions (el-descriptions) */
+.el-descriptions__body {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+.el-descriptions__label {
+  background: rgba(8, 12, 20, 0.7) !important;
+  color: var(--cyber-cyan) !important;
+  font-weight: 600;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.el-descriptions__content {
+  background: rgba(13, 20, 36, 0.4) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dark Tabs Navigation */
+.el-tabs__header {
+  border-bottom: 1px solid rgba(0, 240, 255, 0.15) !important;
+}
+
+.el-tabs__item {
+  color: #94a3b8 !important;
+  font-family: var(--cyber-font-display) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.el-tabs__item:hover {
+  color: #ffffff !important;
+}
+
+.el-tabs__item.is-active {
+  color: var(--cyber-cyan) !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
+}
+
+.el-tabs__active-bar {
+  background-color: var(--cyber-cyan) !important;
+  box-shadow: 0 0 10px var(--cyber-cyan) !important;
+}
+
+/* Dropdown Poppers & Popovers */
+.el-popper,
+.el-dropdown-menu,
+.el-select-dropdown,
+.el-picker-panel {
+  background: rgba(11, 16, 28, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(0, 240, 255, 0.25) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 240, 255, 0.15) !important;
+}
+
+.el-dropdown-menu__item {
+  color: #cbd5e1 !important;
+}
+
+.el-dropdown-menu__item:hover,
+.el-dropdown-menu__item:focus {
+  background: rgba(0, 240, 255, 0.12) !important;
+  color: var(--cyber-cyan) !important;
+}
+
+.el-select-dropdown__item {
+  color: #cbd5e1 !important;
+}
+
+.el-select-dropdown__item.hover,
+.el-select-dropdown__item:hover {
+  background: rgba(0, 240, 255, 0.12) !important;
+  color: var(--cyber-cyan) !important;
+}
+
+.el-select-dropdown__item.is-selected {
+  color: var(--cyber-cyan) !important;
+  font-weight: 700 !important;
+}
+
+/* Pagination Dark HUD */
+.el-pagination {
+  color: #94a3b8 !important;
+}
+
+.el-pagination button,
+.el-pagination .el-pager li {
+  background: rgba(13, 20, 36, 0.6) !important;
+  border: 1px solid rgba(0, 240, 255, 0.15) !important;
+  color: #cbd5e1 !important;
+  border-radius: 4px !important;
+}
+
+.el-pagination .el-pager li.is-active {
+  background: rgba(0, 240, 255, 0.18) !important;
+  border-color: var(--cyber-cyan) !important;
+  color: var(--cyber-cyan) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2) !important;
+}
+
+.el-pagination button:hover,
+.el-pagination .el-pager li:hover {
+  color: var(--cyber-cyan) !important;
+  border-color: var(--cyber-cyan) !important;
 }

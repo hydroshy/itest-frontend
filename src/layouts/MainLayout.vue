@@ -403,26 +403,32 @@ async function handleUserCommand(cmd: string) {
 }
 
 .user-profile {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(0, 240, 255, 0.25);
+  --aug-tl: 8px;
+  --aug-br: 8px;
+  background: rgba(13, 20, 36, 0.65) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid transparent;
+  padding: 5px 12px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .user-profile:hover {
-  background-color: #f1f5f9;
-  border-color: #e2e8f0;
+  --aug-border-bg: #00f0ff;
+  background: rgba(18, 27, 48, 0.85) !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
+  color: #0d131f;
+  font-weight: 800;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
 }
 
 .user-info-text {
@@ -433,26 +439,30 @@ async function handleUserCommand(cmd: string) {
 }
 
 .user-name {
+  font-family: var(--cyber-font-display, sans-serif);
   font-size: 13px;
-  font-weight: 600;
-  color: #1e293b;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.3px;
 }
 
 .user-role-badge {
+  font-family: var(--cyber-font-mono, monospace);
   font-size: 10px;
   font-weight: 700;
-  color: #0284c7;
+  color: var(--cyber-cyan, #00f0ff);
   letter-spacing: 0.5px;
 }
 
 .dropdown-arrow {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--cyber-cyan, #00f0ff);
   transition: transform 0.2s;
 }
 
 .user-profile:hover .dropdown-arrow {
-  color: #475569;
+  color: #ffffff;
+  transform: translateY(2px);
 }
 
 :deep(.user-dropdown-popper) {
