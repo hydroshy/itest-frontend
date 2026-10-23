@@ -1,27 +1,34 @@
 <template>
   <div v-if="isTransitioning" class="ctos-dissolve-overlay">
-    <!-- Bottom-right Exploding White ASCII Dust Particles -->
-    <div class="ascii-particle-canvas">
-      <span
-        v-for="(p, idx) in particles"
-        :key="idx"
-        class="ascii-particle"
-        :style="{
-          '--dest-x': p.destX + 'px',
-          '--dest-y': p.destY + 'px',
-          '--dest-scale': p.destScale,
-          fontSize: p.size + 'px',
-          animationDelay: p.delay + 'ms',
-          animationDuration: p.duration + 'ms',
-          opacity: p.opacity
-        }"
-      >
-        {{ p.char }}
-      </span>
+    <!-- Background CRT scanlines & subtle vignette -->
+    <div class="ctos-scanlines"></div>
+
+    <!-- CENTER: DedSec Iconic Hacker Glitch (Skull + Glitching Telemetry Matrix) -->
+    <div class="dedsec-center-stage">
+      <div class="dedsec-skull-wrapper">
+        <pre class="dedsec-skull-ascii">
+       ______
+    .-"      "-.
+   /   (X)  (X)   \
+  |   .--------.   |
+  |  /  \/\/\/\ \  |
+   \/  \________/ \/
+    '.__________.'
+        </pre>
+      </div>
+
+      <div class="dedsec-title-matrix">
+        <span class="dedsec-tag">[ D E D S E C ]</span>
+      </div>
+
+      <div class="dedsec-telemetry-stream">
+        <span class="stream-line">{{ glitchLine1 }}</span>
+        <span class="stream-line highlight">{{ glitchLine2 }}</span>
+      </div>
     </div>
 
-    <!-- Bottom-Right Glitch Core: Pure White ASCII ITEST 2.0 with Dissolve -->
-    <div class="ctos-dissolve-core">
+    <!-- BOTTOM-RIGHT: Compact & Crisp ITEST 2.0 Terminal HUD -->
+    <div class="ctos-bottom-right-hud">
       <div class="ctos-meta-header">
         <span class="pulse-dot"></span>
         <span class="sys-label">ITEST 2.0</span>
@@ -29,7 +36,6 @@
         <span class="node-label">{{ targetNode }}</span>
       </div>
 
-      <!-- Pure White Sharp ASCII Art for ITEST 2.0 -->
       <pre class="ascii-title-white">
  ___ _____ _____ ____ _____   ____     ___  
 |_ _|_   _| ____/ ___|_   _| |___ \   / _ \ 
@@ -47,55 +53,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { useCtosTransition } from '@/composables/useCtosTransition';
 
 const { isTransitioning, targetNode, asciiStatus } = useCtosTransition();
 
-interface AsciiParticle {
-  char: string;
-  destX: number;
-  destY: number;
-  destScale: number;
-  size: number;
-  delay: number;
-  duration: number;
-  opacity: number;
-}
+const glitchLine1 = ref('SEC_OVERRIDE // 0xDEADBEEF');
+const glitchLine2 = ref('JOIN_THE_RESISTANCE');
 
-const particles = ref<AsciiParticle[]>([]);
-const GLYPHS = '0123456789ABCDEF$#@%*+=-/\\:;<>[]{}ITEST2.0';
+const TELEMETRY_POOL = [
+  'SEC_OVERRIDE // 0xDEADBEEF',
+  'SYSTEM_BREACH :: ACCESS_GRANTED',
+  'ctOS_KERNEL // ROOT_PRIVILEGES_ACQUIRED',
+  'JOIN_THE_RESISTANCE // DEDSEC_OP',
+  'BYPASS_SECURITY_FIREWALL [OK]',
+  'NODE_INJECT // MEMORY_EXPLOIT_OK',
+  '0x7FFD49A0 // PACKET_INJECTION_ACTIVE',
+  'DECRYPT_STREAM >> 100% VERIFIED',
+  'ANONYMOUS_ROUTING >> ESTABLISHED'
+];
 
-function generateParticles() {
-  const count = 64;
-  const list: AsciiParticle[] = [];
-  
-  for (let i = 0; i < count; i++) {
-    const glyph = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-    // Radiate upwards and leftwards from the bottom-right corner (angle roughly from PI to 1.5*PI, or wide cone)
-    // Angle between 160 deg (2.8 rad) and 290 deg (5.0 rad) pointing towards top-left screen
-    const angle = Math.random() * (Math.PI * 0.9) + (Math.PI * 0.95);
-    const distance = Math.floor(Math.random() * 380) + 80;
-    const destX = Math.round(Math.cos(angle) * distance);
-    const destY = Math.round(Math.sin(angle) * distance);
+let streamInterval: any = null;
 
-    list.push({
-      char: glyph,
-      destX,
-      destY,
-      destScale: +(Math.random() * 0.4 + 0.2).toFixed(2),
-      size: Math.floor(Math.random() * 5) + 10, // 10px - 15px
-      delay: Math.floor(Math.random() * 90),
-      duration: Math.floor(Math.random() * 180) + 380, // 380ms - 560ms
-      opacity: +(Math.random() * 0.5 + 0.5).toFixed(2), // 0.5 - 1.0
-    });
-  }
-  particles.value = list;
+function startGlitchStream() {
+  if (streamInterval) clearInterval(streamInterval);
+  let count = 0;
+  streamInterval = setInterval(() => {
+    glitchLine1.value = TELEMETRY_POOL[Math.floor(Math.random() * TELEMETRY_POOL.length)];
+    glitchLine2.value = TELEMETRY_POOL[Math.floor(Math.random() * TELEMETRY_POOL.length)];
+    count++;
+    if (count > 6) {
+      clearInterval(streamInterval);
+      streamInterval = null;
+    }
+  }, 75);
 }
 
 watch(isTransitioning, (val) => {
   if (val) {
-    generateParticles();
+    startGlitchStream();
+  } else {
+    if (streamInterval) {
+      clearInterval(streamInterval);
+      streamInterval = null;
+    }
+  }
+});
+
+onUnmounted(() => {
+  if (streamInterval) {
+    clearInterval(streamInterval);
+    streamInterval = null;
   }
 });
 </script>
@@ -106,13 +114,12 @@ watch(isTransitioning, (val) => {
   inset: 0;
   z-index: 999999;
   pointer-events: none;
-  background: radial-gradient(circle at bottom right, rgba(6, 9, 16, 0.6) 0%, rgba(2, 4, 8, 0.75) 100%);
+  background: radial-gradient(circle at center, rgba(6, 10, 18, 0.7) 0%, rgba(2, 4, 8, 0.82) 100%);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  padding: 40px 48px;
+  align-items: center;
+  justify-content: center;
   animation: overlay-fade 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   overflow: hidden;
 }
@@ -129,96 +136,174 @@ watch(isTransitioning, (val) => {
   }
 }
 
-/* ASCII Canvas anchored at bottom right */
-.ascii-particle-canvas {
+/* Scanlines overlay */
+.ctos-scanlines {
   position: absolute;
-  bottom: 80px;
-  right: 120px;
-  width: 0;
-  height: 0;
+  inset: 0;
   pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.6;
 }
 
-/* White ASCII Particle bursting towards upper-left */
-.ascii-particle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  color: #ffffff;
-  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
-  font-weight: 700;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
+/* =========================================
+   CENTER: DedSec Skull & Glitch Matrix
+========================================= */
+.dedsec-center-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   user-select: none;
-  transform: translate(0, 0) scale(1);
-  animation-name: particle-burst-out;
-  animation-timing-function: cubic-bezier(0.1, 0.85, 0.3, 1);
-  animation-fill-mode: forwards;
+  animation: dedsec-anim 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
-@keyframes particle-burst-out {
+@keyframes dedsec-anim {
   0% {
-    transform: translate(-50%, -50%) scale(1.1);
+    transform: scale(0.92);
+    opacity: 0;
+    filter: blur(4px) brightness(1.6);
+  }
+  15% {
+    transform: scale(1.03);
     opacity: 1;
+    filter: blur(0px) brightness(1.2);
+  }
+  35% {
+    transform: scale(0.98) translateX(2px);
+  }
+  65% {
+    transform: scale(1);
+    opacity: 0.95;
     filter: blur(0px);
   }
-  40% {
-    opacity: 0.9;
-  }
   100% {
-    transform: translate(calc(-50% + var(--dest-x)), calc(-50% + var(--dest-y))) scale(var(--dest-scale));
+    transform: scale(1.04) translateY(-4px);
     opacity: 0;
-    filter: blur(3px);
+    filter: blur(5px) brightness(1.4);
   }
 }
 
-/* Core anchored at bottom right with Pure White Palette */
-.ctos-dissolve-core {
+/* Skull ASCII */
+.dedsec-skull-wrapper {
   position: relative;
+}
+
+.dedsec-skull-ascii {
+  margin: 0;
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 20px rgba(255, 255, 255, 0.5);
+  animation: dedsec-glitch-flicker 0.25s infinite steps(2);
+}
+
+@keyframes dedsec-glitch-flicker {
+  0%, 100% {
+    transform: none;
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(-2px) skewX(2deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateX(2px) skewX(-2deg);
+    opacity: 0.95;
+  }
+  75% {
+    transform: translateY(1px);
+    opacity: 0.85;
+  }
+}
+
+/* DedSec Tag */
+.dedsec-title-matrix {
+  margin-top: 10px;
+}
+
+.dedsec-tag {
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+/* Telemetry lines under DedSec */
+.dedsec-telemetry-stream {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.stream-line.highlight {
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+}
+
+/* =========================================
+   BOTTOM RIGHT: Watermark ITEST 2.0 HUD
+========================================= */
+.ctos-bottom-right-hud {
+  position: absolute;
+  bottom: 24px;
+  right: 32px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   text-align: right;
   user-select: none;
-  animation: core-dissolve 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+  animation: hud-dissolve 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
-@keyframes core-dissolve {
+@keyframes hud-dissolve {
   0% {
-    transform: scale(0.97) translateY(4px);
+    transform: translateY(4px);
     opacity: 0;
-    letter-spacing: 0.5px;
-    filter: blur(3px) brightness(1.6);
   }
-  18% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-    letter-spacing: 1px;
-    filter: blur(0px) brightness(1.2);
-  }
-  60% {
-    transform: scale(1.02);
+  20% {
+    transform: translateY(0);
     opacity: 0.95;
-    letter-spacing: 1.5px;
-    filter: blur(0.5px);
+  }
+  70% {
+    opacity: 0.9;
   }
   100% {
-    transform: scale(1.05) translateY(-6px);
+    transform: translateY(-4px);
     opacity: 0;
-    letter-spacing: 3.5px;
-    filter: blur(5px) brightness(1.4);
+    filter: blur(3px);
   }
 }
 
-/* Meta Header */
 .ctos-meta-header {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 2px;
-  margin-bottom: 6px;
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
   color: #ffffff;
 }
 
@@ -239,7 +324,7 @@ watch(isTransitioning, (val) => {
 .sys-label {
   font-weight: 900;
   color: #ffffff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
 }
 
 .separator {
@@ -247,36 +332,20 @@ watch(isTransitioning, (val) => {
 }
 
 .node-label {
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 10px;
 }
 
-/* Pure White ASCII Art */
+/* Pure White ASCII Art for ITEST 2.0 (Watermark size) */
 .ascii-title-white {
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.15;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: 0.5px;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 20px rgba(255, 255, 255, 0.5);
-  animation: white-flicker 0.22s infinite;
-}
-
-@keyframes white-flicker {
-  0%, 100% {
-    opacity: 1;
-    transform: none;
-  }
-  30% {
-    opacity: 0.9;
-    transform: translateX(1px);
-  }
-  70% {
-    opacity: 0.95;
-    transform: translateX(-1px);
-  }
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
 }
 
 /* Status Line */
@@ -285,9 +354,9 @@ watch(isTransitioning, (val) => {
   align-items: center;
   gap: 6px;
   font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 1.5px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .prefix {
