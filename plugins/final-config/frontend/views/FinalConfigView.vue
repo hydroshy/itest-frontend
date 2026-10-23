@@ -1,55 +1,81 @@
 <template>
   <section class="final-config-page">
-    <header class="page-header">
-      <div><div class="eyebrow"><span class="live-dot" /> FINAL CONFIG</div><h2>Final Config</h2><p>Tạo cấu hình cuối từ Memmap Payload đã được kiểm tra.</p></div>
-      <el-button :icon="Refresh" :loading="loading" @click="fetchProfiles">Làm mới</el-button>
-    </header>
-    <el-alert v-if="errorMessage" class="load-alert" type="error" show-icon :title="errorMessage" @close="errorMessage = ''" />
+    <!-- Nếu ở chế độ Isolate Tab (ví dụ: chỉ mở Final Config Tool từ Menu Card) -->
+    <div v-if="isIsolatedTool" class="isolated-tool-wrapper">
+      <div class="isolated-header">
+        <el-button link :icon="ArrowLeft" @click="goBackToMenu">Trở về Menu</el-button>
+        <span class="isolated-title">Final Config Tool (Isolated View)</span>
+      </div>
+      <FinalConfigTool />
+    </div>
 
-    <el-tabs v-model="activeTab" class="final-tabs" @tab-change="handleTabChange">
-      <el-tab-pane label="FINAL CONFIG MANAGER" name="manager">
-        <el-card shadow="never"><template #header><div class="card-header"><span>Danh sách Final Config</span><el-input v-model="searchQuery" clearable placeholder="Tìm SKU, SO Number, Item Code..." style="width:300px" /></div></template>
-          <div ref="profileTableEl" v-loading="loading" class="tabulator-host profile-table" />
-        </el-card>
-      </el-tab-pane>
-      <el-tab-pane label="FINAL CONFIG CREATE" name="create">
-        <el-card shadow="never"><template #header><span>Tạo Final Config</span></template>
-          <el-form label-position="top" class="create-form">
-            <el-row :gutter="16">
-              <el-col :xs="24" :md="8"><el-form-item label="Sensor connectivity" required><el-select v-model="form.connectivity"><el-option label="LoRaWAN" value="LoRaWAN" /><el-option label="Sigfox" value="Sigfox" /></el-select></el-form-item></el-col>
-              <el-col :xs="24" :md="8"><el-form-item label="SKU" required><el-input v-model="form.skuSuffix" :prefix-icon="null"><template #prepend>{{ skuPrefix }}</template></el-input></el-form-item></el-col>
-              <el-col :xs="24" :md="8"><el-form-item label="LONG_FW (5FXXXX)" required :error="longFwError"><el-input v-model="form.longFw" maxlength="6" @input="normalizeLongFw" /></el-form-item></el-col>
-            </el-row>
-            <el-row :gutter="16"><el-col :xs="24" :md="12"><el-form-item label="SO_NUMBER" required :error="soError"><el-input v-model="form.soNumber" placeholder="SO/2026/12345" /></el-form-item></el-col><el-col :xs="24" :md="12"><el-form-item label="ITEM_CODE" required><el-input v-model="form.itemCode" placeholder="WSLRW-ATH-11" /></el-form-item></el-col></el-row>
-          </el-form>
-          <el-alert v-if="form.memmapId && !registers.length" title="Memmap Payload không có register hợp lệ từ địa chỉ 303 trở lên." type="warning" :closable="false" />
-          <div v-if="registers.length" class="register-heading"><span><strong>{{ selectedCount }}</strong> / {{ registers.length }} registers được chọn</span><el-tag :type="hasInvalidSelected ? 'danger' : 'success'">{{ hasInvalidSelected ? 'Có cấu hình không hợp lệ' : 'Tất cả cấu hình đã chọn hợp lệ' }}</el-tag></div>
-          <el-alert v-if="hasInvalidSelected" class="validation-alert" type="warning" :closable="false" show-icon :title="invalidSelectedMessage" />
-          <div ref="registerTableEl" class="tabulator-host register-table" />
-          <div class="actions"><el-button @click="resetCreate">Đặt lại</el-button><el-button type="primary" :loading="saving" :disabled="!canCreate" @click="createProfile">Create Final Config</el-button></div>
-        </el-card>
-      </el-tab-pane>
-      <el-tab-pane label="FINAL CONFIG TOOL" name="tool">
-        <FinalConfigTool />
-      </el-tab-pane>
-    </el-tabs>
+    <!-- Chế độ đầy đủ với các Tab thông thường -->
+    <template v-else>
+      <header class="page-header">
+        <div><div class="eyebrow"><span class="live-dot" /> FINAL CONFIG</div><h2>Final Config</h2><p>Tạo cấu hình cuối từ Memmap Payload đã được kiểm tra.</p></div>
+        <el-button :icon="Refresh" :loading="loading" @click="fetchProfiles">Làm mới</el-button>
+      </header>
+      <el-alert v-if="errorMessage" class="load-alert" type="error" show-icon :title="errorMessage" @close="errorMessage = ''" />
 
-    <el-dialog v-model="detailVisible" title="Chi tiết Final Config" width="90%" destroy-on-close><div v-loading="detailLoading"><div v-if="detail" class="details"><b>{{ detail.sku }}</b><span>SO: {{ detail.soNumber || detail.so_number }}</span><span>ITEM: {{ detail.itemCode || detail.item_code }}</span></div><div ref="detailTableEl" class="tabulator-host register-table" /></div></el-dialog>
+      <el-tabs v-model="activeTab" class="final-tabs" @tab-change="handleTabChange">
+        <el-tab-pane label="FINAL CONFIG MANAGER" name="manager">
+          <el-card shadow="never"><template #header><div class="card-header"><span>Danh sách Final Config</span><el-input v-model="searchQuery" clearable placeholder="Tìm SKU, SO Number, Item Code..." style="width:300px" /></div></template>
+            <div ref="profileTableEl" v-loading="loading" class="tabulator-host profile-table" />
+          </el-card>
+        </el-tab-pane>
+        <el-tab-pane label="FINAL CONFIG CREATE" name="create">
+          <el-card shadow="never"><template #header><span>Tạo Final Config</span></template>
+            <el-form label-position="top" class="create-form">
+              <el-row :gutter="16">
+                <el-col :xs="24" :md="8"><el-form-item label="Sensor connectivity" required><el-select v-model="form.connectivity"><el-option label="LoRaWAN" value="LoRaWAN" /><el-option label="Sigfox" value="Sigfox" /></el-select></el-form-item></el-col>
+                <el-col :xs="24" :md="8"><el-form-item label="SKU" required><el-input v-model="form.skuSuffix" :prefix-icon="null"><template #prepend>{{ skuPrefix }}</template></el-input></el-form-item></el-col>
+                <el-col :xs="24" :md="8"><el-form-item label="LONG_FW (5FXXXX)" required :error="longFwError"><el-input v-model="form.longFw" maxlength="6" @input="normalizeLongFw" /></el-form-item></el-col>
+              </el-row>
+              <el-row :gutter="16"><el-col :xs="24" :md="12"><el-form-item label="SO_NUMBER" required :error="soError"><el-input v-model="form.soNumber" placeholder="SO/2026/12345" /></el-form-item></el-col><el-col :xs="24" :md="12"><el-form-item label="ITEM_CODE" required><el-input v-model="form.itemCode" placeholder="WSLRW-ATH-11" /></el-form-item></el-col></el-row>
+            </el-form>
+            <el-alert v-if="form.memmapId && !registers.length" title="Memmap Payload không có register hợp lệ từ địa chỉ 303 trở lên." type="warning" :closable="false" />
+            <div v-if="registers.length" class="register-heading"><span><strong>{{ selectedCount }}</strong> / {{ registers.length }} registers được chọn</span><el-tag :type="hasInvalidSelected ? 'danger' : 'success'">{{ hasInvalidSelected ? 'Có cấu hình không hợp lệ' : 'Tất cả cấu hình đã chọn hợp lệ' }}</el-tag></div>
+            <el-alert v-if="hasInvalidSelected" class="validation-alert" type="warning" :closable="false" show-icon :title="invalidSelectedMessage" />
+            <div ref="registerTableEl" class="tabulator-host register-table" />
+            <div class="actions"><el-button @click="resetCreate">Đặt lại</el-button><el-button type="primary" :loading="saving" :disabled="!canCreate" @click="createProfile">Create Final Config</el-button></div>
+          </el-card>
+        </el-tab-pane>
+        <el-tab-pane label="FINAL CONFIG TOOL" name="tool">
+          <FinalConfigTool />
+        </el-tab-pane>
+      </el-tabs>
+
+      <el-dialog v-model="detailVisible" title="Chi tiết Final Config" width="90%" destroy-on-close><div v-loading="detailLoading"><div v-if="detail" class="details"><b>{{ detail.sku }}</b><span>SO: {{ detail.soNumber || detail.so_number }}</span><span>ITEM: {{ detail.itemCode || detail.item_code }}</span></div><div ref="detailTableEl" class="tabulator-host register-table" /></div></el-dialog>
+    </template>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Refresh } from '@element-plus/icons-vue';
+import { Refresh, ArrowLeft } from '@element-plus/icons-vue';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 import FinalConfigTool from '../components/FinalConfigTool.vue';
 import { validateRegisterConfig } from '../utils/validator';
 
 type Row = Record<string, any>;
+const route = useRoute();
+const router = useRouter();
+
+// Isolated view check: khi url có ?tab=tool hoặc ?isolate=true
+const isIsolatedTool = computed(() => {
+  return route.query.tab === 'tool';
+});
+
+function goBackToMenu() {
+  router.push('/menu');
+}
+
 const API = '/api/plugins/final-config'; const MEMMAP_API = '/api/plugins/memmap-manager';
-const activeTab = ref('manager'), loading = ref(false), saving = ref(false), errorMessage = ref(''), searchQuery = ref('');
+const activeTab = ref(route.query.tab === 'tool' ? 'tool' : (route.query.tab === 'create' ? 'create' : 'manager'));
+const loading = ref(false), saving = ref(false), errorMessage = ref(''), searchQuery = ref('');
 const profiles = ref<Row[]>([]), memmapProfiles = ref<Row[]>([]), registers = ref<Row[]>([]), detail = ref<Row | null>(null), detailVisible = ref(false), detailLoading = ref(false);
 const form = ref({ connectivity: 'LoRaWAN', skuSuffix: '', longFw: '', soNumber: '', itemCode: '', memmapId: '' });
 const profileTableEl = ref<HTMLElement>(), registerTableEl = ref<HTMLElement>(), detailTableEl = ref<HTMLElement>(); let profileTable: Tabulator | undefined, registerTable: Tabulator | undefined, detailTable: Tabulator | undefined;
@@ -79,5 +105,23 @@ watch(searchQuery, filterProfiles); watch([sku, () => form.value.longFw, memmapP
 </script>
 
 <style scoped>
+.isolated-tool-wrapper {
+  padding: 12px 16px;
+  background: #ffffff;
+  border-radius: 8px;
+}
+.isolated-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+}
+.isolated-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
 .final-config-page{display:flex;flex-direction:column;gap:16px}.page-header,.card-header,.register-heading,.actions,.details{display:flex;align-items:center;gap:12px}.page-header,.card-header,.register-heading{justify-content:space-between}.eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;color:#0284c7}.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#0284c7;margin-right:7px}.page-header h2{margin:4px 0;font-size:22px;color:#0f172a}.page-header p{margin:0;color:#64748b;font-size:13px}.create-form{margin-bottom:12px}.tabulator-host{width:100%}.profile-table{min-height:150px}.register-table{margin-top:14px;border:1px solid #dbe4ef;border-radius:6px;overflow:hidden}.register-heading{margin-top:16px;font-size:13px;color:#475569}.actions{justify-content:flex-end;margin-top:16px}.details{padding:0 0 14px;flex-wrap:wrap;color:#475569}:deep(.tabulator){font-size:12px;border:0}:deep(.tabulator .tabulator-header){background:#f1f5f9}:deep(.tabulator .tabulator-row.tabulator-selected),:deep(.tabulator .tabulator-row.tabulator-selected:hover){background:inherit;color:inherit}:deep(.tabulator .tabulator-row.invalid-row){background:#fee2e2}:deep(.check-pass){color:#059669;font-weight:700}:deep(.check-fail){color:#dc2626;font-weight:700}@media(max-width:720px){.page-header,.card-header,.register-heading{flex-direction:column;align-items:stretch}}
 </style>

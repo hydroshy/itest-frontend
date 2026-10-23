@@ -392,7 +392,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   Files,
@@ -412,8 +413,29 @@ import {
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 
+const route = useRoute();
+
 // Active Tab
-const activeTab = ref('sale-orders');
+const activeTab = ref(
+  (route?.query?.tab === 'devices' || route?.query?.tab === 'testing-devices') ? 'testing-devices' :
+  (route?.query?.tab === 'config' || route?.query?.tab === 'config-devices') ? 'config-devices' :
+  (route?.query?.tab as string) || 'sale-orders'
+);
+
+watch(() => route?.query?.tab, (newTab) => {
+  if (newTab) {
+    if (newTab === 'devices' || newTab === 'testing-devices') {
+      activeTab.value = 'testing-devices';
+    } else if (newTab === 'config' || newTab === 'config-devices') {
+      activeTab.value = 'config-devices';
+    } else if (newTab === 'so' || newTab === 'sale-orders') {
+      activeTab.value = 'sale-orders';
+    } else {
+      activeTab.value = newTab as string;
+    }
+    onTabChange(activeTab.value);
+  }
+});
 
 // Tabulator Instances & Container Refs
 const soTableRef = ref<HTMLElement | null>(null);

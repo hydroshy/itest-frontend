@@ -9,6 +9,35 @@ export const finalConfigPlugin: FrontendPluginDefinition = {
     sdkVersion: '^1.0.0',
     description: 'Quản lý và tạo cấu hình cuối (Final Config) từ Memmap Payload.',
     author: 'ITEST IoT Platform Team',
+    features: [
+      {
+        id: 'final-config:tool',
+        title: 'Final Config Tool',
+        description: 'Công cụ nạp cấu hình cuối, ghi AppKey và kiểm tra Modbus cho thiết bị IoT',
+        icon: 'Cpu',
+        tab: 'tool',
+        route: '/plugins/final-config?tab=tool',
+        order: 1,
+      },
+      {
+        id: 'final-config:manager',
+        title: 'Quản Lý Final Config',
+        description: 'Xem danh sách và chi tiết các cấu hình Final Config đã lưu',
+        icon: 'Files',
+        tab: 'manager',
+        route: '/plugins/final-config?tab=manager',
+        order: 2,
+      },
+      {
+        id: 'final-config:create',
+        title: 'Tạo Final Config Mới',
+        description: 'Tạo cấu hình cuối mới từ Memmap Payload đã được kiểm tra',
+        icon: 'Plus',
+        tab: 'create',
+        route: '/plugins/final-config?tab=create',
+        order: 3,
+      },
+    ],
   },
 
   async setup(context) {

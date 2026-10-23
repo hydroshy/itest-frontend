@@ -82,7 +82,7 @@ async function handleLogin() {
       });
 
       ElMessage.success('Đăng nhập thành công');
-      const redirect = (route.query.redirect as string) || '/dashboard';
+      const redirect = (route.query.redirect as string) || '/menu';
       router.push(redirect);
     } catch (err: any) {
       ElMessage.error(err?.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');

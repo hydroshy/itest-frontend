@@ -19,6 +19,11 @@
           class="sidebar-menu"
         >
           <!-- Core Menu Group -->
+          <el-menu-item index="/menu">
+            <el-icon><Grid /></el-icon>
+            <template #title>Trung tâm Ứng dụng</template>
+          </el-menu-item>
+
           <el-menu-item index="/dashboard">
             <el-icon><Odometer /></el-icon>
             <template #title>Bảng điều khiển</template>

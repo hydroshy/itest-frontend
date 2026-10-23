@@ -8,8 +8,14 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'main-layout',
     component: MainLayout,
-    redirect: '/dashboard',
+    redirect: '/menu',
     children: [
+      {
+        path: 'menu',
+        name: 'MenuLauncher',
+        component: () => import('@/views/menu/MenuView.vue'),
+        meta: { title: 'Trung tâm Ứng dụng', icon: 'Grid', requiresAuth: true },
+      },
       {
         path: 'dashboard',
         name: 'Dashboard',

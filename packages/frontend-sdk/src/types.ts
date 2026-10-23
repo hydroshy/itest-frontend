@@ -78,6 +78,18 @@ export interface FrontendExtensionPoint {
   pluginId?: string;
 }
 
+export interface FrontendFeatureDefinition {
+  id: string; // e.g. 'final-config:tool'
+  title: string;
+  description?: string;
+  icon?: string;
+  tab?: string; // Tab identifier inside the view (e.g. 'tool')
+  route?: string; // Target route with query, e.g. '/plugins/final-config?tab=tool'
+  order?: number;
+  permissions?: string[];
+  permission?: string;
+}
+
 export interface FrontendPluginManifest {
   id: string;
   name: string;
@@ -91,6 +103,7 @@ export interface FrontendPluginManifest {
   menus?: FrontendMenuDefinition[];
   widgets?: FrontendWidgetDefinition[];
   extensions?: FrontendExtensionPoint[];
+  features?: FrontendFeatureDefinition[];
   permissions?: string[];
   dependencies?: Record<string, string>;
 }
@@ -127,6 +140,7 @@ export interface FrontendPluginContext {
   registerMenu(menu: FrontendMenuDefinition): void;
   registerWidget(widget: FrontendWidgetDefinition): void;
   registerExtension(extension: FrontendExtensionPoint): void;
+  registerFeature?(feature: FrontendFeatureDefinition): void;
   permissions: {
     hasPermission(permission: string): boolean;
     hasAnyPermission(permissions: string[]): boolean;
