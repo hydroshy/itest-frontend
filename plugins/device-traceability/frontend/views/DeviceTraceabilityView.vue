@@ -1,349 +1,228 @@
 <template>
-  <div class="traceability-view">
-    <!-- Header -->
-    <div class="view-header">
-      <div class="header-left">
-        <div class="header-icon-box">
-          <el-icon class="icon-brand"><Files /></el-icon>
-        </div>
-        <div>
-          <h2 class="view-title">DEVICE TRACEABILITY</h2>
-          <p class="view-subtitle">
-            Hệ thống quản lý truy xuất nguồn gốc thiết bị, Sale Orders (SO), Work Authorizations (WA) và kết quả kiểm thử phần cứng.
-          </p>
-        </div>
+  <div class="traceability-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-title">
+        <h2><el-icon><Files /></el-icon> Quản Lý Truy Xuất Nguồn Gốc (Traceability)</h2>
+        <span class="subtitle">Quản lý Sale Order, Work Authorization, Thiết Bị Kiểm Thử &amp; Cấu Hình Cuối</span>
       </div>
-      <div class="header-right">
-        <el-tag effect="dark" type="success" class="header-tag">
-          <el-icon><Check /></el-icon> BI Metabase Ready
-        </el-tag>
-        <el-tag effect="plain" type="info">v2.0.0</el-tag>
+      <div class="header-actions">
+        <el-button type="primary" :icon="Plus" @click="openCreateSoDialog">Tạo Sale Order Mới</el-button>
+        <el-button type="success" :icon="Upload" @click="openImportCsvDialog">Import CSV Thiết Bị</el-button>
+        <el-button :icon="Refresh" @click="refreshAllData">Làm mới dữ liệu</el-button>
       </div>
     </div>
 
     <!-- Main Navigation Tabs -->
-    <el-tabs v-model="activeTab" class="traceability-tabs" type="border-card">
-      <!-- TAB 1: SALE ORDERS (SO & WA) -->
-      <el-tab-pane name="sale-orders">
-        <template #label>
-          <span class="tab-label">
-            <el-icon><List /></el-icon> Đơn Hàng (Sale Orders)
-          </span>
-        </template>
-
-        <div class="tab-toolbar">
-          <div class="search-filters">
-            <el-input
-              v-model="soSearchQuery"
-              placeholder="Tìm theo SO hoặc Khách hàng..."
-              prefix-icon="Search"
-              clearable
-              style="width: 280px"
-              @input="filterSaleOrders"
-            />
-            <el-button @click="fetchSaleOrders" :loading="loadingSo">
-              <el-icon><Refresh /></el-icon> Làm mới
-            </el-button>
-          </div>
-
-          <div class="action-buttons">
-            <el-button type="primary" @click="openCreateSoDialog">
-              <el-icon><Plus /></el-icon> Tạo Mới Sale Order
-            </el-button>
-          </div>
-        </div>
-
-        <!-- Sale Orders Table -->
-        <el-table
-          :data="pagedSaleOrders"
-          v-loading="loadingSo"
-          stripe
-          border
-          style="width: 100%"
-          highlight-current-row
-          @current-change="handleSoRowSelect"
-        >
-          <el-table-column prop="soNumber" label="Mã Sale Order (SO)" width="180">
-            <template #default="{ row }">
-              <span class="font-bold font-mono text-primary">{{ row.soNumber }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="customerName" label="Khách Hàng" min-width="160">
-            <template #default="{ row }">
-              {{ row.customerName || 'N/A' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Số Lượng WA" width="130" align="center">
-            <template #default="{ row }">
-              <el-tag size="small" type="info">
-                {{ row.workAuthorizations ? row.workAuthorizations.length : (row.waCount || 0) }} WAs
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="Tiến Độ Thiết Bị" min-width="220">
-            <template #default="{ row }">
-              <div class="progress-cell">
-                <el-progress
-                  :percentage="calcSoProgress(row)"
-                  :status="calcSoProgress(row) === 100 ? 'success' : undefined"
-                  style="flex: 1"
-                />
-                <span class="progress-text">
-                  {{ (row.stats && row.stats.configPassCount) || 0 }}/{{ (row.stats && row.stats.totalDevices) || 0 }} Đạt
-                </span>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="notes" label="Ghi Chú" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="createdAt" label="Ngày Tạo" width="160">
-            <template #default="{ row }">
-              {{ formatDateTime(row.createdAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Thao Tác" width="180" fixed="right" align="center">
-            <template #default="{ row }">
-              <el-button size="small" type="primary" link @click.stop="openCreateWaDialog(row)">
-                <el-icon><Plus /></el-icon> Thêm WA
-              </el-button>
-              <el-button size="small" type="success" link @click.stop="goToTestingTabWithSo(row)">
-                <el-icon><Upload /></el-icon> Import CSV
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <!-- Sub-panel: Work Authorizations under selected SO -->
-        <div v-if="selectedSo" class="order-devices-panel mt-4">
-          <div class="panel-header">
-            <div class="panel-title">
-              <el-icon><FolderOpened /></el-icon>
-              Danh sách Work Authorizations (WA) thuộc SO: 
-              <span class="text-primary font-mono font-bold">{{ selectedSo.soNumber }}</span>
+    <el-tabs v-model="activeTab" type="border-card" class="main-tabs" @tab-change="onTabChange">
+      <!-- TAB 1: SALE ORDERS (CÂY DỮ LIỆU SO -> WA -> DEVICE) -->
+      <el-tab-pane label="SALE ORDERS (Cây SO -> WA -> Device)" name="sale-orders">
+        <div class="tab-content">
+          <div class="filter-bar">
+            <div class="filter-left">
+              <el-input
+                v-model="soSearchNumber"
+                placeholder="Tìm mã SO..."
+                clearable
+                style="width: 200px"
+                :prefix-icon="Search"
+                @clear="loadSoTreeData"
+                @keyup.enter="loadSoTreeData"
+              />
+              <el-input
+                v-model="soSearchCustomer"
+                placeholder="Tìm tên khách hàng..."
+                clearable
+                style="width: 220px"
+                :prefix-icon="Search"
+                @clear="loadSoTreeData"
+                @keyup.enter="loadSoTreeData"
+              />
+              <el-button type="primary" :icon="Search" @click="loadSoTreeData">Tìm kiếm</el-button>
+              <el-button @click="resetSoFilters">Đặt lại</el-button>
             </div>
-            <div class="panel-actions">
-              <el-button size="small" type="primary" @click="openCreateWaDialog(selectedSo)">
-                <el-icon><Plus /></el-icon> Tạo WA Mới
-              </el-button>
-              <el-button size="small" @click="fetchSoDetail(selectedSo.id)">
-                <el-icon><Refresh /></el-icon> Cập nhật
-              </el-button>
+            <div class="filter-right">
+              <el-button size="small" @click="expandAllSoTree">Mở rộng tất cả</el-button>
+              <el-button size="small" @click="collapseAllSoTree">Thu gọn tất cả</el-button>
+              <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải vào dòng để mở Menu Thao tác (Tạo WA, Đổi trạng thái, Xóa...)</span>
             </div>
           </div>
 
-          <el-table
-            :data="selectedSo.workAuthorizations || []"
-            v-loading="loadingSoDetail"
-            size="small"
-            border
-            style="width: 100%"
-          >
-            <el-table-column prop="waNumber" label="Mã WA (WA/xxxx/xxxxx)" width="220">
-              <template #default="{ row }">
-                <el-tag type="warning" effect="plain" class="font-mono font-bold">{{ row.waNumber }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="itemCode" label="Item Code" min-width="180">
-              <template #default="{ row }">
-                <span class="font-mono">{{ row.itemCode || 'Chưa gán' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="plannedQuantity" label="SL Kế Hoạch" width="120" align="center">
-              <template #default="{ row }">
-                {{ row.plannedQuantity || 0 }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="notes" label="Ghi Chú" min-width="180" show-overflow-tooltip />
-            <el-table-column prop="createdAt" label="Ngày Tạo" width="160">
-              <template #default="{ row }">
-                {{ formatDateTime(row.createdAt) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="Thao Tác" width="160" align="center">
-              <template #default="{ row }">
-                <el-button size="small" type="primary" link @click="goToTestingTabWithWa(selectedSo, row)">
-                  <el-icon><Upload /></el-icon> Import Thiết Bị
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+          <!-- Tabulator Tree Container -->
+          <div class="table-wrapper">
+            <div ref="soTableRef" class="tabulator-custom-theme"></div>
+            <div v-if="soTreeLoading" class="loading-overlay">
+              <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải cây dữ liệu Sale Order...</span>
+            </div>
+          </div>
         </div>
       </el-tab-pane>
 
-      <!-- TAB 2: DEVICE TESTING LIST & CSV IMPORT -->
-      <el-tab-pane name="device-testing">
-        <template #label>
-          <span class="tab-label">
-            <el-icon><Checked /></el-icon> Danh Sách Thiết Bị Đã Test (Device Testing List)
-          </span>
-        </template>
-
-        <div class="tab-toolbar">
-          <div class="search-filters">
-            <el-select
-              v-model="filterTestingSoId"
-              placeholder="Lọc theo Sale Order (SO)"
-              clearable
-              filterable
-              style="width: 220px"
-              @change="fetchDevices"
-            >
-              <el-option
-                v-for="so in saleOrdersList"
-                :key="so.id"
-                :label="`${so.soNumber} (${so.customerName || 'N/A'})`"
-                :value="so.id"
+      <!-- TAB 2: DEVICE TESTING LIST -->
+      <el-tab-pane label="DEVICE TESTING LIST (Danh Sách Kiểm Thử)" name="device-testing">
+        <div class="tab-content">
+          <div class="filter-bar">
+            <div class="filter-left">
+              <el-input
+                v-model="testingSearchSerial"
+                placeholder="Tìm S/N hoặc DevEUI..."
+                clearable
+                style="width: 220px"
+                :prefix-icon="Search"
+                @clear="loadTestingDevices"
+                @keyup.enter="loadTestingDevices"
               />
-            </el-select>
-
-            <el-select
-              v-model="filterTestingWaId"
-              placeholder="Lọc theo WA"
-              clearable
-              filterable
-              style="width: 220px"
-              @change="fetchDevices"
-            >
-              <el-option
-                v-for="wa in availableWas"
-                :key="wa.id"
-                :label="`${wa.waNumber} (${wa.itemCode || 'N/A'})`"
-                :value="wa.id"
+              <el-input
+                v-model="testingSearchSo"
+                placeholder="Lọc theo Mã SO..."
+                clearable
+                style="width: 180px"
+                :prefix-icon="Search"
+                @clear="loadTestingDevices"
+                @keyup.enter="loadTestingDevices"
               />
-            </el-select>
-
-            <el-input
-              v-model="searchDeviceSerial"
-              placeholder="Tìm theo Serial Number..."
-              prefix-icon="Search"
-              clearable
-              style="width: 200px"
-              @input="fetchDevices"
-            />
-
-            <el-select
-              v-model="filterTestResult"
-              placeholder="Kết quả test"
-              clearable
-              style="width: 140px"
-              @change="fetchDevices"
-            >
-              <el-option label="PASS" value="PASS" />
-              <el-option label="FAIL" value="FAIL" />
-              <el-option label="PENDING" value="PENDING" />
-            </el-select>
-
-            <el-button @click="fetchDevices" :loading="loadingDevices">
-              <el-icon><Refresh /></el-icon> Làm mới
-            </el-button>
+              <el-select
+                v-model="testingFilterResult"
+                placeholder="Kết quả Test"
+                clearable
+                style="width: 150px"
+                @change="loadTestingDevices"
+              >
+                <el-option label="Tất cả kết quả" value="" />
+                <el-option label="PASS" value="PASS" />
+                <el-option label="FAIL" value="FAIL" />
+                <el-option label="NONE / PENDING" value="NONE" />
+              </el-select>
+              <el-button type="primary" :icon="Search" @click="loadTestingDevices">Lọc danh sách</el-button>
+              <el-button @click="resetTestingFilters">Đặt lại</el-button>
+            </div>
+            <div class="filter-right">
+              <el-button type="success" :icon="Upload" size="small" @click="openImportCsvDialog">Import CSV</el-button>
+              <el-button :icon="Refresh" size="small" @click="loadTestingDevices">Làm mới</el-button>
+              <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải để đổi trạng thái Test hoặc Xóa thiết bị</span>
+            </div>
           </div>
 
-          <div class="action-buttons">
-            <el-button type="success" @click="openImportCsvDialog">
-              <el-icon><Upload /></el-icon> Import File CSV Đã Test
-            </el-button>
+          <!-- Tabulator Testing Container -->
+          <div class="table-wrapper">
+            <div ref="testingTableRef" class="tabulator-custom-theme"></div>
+            <div v-if="testingLoading" class="loading-overlay">
+              <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải danh sách thiết bị kiểm thử...</span>
+            </div>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar">
+            <el-pagination
+              v-model:current-page="testingPage"
+              v-model:page-size="testingLimit"
+              :page-sizes="[20, 50, 100, 200]"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="testingTotal"
+              @size-change="loadTestingDevices"
+              @current-change="loadTestingDevices"
+            />
           </div>
         </div>
+      </el-tab-pane>
 
-        <!-- Devices List Table -->
-        <el-table
-          :data="devicesList"
-          v-loading="loadingDevices"
-          stripe
-          border
-          style="width: 100%"
-        >
-          <el-table-column prop="serialNumber" label="Serial Number (S/N)" width="200" fixed>
-            <template #default="{ row }">
-              <span class="font-bold font-mono text-primary">{{ row.serialNumber }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Gắn vào SO / WA" width="240">
-            <template #default="{ row }">
-              <div>
-                <span class="text-xs text-muted">SO: </span>
-                <span class="font-mono font-bold">{{ row.so?.so_number || row.soNumber || 'N/A' }}</span>
-              </div>
-              <div v-if="row.wa?.wa_number || row.waNumber">
-                <span class="text-xs text-muted">WA: </span>
-                <el-tag size="small" type="warning" effect="plain" class="font-mono">
-                  {{ row.wa?.wa_number || row.waNumber }}
-                </el-tag>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="devEui" label="DevEUI / MAC" width="180">
-            <template #default="{ row }">
-              <span class="font-mono">{{ row.devEui || '—' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="itemCode" label="Item Code / SKU" width="180">
-            <template #default="{ row }">
-              <span>{{ row.itemCode || row.sku || '—' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="testResult" label="Kết Quả Test" width="130" align="center">
-            <template #default="{ row }">
-              <el-tag
-                :type="row.testResult === 'PASS' ? 'success' : row.testResult === 'FAIL' ? 'danger' : 'info'"
-                effect="dark"
-                class="font-bold"
+      <!-- TAB 3: DEVICE FINAL CONFIG LIST -->
+      <el-tab-pane label="DEVICE FINAL CONFIG LIST (Cấu Hình Cuối)" name="device-final-config">
+        <div class="tab-content">
+          <div class="filter-bar">
+            <div class="filter-left">
+              <el-input
+                v-model="configSearchSerial"
+                placeholder="Tìm S/N hoặc DevEUI..."
+                clearable
+                style="width: 220px"
+                :prefix-icon="Search"
+                @clear="loadFinalConfigDevices"
+                @keyup.enter="loadFinalConfigDevices"
+              />
+              <el-select
+                v-model="configFilterStatus"
+                placeholder="Trạng thái Config"
+                clearable
+                style="width: 180px"
+                @change="loadFinalConfigDevices"
               >
-                {{ row.testResult || 'PENDING' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="configStatus" label="Final Config" width="160" align="center">
-            <template #default="{ row }">
-              <el-tag
-                :type="getConfigStatusTagType(row.configStatus)"
-                effect="plain"
-              >
-                {{ row.configStatus || 'PENDING' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="testStation" label="Trạm Test" width="120" />
-          <el-table-column prop="testPerson" label="Kỹ Thuật Viên" width="130" />
-          <el-table-column prop="testedAt" label="Thời Gian Test" width="170">
-            <template #default="{ row }">
-              {{ formatDateTime(row.testedAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Chi Tiết Test" min-width="120" align="center">
-            <template #default="{ row }">
-              <el-button size="small" type="info" link @click="showRawTestDialog(row)">
-                <el-icon><View /></el-icon> Xem Raw Data
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+                <el-option label="Tất cả trạng thái" value="" />
+                <el-option label="CONFIGURED_PASS" value="CONFIGURED_PASS" />
+                <el-option label="CONFIG_FAILED" value="CONFIG_FAILED" />
+                <el-option label="UNCONFIGURED / NONE" value="NONE" />
+              </el-select>
+              <el-button type="primary" :icon="Search" @click="loadFinalConfigDevices">Lọc danh sách</el-button>
+              <el-button @click="resetConfigFilters">Đặt lại</el-button>
+            </div>
+            <div class="filter-right">
+              <el-button :icon="Refresh" size="small" @click="loadFinalConfigDevices">Làm mới</el-button>
+              <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải để xem Session / Đổi trạng thái Config / Xóa</span>
+            </div>
+          </div>
 
-        <!-- Pagination -->
-        <div class="pagination-wrapper mt-4">
-          <el-pagination
-            v-model:current-page="devicePage"
-            v-model:page-size="deviceLimit"
-            :total="deviceTotal"
-            :page-sizes="[20, 50, 100, 200]"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="fetchDevices"
-            @current-change="fetchDevices"
-          />
+          <!-- Tabulator Config Container -->
+          <div class="table-wrapper">
+            <div ref="configTableRef" class="tabulator-custom-theme"></div>
+            <div v-if="configLoading" class="loading-overlay">
+              <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải danh sách thiết bị cấu hình cuối...</span>
+            </div>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar">
+            <el-pagination
+              v-model:current-page="configPage"
+              v-model:page-size="configLimit"
+              :page-sizes="[20, 50, 100, 200]"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="configTotal"
+              @size-change="loadFinalConfigDevices"
+              @current-change="loadFinalConfigDevices"
+            />
+          </div>
         </div>
       </el-tab-pane>
     </el-tabs>
 
-    <!-- DIALOG: TẠO MỚI SALE ORDER -->
+    <!-- Dialogs: Raw Test Data Viewer, Session Audit Viewer, SO/WA/CSV Dialogs -->
+    <el-dialog v-model="rawTestDialogVisible" title="Chi Tiết Dữ Liệu Kiểm Thử Gốc" width="650px">
+      <div v-if="selectedRawDevice">
+        <p><strong>Thiết bị:</strong> {{ selectedRawDevice.serialNumber || selectedRawDevice.code }} | <strong>DevEUI:</strong> {{ selectedRawDevice.devEui || 'N/A' }}</p>
+        <p><strong>Trạm kiểm thử:</strong> {{ selectedRawDevice.testStation || 'N/A' }} | <strong>Người kiểm thử:</strong> {{ selectedRawDevice.testPerson || 'N/A' }}</p>
+        <div class="json-code-box">
+          <pre>{{ JSON.stringify(selectedRawDevice.testRawData || selectedRawDevice, null, 2) }}</pre>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="rawTestDialogVisible = false">Đóng</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="sessionAuditDialogVisible" title="Chi Tiết Final Config Session &amp; Audit" width="700px">
+      <div v-if="selectedSessionDevice">
+        <p><strong>S/N:</strong> {{ selectedSessionDevice.serialNumber || selectedSessionDevice.code }} | <strong>Trạng thái Config:</strong> {{ selectedSessionDevice.configStatus }}</p>
+        <p><strong>Session ID:</strong> {{ selectedSessionDevice.finalConfigSessionId || 'Chưa liên kết Session' }}</p>
+        <div class="json-code-box">
+          <pre>{{ JSON.stringify(selectedSessionDevice.sessionProfile || selectedSessionDevice.auditData || selectedSessionDevice, null, 2) }}</pre>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="sessionAuditDialogVisible = false">Đóng</el-button>
+      </template>
+    </el-dialog>
+
+<!-- DIALOG: TẠO MỚI SALE ORDER -->
     <el-dialog v-model="createSoVisible" title="Tạo Mới Đơn Hàng (Sale Order)" width="500px">
-      <el-form :model="createSoForm" label-width="140px" label-position="left">
+      <el-form :model="newSoForm" label-width="140px" label-position="left">
         <el-form-item label="Mã Sale Order" required>
-          <el-input v-model="createSoForm.soNumber" placeholder="Ví dụ: SO-2026-001 hoặc SO/26/001" />
+          <el-input v-model="newSoForm.soNumber" placeholder="Ví dụ: SO-2026-001 hoặc SO/26/001" />
         </el-form-item>
         <el-form-item label="Tên Khách Hàng">
-          <el-input v-model="createSoForm.customerName" placeholder="Tên khách hàng / Đối tác" />
+          <el-input v-model="newSoForm.customerName" placeholder="Tên khách hàng / Đối tác" />
         </el-form-item>
         <el-form-item label="Ghi Chú">
-          <el-input v-model="createSoForm.notes" type="textarea" :rows="3" placeholder="Ghi chú đơn hàng..." />
+          <el-input v-model="newSoForm.notes" type="textarea" :rows="3" placeholder="Ghi chú đơn hàng..." />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -354,26 +233,26 @@
 
     <!-- DIALOG: TẠO MỚI WORK AUTHORIZATION (WA) -->
     <el-dialog v-model="createWaVisible" title="Tạo Work Authorization (WA) Thuộc SO" width="550px">
-      <el-form :model="createWaForm" label-width="170px" label-position="left">
+      <el-form :model="newWaForm" label-width="170px" label-position="left">
         <el-form-item label="Sale Order">
-          <span class="font-bold text-primary">{{ createWaForm.soNumber }}</span>
+          <span class="font-bold text-primary">{{ newWaForm.soNumber }}</span>
         </el-form-item>
         <el-form-item label="Mã WA (WA/xxxx/xxxxx)" required>
           <el-input
-            v-model="createWaForm.waNumber"
+            v-model="newWaForm.waNumber"
             placeholder="Ví dụ: WA/2026/00001"
             @blur="formatWaNumberInput"
           />
           <span class="text-xs text-muted">Cú pháp bắt buộc theo chuẩn: WA/xxxx/xxxxx</span>
         </el-form-item>
         <el-form-item label="Item Code / Mã SP">
-          <el-input v-model="createWaForm.itemCode" placeholder="Ví dụ: WSLRW-C-RS485-01" />
+          <el-input v-model="newWaForm.itemCode" placeholder="Ví dụ: WSLRW-C-RS485-01" />
         </el-form-item>
         <el-form-item label="Số Lượng Kế Hoạch">
-          <el-input-number v-model="createWaForm.plannedQuantity" :min="1" :max="100000" />
+          <el-input-number v-model="newWaForm.plannedQuantity" :min="1" :max="100000" />
         </el-form-item>
         <el-form-item label="Ghi Chú">
-          <el-input v-model="createWaForm.notes" type="textarea" :rows="2" placeholder="Ghi chú lệnh..." />
+          <el-input v-model="newWaForm.notes" type="textarea" :rows="2" placeholder="Ghi chú lệnh..." />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -513,7 +392,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   Files,
@@ -527,34 +406,67 @@ import {
   Search,
   UploadFilled,
   View,
+  InfoFilled,
+  Loading,
 } from '@element-plus/icons-vue';
+import { TabulatorFull as Tabulator } from 'tabulator-tables';
+import 'tabulator-tables/dist/css/tabulator.min.css';
 
-// -----------------------------------------------------------------------------
-// STATE DECLARATION
-// -----------------------------------------------------------------------------
-const activeTab = ref<'sale-orders' | 'device-testing'>('sale-orders');
+// Active Tab
+const activeTab = ref('sale-orders');
 
-// Sale Orders state
-const saleOrdersList = ref<any[]>([]);
-const loadingSo = ref(false);
-const soSearchQuery = ref('');
-const selectedSo = ref<any | null>(null);
-const loadingSoDetail = ref(false);
+// Tabulator Instances & Container Refs
+const soTableRef = ref<HTMLElement | null>(null);
+const testingTableRef = ref<HTMLElement | null>(null);
+const configTableRef = ref<HTMLElement | null>(null);
 
-// Create SO Dialog
+let soTabulator: Tabulator | null = null;
+let testingTabulator: Tabulator | null = null;
+let configTabulator: Tabulator | null = null;
+
+// Loading States
+const soTreeLoading = ref(false);
+const testingLoading = ref(false);
+const configLoading = ref(false);
+
+// Filter & Search States
+const soSearchNumber = ref('');
+const soSearchCustomer = ref('');
+
+const testingSearchSerial = ref('');
+const testingSearchSo = ref('');
+const testingFilterResult = ref('');
+const testingPage = ref(1);
+const testingLimit = ref(50);
+const testingTotal = ref(0);
+
+const configSearchSerial = ref('');
+const configFilterStatus = ref('');
+const configPage = ref(1);
+const configLimit = ref(50);
+const configTotal = ref(0);
+
+// Dialog Data States
+const rawTestDialogVisible = ref(false);
+const selectedRawDevice = ref<any>(null);
+
+const sessionAuditDialogVisible = ref(false);
+const selectedSessionDevice = ref<any>(null);
+
+// Dialog States from original view
 const createSoVisible = ref(false);
 const submittingSo = ref(false);
-const createSoForm = ref({
+const newSoForm = reactive({
   soNumber: '',
   customerName: '',
+  customerCode: '',
   notes: '',
 });
 
-// Create WA Dialog
 const createWaVisible = ref(false);
 const submittingWa = ref(false);
-const createWaForm = ref({
-  soId: '',
+const targetSoForWa = ref<any>(null);
+const newWaForm = reactive({
   soNumber: '',
   waNumber: '',
   itemCode: '',
@@ -562,321 +474,33 @@ const createWaForm = ref({
   notes: '',
 });
 
-// Device Testing state
-const devicesList = ref<any[]>([]);
-const loadingDevices = ref(false);
-const searchDeviceSerial = ref('');
-const filterTestingSoId = ref('');
-const filterTestingWaId = ref('');
-const filterTestResult = ref('');
-const devicePage = ref(1);
-const deviceLimit = ref(50);
-const deviceTotal = ref(0);
+const soDetailVisible = ref(false);
+const selectedSo = ref<any>(null);
+const loadingSoDetail = ref(false);
 
-// CSV Import state
 const importCsvVisible = ref(false);
-const importAssignMode = ref<'WA' | 'SO'>('WA');
-const selectedImportWaId = ref('');
+const submittingImport = ref(false);
+const importAssignMode = ref('NONE');
 const selectedImportSoId = ref('');
-const parsedAutoSo = ref('');
+const selectedImportWaId = ref('');
+const parsedCsvDevices = ref<any[]>([]);
+const soOptions = ref<any[]>([]);
 const csvFileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref('');
-const parsedCsvDevices = ref<any[]>([]);
-const submittingImport = ref(false);
-
-// Raw Test Data modal
-const rawTestDialogVisible = ref(false);
-const viewingRawData = ref<any | null>(null);
-
-// -----------------------------------------------------------------------------
-// AUTH HELPER
-// -----------------------------------------------------------------------------
-const getAuthHeaders = (): Record<string, string> => {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const token =
-    localStorage.getItem('itest_token') ||
-    localStorage.getItem('token') ||
-    sessionStorage.getItem('token');
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
-};
-
-// -----------------------------------------------------------------------------
-// COMPUTED
-// -----------------------------------------------------------------------------
-const pagedSaleOrders = computed(() => {
-  if (!Array.isArray(saleOrdersList.value)) return [];
-  const q = soSearchQuery.value.trim().toLowerCase();
-  if (!q) return saleOrdersList.value;
-  return saleOrdersList.value.filter(
-    (so) =>
-      so.soNumber?.toLowerCase().includes(q) ||
-      so.customerName?.toLowerCase().includes(q) ||
-      so.notes?.toLowerCase().includes(q),
-  );
-});
-
-const allAvailableWas = computed(() => {
-  const list: any[] = [];
-  if (Array.isArray(saleOrdersList.value)) {
-    saleOrdersList.value.forEach((so) => {
-      if (so.workAuthorizations && Array.isArray(so.workAuthorizations)) {
-        so.workAuthorizations.forEach((wa: any) => {
-          list.push({
-            ...wa,
-            soNumber: so.soNumber,
-            soId: so.id,
-          });
-        });
-      }
-    });
-  }
-  return list;
-});
-
-const availableWas = computed(() => {
-  if (!filterTestingSoId.value) return allAvailableWas.value;
-  if (!Array.isArray(saleOrdersList.value)) return [];
-  const targetSo = saleOrdersList.value.find((s) => s.id === filterTestingSoId.value);
-  if (!targetSo || !targetSo.workAuthorizations) return [];
-  return targetSo.workAuthorizations;
-});
-
-// -----------------------------------------------------------------------------
-// SALE ORDERS LOGIC
-// -----------------------------------------------------------------------------
-const fetchSaleOrders = async () => {
-  loadingSo.value = true;
-  try {
-    const res = await fetch('/api/plugins/device-traceability/so?limit=100', {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    saleOrdersList.value = Array.isArray(data) ? data : (data.data || data.items || []);
-    if (selectedSo.value && Array.isArray(saleOrdersList.value)) {
-      const updated = saleOrdersList.value.find((s) => s.id === selectedSo.value.id);
-      if (updated) selectedSo.value = updated;
-    }
-  } catch (err: any) {
-    ElMessage.error(`Lỗi tải danh sách Sale Orders: ${err.message}`);
-  } finally {
-    loadingSo.value = false;
-  }
-};
-
-const filterSaleOrders = () => {
-  // Handled by computed pagedSaleOrders
-};
-
-const handleSoRowSelect = async (row: any) => {
-  if (!row) {
-    selectedSo.value = null;
-    return;
-  }
-  selectedSo.value = row;
-  await fetchSoDetail(row.id);
-};
-
-const fetchSoDetail = async (soId: string) => {
-  loadingSoDetail.value = true;
-  try {
-    const res = await fetch(`/api/plugins/device-traceability/so/${soId}`, {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const detail = await res.json();
-    selectedSo.value = detail;
-    // Update item in list
-    if (Array.isArray(saleOrdersList.value)) {
-      const idx = saleOrdersList.value.findIndex((s) => s.id === soId);
-      if (idx !== -1) {
-        saleOrdersList.value[idx] = detail;
-      }
-    }
-  } catch (err: any) {
-    ElMessage.error(`Lỗi tải chi tiết SO: ${err.message}`);
-  } finally {
-    loadingSoDetail.value = false;
-  }
-};
-
-const openCreateSoDialog = () => {
-  createSoForm.value = {
-    soNumber: '',
-    customerName: '',
-    notes: '',
-  };
-  createSoVisible.value = true;
-};
-
-const submitCreateSo = async () => {
-  if (!createSoForm.value.soNumber.trim()) {
-    ElMessage.warning('Vui lòng nhập Mã Sale Order (SO Number).');
-    return;
-  }
-
-  submittingSo.value = true;
-  try {
-    const res = await fetch('/api/plugins/device-traceability/so', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        soNumber: createSoForm.value.soNumber.trim(),
-        customerName: createSoForm.value.customerName.trim() || undefined,
-        notes: createSoForm.value.notes.trim() || undefined,
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${res.status}`);
-    }
-
-    ElMessage.success('Tạo Sale Order thành công!');
-    createSoVisible.value = false;
-    await fetchSaleOrders();
-  } catch (err: any) {
-    ElMessage.error(`Lỗi tạo SO: ${err.message}`);
-  } finally {
-    submittingSo.value = false;
-  }
-};
-
-const openCreateWaDialog = (so: any) => {
-  createWaForm.value = {
-    soId: so.id,
-    soNumber: so.soNumber,
-    waNumber: '',
-    itemCode: '',
-    plannedQuantity: 100,
-    notes: '',
-  };
-  createWaVisible.value = true;
-};
+const parsedAutoSo = ref('');
+const saleOrdersList = ref<any[]>([]);
+const allAvailableWas = ref<any[]>([]);
+const viewingRawData = ref<any>(null);
 
 const formatWaNumberInput = () => {
-  let val = createWaForm.value.waNumber.trim();
-  if (val && !val.toUpperCase().startsWith('WA/')) {
-    // Auto-prefix if user just entered numbers or date
-    const parts = val.split('/');
-    if (parts.length === 2) {
-      val = `WA/${parts[0]}/${parts[1]}`;
-    }
-  }
-  createWaForm.value.waNumber = val;
+  if (!newWaForm.waNumber) return;
+  newWaForm.waNumber = newWaForm.waNumber.trim();
 };
 
-const submitCreateWa = async () => {
-  const wa = createWaForm.value.waNumber.trim();
-  if (!wa) {
-    ElMessage.warning('Vui lòng nhập Mã WA.');
-    return;
-  }
-  // Validate syntax WA/xxxx/xxxxx
-  const waRegex = /^WA\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/;
-  if (!waRegex.test(wa)) {
-    ElMessage.warning('Mã WA không đúng định dạng. Cú pháp bắt buộc: WA/xxxx/xxxxx (Ví dụ: WA/2026/00001)');
-    return;
-  }
-
-  submittingWa.value = true;
-  try {
-    const res = await fetch(`/api/plugins/device-traceability/so/${createWaForm.value.soId}/wa`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        soId: createWaForm.value.soId,
-        waNumber: wa,
-        itemCode: createWaForm.value.itemCode.trim() || undefined,
-        plannedQuantity: Number(createWaForm.value.plannedQuantity) || 0,
-        notes: createWaForm.value.notes.trim() || undefined,
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${res.status}`);
-    }
-
-    ElMessage.success(`Tạo WA [${wa}] thành công!`);
-    createWaVisible.value = false;
-    await fetchSoDetail(createWaForm.value.soId);
-  } catch (err: any) {
-    ElMessage.error(`Lỗi tạo WA: ${err.message}`);
-  } finally {
-    submittingWa.value = false;
-  }
-};
-
-const goToTestingTabWithSo = (so: any) => {
-  filterTestingSoId.value = so.id;
-  filterTestingWaId.value = '';
-  activeTab.value = 'device-testing';
-  fetchDevices();
-};
-
-const goToTestingTabWithWa = (so: any, wa: any) => {
-  filterTestingSoId.value = so.id;
-  filterTestingWaId.value = wa.id;
-  activeTab.value = 'device-testing';
-  fetchDevices();
-};
-
-// -----------------------------------------------------------------------------
-// DEVICES & TESTING LOGIC
-// -----------------------------------------------------------------------------
-const fetchDevices = async () => {
-  loadingDevices.value = true;
-  try {
-    const params = new URLSearchParams({
-      page: String(devicePage.value),
-      limit: String(deviceLimit.value),
-    });
-    if (filterTestingSoId.value) params.append('soId', filterTestingSoId.value);
-    if (filterTestingWaId.value) params.append('waId', filterTestingWaId.value);
-    if (searchDeviceSerial.value.trim()) params.append('serialNumber', searchDeviceSerial.value.trim());
-    if (filterTestResult.value) params.append('testResult', filterTestResult.value);
-
-    const res = await fetch(`/api/plugins/device-traceability/devices?${params.toString()}`, {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    devicesList.value = Array.isArray(data) ? data : (data.data || data.items || []);
-    deviceTotal.value = data.meta?.total ?? data.total ?? devicesList.value.length;
-  } catch (err: any) {
-    ElMessage.error(`Lỗi tải danh sách thiết bị: ${err.message}`);
-  } finally {
-    loadingDevices.value = false;
-  }
-};
-
-const showRawTestDialog = (row: any) => {
-  viewingRawData.value = row.testRawData || null;
-  rawTestDialogVisible.value = true;
-};
-
-// -----------------------------------------------------------------------------
-// CSV IMPORT LOGIC (WSLRW-C-RS485-01_tested.csv)
-// -----------------------------------------------------------------------------
-const openImportCsvDialog = () => {
-  importAssignMode.value = 'WA';
-  selectedImportWaId.value = filterTestingWaId.value || '';
-  selectedImportSoId.value = filterTestingSoId.value || '';
-  parsedAutoSo.value = '';
-  selectedFileName.value = '';
-  parsedCsvDevices.value = [];
-  if (selectedImportWaId.value) {
-    handleImportWaChanged(selectedImportWaId.value);
-  }
-  importCsvVisible.value = true;
-};
-
-const handleImportWaChanged = (val: string) => {
-  const match = allAvailableWas.value.find((w) => w.id === val || w.waNumber === val);
-  if (match) {
-    parsedAutoSo.value = match.soNumber || '';
+const handleImportWaChanged = (waId: string) => {
+  const found = allAvailableWas.value.find(w => w.id === waId || w.waNumber === waId);
+  if (found && found.soNumber) {
+    parsedAutoSo.value = found.soNumber;
   } else {
     parsedAutoSo.value = '';
   }
@@ -884,51 +508,900 @@ const handleImportWaChanged = (val: string) => {
 
 const triggerFileInput = () => {
   if (csvFileInputRef.value) {
-    csvFileInputRef.value.value = '';
     csvFileInputRef.value.click();
   }
 };
 
+const handleCsvFileSelected = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+  selectedFileName.value = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = (e.target?.result as string) || '';
+    processCsvText(text);
+  };
+  reader.readAsText(file);
+};
+
+// Auth Helpers
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem('token') || localStorage.getItem('itest_token') || '';
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
+// ==========================================
+// TAB 1: SALE ORDERS TREE
+// ==========================================
+
+const initSoTreeTable = () => {
+  if (!soTableRef.value) return;
+  if (soTabulator) {
+    soTabulator.destroy();
+    soTabulator = null;
+  }
+
+  soTabulator = new Tabulator(soTableRef.value, {
+    data: [],
+    dataTree: true,
+    dataTreeStartExpanded: true,
+    dataTreeChildField: '_children',
+    layout: 'fitColumns',
+    responsiveLayout: 'collapse',
+    placeholder: 'Không có dữ liệu Sale Order',
+    columns: [
+      {
+        title: 'Mã / Đối Tượng',
+        field: 'code',
+        widthGrow: 2.2,
+        responsive: 0,
+        formatter: (cell) => {
+          const rowData = cell.getRow().getData();
+          const type = rowData.type;
+          let icon = '📁';
+          let badgeClass = 'badge-so';
+          let label = rowData.code || rowData.soNumber || '';
+
+          if (type === 'WA') {
+            icon = '📑';
+            badgeClass = 'badge-wa';
+            label = rowData.code || rowData.waNumber || '';
+          } else if (type === 'DEVICE') {
+            icon = '📟';
+            badgeClass = 'badge-device';
+            label = rowData.code || rowData.serialNumber || '';
+          }
+
+          return `<span class="tree-node ${badgeClass}">
+            <span class="tree-icon">${icon}</span>
+            <span class="tree-type-tag">${type}</span>
+            <strong class="tree-label">${label}</strong>
+          </span>`;
+        },
+      },
+      {
+        title: 'Tên Khách Hàng / SKU',
+        field: 'customerName',
+        widthGrow: 1.8,
+        formatter: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.type === 'SO') {
+            return rowData.customerName || '<span class="text-muted">-</span>';
+          }
+          if (rowData.type === 'DEVICE') {
+            return `<span class="sku-cell">${rowData.sku || rowData.itemCode || '-'}</span>`;
+          }
+          return '<span class="text-muted">-</span>';
+        },
+      },
+      {
+        title: 'SL Kế Hoạch / DevEUI',
+        field: 'plannedQuantity',
+        widthGrow: 1.4,
+        formatter: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.type === 'SO' || rowData.type === 'WA') {
+            const count = rowData.plannedQuantity ?? rowData.deviceCount ?? 0;
+            return `<span class="quantity-badge">${count} thiết bị</span>`;
+          }
+          if (rowData.type === 'DEVICE') {
+            return `<span class="mono-font">${rowData.devEui || '-'}</span>`;
+          }
+          return '-';
+        },
+      },
+      {
+        title: 'Trạng Thái Test',
+        field: 'testResult',
+        widthGrow: 1.2,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.type === 'SO') {
+            return `<span class="count-badge pass">PASS: ${rowData.testPassCount ?? 0}</span>`;
+          }
+          if (rowData.type === 'WA') {
+            return `<span class="count-badge pass">PASS: ${rowData.devicePassCount ?? 0}</span>`;
+          }
+          const res = (rowData.testResult || rowData.testStatus || 'NONE').toUpperCase();
+          if (res === 'PASS') return '<span class="status-pill pass">PASS</span>';
+          if (res === 'FAIL') return '<span class="status-pill fail">FAIL</span>';
+          return '<span class="status-pill pending">NONE</span>';
+        },
+      },
+      {
+        title: 'Trạng Thái Config',
+        field: 'configStatus',
+        widthGrow: 1.4,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.type === 'SO') {
+            return `<span class="count-badge pass">PASS: ${rowData.configPassCount ?? 0}</span>`;
+          }
+          if (rowData.type === 'WA') {
+            return `<span class="count-badge pass">PASS: ${rowData.deviceConfigPassCount ?? 0}</span>`;
+          }
+          const res = (rowData.configStatus || rowData.finalConfigStatus || 'NONE').toUpperCase();
+          if (res === 'CONFIGURED_PASS' || res === 'PASS') return '<span class="status-pill pass">CONFIG PASS</span>';
+          if (res === 'CONFIG_FAILED' || res === 'FAIL') return '<span class="status-pill fail">CONFIG FAIL</span>';
+          return '<span class="status-pill pending">UNCONFIG</span>';
+        },
+      },
+      {
+        title: 'Thời Gian',
+        field: 'createdAt',
+        widthGrow: 1.3,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const d = cell.getValue();
+          if (!d) return '<span class="text-muted">-</span>';
+          try {
+            const dt = new Date(d);
+            return dt.toLocaleDateString('vi-VN') + ' ' + dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          } catch {
+            return String(d);
+          }
+        },
+      },
+    ],
+    rowContextMenu: (e, row) => {
+      const data = row.getData();
+      const menu: any[] = [];
+
+      if (data.type === 'SO') {
+        menu.push({
+          label: '➕ Thêm Work Authorization (WA)...',
+          action: () => {
+            openCreateWaDialog(data);
+          },
+        });
+        menu.push({
+          label: '📥 Import CSV Thiết Bị vào SO này...',
+          action: () => {
+            openImportCsvForSo(data.id);
+          },
+        });
+        menu.push({
+          label: '🔍 Xem chi tiết Sale Order...',
+          action: () => {
+            viewSoDetail(data.id);
+          },
+        });
+      } else if (data.type === 'WA') {
+        menu.push({
+          label: '📥 Import CSV Thiết Bị vào WA này...',
+          action: () => {
+            openImportCsvForWa(data.soId, data.id);
+          },
+        });
+      } else if (data.type === 'DEVICE') {
+        menu.push({
+          label: '🧪 Đặt Test Status: PASS',
+          action: () => {
+            handleUpdateDeviceStatus(data.id, { testResult: 'PASS' });
+          },
+        });
+        menu.push({
+          label: '❌ Đặt Test Status: FAIL',
+          action: () => {
+            handleUpdateDeviceStatus(data.id, { testResult: 'FAIL' });
+          },
+        });
+        menu.push({
+          label: '⚪ Đặt Test Status: NONE',
+          action: () => {
+            handleUpdateDeviceStatus(data.id, { testResult: 'NONE' });
+          },
+        });
+        menu.push({ separator: true });
+        menu.push({
+          label: '⚙️ Đặt Final Config: CONFIGURED_PASS',
+          action: () => {
+            handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS' });
+          },
+        });
+        menu.push({
+          label: '⚙️ Đặt Final Config: CONFIG_FAILED',
+          action: () => {
+            handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED' });
+          },
+        });
+        menu.push({
+          label: '⚙️ Đặt Final Config: UNCONFIGURED (NONE)',
+          action: () => {
+            handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED' });
+          },
+        });
+        menu.push({ separator: true });
+        menu.push({
+          label: '🗑️ Xóa thiết bị này',
+          action: () => {
+            handleDeleteDevice(data.id, data.serialNumber || data.code);
+          },
+        });
+      }
+
+      return menu;
+    },
+  });
+};
+
+const loadSoTreeData = async () => {
+  soTreeLoading.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (soSearchNumber.value.trim()) params.append('soNumber', soSearchNumber.value.trim());
+    if (soSearchCustomer.value.trim()) params.append('customerName', soSearchCustomer.value.trim());
+
+    const url = `/api/plugins/device-traceability/so/tree?${params.toString()}`;
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const treeData = Array.isArray(data) ? data : (data.data || []);
+
+    if (soTabulator) {
+      await soTabulator.setData(treeData);
+    }
+  } catch (err: any) {
+    ElMessage.error(`Lỗi tải cây dữ liệu Sale Order: ${err.message}`);
+  } finally {
+    soTreeLoading.value = false;
+  }
+};
+
+const resetSoFilters = () => {
+  soSearchNumber.value = '';
+  soSearchCustomer.value = '';
+  loadSoTreeData();
+};
+
+const expandAllSoTree = () => {
+  if (!soTabulator) return;
+  const rows = soTabulator.getRows();
+  rows.forEach((r) => {
+    if (r.treeExpand) r.treeExpand();
+  });
+};
+
+const collapseAllSoTree = () => {
+  if (!soTabulator) return;
+  const rows = soTabulator.getRows();
+  rows.forEach((r) => {
+    if (r.treeCollapse) r.treeCollapse();
+  });
+};
+
+// ==========================================
+// TAB 2: DEVICE TESTING LIST
+// ==========================================
+
+const initTestingTable = () => {
+  if (!testingTableRef.value) return;
+  if (testingTabulator) {
+    testingTabulator.destroy();
+    testingTabulator = null;
+  }
+
+  testingTabulator = new Tabulator(testingTableRef.value, {
+    data: [],
+    layout: 'fitColumns',
+    responsiveLayout: 'collapse',
+    placeholder: 'Không có dữ liệu thiết bị kiểm thử',
+    columns: [
+      {
+        title: 'Serial Number (S/N)',
+        field: 'serialNumber',
+        widthGrow: 1.8,
+        responsive: 0,
+        formatter: (cell) => `<strong class="mono-font serial-text">${cell.getValue() || '-'}</strong>`,
+      },
+      {
+        title: 'DevEUI',
+        field: 'devEui',
+        widthGrow: 1.8,
+        formatter: (cell) => `<span class="mono-font">${cell.getValue() || '-'}</span>`,
+      },
+      {
+        title: 'Mã SO',
+        field: 'soNumber',
+        widthGrow: 1.2,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const num = row.soNumber || (row.so ? row.so.so_number : '-');
+          return `<span class="badge-so-sm">${num}</span>`;
+        },
+      },
+      {
+        title: 'Mã WA',
+        field: 'waNumber',
+        widthGrow: 1.2,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const num = row.waNumber || (row.wa ? row.wa.wa_number : '-');
+          return num && num !== '-' ? `<span class="badge-wa-sm">${num}</span>` : '<span class="text-muted">-</span>';
+        },
+      },
+      {
+        title: 'SKU / Item Code',
+        field: 'sku',
+        widthGrow: 1.4,
+        formatter: (cell) => cell.getValue() || cell.getRow().getData().itemCode || '<span class="text-muted">-</span>',
+      },
+      {
+        title: 'HW / FW',
+        field: 'hwVersion',
+        widthGrow: 1.2,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          return `${row.hwVersion || '-'}/${row.fwVersion || '-'}`;
+        },
+      },
+      {
+        title: 'Kết Quả Test',
+        field: 'testResult',
+        widthGrow: 1.2,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const val = (cell.getValue() || 'NONE').toUpperCase();
+          if (val === 'PASS') return '<span class="status-pill pass">PASS</span>';
+          if (val === 'FAIL') return '<span class="status-pill fail">FAIL</span>';
+          return '<span class="status-pill pending">NONE</span>';
+        },
+      },
+      {
+        title: 'Trạm Test / KTV',
+        field: 'testStation',
+        widthGrow: 1.4,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          return `${row.testStation || '-'} (${row.testPerson || '-'})`;
+        },
+      },
+      {
+        title: 'Thời Gian Test',
+        field: 'testedAt',
+        widthGrow: 1.4,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const d = cell.getValue() || cell.getRow().getData().createdAt;
+          if (!d) return '<span class="text-muted">-</span>';
+          try {
+            const dt = new Date(d);
+            return dt.toLocaleDateString('vi-VN') + ' ' + dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          } catch {
+            return String(d);
+          }
+        },
+      },
+    ],
+    rowContextMenu: (e, row) => {
+      const data = row.getData();
+      return [
+        {
+          label: '🧪 Đặt Test Status: PASS',
+          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'PASS' }),
+        },
+        {
+          label: '❌ Đặt Test Status: FAIL',
+          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'FAIL' }),
+        },
+        {
+          label: '⚪ Đặt Test Status: NONE',
+          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'NONE' }),
+        },
+        { separator: true },
+        {
+          label: '📋 Xem Dữ Liệu Raw Test...',
+          action: () => {
+            selectedRawDevice.value = data;
+            rawTestDialogVisible.value = true;
+          },
+        },
+        { separator: true },
+        {
+          label: '🗑️ Xóa Thiết Bị Này',
+          action: () => handleDeleteDevice(data.id, data.serialNumber),
+        },
+      ];
+    },
+  });
+};
+
+const loadTestingDevices = async () => {
+  testingLoading.value = true;
+  try {
+    const params = new URLSearchParams({
+      page: String(testingPage.value),
+      limit: String(testingLimit.value),
+    });
+
+    if (testingSearchSerial.value.trim()) params.append('serialNumber', testingSearchSerial.value.trim());
+    if (testingSearchSo.value.trim()) params.append('soNumber', testingSearchSo.value.trim());
+    if (testingFilterResult.value) params.append('testResult', testingFilterResult.value);
+
+    const res = await fetch(`/api/plugins/device-traceability/devices?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const result = await res.json();
+
+    const items = Array.isArray(result) ? result : (result.data || result.items || []);
+    testingTotal.value = result.total ?? result.count ?? items.length;
+
+    if (testingTabulator) {
+      await testingTabulator.setData(items);
+    }
+  } catch (err: any) {
+    ElMessage.error(`Lỗi tải danh sách kiểm thử: ${err.message}`);
+  } finally {
+    testingLoading.value = false;
+  }
+};
+
+const resetTestingFilters = () => {
+  testingSearchSerial.value = '';
+  testingSearchSo.value = '';
+  testingFilterResult.value = '';
+  testingPage.value = 1;
+  loadTestingDevices();
+};
+
+// ==========================================
+// TAB 3: DEVICE FINAL CONFIG LIST
+// ==========================================
+
+const initConfigTable = () => {
+  if (!configTableRef.value) return;
+  if (configTabulator) {
+    configTabulator.destroy();
+    configTabulator = null;
+  }
+
+  configTabulator = new Tabulator(configTableRef.value, {
+    data: [],
+    layout: 'fitColumns',
+    responsiveLayout: 'collapse',
+    placeholder: 'Không có dữ liệu thiết bị cấu hình cuối',
+    columns: [
+      {
+        title: 'Serial Number (S/N)',
+        field: 'serialNumber',
+        widthGrow: 1.8,
+        responsive: 0,
+        formatter: (cell) => `<strong class="mono-font serial-text">${cell.getValue() || '-'}</strong>`,
+      },
+      {
+        title: 'DevEUI',
+        field: 'devEui',
+        widthGrow: 1.8,
+        formatter: (cell) => `<span class="mono-font">${cell.getValue() || '-'}</span>`,
+      },
+      {
+        title: 'SKU / Model',
+        field: 'sku',
+        widthGrow: 1.5,
+        formatter: (cell) => cell.getValue() || cell.getRow().getData().itemCode || '<span class="text-muted">-</span>',
+      },
+      {
+        title: 'Trạng Thái Cấu Hình',
+        field: 'configStatus',
+        widthGrow: 1.6,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const val = (cell.getValue() || 'UNCONFIGURED').toUpperCase();
+          if (val === 'CONFIGURED_PASS' || val === 'PASS') return '<span class="status-pill pass">CONFIG PASS</span>';
+          if (val === 'CONFIG_FAILED' || val === 'FAIL') return '<span class="status-pill fail">CONFIG FAIL</span>';
+          return '<span class="status-pill pending">UNCONFIG</span>';
+        },
+      },
+      {
+        title: 'Final Config Session ID',
+        field: 'finalConfigSessionId',
+        widthGrow: 2.0,
+        formatter: (cell) => {
+          const val = cell.getValue();
+          return val ? `<span class="mono-font session-id-text">${val}</span>` : '<span class="text-muted">Chưa gắn session</span>';
+        },
+      },
+      {
+        title: 'Thời Gian Cập Nhật',
+        field: 'updatedAt',
+        widthGrow: 1.4,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const d = cell.getValue() || cell.getRow().getData().createdAt;
+          if (!d) return '<span class="text-muted">-</span>';
+          try {
+            const dt = new Date(d);
+            return dt.toLocaleDateString('vi-VN') + ' ' + dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          } catch {
+            return String(d);
+          }
+        },
+      },
+    ],
+    rowContextMenu: (e, row) => {
+      const data = row.getData();
+      return [
+        {
+          label: '⚙️ Đặt Config Status: CONFIGURED_PASS',
+          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS' }),
+        },
+        {
+          label: '⚙️ Đặt Config Status: CONFIG_FAILED',
+          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED' }),
+        },
+        {
+          label: '⚙️ Đặt Config Status: UNCONFIGURED (NONE)',
+          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED' }),
+        },
+        { separator: true },
+        {
+          label: '📊 Xem Chi Tiết Session & Audit...',
+          action: () => {
+            selectedSessionDevice.value = data;
+            sessionAuditDialogVisible.value = true;
+          },
+        },
+        { separator: true },
+        {
+          label: '🗑️ Xóa Thiết Bị Này',
+          action: () => handleDeleteDevice(data.id, data.serialNumber),
+        },
+      ];
+    },
+  });
+};
+
+const loadFinalConfigDevices = async () => {
+  configLoading.value = true;
+  try {
+    const params = new URLSearchParams({
+      page: String(configPage.value),
+      limit: String(configLimit.value),
+    });
+
+    if (configSearchSerial.value.trim()) params.append('serialNumber', configSearchSerial.value.trim());
+    if (configFilterStatus.value) params.append('configStatus', configFilterStatus.value);
+
+    const res = await fetch(`/api/plugins/device-traceability/final-config-devices?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const result = await res.json();
+
+    const items = Array.isArray(result) ? result : (result.data || result.items || []);
+    configTotal.value = result.total ?? result.count ?? items.length;
+
+    if (configTabulator) {
+      await configTabulator.setData(items);
+    }
+  } catch (err: any) {
+    ElMessage.error(`Lỗi tải danh sách cấu hình cuối: ${err.message}`);
+  } finally {
+    configLoading.value = false;
+  }
+};
+
+const resetConfigFilters = () => {
+  configSearchSerial.value = '';
+  configFilterStatus.value = '';
+  configPage.value = 1;
+  loadFinalConfigDevices();
+};
+
+// ==========================================
+// SHARED DEVICE MUTATION ACTIONS
+// ==========================================
+
+const handleUpdateDeviceStatus = async (
+  deviceId: string,
+  updates: { testResult?: string; configStatus?: string; status?: string }
+) => {
+  try {
+    const res = await fetch(`/api/plugins/device-traceability/devices/${deviceId}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(updates),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    ElMessage.success('Cập nhật trạng thái thiết bị thành công!');
+    refreshActiveTabData();
+  } catch (err: any) {
+    ElMessage.error(`Lỗi cập nhật trạng thái: ${err.message}`);
+  }
+};
+
+const handleDeleteDevice = async (deviceId: string, identifier: string) => {
+  try {
+    await ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa thiết bị "${identifier}" không? Thao tác này không thể hoàn tác.`,
+      'Xác nhận xóa thiết bị',
+      {
+        confirmButtonText: 'Xóa ngay',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning',
+      }
+    );
+
+    const res = await fetch(`/api/plugins/device-traceability/devices/${deviceId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    ElMessage.success(`Đã xóa thiết bị ${identifier} thành công.`);
+    refreshActiveTabData();
+  } catch (err: any) {
+    if (err !== 'cancel') {
+      ElMessage.error(`Lỗi khi xóa thiết bị: ${err.message}`);
+    }
+  }
+};
+
+// ==========================================
+// TAB CHANGE & REFRESH LOGIC
+// ==========================================
+
+const onTabChange = (tabName: any) => {
+  nextTick(() => {
+    if (tabName === 'sale-orders') {
+      if (!soTabulator) initSoTreeTable();
+      loadSoTreeData();
+    } else if (tabName === 'device-testing') {
+      if (!testingTabulator) initTestingTable();
+      loadTestingDevices();
+    } else if (tabName === 'device-final-config') {
+      if (!configTabulator) initConfigTable();
+      loadFinalConfigDevices();
+    }
+  });
+};
+
+const refreshActiveTabData = () => {
+  if (activeTab.value === 'sale-orders') {
+    loadSoTreeData();
+  } else if (activeTab.value === 'device-testing') {
+    loadTestingDevices();
+  } else if (activeTab.value === 'device-final-config') {
+    loadFinalConfigDevices();
+  }
+};
+
+const refreshAllData = () => {
+  loadSoTreeData();
+  if (testingTabulator) loadTestingDevices();
+  if (configTabulator) loadFinalConfigDevices();
+  ElMessage.info('Đang làm mới dữ liệu...');
+};
+
+// ==========================================
+// SO / WA / CSV IMPORT LOGIC (FROM BACKUP)
+// ==========================================
+
+const openCreateSoDialog = () => {
+  newSoForm.soNumber = '';
+  newSoForm.customerName = '';
+  newSoForm.customerCode = '';
+  newSoForm.notes = '';
+  createSoVisible.value = true;
+};
+
+const submitCreateSo = async () => {
+  if (!newSoForm.soNumber.trim()) {
+    ElMessage.warning('Vui lòng nhập Mã Sale Order');
+    return;
+  }
+  submittingSo.value = true;
+  try {
+    const res = await fetch('/api/plugins/device-traceability/so', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(newSoForm),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+    ElMessage.success('Tạo Sale Order thành công');
+    createSoVisible.value = false;
+    loadSoTreeData();
+  } catch (err: any) {
+    ElMessage.error(`Lỗi khi tạo SO: ${err.message}`);
+  } finally {
+    submittingSo.value = false;
+  }
+};
+
+const openCreateWaDialog = (so: any) => {
+  targetSoForWa.value = so;
+  newWaForm.soNumber = so?.soNumber || '';
+  newWaForm.waNumber = '';
+  newWaForm.itemCode = '';
+  newWaForm.plannedQuantity = 100;
+  newWaForm.notes = '';
+  createWaVisible.value = true;
+};
+
+const submitCreateWa = async () => {
+  if (!newWaForm.waNumber.trim()) {
+    ElMessage.warning('Vui lòng nhập Mã Work Authorization (WA)');
+    return;
+  }
+  if (!targetSoForWa.value?.id) {
+    ElMessage.error('Không tìm thấy thông tin Sale Order đích');
+    return;
+  }
+
+  submittingWa.value = true;
+  try {
+    const targetSoId = targetSoForWa.value.id;
+    const payload = {
+      waNumber: newWaForm.waNumber,
+      plannedQuantity: newWaForm.plannedQuantity,
+      notes: newWaForm.notes,
+      soId: targetSoId,
+    };
+
+    const res = await fetch(`/api/plugins/device-traceability/so/${targetSoId}/wa`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    ElMessage.success('Tạo Work Authorization thành công');
+    createWaVisible.value = false;
+    loadSoTreeData();
+  } catch (err: any) {
+    ElMessage.error(`Lỗi khi tạo WA: ${err.message}`);
+  } finally {
+    submittingWa.value = false;
+  }
+};
+
+const viewSoDetail = async (soId: string) => {
+  loadingSoDetail.value = true;
+  soDetailVisible.value = true;
+  selectedSo.value = null;
+
+  try {
+    const res = await fetch(`/api/plugins/device-traceability/so/${soId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    selectedSo.value = await res.json();
+  } catch (err: any) {
+    ElMessage.error(`Lỗi tải chi tiết SO: ${err.message}`);
+    soDetailVisible.value = false;
+  } finally {
+    loadingSoDetail.value = false;
+  }
+};
+
+const fetchSoOptions = async () => {
+  try {
+    const res = await fetch('/api/plugins/device-traceability/so?limit=100', {
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      soOptions.value = Array.isArray(data) ? data : (data.items || data.data || []);
+    }
+  } catch (e) {
+    console.warn('Could not fetch SO options', e);
+  }
+};
+
+const openImportCsvDialog = async () => {
+  importAssignMode.value = 'NONE';
+  selectedImportSoId.value = '';
+  selectedImportWaId.value = '';
+  parsedCsvDevices.value = [];
+  await fetchSoOptions();
+  importCsvVisible.value = true;
+};
+
+const openImportCsvForSo = async (soId: string) => {
+  await openImportCsvDialog();
+  importAssignMode.value = 'SO';
+  selectedImportSoId.value = soId;
+};
+
+const openImportCsvForWa = async (soId: string, waId: string) => {
+  await openImportCsvDialog();
+  importAssignMode.value = 'WA';
+  selectedImportSoId.value = soId;
+  selectedImportWaId.value = waId;
+};
+
+const onImportModeChange = () => {
+  selectedImportSoId.value = '';
+  selectedImportWaId.value = '';
+};
+
+const onImportSoChange = () => {
+  selectedImportWaId.value = '';
+};
+
+const getSelectedSoWas = () => {
+  if (!selectedImportSoId.value) return [];
+  const so = soOptions.value.find((s) => s.id === selectedImportSoId.value || s.soNumber === selectedImportSoId.value);
+  return so?.workAuthorizations || [];
+};
+
 const parseCsvLine = (line: string): string[] => {
   const result: string[] = [];
-  let current = '';
+  let cur = '';
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const c = line[i];
     if (c === '"') {
       if (inQuotes && line[i + 1] === '"') {
-        current += '"';
+        cur += '"';
         i++;
       } else {
         inQuotes = !inQuotes;
       }
     } else if (c === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
+      result.push(cur.trim());
+      cur = '';
     } else {
-      current += c;
+      cur += c;
     }
   }
-  result.push(current);
+  result.push(cur.trim());
   return result;
 };
 
-const handleCsvFileSelected = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
-
-  selectedFileName.value = file.name;
+const handleCsvFileUpload = (file: File) => {
   const reader = new FileReader();
-  reader.onload = (event) => {
-    try {
-      const text = (event.target?.result as string) || '';
+  reader.onload = (e) => {
+    const text = e.target?.result as string;
+    if (text) {
       processCsvText(text);
-    } catch (err: any) {
-      ElMessage.error(`Lỗi đọc file CSV: ${err.message}`);
     }
   };
-  reader.readAsText(file);
+  reader.readAsText(file, 'UTF-8');
+  return false;
 };
 
 const processCsvText = (csvText: string) => {
@@ -990,31 +1463,13 @@ const submitCsvImport = async () => {
   let soNumber: string | undefined = undefined;
 
   if (importAssignMode.value === 'WA') {
-    const target = selectedImportWaId.value.trim();
-    if (!target) {
-      ElMessage.warning('Vui lòng chọn hoặc nhập Mã WA.');
-      return;
-    }
-    const match = allAvailableWas.value.find((w) => w.id === target || w.waNumber === target);
-    if (match) {
-      waId = match.id;
-      waNumber = match.waNumber;
-    } else {
-      waNumber = target;
-    }
-  } else {
-    const target = selectedImportSoId.value.trim();
-    if (!target) {
-      ElMessage.warning('Vui lòng chọn hoặc nhập Mã SO.');
-      return;
-    }
-    const match = saleOrdersList.value.find((s) => s.id === target || s.soNumber === target);
-    if (match) {
-      soId = match.id;
-      soNumber = match.soNumber;
-    } else {
-      soNumber = target;
-    }
+    const target = selectedImportWaId.value;
+    if (target && target.length >= 32) waId = target;
+    else if (target) waNumber = target;
+  } else if (importAssignMode.value === 'SO') {
+    const target = selectedImportSoId.value;
+    if (target && target.length >= 32) soId = target;
+    else if (target) soNumber = target;
   }
 
   submittingImport.value = true;
@@ -1040,76 +1495,50 @@ const submitCsvImport = async () => {
 
     const resData = await res.json();
     ElMessage.success(
-      `Đã import thành công: ${resData.importedCount ?? resData.totalImported ?? parsedCsvDevices.value.length} thiết bị (PASS: ${resData.passCount ?? 0}, FAIL: ${resData.failCount ?? 0})!`,
+      `Đã import thành công: ${resData.importedCount ?? resData.totalImported ?? parsedCsvDevices.value.length} thiết bị (PASS: ${resData.passCount ?? 0}, FAIL: ${resData.failCount ?? 0})!`
     );
 
     importCsvVisible.value = false;
-    parsedCsvDevices.value = [];
-    selectedFileName.value = '';
-
-    // Refresh views
-    await fetchDevices();
-    await fetchSaleOrders();
+    refreshActiveTabData();
   } catch (err: any) {
-    ElMessage.error(`Lỗi import kết quả test: ${err.message}`);
+    ElMessage.error(`Import thất bại: ${err.message}`);
   } finally {
     submittingImport.value = false;
   }
 };
 
-// -----------------------------------------------------------------------------
-// HELPERS
-// -----------------------------------------------------------------------------
-const formatDateTime = (val?: string | Date) => {
-  if (!val) return '—';
-  try {
-    const d = new Date(val);
-    if (isNaN(d.getTime())) return String(val);
-    return d.toLocaleString('vi-VN', { hour12: false });
-  } catch {
-    return String(val);
+// Lifecycle
+onMounted(() => {
+  nextTick(() => {
+    initSoTreeTable();
+    loadSoTreeData();
+  });
+});
+
+onBeforeUnmount(() => {
+  if (soTabulator) {
+    soTabulator.destroy();
+    soTabulator = null;
   }
-};
-
-const calcSoProgress = (row: any) => {
-  const total = Number((row.stats && row.stats.totalDevices) || row.totalDevices || 0);
-  if (!total) return 0;
-  const pass = Number((row.stats && row.stats.configPassCount) || row.configPassCount || 0);
-  return Math.min(100, Math.round((pass / total) * 100));
-};
-
-const getConfigStatusTagType = (status?: string) => {
-  switch (status?.toUpperCase()) {
-    case 'CONFIGURED_PASS':
-    case 'COMPLETED':
-      return 'success';
-    case 'CONFIGURED_FAIL':
-    case 'FAILED':
-      return 'danger';
-    case 'IN_PROGRESS':
-      return 'warning';
-    default:
-      return 'info';
+  if (testingTabulator) {
+    testingTabulator.destroy();
+    testingTabulator = null;
   }
-};
-
-// -----------------------------------------------------------------------------
-// LIFECYCLE
-// -----------------------------------------------------------------------------
-onMounted(async () => {
-  await fetchSaleOrders();
-  await fetchDevices();
+  if (configTabulator) {
+    configTabulator.destroy();
+    configTabulator = null;
+  }
 });
 </script>
 
 <style scoped>
-.traceability-view {
+.traceability-container {
   padding: 20px;
-  background: #f8fafc;
-  min-height: calc(100vh - 64px);
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 80px);
 }
 
-.view-header {
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1117,173 +1546,259 @@ onMounted(async () => {
   background: #ffffff;
   padding: 16px 20px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.header-left {
+.header-title h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2f3d;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
-.header-icon-box {
-  width: 44px;
-  height: 44px;
-  background: #eff6ff;
+.header-title .subtitle {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.main-tabs {
+  background: #ffffff;
   border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e4e7ed;
+}
+
+.tab-content {
+  padding: 12px 0 0 0;
+}
+
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.table-guide-hint {
+  font-size: 12px;
+  color: #606266;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f0f2f5;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.table-wrapper {
+  position: relative;
+  min-height: 380px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  font-weight: 500;
+  color: #409eff;
+  z-index: 10;
 }
 
-.icon-brand {
-  font-size: 24px;
-  color: #2563eb;
-}
-
-.view-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.view-subtitle {
-  margin: 4px 0 0 0;
-  font-size: 13px;
-  color: #64748b;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tab-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-}
-
-.tab-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.search-filters {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.progress-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.progress-text {
-  font-size: 12px;
-  color: #64748b;
-  min-width: 70px;
-}
-
-.order-devices-panel {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.panel-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1e293b;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.hidden-file-input {
-  display: none;
-}
-
-.csv-preview {
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  border-radius: 6px;
-  padding: 12px;
-}
-
-.preview-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #334155;
-}
-
-.raw-data-box {
-  background: #0f172a;
-  color: #38bdf8;
-  padding: 12px;
-  border-radius: 6px;
-  font-family: monospace;
-  font-size: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.pagination-wrapper {
+.pagination-bar {
   display: flex;
   justify-content: flex-end;
-}
-
-.mt-1 {
-  margin-top: 4px;
-}
-
-.mt-4 {
   margin-top: 16px;
 }
 
-.mb-4 {
-  margin-bottom: 16px;
+.mono-font {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
 }
 
-.ml-3 {
-  margin-left: 12px;
+.serial-text {
+  color: #409eff;
 }
 
-.font-bold {
-  font-weight: 700;
+.session-id-text {
+  color: #67c23a;
+  font-size: 12px;
 }
 
-.font-mono {
-  font-family: monospace;
+.tree-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.text-primary {
-  color: #2563eb;
+.tree-type-tag {
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.badge-so .tree-type-tag {
+  background: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+
+.badge-wa .tree-type-tag {
+  background: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.badge-device .tree-type-tag {
+  background: #fff7e6;
+  color: #fa8c16;
+  border: 1px solid #ffd591;
+}
+
+.badge-so-sm {
+  background: #e6f7ff;
+  color: #1890ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge-wa-sm {
+  background: #f6ffed;
+  color: #52c41a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.quantity-badge {
+  background: #f4f4f5;
+  color: #606266;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.count-badge.pass {
+  background: #f0f9eb;
+  color: #67c23a;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e1f3d8;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.status-pill.pass {
+  background: #67c23a;
+  color: #ffffff;
+}
+
+.status-pill.fail {
+  background: #f56c6c;
+  color: #ffffff;
+}
+
+.status-pill.pending {
+  background: #909399;
+  color: #ffffff;
+}
+
+.sku-cell {
+  color: #303133;
+  font-weight: 500;
 }
 
 .text-muted {
-  color: #94a3b8;
+  color: #c0c4cc;
 }
 
-.text-xs {
+.json-code-box {
+  background: #282c34;
+  color: #abb2bf;
+  padding: 12px;
+  border-radius: 6px;
+  max-height: 380px;
+  overflow-y: auto;
+  font-family: Consolas, monospace;
   font-size: 12px;
+  margin-top: 10px;
+}
+
+/* Custom Tabulator Table Styling */
+:deep(.tabulator) {
+  border: none;
+  font-size: 13px;
+  background-color: #fff;
+}
+
+:deep(.tabulator-header) {
+  background-color: #fafafa;
+  border-bottom: 2px solid #e8e8e8;
+  font-weight: 600;
+  color: #262626;
+}
+
+:deep(.tabulator-row) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+:deep(.tabulator-row:hover) {
+  background-color: #f5f7fa !important;
+  cursor: pointer;
+}
+
+:deep(.tabulator-row.tabulator-tree-level-1) {
+  background-color: #fafbfc;
+}
+
+:deep(.tabulator-row.tabulator-tree-level-2) {
+  background-color: #ffffff;
 }
 </style>
