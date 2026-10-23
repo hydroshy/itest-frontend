@@ -2,13 +2,6 @@
   <div class="menu-launcher-container">
     <!-- Header Greeting & Search -->
     <div class="launcher-header">
-      <div class="header-titles">
-        <h1 class="launcher-title">Trung tâm Điều khiển & Ứng dụng</h1>
-        <p class="launcher-subtitle">
-          Chọn tính năng hoặc công cụ để bắt đầu làm việc. Các mục hiển thị được phân quyền theo tài khoản của bạn.
-        </p>
-      </div>
-
       <div class="header-actions">
         <el-input
           v-model="searchQuery"
@@ -298,34 +291,16 @@ onMounted(() => {
 
 <style scoped>
 .menu-launcher-container {
-  padding: 32px 40px;
+  padding: 24px 32px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .launcher-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.launcher-title {
-  font-size: 26px;
-  font-weight: 700;
-  color: #1f2d3d;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
-}
-
-.launcher-subtitle {
-  font-size: 14px;
-  color: #5e6d82;
-  margin: 0;
-  max-width: 650px;
-  line-height: 1.5;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .header-actions {
@@ -335,11 +310,11 @@ onMounted(() => {
 }
 
 .search-input {
-  width: 280px;
+  width: 320px;
 }
 
 .category-bar {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .cards-grid {

@@ -7,7 +7,6 @@
     class="layout-aside"
   >
       <div class="logo-box">
-        <el-icon class="logo-icon"><Platform /></el-icon>
         <span v-show="!isCollapse" class="logo-text">iTest 2.0</span>
       </div>
 
@@ -121,13 +120,10 @@
             class="app-center-brand"
             @click="router.push('/menu')"
           >
-            <el-icon class="logo-icon"><Platform /></el-icon>
             <span class="brand-title">iTest 2.0</span>
-            <span class="cyber-badge cyan" style="margin-left: 6px; font-size: 10px;">SYS.HUD</span>
           </el-button>
 
           <el-breadcrumb separator="//" class="breadcrumb breadcrumb-cyber">
-            <el-breadcrumb-item :to="{ path: '/menu' }">MENU</el-breadcrumb-item>
             <el-breadcrumb-item v-if="route.path !== '/menu'">{{ currentRouteTitle }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
