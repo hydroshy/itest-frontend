@@ -84,8 +84,8 @@ async function handleLogin() {
       ElMessage.success('Đăng nhập thành công');
       const redirect = (route.query.redirect as string) || '/menu';
       router.push(redirect);
-    } catch (err: any) {
-      ElMessage.error(err?.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');
+    } catch (_err) {
+      // Thông báo lỗi cụ thể (như "Invalid username/email or password") đã được httpClient interceptor hiển thị duy nhất 1 lần
     } finally {
       loading.value = false;
     }
