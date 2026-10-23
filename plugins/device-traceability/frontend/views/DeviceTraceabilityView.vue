@@ -605,6 +605,7 @@ const getAuthHeaders = (): Record<string, string> => {
 // COMPUTED
 // -----------------------------------------------------------------------------
 const pagedSaleOrders = computed(() => {
+  if (!Array.isArray(saleOrdersList.value)) return [];
   const q = soSearchQuery.value.trim().toLowerCase();
   if (!q) return saleOrdersList.value;
   return saleOrdersList.value.filter(
@@ -617,22 +618,25 @@ const pagedSaleOrders = computed(() => {
 
 const allAvailableWas = computed(() => {
   const list: any[] = [];
-  saleOrdersList.value.forEach((so) => {
-    if (so.workAuthorizations && Array.isArray(so.workAuthorizations)) {
-      so.workAuthorizations.forEach((wa: any) => {
-        list.push({
-          ...wa,
-          soNumber: so.soNumber,
-          soId: so.id,
+  if (Array.isArray(saleOrdersList.value)) {
+    saleOrdersList.value.forEach((so) => {
+      if (so.workAuthorizations && Array.isArray(so.workAuthorizations)) {
+        so.workAuthorizations.forEach((wa: any) => {
+          list.push({
+            ...wa,
+            soNumber: so.soNumber,
+            soId: so.id,
+          });
         });
-      });
-    }
-  });
+      }
+    });
+  }
   return list;
 });
 
 const availableWas = computed(() => {
   if (!filterTestingSoId.value) return allAvailableWas.value;
+  if (!Array.isArray(saleOrdersList.value)) return [];
   const targetSo = saleOrdersList.value.find((s) => s.id === filterTestingSoId.value);
   if (!targetSo || !targetSo.workAuthorizations) return [];
   return targetSo.workAuthorizations;
@@ -649,8 +653,8 @@ const fetchSaleOrders = async () => {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    saleOrdersList.value = data.items || data || [];
-    if (selectedSo.value) {
+    saleOrdersList.value = Array.isArray(data) ? data : (data.data || data.items || []);
+    if (selectedSo.value && Array.isArray(saleOrdersList.value)) {
       const updated = saleOrdersList.value.find((s) => s.id === selectedSo.value.id);
       if (updated) selectedSo.value = updated;
     }
@@ -684,9 +688,11 @@ const fetchSoDetail = async (soId: string) => {
     const detail = await res.json();
     selectedSo.value = detail;
     // Update item in list
-    const idx = saleOrdersList.value.findIndex((s) => s.id === soId);
-    if (idx !== -1) {
-      saleOrdersList.value[idx] = detail;
+    if (Array.isArray(saleOrdersList.value)) {
+      const idx = saleOrdersList.value.findIndex((s) => s.id === soId);
+      if (idx !== -1) {
+        saleOrdersList.value[idx] = detail;
+      }
     }
   } catch (err: any) {
     ElMessage.error(`Lỗi tải chi tiết SO: ${err.message}`);
@@ -836,8 +842,8 @@ const fetchDevices = async () => {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    devicesList.value = data.items || data || [];
-    deviceTotal.value = data.total || devicesList.value.length;
+    devicesList.value = Array.isArray(data) ? data : (data.data || data.items || []);
+    deviceTotal.value = data.meta?.total ?? data.total ?? devicesList.value.length;
   } catch (err: any) {
     ElMessage.error(`Lỗi tải danh sách thiết bị: ${err.message}`);
   } finally {
@@ -1020,7 +1026,7 @@ const submitCsvImport = async () => {
       devices: parsedCsvDevices.value,
     };
 
-    const res = await fetch('/api/plugins/device-traceability/devices/import-test-results', {
+    const res = await fetch('/api/plugins/device-traceability/devices/import-csv', {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -1033,7 +1039,7 @@ const submitCsvImport = async () => {
 
     const resData = await res.json();
     ElMessage.success(
-      `Đã import thành công: ${resData.totalImported || parsedCsvDevices.value.length} thiết bị (PASS: ${resData.passCount || 0}, FAIL: ${resData.failCount || 0})!`,
+      `Đã import thành công: ${resData.importedCount ?? resData.totalImported ?? parsedCsvDevices.value.length} thiết bị (PASS: ${resData.passCount ?? 0}, FAIL: ${resData.failCount ?? 0})!`,
     );
 
     importCsvVisible.value = false;
