@@ -1,4 +1,4 @@
-﻿
+
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
@@ -28,6 +28,7 @@ import {
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 
+// XLSX type declaration
 declare const XLSX: any;
 
 export function useFinalConfigEngine() {
@@ -2312,7 +2313,11 @@ const activeFeature = ref({ id: 'final-config-device' });
 
   const updateTabulatorData = () => {
     if (auditTabulatorInstance) {
-      auditTabulatorInstance.setData(filteredAuditRegisters.value);
+      try {
+        auditTabulatorInstance.setData(filteredAuditRegisters.value);
+      } catch (e) {
+        console.warn('Failed to update Tabulator data:', e);
+      }
     }
   };
 
@@ -2415,8 +2420,12 @@ const activeFeature = ref({ id: 'final-config-device' });
         if (!auditTabulatorInstance) {
           initTabulatorTable();
         } else {
-          auditTabulatorInstance.redraw(true);
-          updateTabulatorData();
+          try {
+            auditTabulatorInstance.redraw(true);
+            updateTabulatorData();
+          } catch (e) {
+            console.warn('Failed to redraw Tabulator:', e);
+          }
         }
       });
     }
@@ -2424,12 +2433,17 @@ const activeFeature = ref({ id: 'final-config-device' });
 
   const exportAuditCsv = () => {
     if (auditTabulatorInstance) {
-      auditTabulatorInstance.download('csv', 'final_config_' + (fcHardwareInfo.value.serialNumber || 'audit') + '.csv');
+      try {
+        auditTabulatorInstance.download('csv', 'final_config_' + (fcHardwareInfo.value.serialNumber || 'audit') + '.csv');
+      } catch (e) {
+        console.warn('Failed to download CSV:', e);
+      }
     }
   };
 
   const exportAuditXlsx = () => {
-    if (typeof XLSX === 'undefined') {
+    const xlsxLib = typeof window !== 'undefined' ? (window as any).XLSX : undefined;
+    if (!xlsxLib) {
       if (showToast) showToast('SheetJS (XLSX) library not available.', 'error');
       return;
     }
@@ -2443,11 +2457,15 @@ const activeFeature = ref({ id: 'final-config-device' });
       'Read-Back Value': r.value_read_back,
       Status: r.status,
     }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Final Config Audit');
-    XLSX.writeFile(wb, 'final_config_' + (fcHardwareInfo.value.serialNumber || 'audit') + '.xlsx');
-    if (showToast) showToast('Exported audit report to XLSX', 'success');
+    try {
+      const ws = xlsxLib.utils.json_to_sheet(data);
+      const wb = xlsxLib.utils.book_new();
+      xlsxLib.utils.book_append_sheet(wb, ws, 'Final Config Audit');
+      xlsxLib.writeFile(wb, 'final_config_' + (fcHardwareInfo.value.serialNumber || 'audit') + '.xlsx');
+      if (showToast) showToast('Exported audit report to XLSX', 'success');
+    } catch (e: any) {
+      if (showToast) showToast('Failed to export XLSX: ' + (e?.message || e), 'error');
+    }
   };
 
   // ----------------------------------------------------------------------
@@ -2503,7 +2521,6 @@ const activeFeature = ref({ id: 'final-config-device' });
 
 
   return {
-    XLSX,
     fcFormatBytes,
     fcSerialPort,
     fcSerialConnected,
