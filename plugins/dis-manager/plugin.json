@@ -1,0 +1,28 @@
+{
+  "id": "dis-manager",
+  "name": "DIS Odoo Integration",
+  "version": "1.0.0",
+  "sdkVersion": "^1.0.0",
+  "type": "FRONTEND",
+  "description": "Quản trị kết nối DIS API (Odoo), kiểm thử API Sandbox và đồng bộ Sales Orders vào iTest.",
+  "author": "ITEST IoT Platform Team",
+  "frontend": "frontend/index.ts",
+  "enabledByDefault": true,
+  "permissions": [
+    {
+      "namespace": "dis",
+      "resource": "connection",
+      "action": "manage"
+    },
+    {
+      "namespace": "dis",
+      "resource": "orders",
+      "action": "read"
+    },
+    {
+      "namespace": "dis",
+      "resource": "sync",
+      "action": "execute"
+    }
+  ]
+}

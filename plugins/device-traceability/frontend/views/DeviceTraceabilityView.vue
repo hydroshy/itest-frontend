@@ -5,6 +5,7 @@
       <el-button link :icon="ArrowLeft" @click="goBackToMenu">Trở về Menu</el-button>
       <span class="isolated-title">{{ isolatedTitle }}</span>
       <div class="header-actions" style="margin-left: auto;">
+        <el-button v-if="normalizedActiveTab === 'sale-orders'" type="warning" :icon="Download" @click="openDisSyncDialog">Đồng bộ từ DIS (Odoo)</el-button>
         <el-button v-if="normalizedActiveTab === 'sale-orders'" type="primary" :icon="Plus" @click="openCreateSoDialog">Tạo Sale Order Mới</el-button>
         <el-button v-if="normalizedActiveTab === 'sale-orders'" type="success" :icon="Upload" @click="openImportCsvDialog">Import CSV Thiết Bị</el-button>
         <el-button :icon="Refresh" @click="refreshActiveTabData">Làm mới dữ liệu</el-button>
@@ -17,6 +18,7 @@
         <span class="subtitle">Quản lý Sale Order, Work Authorization, Thiết Bị Kiểm Thử &amp; Cấu Hình Cuối</span>
       </div>
       <div class="header-actions">
+        <el-button type="warning" :icon="Download" @click="openDisSyncDialog">Đồng bộ từ DIS (Odoo)</el-button>
         <el-button type="primary" :icon="Plus" @click="openCreateSoDialog">Tạo Sale Order Mới</el-button>
         <el-button type="success" :icon="Upload" @click="openImportCsvDialog">Import CSV Thiết Bị</el-button>
         <el-button :icon="Refresh" @click="refreshAllData">Làm mới dữ liệu</el-button>
@@ -651,6 +653,156 @@
         <el-button @click="rawTestDialogVisible = false">Đóng</el-button>
       </template>
     </el-dialog>
+
+    <!-- DIALOG: TÌM KIẾM & ĐỒNG BỘ SALES ORDER TỪ DIS (ODOO) -->
+    <el-dialog
+      v-model="disSyncDialogVisible"
+      title="Đồng Bộ Sales Order từ Hệ Thống DIS (Odoo)"
+      width="900px"
+      top="5vh"
+      destroy-on-close
+    >
+      <div class="dis-sync-container">
+        <!-- Status & Mode Notice -->
+        <div class="dis-status-header mb-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <span class="mr-2">Trạng thái kết nối DIS API:</span>
+              <el-tag v-if="disStatus.connected && !disStatus.isMock" type="success" effect="dark">
+                Live Connection (HTTPS)
+              </el-tag>
+              <el-tag v-else-if="disStatus.isMock" type="warning" effect="dark">
+                Mock Mode (Mô phỏng offline)
+              </el-tag>
+              <el-tag v-else type="info">Chưa kết nối / Đang kiểm tra...</el-tag>
+            </div>
+            <div class="text-muted text-sm">
+              <span v-if="disStatus.isMock">
+                (Thiếu DIS_SO_TOKEN, đang dùng dữ liệu chuẩn OpenAPI v1.1.0)
+              </span>
+              <span v-else>
+                Base URL: {{ disStatus.baseUrl || 'https://dis-so.daviteq.com' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="dis-search-bar mb-3">
+          <el-row :gutter="10">
+            <el-col :span="4">
+              <el-input-number
+                v-model="disFilterYear"
+                :min="2020"
+                :max="2035"
+                placeholder="Năm"
+                style="width: 100%"
+              />
+            </el-col>
+            <el-col :span="4">
+              <el-select v-model="disFilterMonth" placeholder="Tháng" clearable style="width: 100%">
+                <el-option v-for="m in 12" :key="m" :label="`Tháng ${m}`" :value="m" />
+              </el-select>
+            </el-col>
+            <el-col :span="5">
+              <el-select v-model="disFilterState" placeholder="Trạng thái" style="width: 100%">
+                <el-option label="Tất cả trạng thái" value="" />
+                <el-option label="Sale Order (Đã duyệt)" value="sale" />
+                <el-option label="Hoàn tất (Done)" value="done" />
+                <el-option label="Báo giá (Draft)" value="draft" />
+                <el-option label="Đã hủy (Cancel)" value="cancel" />
+              </el-select>
+            </el-col>
+            <el-col :span="8">
+              <el-input
+                v-model="disFilterQuery"
+                placeholder="Tìm mã SO (VD: SO26...), khách hàng..."
+                clearable
+                :prefix-icon="Search"
+                @keyup.enter="searchDisOrders"
+              />
+            </el-col>
+            <el-col :span="3">
+              <el-button type="primary" :icon="Search" :loading="loadingDisList" style="width: 100%" @click="searchDisOrders">
+                Tìm
+              </el-button>
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- Orders Table List -->
+        <el-table
+          v-loading="loadingDisList"
+          :data="disOrdersList"
+          height="240px"
+          border
+          highlight-current-row
+          style="width: 100%"
+          @current-change="handleDisOrderSelect"
+        >
+          <el-table-column prop="odoo_id" label="ID Odoo" width="90" align="center" />
+          <el-table-column prop="name" label="Mã Đơn Hàng (SO)" width="160" font-weight="bold">
+            <template #default="{ row }">
+              <span style="color: #00f0ff; font-weight: bold">{{ row.name }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="partner_name" label="Khách Hàng" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="date_order" label="Ngày Đặt Hàng" width="160" align="center" />
+          <el-table-column prop="state" label="Trạng Thái" width="110" align="center">
+            <template #default="{ row }">
+              <el-tag :type="getDisStateTag(row.state)" size="small">
+                {{ row.state }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- Selected SO Details & Line Items -->
+        <div v-if="selectedDisOrder" class="dis-detail-section mt-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div style="font-weight: 600; color: #00f0ff">
+              Chi Tiết Đơn Hàng: {{ selectedDisOrder.name }} - {{ selectedDisOrder.partner_name }}
+            </div>
+            <div>
+              <el-button
+                type="success"
+                :icon="Check"
+                :loading="syncingDisOrder"
+                @click="syncSelectedDisOrderToDatabase"
+              >
+                Đồng Bộ Vào Traceability Database
+              </el-button>
+            </div>
+          </div>
+
+          <el-table
+            v-loading="loadingDisDetail"
+            :data="selectedDisOrderLines"
+            height="180px"
+            border
+            size="small"
+            style="width: 100%"
+          >
+            <el-table-column prop="line_type" label="Loại Dòng" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag v-if="row.line_type === 'product'" type="success" size="small">Product</el-tag>
+                <el-tag v-else-if="row.line_type === 'section'" type="info" size="small">Section</el-tag>
+                <el-tag v-else type="warning" size="small">{{ row.line_type || 'Note' }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="sku" label="SKU Sản Phẩm" width="180" show-overflow-tooltip />
+            <el-table-column prop="product_name" label="Tên Sản Phẩm / Diễn Giải" min-width="220" show-overflow-tooltip />
+            <el-table-column prop="product_uom_qty" label="SL Yêu Cầu" width="110" align="right" />
+            <el-table-column prop="qty_delivered" label="Đã Giao" width="90" align="right" />
+            <el-table-column prop="price_unit" label="Đơn Giá" width="110" align="right" />
+          </el-table>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="disSyncDialogVisible = false">Đóng</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -665,6 +817,7 @@ import {
   Refresh,
   FolderOpened,
   Upload,
+  Download,
   Checked,
   Check,
   Search,
@@ -754,6 +907,28 @@ const configFilterStatus = ref('');
 const configPage = ref(1);
 const configLimit = ref(50);
 const configTotal = ref(0);
+
+// DIS (Odoo) Integration Dialog States
+const disSyncDialogVisible = ref(false);
+const loadingDisList = ref(false);
+const loadingDisDetail = ref(false);
+const syncingDisOrder = ref(false);
+const disStatus = reactive<{
+  connected: boolean;
+  isMock: boolean;
+  baseUrl: string;
+}>({
+  connected: false,
+  isMock: false,
+  baseUrl: '',
+});
+const disFilterYear = ref<number | undefined>(new Date().getFullYear());
+const disFilterMonth = ref<number | undefined>(undefined);
+const disFilterState = ref('sale');
+const disFilterQuery = ref('');
+const disOrdersList = ref<any[]>([]);
+const selectedDisOrder = ref<any | null>(null);
+const selectedDisOrderLines = ref<any[]>([]);
 
 // Dialog Data States
 const editDeviceDialogVisible = ref(false);
@@ -948,6 +1123,173 @@ const getAuthHeaders = (): Record<string, string> => {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
+};
+
+// ==========================================
+// DIS (ODOO) INTEGRATION METHODS
+// ==========================================
+
+const getDisStateTag = (state: string): string => {
+  switch (state) {
+    case 'sale':
+      return 'success';
+    case 'done':
+      return 'info';
+    case 'draft':
+      return 'warning';
+    case 'cancel':
+      return 'danger';
+    default:
+      return '';
+  }
+};
+
+const checkDisStatus = async () => {
+  try {
+    const res = await fetch('/api/plugins/device-traceability/dis/status', {
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      disStatus.connected = !!data.connected;
+      disStatus.isMock = !!data.isMock;
+      disStatus.baseUrl = data.baseUrl || 'https://dis-so.daviteq.com';
+    } else {
+      // Fallback route alias
+      const resFallback = await fetch('/api/dis/status', {
+        headers: getAuthHeaders(),
+      });
+      if (resFallback.ok) {
+        const data = await resFallback.json();
+        disStatus.connected = !!data.connected;
+        disStatus.isMock = !!data.isMock;
+        disStatus.baseUrl = data.baseUrl || 'https://dis-so.daviteq.com';
+      }
+    }
+  } catch (err) {
+    console.warn('Lỗi kiểm tra DIS API status, fallback sang Mock:', err);
+    disStatus.connected = true;
+    disStatus.isMock = true;
+    disStatus.baseUrl = 'https://dis-so.daviteq.com (Mock Fallback)';
+  }
+};
+
+const openDisSyncDialog = async () => {
+  disSyncDialogVisible.value = true;
+  selectedDisOrder.value = null;
+  selectedDisOrderLines.value = [];
+  await checkDisStatus();
+  await searchDisOrders();
+};
+
+const searchDisOrders = async () => {
+  loadingDisList.value = true;
+  selectedDisOrder.value = null;
+  selectedDisOrderLines.value = [];
+  try {
+    const params = new URLSearchParams();
+    if (disFilterYear.value) params.append('year', String(disFilterYear.value));
+    if (disFilterMonth.value) params.append('month', String(disFilterMonth.value));
+    if (disFilterState.value) params.append('state', disFilterState.value);
+    if (disFilterQuery.value) params.append('q', disFilterQuery.value.trim());
+
+    let res = await fetch(`/api/plugins/device-traceability/dis/so/search?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      res = await fetch(`/api/dis/so/search?${params.toString()}`, {
+        headers: getAuthHeaders(),
+      });
+    }
+
+    if (res.ok) {
+      const result = await res.json();
+      const list = Array.isArray(result) ? result : (result.data || []);
+      disOrdersList.value = Array.isArray(list) ? list : [];
+    } else {
+      ElMessage.warning('Không tải được danh sách đơn hàng từ DIS API.');
+      disOrdersList.value = [];
+    }
+  } catch (err) {
+    console.error('Lỗi khi tìm kiếm DIS Sales Orders:', err);
+    ElMessage.error('Lỗi kết nối khi gọi DIS API.');
+    disOrdersList.value = [];
+  } finally {
+    loadingDisList.value = false;
+  }
+};
+
+const handleDisOrderSelect = async (row: any) => {
+  if (!row) {
+    selectedDisOrder.value = null;
+    selectedDisOrderLines.value = [];
+    return;
+  }
+  selectedDisOrder.value = row;
+  loadingDisDetail.value = true;
+  try {
+    const odooId = row.odoo_id || row.id;
+    let res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      res = await fetch(`/api/dis/so/${odooId}`, {
+        headers: getAuthHeaders(),
+      });
+    }
+
+    if (res.ok) {
+      const data = await res.json();
+      const detail = data.data || data;
+      selectedDisOrderLines.value = Array.isArray(detail.lines) ? detail.lines : [];
+    } else {
+      selectedDisOrderLines.value = [];
+    }
+  } catch (err) {
+    console.error('Lỗi khi tải chi tiết SO từ DIS:', err);
+    selectedDisOrderLines.value = [];
+  } finally {
+    loadingDisDetail.value = false;
+  }
+};
+
+const syncSelectedDisOrderToDatabase = async () => {
+  if (!selectedDisOrder.value) return;
+  const odooId = selectedDisOrder.value.odoo_id || selectedDisOrder.value.id;
+  syncingDisOrder.value = true;
+  try {
+    let res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}/sync`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        autoCreateWa: true,
+      }),
+    });
+    if (!res.ok) {
+      res = await fetch(`/api/dis/so/${odooId}/sync`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          autoCreateWa: true,
+        }),
+      });
+    }
+
+    if (res.ok) {
+      const result = await res.json();
+      ElMessage.success(result.message || `Đồng bộ thành công Sales Order ${selectedDisOrder.value.name}!`);
+      disSyncDialogVisible.value = false;
+      await loadSoTreeData();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      ElMessage.error(err.message || 'Không thể đồng bộ Sales Order từ DIS.');
+    }
+  } catch (err) {
+    console.error('Lỗi khi đồng bộ đơn hàng DIS:', err);
+    ElMessage.error('Lỗi mạng khi thực hiện đồng bộ.');
+  } finally {
+    syncingDisOrder.value = false;
+  }
 };
 
 // ==========================================
@@ -2244,6 +2586,63 @@ onBeforeUnmount(() => {
   font-family: Consolas, monospace;
   font-size: 12px;
   margin-top: 10px;
+}
+
+/* DIS Integration Modal Styles */
+.dis-sync-container {
+  padding: 4px;
+}
+
+.dis-status-header {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dis-search-bar {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.dis-detail-section {
+  background: rgba(0, 240, 255, 0.03);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
+
+.mt-3 {
+  margin-top: 12px;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+
+.text-sm {
+  font-size: 12px;
 }
 
 /* Custom Tabulator Table Styling */
