@@ -1390,16 +1390,20 @@ const initSoTreeTable = () => {
         responsive: 0,
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
-          const type = rowData.type;
+          const type = (rowData.type || '').toUpperCase();
           let icon = '📁';
           let badgeClass = 'badge-so';
           let label = rowData.code || rowData.soNumber || '';
 
-          if (type === 'WA') {
+          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+            icon = '📦';
+            badgeClass = 'badge-item';
+            label = rowData.code || rowData.itemCode || rowData.orderingCode || '';
+          } else if (type === 'WA') {
             icon = '📑';
             badgeClass = 'badge-wa';
             label = rowData.code || rowData.waNumber || '';
-          } else if (type === 'DEVICE') {
+          } else if (type === 'DEVICE' || type === 'SERIAL_NUMBER' || type === 'SERIAL') {
             icon = '📟';
             badgeClass = 'badge-device';
             label = rowData.code || rowData.serialNumber || '';
@@ -1413,16 +1417,21 @@ const initSoTreeTable = () => {
         },
       },
       {
-        title: 'Tên Khách Hàng / SKU',
+        title: 'Tên Khách Hàng / SKU / Diễn Giải',
         field: 'customerName',
-        widthGrow: 1.8,
+        widthGrow: 2.0,
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
-          if (rowData.type === 'SO') {
+          const type = (rowData.type || '').toUpperCase();
+          if (type === 'SO') {
             return rowData.customerName || '<span class="text-muted">-</span>';
           }
-          if (rowData.type === 'DEVICE') {
-            return `<span class="sku-cell">${rowData.sku || rowData.itemCode || '-'}</span>`;
+          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+            return `<span class="sku-cell" title="${rowData.description || ''}">${rowData.description || rowData.productName || rowData.itemCode || '-'}</span>`;
+          }
+          if (type === 'DEVICE' || type === 'SERIAL_NUMBER' || type === 'SERIAL') {
+            const waTag = rowData.waNumber || rowData.waCode ? `<span class="badge-wa-sm" style="margin-left:6px;" title="Work Authorization">WA: ${rowData.waNumber || rowData.waCode}</span>` : '';
+            return `<span class="sku-cell">${rowData.sku || rowData.itemCode || '-'}</span>${waTag}`;
           }
           return '<span class="text-muted">-</span>';
         },
@@ -1433,11 +1442,12 @@ const initSoTreeTable = () => {
         widthGrow: 1.4,
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
-          if (rowData.type === 'SO' || rowData.type === 'WA') {
-            const count = rowData.plannedQuantity ?? rowData.deviceCount ?? 0;
-            return `<span class="quantity-badge">${count} thiết bị</span>`;
+          const type = (rowData.type || '').toUpperCase();
+          if (type === 'SO' || type === 'WA' || type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+            const count = rowData.plannedQuantity ?? rowData.quantity ?? rowData.deviceCount ?? 0;
+            return `<span class="quantity-badge">${count} chiếc</span>`;
           }
-          if (rowData.type === 'DEVICE') {
+          if (type === 'DEVICE' || type === 'SERIAL_NUMBER' || type === 'SERIAL') {
             return `<span class="mono-font">${rowData.devEui || '-'}</span>`;
           }
           return '-';
@@ -1446,15 +1456,15 @@ const initSoTreeTable = () => {
       {
         title: 'Trạng Thái Test',
         field: 'testResult',
-        widthGrow: 1.2,
+        widthGrow: 1.3,
         hozAlign: 'center',
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
-          if (rowData.type === 'SO') {
-            return `<span class="count-badge pass">PASS: ${rowData.testPassCount ?? 0}</span>`;
-          }
-          if (rowData.type === 'WA') {
-            return `<span class="count-badge pass">PASS: ${rowData.devicePassCount ?? 0}</span>`;
+          const type = (rowData.type || '').toUpperCase();
+          if (type === 'SO' || type === 'WA' || type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+            const passCount = rowData.passCount != null ? rowData.passCount : (rowData.testPassCount ?? rowData.devicePassCount ?? 0);
+            const failCount = rowData.failCount != null ? rowData.failCount : (rowData.testFailCount ?? rowData.deviceFailCount ?? 0);
+            return `<span class="count-badge pass">PASS: ${passCount}</span>${failCount > 0 ? ` <span class="count-badge fail">FAIL: ${failCount}</span>` : ''}`;
           }
           const res = (rowData.testResult || rowData.testStatus || 'NONE').toUpperCase();
           if (res === 'PASS') return '<span class="status-pill pass">PASS</span>';
@@ -1469,11 +1479,10 @@ const initSoTreeTable = () => {
         hozAlign: 'center',
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
-          if (rowData.type === 'SO') {
-            return `<span class="count-badge pass">PASS: ${rowData.configPassCount ?? 0}</span>`;
-          }
-          if (rowData.type === 'WA') {
-            return `<span class="count-badge pass">PASS: ${rowData.deviceConfigPassCount ?? 0}</span>`;
+          const type = (rowData.type || '').toUpperCase();
+          if (type === 'SO' || type === 'WA' || type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+            const cfgPass = rowData.configPassCount != null ? rowData.configPassCount : (rowData.deviceConfigPassCount ?? 0);
+            return `<span class="count-badge pass">PASS: ${cfgPass}</span>`;
           }
           const res = (rowData.configStatus || rowData.finalConfigStatus || 'NONE').toUpperCase();
           if (res === 'CONFIGURED_PASS' || res === 'PASS') return '<span class="status-pill pass">CONFIG PASS</span>';
@@ -1519,6 +1528,13 @@ const initSoTreeTable = () => {
           label: '🔍 Xem chi tiết Sale Order...',
           action: () => {
             viewSoDetail(data.id);
+          },
+        });
+      } else if (data.type === 'ITEM' || data.type === 'ITEM_CODE' || data.type === 'SKU') {
+        menu.push({
+          label: '📥 Import CSV Thiết Bị vào Sản Phẩm này...',
+          action: () => {
+            openImportCsvForSo(data.soId || data.id);
           },
         });
       } else if (data.type === 'WA') {
@@ -2566,6 +2582,12 @@ onBeforeUnmount(() => {
   border: 1px solid #91d5ff;
 }
 
+.badge-item .tree-type-tag {
+  background: #f9f0ff;
+  color: #722ed1;
+  border: 1px solid #d3adf7;
+}
+
 .badge-wa .tree-type-tag {
   background: #f6ffed;
   color: #52c41a;
@@ -2747,5 +2769,9 @@ onBeforeUnmount(() => {
 
 :deep(.tabulator-row.tabulator-tree-level-2) {
   background-color: rgba(0, 240, 255, 0.04) !important;
+}
+
+:deep(.tabulator-row.tabulator-tree-level-3) {
+  background-color: rgba(0, 240, 255, 0.06) !important;
 }
 </style>
