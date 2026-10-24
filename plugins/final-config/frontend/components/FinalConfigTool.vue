@@ -255,41 +255,28 @@
               }"
               :style="{ width: fcProgress + '%' }"
             >
-              <!-- Glowing head pulse beacon -->
-              <div class="fill-lead-beacon" v-if="fcProgress > 0 && fcProgress < 100"></div>
-            </div>
-
-            <!-- Dynamic Chase Micro-Dots Stream (ONLY visible when running) -->
-            <div v-if="isRunningFinalConfig" class="cyber-chase-layer">
-              <div class="chase-wave wave-1">
-                <span class="chase-dot d-7"></span>
-                <span class="chase-dot d-6"></span>
-                <span class="chase-dot d-5"></span>
-                <span class="chase-dot d-4"></span>
-                <span class="chase-dot d-3"></span>
-                <span class="chase-dot d-2"></span>
-                <span class="chase-dot d-1"></span>
-                <span class="chase-dot d-lead"></span>
-              </div>
-              <div class="chase-wave wave-2">
-                <span class="chase-dot d-7"></span>
-                <span class="chase-dot d-6"></span>
-                <span class="chase-dot d-5"></span>
-                <span class="chase-dot d-4"></span>
-                <span class="chase-dot d-3"></span>
-                <span class="chase-dot d-2"></span>
-                <span class="chase-dot d-1"></span>
-                <span class="chase-dot d-lead"></span>
-              </div>
-              <div class="chase-wave wave-3">
-                <span class="chase-dot d-7"></span>
-                <span class="chase-dot d-6"></span>
-                <span class="chase-dot d-5"></span>
-                <span class="chase-dot d-4"></span>
-                <span class="chase-dot d-3"></span>
-                <span class="chase-dot d-2"></span>
-                <span class="chase-dot d-1"></span>
-                <span class="chase-dot d-lead"></span>
+              <!-- Glowing head pulse beacon & shooting micro-dots emitter -->
+              <div class="fill-lead-head" v-if="(fcProgress > 0 || isRunningFinalConfig) && fcProgress < 100">
+                <div class="fill-lead-beacon" :class="{ 'is-active-pulse': isRunningFinalConfig }"></div>
+                <!-- Micro-dots shooting out from the moving head -->
+                <div v-if="isRunningFinalConfig" class="lead-spark-emitter">
+                  <span class="spark-dot s-1"></span>
+                  <span class="spark-dot s-2"></span>
+                  <span class="spark-dot s-3"></span>
+                  <span class="spark-dot s-4"></span>
+                  <span class="spark-dot s-5"></span>
+                  <span class="spark-dot s-6"></span>
+                  <span class="spark-dot s-7"></span>
+                  <span class="spark-dot s-8"></span>
+                  <span class="spark-dot s-9"></span>
+                  <span class="spark-dot s-10"></span>
+                  <span class="spark-dot s-11"></span>
+                  <span class="spark-dot s-12"></span>
+                  <span class="spark-dot s-13"></span>
+                  <span class="spark-dot s-14"></span>
+                  <span class="spark-dot s-15"></span>
+                  <span class="spark-dot s-16"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -1085,7 +1072,7 @@ const statusTagType = computed(() => {
   border-radius: 2px;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 0 14px rgba(6, 182, 212, 0.5);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cyber-microdots-fill.is-pass {
@@ -1098,135 +1085,14 @@ const statusTagType = computed(() => {
   box-shadow: 0 0 14px rgba(239, 68, 68, 0.6);
 }
 
-/* Dynamic Chasing Micro-Dots Layer (Active only when running) */
-.cyber-chase-layer {
+/* Moving Head Container */
+.fill-lead-head {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
   bottom: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 3;
-}
-
-.chase-wave {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  animation: chase-run 2.4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
-  opacity: 0;
-}
-
-.chase-wave.wave-1 {
-  animation-delay: 0s;
-}
-
-.chase-wave.wave-2 {
-  animation-delay: 0.8s;
-}
-
-.chase-wave.wave-3 {
-  animation-delay: 1.6s;
-}
-
-@keyframes chase-run {
-  0% {
-    left: -160px;
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 0.3;
-  }
-  100% {
-    left: 100%;
-    opacity: 0;
-  }
-}
-
-.chase-dot {
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: inline-block;
-  transition: all 0.2s ease;
-}
-
-.chase-dot.d-lead {
-  width: 7px;
-  height: 7px;
-  background: #ffffff;
-  box-shadow: 0 0 8px #ffffff, 0 0 16px #38bdf8, 0 0 24px #0284c7;
-  animation: dot-sparkle 0.4s ease-in-out infinite alternate;
-}
-
-.chase-dot.d-1 {
-  width: 5.5px;
-  height: 5.5px;
-  background: #bae6fd;
-  box-shadow: 0 0 6px #38bdf8;
-  opacity: 0.95;
-}
-
-.chase-dot.d-2 {
-  width: 5px;
-  height: 5px;
-  background: #7dd3fc;
-  box-shadow: 0 0 5px #0284c7;
-  opacity: 0.85;
-}
-
-.chase-dot.d-3 {
-  width: 4.5px;
-  height: 4.5px;
-  background: #38bdf8;
-  box-shadow: 0 0 4px #0284c7;
-  opacity: 0.75;
-}
-
-.chase-dot.d-4 {
-  width: 4px;
-  height: 4px;
-  background: #0ea5e9;
-  opacity: 0.65;
-}
-
-.chase-dot.d-5 {
-  width: 3.5px;
-  height: 3.5px;
-  background: #0284c7;
-  opacity: 0.5;
-}
-
-.chase-dot.d-6 {
-  width: 3px;
-  height: 3px;
-  background: #0369a1;
-  opacity: 0.35;
-}
-
-.chase-dot.d-7 {
-  width: 2.5px;
-  height: 2.5px;
-  background: #075985;
-  opacity: 0.2;
-}
-
-@keyframes dot-sparkle {
-  from {
-    transform: scale(0.9);
-  }
-  to {
-    transform: scale(1.2);
-  }
+  right: 0;
+  width: 0;
+  z-index: 4;
 }
 
 /* Glowing head pulse beacon */
@@ -1238,6 +1104,267 @@ const statusTagType = computed(() => {
   width: 4px;
   background: #ffffff;
   box-shadow: 0 0 8px #ffffff, 0 0 14px #38bdf8;
+  border-radius: 1px;
+}
+
+.fill-lead-beacon.is-active-pulse {
+  animation: beacon-shimmer 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes beacon-shimmer {
+  0% {
+    box-shadow: 0 0 6px #ffffff, 0 0 12px #38bdf8;
+  }
+  100% {
+    box-shadow: 0 0 12px #ffffff, 0 0 20px #06b6d4, 0 0 28px #38bdf8;
+  }
+}
+
+/* Micro-dots particle emitter shooting forward from moving head */
+.lead-spark-emitter {
+  position: absolute;
+  top: 50%;
+  right: -2px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.spark-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  background: #f0f9ff;
+  box-shadow: 0 0 4px #ffffff, 0 0 8px #38bdf8, 0 0 12px #06b6d4;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Shooting trajectory animations */
+@keyframes spark-spray-1 {
+  0% {
+    transform: translate(0, 0) scale(1.4);
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(34px, -4px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-spray-2 {
+  0% {
+    transform: translate(0, 0) scale(1.1);
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(22px, 5px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-spray-3 {
+  0% {
+    transform: translate(0, 0) scale(1.5);
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(44px, -1px) scale(0.15);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-spray-4 {
+  0% {
+    transform: translate(0, 0) scale(1.2);
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(18px, -7px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-spray-5 {
+  0% {
+    transform: translate(0, 0) scale(1.3);
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(38px, 6px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-spray-6 {
+  0% {
+    transform: translate(0, 0) scale(1.0);
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(28px, 0px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-spray-7 {
+  0% {
+    transform: translate(0, 0) scale(1.6);
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(50px, -3px) scale(0.1);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-spray-8 {
+  0% {
+    transform: translate(0, 0) scale(1.2);
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(26px, 7px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* Individual particle variations & delays */
+.spark-dot.s-1 {
+  width: 2.5px;
+  height: 2.5px;
+  animation: spark-spray-1 0.65s ease-out infinite;
+  animation-delay: 0s;
+}
+
+.spark-dot.s-2 {
+  width: 2px;
+  height: 2px;
+  animation: spark-spray-2 0.55s ease-out infinite;
+  animation-delay: 0.08s;
+}
+
+.spark-dot.s-3 {
+  width: 3px;
+  height: 3px;
+  animation: spark-spray-3 0.75s ease-out infinite;
+  animation-delay: 0.16s;
+}
+
+.spark-dot.s-4 {
+  width: 2px;
+  height: 2px;
+  animation: spark-spray-4 0.6s ease-out infinite;
+  animation-delay: 0.24s;
+}
+
+.spark-dot.s-5 {
+  width: 2.5px;
+  height: 2.5px;
+  animation: spark-spray-5 0.7s ease-out infinite;
+  animation-delay: 0.32s;
+}
+
+.spark-dot.s-6 {
+  width: 2px;
+  height: 2px;
+  animation: spark-spray-6 0.5s ease-out infinite;
+  animation-delay: 0.4s;
+}
+
+.spark-dot.s-7 {
+  width: 3px;
+  height: 3px;
+  animation: spark-spray-7 0.8s ease-out infinite;
+  animation-delay: 0.48s;
+}
+
+.spark-dot.s-8 {
+  width: 2px;
+  height: 2px;
+  animation: spark-spray-8 0.62s ease-out infinite;
+  animation-delay: 0.56s;
+}
+
+.spark-dot.s-9 {
+  width: 2.5px;
+  height: 2.5px;
+  animation: spark-spray-1 0.68s ease-out infinite;
+  animation-delay: 0.12s;
+}
+
+.spark-dot.s-10 {
+  width: 2px;
+  height: 2px;
+  animation: spark-spray-3 0.58s ease-out infinite;
+  animation-delay: 0.28s;
+}
+
+.spark-dot.s-11 {
+  width: 3px;
+  height: 3px;
+  animation: spark-spray-5 0.72s ease-out infinite;
+  animation-delay: 0.44s;
+}
+
+.spark-dot.s-12 {
+  width: 1.5px;
+  height: 1.5px;
+  animation: spark-spray-7 0.76s ease-out infinite;
+  animation-delay: 0.6s;
+}
+
+.spark-dot.s-13 {
+  width: 2px;
+  height: 2px;
+  animation: spark-spray-2 0.52s ease-out infinite;
+  animation-delay: 0.2s;
+}
+
+.spark-dot.s-14 {
+  width: 2.5px;
+  height: 2.5px;
+  animation: spark-spray-4 0.66s ease-out infinite;
+  animation-delay: 0.36s;
+}
+
+.spark-dot.s-15 {
+  width: 2px;
+  height: 2px;
+  animation: spark-spray-6 0.54s ease-out infinite;
+  animation-delay: 0.52s;
+}
+
+.spark-dot.s-16 {
+  width: 2.5px;
+  height: 2.5px;
+  animation: spark-spray-8 0.64s ease-out infinite;
+  animation-delay: 0.04s;
 }
 
 /* Telemetry status row */
