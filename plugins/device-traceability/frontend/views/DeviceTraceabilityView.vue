@@ -1295,6 +1295,26 @@ const handleDisOrderSelect = async (row: any) => {
     if (res.ok) {
       const data = await res.json();
       const detail = data.data || data;
+      const email =
+        detail.partner_email ||
+        detail.partnerEmail ||
+        detail.customer_email ||
+        detail.customerEmail ||
+        detail.email ||
+        detail.customer?.email ||
+        detail.partner?.email ||
+        detail.partner_id?.email ||
+        '';
+      if (email) {
+        row.partner_email = email;
+        row.partnerEmail = email;
+      }
+      selectedDisOrder.value = {
+        ...row,
+        ...detail,
+        partner_email: email || selectedDisOrder.value?.partner_email || '',
+        partnerEmail: email || selectedDisOrder.value?.partnerEmail || '',
+      };
       const rawLines = detail.lines || detail.items || detail.order_line || [];
       const linesArray = Array.isArray(rawLines) ? rawLines : [];
       // Lọc bỏ line có default_code === 'N/A' hoặc rỗng và map item_code từ default_code

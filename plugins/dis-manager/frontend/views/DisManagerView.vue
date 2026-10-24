@@ -796,7 +796,28 @@ const handleOrderSelect = async (row: any) => {
     }
 
     if (res.ok) {
-      const detail = await res.json();
+      const data = await res.json();
+      const detail = data.data || data;
+      const email =
+        detail.partner_email ||
+        detail.partnerEmail ||
+        detail.customer_email ||
+        detail.customerEmail ||
+        detail.email ||
+        detail.customer?.email ||
+        detail.partner?.email ||
+        detail.partner_id?.email ||
+        '';
+      if (email) {
+        row.partner_email = email;
+        row.partnerEmail = email;
+      }
+      selectedOrder.value = {
+        ...row,
+        ...detail,
+        partner_email: email || selectedOrder.value?.partner_email || '',
+        partnerEmail: email || selectedOrder.value?.partnerEmail || '',
+      };
       const rawLines = detail.lines || detail.items || detail.order_line || [];
       const linesArray = Array.isArray(rawLines) ? rawLines : [];
       // Lọc bỏ các dòng có default_code === 'N/A' hoặc rỗng và map ITEM-CODE từ default_code
