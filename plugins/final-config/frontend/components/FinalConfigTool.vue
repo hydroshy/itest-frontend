@@ -167,97 +167,112 @@
         </div>
       </div>
 
-      <!-- 1.3 STAGE 2 LOCKED TARGET CONFIGURATION (LUÔN MẶC ĐỊNH HIỆN DƯỚI NÚT START) -->
-      <div class="locked-target-container">
-        <div class="lock-header">
-          <div class="lock-title">
-            <el-icon class="text-warning"><Tickets /></el-icon>
-            <span>STAGE 2 LOCKED TARGET CONFIGURATION</span>
+      <!-- 1.3 CYBER HUD DASHBOARD: TARGET CONFIGURATION (SN / SO) & MICRO-DOTS PROGRESS BAR -->
+      <div class="cyber-hud-container">
+        <!-- Sci-Fi Corner Brackets -->
+        <div class="hud-corner hud-corner-tl"></div>
+        <div class="hud-corner hud-corner-tr"></div>
+        <div class="hud-corner hud-corner-bl"></div>
+        <div class="hud-corner hud-corner-br"></div>
+
+        <!-- Top Header: System Telemetry & Lock Status -->
+        <div class="cyber-hud-header">
+          <div class="hud-title-wrap">
+            <span class="hud-tech-badge">STAGE 2 // LOCKED TARGET</span>
+            <span class="hud-title-text">TARGET CONFIGURATION &amp; PIPELINE MONITOR</span>
           </div>
-          <el-tag v-if="fcProgress >= 25 || stage2Settled" type="warning" effect="plain" size="small">
-            LOCKED VIA SN/SO
-          </el-tag>
-          <el-tag v-else type="info" effect="plain" size="small">
-            TARGET CONFIG STANDBY
-          </el-tag>
-        </div>
-
-        <el-form label-position="top" inline class="lock-form">
-          <el-form-item label="SERIAL NUMBER:">
-            <el-input
-              :model-value="fcSerialNumberInput"
-              readonly
-              placeholder="Waiting for hardware audit or input..."
-              style="width: 290px;"
-              class="target-input mono-font"
-            >
-              <template #prefix>
-                <el-icon><Cpu /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item label="SO NUMBER:">
-            <el-input
-              :model-value="fcSelectedSo"
-              readonly
-              placeholder="Not assigned / Ready"
-              style="width: 290px;"
-              class="target-input mono-font"
-            >
-              <template #prefix>
-                <el-icon><Document /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <div class="card-section-divider"></div>
-
-      <!-- 1.4 WATCH DOGS 2 CYBERPUNK ASCII PROGRESS BAR -->
-      <div class="wd2-progress-section">
-        <div class="wd2-progress-header">
-          <div class="wd2-title-block">
-            <span class="wd2-tag">PIPELINE PROGRESS</span>
-            <span class="wd2-ascii-blocks">{{ wd2AsciiBlocks }}</span>
-          </div>
-          <div class="wd2-stream-block">
-            <span class="wd2-cipher-label">// STREAM:</span>
-            <span class="wd2-stream-text" :class="{ 'is-glitching': isRunningFinalConfig }">
-              {{ wd2AsciiStream }}
-            </span>
-            <span class="wd2-hex-chip">{{ wd2RandomCipher }}</span>
-          </div>
-        </div>
-
-        <!-- Custom Cyberpunk HUD Progress Bar -->
-        <div class="wd2-progress-track-wrapper">
-          <div class="wd2-progress-track">
+          <div class="hud-status-wrap">
             <div
-              class="wd2-progress-fill"
-              :class="{ 'is-active': isRunningFinalConfig, 'is-pass': finalVerdict === 'PASS', 'is-fail': finalVerdict === 'FAIL' }"
+              class="cyber-lock-chip"
+              :class="{ 'is-locked': fcProgress >= 25 || stage2Settled }"
+            >
+              <span class="lock-beacon-dot"></span>
+              <span class="lock-chip-text">
+                {{ (fcProgress >= 25 || stage2Settled) ? 'LOCKED VIA SN/SO' : 'STANDBY' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cyber Data Readout: SERIAL NUMBER & SO NUMBER -->
+        <div class="cyber-readout-grid">
+          <!-- Parameter 1: SERIAL NUMBER -->
+          <div class="cyber-readout-card" :class="{ 'has-value': !!fcSerialNumberInput }">
+            <div class="readout-header">
+              <span class="readout-tag">PARAM 01</span>
+              <span class="readout-label">SERIAL NUMBER:</span>
+              <el-icon class="readout-icon"><Cpu /></el-icon>
+            </div>
+            <div class="readout-display-box">
+              <span class="readout-value font-mono">
+                {{ fcSerialNumberInput || '--- WAITING HARDWARE AUDIT ---' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Parameter 2: SO NUMBER -->
+          <div class="cyber-readout-card" :class="{ 'has-value': !!fcSelectedSo }">
+            <div class="readout-header">
+              <span class="readout-tag">PARAM 02</span>
+              <span class="readout-label">SO NUMBER:</span>
+              <el-icon class="readout-icon"><Document /></el-icon>
+            </div>
+            <div class="readout-display-box">
+              <span class="readout-value font-mono">
+                {{ fcSelectedSo || '--- NOT ASSIGNED / READY ---' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Bar with Moving Micro-Dots Particles Animation -->
+        <div class="cyber-progress-block">
+          <div class="progress-meta-row">
+            <div class="progress-meta-left">
+              <span class="progress-meta-title">PIPELINE PROGRESS</span>
+              <span class="progress-meta-stage font-mono">STAGE {{ currentStage }}/4</span>
+            </div>
+            <div class="progress-meta-right">
+              <span
+                class="progress-meta-verdict font-mono"
+                :class="'verdict-' + (finalVerdict === 'PASS' ? 'pass' : finalVerdict === 'FAIL' ? 'fail' : 'running')"
+              >
+                {{ isRunningFinalConfig ? 'EXECUTING PIPELINE' : (finalVerdict || 'SYSTEM IDLE') }}
+              </span>
+              <span class="progress-meta-percent font-mono">{{ fcProgress }}%</span>
+            </div>
+          </div>
+
+          <!-- Micro-Dots Track -->
+          <div class="cyber-microdots-track">
+            <!-- Ambient micro-dots background pattern -->
+            <div class="ambient-microdots-grid"></div>
+
+            <!-- Active progress bar fill with moving micro-dots particles -->
+            <div
+              class="cyber-microdots-fill"
+              :class="{
+                'is-running': isRunningFinalConfig,
+                'is-pass': finalVerdict === 'PASS',
+                'is-fail': finalVerdict === 'FAIL'
+              }"
               :style="{ width: fcProgress + '%' }"
             >
-              <!-- Moving Scanline Glitch Light -->
-              <div class="wd2-glitch-scanner" v-if="isRunningFinalConfig"></div>
+              <!-- Moving tiny particle dots layer -->
+              <div class="moving-particles-layer" :class="{ 'fast-drift': isRunningFinalConfig }"></div>
+              <!-- Glowing head pulse beacon -->
+              <div class="fill-lead-beacon" v-if="fcProgress > 0 && fcProgress < 100"></div>
             </div>
-            <!-- Matrix ASCII character stream floating on progress bar -->
-            <div class="wd2-progress-stream-overlay">
-              <span class="wd2-marquee-ascii">{{ wd2AsciiStream }} {{ wd2AsciiStream }}</span>
-            </div>
-          </div>
-          <div class="wd2-progress-percentage">
-            {{ fcProgress }}%
           </div>
         </div>
 
-        <!-- Terminal Status Message Line -->
-        <div class="wd2-terminal-line">
-          <span class="terminal-prompt">&gt;_</span>
-          <span class="terminal-text">
-            {{ fcStatusMessage || (isRunningFinalConfig ? 'EXECUTING AUTOMATED 4-STAGE PIPELINE...' : 'SYSTEM READY // STANDBY') }}
+        <!-- Cyber Telemetry Status Line -->
+        <div class="cyber-telemetry-row">
+          <span class="telemetry-prompt">&gt;_ [SYS_MONITOR]:</span>
+          <span class="telemetry-msg font-mono">
+            {{ fcStatusMessage || (isRunningFinalConfig ? 'EXECUTING AUTOMATED PIPELINE...' : 'SYSTEM READY // AWAITING COMMAND') }}
           </span>
-          <span class="terminal-cursor" :class="{ 'blink': !isRunningFinalConfig }">_</span>
+          <span class="telemetry-cursor">█</span>
         </div>
       </div>
     </el-card>
@@ -454,7 +469,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
 import {
   Operation,
   Top,
@@ -546,48 +561,6 @@ const statusTagType = computed(() => {
   if (statusDisplayText.value === 'FAIL') return 'danger';
   if (statusDisplayText.value === 'RUNNING') return 'primary';
   return 'info'; // Màu xám cho NONE / IDLE
-});
-
-// Watch Dogs 2 / DedSec ASCII Glitch Stream
-const asciiGlyphs = '░▒▓█▀▄▌▐01_/<>$#@*!&%?+=~^[]{}|\\;:XYZQWERTY';
-const wd2AsciiStream = ref('// STANDBY_AWAITING_TRIGGER //');
-const wd2RandomCipher = ref('0x0000');
-let wd2Ticker: any = null;
-
-const generateRandomAscii = (len = 32) => {
-  let str = '';
-  for (let i = 0; i < len; i++) {
-    str += asciiGlyphs[Math.floor(Math.random() * asciiGlyphs.length)];
-  }
-  return str;
-};
-
-onMounted(() => {
-  wd2Ticker = setInterval(() => {
-    if (isRunningFinalConfig.value) {
-      wd2AsciiStream.value = generateRandomAscii(34);
-      wd2RandomCipher.value = '0x' + Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, '0');
-    } else {
-      wd2AsciiStream.value = '// SYSTEM_IDLE_STANDBY //';
-      wd2RandomCipher.value = '0x0000';
-    }
-  }, 65);
-});
-
-onUnmounted(() => {
-  if (wd2Ticker) {
-    clearInterval(wd2Ticker);
-    wd2Ticker = null;
-  }
-});
-
-// ASCII Block Representation: [████████░░░░░░░░]
-const wd2AsciiBlocks = computed(() => {
-  const total = 22;
-  const count = Math.min(total, Math.round((fcProgress.value / 100) * total));
-  const empty = Math.max(0, total - count);
-  const fillChar = isRunningFinalConfig.value ? '█' : '▓';
-  return '[' + fillChar.repeat(count) + '░'.repeat(empty) + ']';
 });
 </script>
 
@@ -792,261 +765,401 @@ const wd2AsciiBlocks = computed(() => {
   box-shadow: none !important;
 }
 
-/* 1.3 STAGE 2 LOCKED TARGET CONFIGURATION */
-.locked-target-container {
-  background-color: var(--el-fill-color-light, #f8fafc);
-  border: 1px solid var(--el-border-color-lighter, #e2e8f0);
-  border-left: 4px solid var(--el-color-warning, #e6a23c);
+/* 1.3 CYBER HUD DASHBOARD & MICRO-DOTS PROGRESS BAR */
+.cyber-hud-container {
+  position: relative;
+  background: radial-gradient(circle at 50% 0%, #0d1527 0%, #060913 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: 6px;
-  padding: 12px 16px 4px 16px;
+  padding: 16px 18px 14px 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+/* Sci-Fi Corner Brackets */
+.hud-corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: #38bdf8;
+  border-style: solid;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.hud-corner-tl {
+  top: 3px;
+  left: 3px;
+  border-width: 2px 0 0 2px;
+}
+.hud-corner-tr {
+  top: 3px;
+  right: 3px;
+  border-width: 2px 2px 0 0;
+}
+.hud-corner-bl {
+  bottom: 3px;
+  left: 3px;
+  border-width: 0 0 2px 2px;
+}
+.hud-corner-br {
+  bottom: 3px;
+  right: 3px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Header */
+.cyber-hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+  padding-bottom: 10px;
+}
+
+.hud-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hud-tech-badge {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 3px;
+}
+
+.hud-title-text {
+  font-size: 13px;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: 0.5px;
+}
+
+.hud-status-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.cyber-lock-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  background: rgba(100, 116, 139, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.cyber-lock-chip.is-locked {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #34d399;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.lock-beacon-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.cyber-lock-chip.is-locked .lock-beacon-dot {
+  background: #34d399;
+  box-shadow: 0 0 6px #34d399;
+  animation: beacon-pulse 1.5s infinite;
+}
+
+/* Cyber Data Readout: SERIAL NUMBER & SO NUMBER */
+.cyber-readout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 768px) {
+  .cyber-readout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cyber-readout-card {
+  background: #090f1e;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 4px;
+  padding: 10px 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cyber-readout-card.has-value {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.08);
+}
+
+.readout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.readout-tag {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.readout-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  flex: 1;
+  margin-left: 8px;
+}
+
+.readout-icon {
+  font-size: 14px;
+  color: #38bdf8;
+}
+
+.readout-display-box {
+  background: #040711;
+  border: 1px solid #1e293b;
+  border-radius: 3px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+}
+
+.readout-value {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.cyber-readout-card:not(.has-value) .readout-value {
+  color: #475569;
+  text-shadow: none;
+  font-weight: 600;
+}
+
+/* Micro-Dots Moving Particle Progress Bar */
+.cyber-progress-block {
   margin-bottom: 12px;
 }
 
-.lock-header {
+.progress-meta-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.lock-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--el-text-color-primary);
-  letter-spacing: 0.5px;
-}
-
-.lock-form {
-  margin-bottom: 0;
-}
-
-.lock-form :deep(.el-form-item) {
-  margin-bottom: 10px;
-  margin-right: 24px;
-}
-
-.lock-form :deep(.el-form-item__label) {
-  font-weight: 700;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  letter-spacing: 0.5px;
-  padding-bottom: 2px;
-}
-
-.target-input :deep(.el-input__wrapper) {
-  background-color: var(--el-bg-color, #ffffff);
-  box-shadow: 0 0 0 1px var(--el-border-color) inset;
-}
-
-/* 1.4 WATCH DOGS 2 CYBERPUNK ASCII PROGRESS BAR */
-.wd2-progress-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 4px 0;
-}
-
-.wd2-progress-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  margin-bottom: 6px;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.wd2-title-block {
+.progress-meta-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.wd2-tag {
+.progress-meta-title {
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 1px;
-  color: var(--el-text-color-regular);
+  color: #e2e8f0;
+  letter-spacing: 0.5px;
 }
 
-.wd2-ascii-blocks {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--el-color-primary);
-  letter-spacing: 1px;
-}
-
-.wd2-stream-block {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 12px;
-}
-
-.wd2-cipher-label {
-  color: var(--el-text-color-secondary);
-  font-weight: 600;
-}
-
-.wd2-stream-text {
-  color: #06b6d4;
-  letter-spacing: 1px;
-  max-width: 320px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  display: inline-block;
-}
-
-.wd2-stream-text.is-glitching {
-  color: #10b981;
-  text-shadow: 0 0 4px #10b981;
-  animation: wd2-text-flicker 0.4s infinite alternate;
-}
-
-.wd2-hex-chip {
-  background: #0f172a;
-  color: #38bdf8;
-  padding: 1px 6px;
-  border-radius: 4px;
+.progress-meta-stage {
   font-size: 11px;
   font-weight: 700;
-  border: 1px solid #1e293b;
-}
-
-.wd2-progress-track-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-}
-
-.wd2-progress-track {
-  position: relative;
-  flex: 1;
-  height: 24px;
-  background-color: #090d16;
-  border: 1px solid #1e293b;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
-}
-
-.wd2-progress-fill {
-  position: relative;
-  height: 100%;
-  background: linear-gradient(90deg, #0284c7 0%, #06b6d4 70%, #10b981 100%);
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  padding: 2px 6px;
   border-radius: 2px;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+  border: 1px solid #334155;
 }
 
-.wd2-progress-fill.is-pass {
-  background: linear-gradient(90deg, #059669 0%, #10b981 100%);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
-}
-
-.wd2-progress-fill.is-fail {
-  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
-}
-
-.wd2-glitch-scanner {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.35) 50%,
-    transparent 100%
-  );
-  animation: wd2-scanner-move 1.2s infinite ease-in-out;
-}
-
-.wd2-progress-stream-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.progress-meta-right {
   display: flex;
   align-items: center;
-  pointer-events: none;
-  overflow: hidden;
-  opacity: 0.28;
+  gap: 12px;
 }
 
-.wd2-marquee-ascii {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: #ffffff;
-  white-space: nowrap;
-  animation: wd2-marquee 10s linear infinite;
-}
-
-.wd2-progress-percentage {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 15px;
+.progress-meta-verdict {
+  font-size: 12px;
   font-weight: 800;
-  color: var(--el-color-primary);
+  letter-spacing: 0.5px;
+}
+
+.progress-meta-verdict.verdict-pass {
+  color: #34d399;
+  text-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+}
+
+.progress-meta-verdict.verdict-fail {
+  color: #f87171;
+  text-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+}
+
+.progress-meta-verdict.verdict-running {
+  color: #38bdf8;
+  text-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+}
+
+.progress-meta-percent {
+  font-size: 16px;
+  font-weight: 900;
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
   min-width: 48px;
   text-align: right;
 }
 
-.wd2-terminal-line {
+/* The Micro-Dots Track */
+.cyber-microdots-track {
+  position: relative;
+  height: 24px;
+  background-color: #040711;
+  border: 1px solid #1e293b;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+/* Ambient micro-dots background pattern */
+.ambient-microdots-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle, rgba(148, 163, 184, 0.25) 1px, transparent 1px);
+  background-size: 6px 6px;
+  pointer-events: none;
+}
+
+/* Active progress bar fill */
+.cyber-microdots-fill {
+  position: relative;
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7 0%, #06b6d4 50%, #10b981 100%);
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 14px rgba(6, 182, 212, 0.5);
+  overflow: hidden;
+}
+
+.cyber-microdots-fill.is-pass {
+  background: linear-gradient(90deg, #059669 0%, #10b981 100%);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.6);
+}
+
+.cyber-microdots-fill.is-fail {
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.6);
+}
+
+/* Moving tiny particle dots layer */
+.moving-particles-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 1.2px, transparent 1.2px),
+    radial-gradient(circle, rgba(56, 189, 248, 0.7) 1px, transparent 1px);
+  background-size: 8px 8px, 16px 16px;
+  background-position: 0 0, 4px 4px;
+  animation: microdots-drift 0.7s linear infinite;
+  opacity: 0.9;
+}
+
+.moving-particles-layer.fast-drift {
+  animation-duration: 0.35s;
+}
+
+@keyframes microdots-drift {
+  from {
+    background-position: 0 0, 4px 4px;
+  }
+  to {
+    background-position: 16px 0, 20px 0;
+  }
+}
+
+/* Glowing head pulse beacon */
+.fill-lead-beacon {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff, 0 0 14px #38bdf8;
+}
+
+/* Telemetry status row */
+.cyber-telemetry-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  background: #040711;
+  border: 1px solid #1e293b;
+  border-radius: 3px;
+  padding: 6px 12px;
+  overflow: hidden;
+}
+
+.telemetry-prompt {
   font-family: 'Courier New', Courier, monospace;
   font-size: 12px;
-  color: var(--el-text-color-regular);
-  padding: 2px 4px;
+  font-weight: 700;
+  color: #06b6d4;
+  white-space: nowrap;
 }
 
-.terminal-prompt {
-  color: var(--el-color-primary);
+.telemetry-msg {
+  font-size: 12px;
+  color: #cbd5e1;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.telemetry-cursor {
   font-weight: 800;
+  color: #06b6d4;
+  animation: beacon-pulse 1s infinite;
 }
 
-.terminal-text {
-  color: var(--el-text-color-primary);
-  font-weight: 600;
-}
-
-.terminal-cursor {
-  font-weight: 800;
-  color: var(--el-color-primary);
-}
-
-.terminal-cursor.blink {
-  animation: wd2-cursor-blink 1s infinite;
-}
-
-@keyframes wd2-scanner-move {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-@keyframes wd2-marquee {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
-}
-
-@keyframes wd2-text-flicker {
-  0% { opacity: 0.8; }
-  100% { opacity: 1; }
-}
-
-@keyframes wd2-cursor-blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
+@keyframes beacon-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
 }
 
 /* 2. DEBUG MODE ONLY SECTIONS */
