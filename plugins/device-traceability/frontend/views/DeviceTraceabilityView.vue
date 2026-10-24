@@ -1437,7 +1437,9 @@ const initSoTreeTable = () => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
           if (type === 'SO') {
-            return rowData.customerName || '<span class="text-muted">-</span>';
+            const email = rowData.partnerEmail || rowData.partner_email || rowData.customerEmail || rowData.customer_email || rowData.email || rowData.partner?.email || rowData.customer?.email || '';
+            const emailHtml = email ? ` <span class="text-cyan text-sm" style="font-weight: normal; margin-left: 6px;">&lt;${email}&gt;</span>` : '';
+            return (rowData.customerName || '<span class="text-muted">-</span>') + emailHtml;
           }
           if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
             return `<span class="sku-cell" title="${rowData.description || ''}">${rowData.description || rowData.productName || rowData.itemCode || '-'}</span>`;
