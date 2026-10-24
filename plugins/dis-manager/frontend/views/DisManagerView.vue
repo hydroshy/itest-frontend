@@ -733,7 +733,18 @@ const searchOrders = async () => {
       const list = Array.isArray(data) 
         ? data 
         : (data.items || data.data || (data.result && data.result.items) || []);
-      orderList.value = Array.isArray(list) ? list : [];
+      orderList.value = (Array.isArray(list) ? list : []).map((item: any) => ({
+        ...item,
+        id: item.id || item.odoo_id,
+        odoo_id: item.odoo_id || item.id,
+        name: item.name || item.number || `SO-${item.id}`,
+        number: item.number || item.name || `SO-${item.id}`,
+        partner_name: item.partner_name || item.customer?.name || (typeof item.customer === 'string' ? item.customer : '—'),
+        date_order: item.date_order || item.order_date,
+        state: typeof item.state === 'object' ? (item.state?.code || item.state?.label || 'sale') : (item.state || 'sale'),
+        amount_total: item.amount_total ?? item.total_amount ?? 0,
+        currency: item.currency || item.currency_id || 'VND',
+      }));
     } else {
       orderList.value = [];
       ElMessage.warning('Không tải được danh sách đơn hàng từ DIS API.');
@@ -771,8 +782,17 @@ const handleOrderSelect = async (row: any) => {
 
     if (res.ok) {
       const detail = await res.json();
-      const lines = detail.lines || detail.order_line || [];
-      orderLineList.value = Array.isArray(lines) ? lines : [];
+      const lines = detail.lines || detail.items || detail.order_line || [];
+      orderLineList.value = (Array.isArray(lines) ? lines : []).map((l: any, idx: number) => ({
+        ...l,
+        id: l.id ?? idx + 1,
+        default_code: l.default_code || l.sku || l.product?.sku || l.product?.default_code || 'N/A',
+        product_name: l.product_name || l.name || l.product?.name || '',
+        product_uom_qty: l.product_uom_qty ?? l.quantity ?? 0,
+        qty_delivered: l.qty_delivered ?? l.delivered_quantity ?? 0,
+        qty_invoiced: l.qty_invoiced ?? l.invoiced_quantity ?? 0,
+        price_unit: l.price_unit ?? l.unit_price ?? 0,
+      }));
     } else {
       orderLineList.value = [];
     }

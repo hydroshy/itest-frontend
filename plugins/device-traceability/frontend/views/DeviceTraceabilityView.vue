@@ -695,7 +695,8 @@
                 v-model="disFilterYear"
                 :min="2020"
                 :max="2035"
-                placeholder="Năm"
+                placeholder="Năm (tất cả)"
+                clearable
                 style="width: 100%"
               />
             </el-col>
