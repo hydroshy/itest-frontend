@@ -1417,90 +1417,149 @@ const initSoTreeTable = () => {
     placeholder: 'Không có dữ liệu Sale Order',
     columns: [
       {
-        title: 'Mã / Đối Tượng',
+        title: 'Mã / Phân Cấp Đối Tượng',
         field: 'code',
-        widthGrow: 2.2,
+        widthGrow: 2.4,
         responsive: 0,
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
           let icon = '📁';
           let badgeClass = 'badge-so';
+          let typeLabel = 'SO';
           let label = rowData.code || rowData.soNumber || '';
 
           if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
             icon = '📦';
             badgeClass = 'badge-item';
+            typeLabel = 'ITEM';
             label = rowData.code || rowData.itemCode || rowData.orderingCode || '';
           } else if (type === 'WA') {
             icon = '📑';
             badgeClass = 'badge-wa';
+            typeLabel = 'WA';
             label = rowData.code || rowData.waNumber || '';
           } else if (type === 'DEVICE' || type === 'SERIAL_NUMBER' || type === 'SERIAL') {
             icon = '📟';
             badgeClass = 'badge-device';
+            typeLabel = 'SN';
             label = rowData.code || rowData.serialNumber || '';
           }
 
           return `<span class="tree-node ${badgeClass}">
             <span class="tree-icon">${icon}</span>
-            <span class="tree-type-tag">${type}</span>
+            <span class="tree-type-tag">${typeLabel}</span>
             <strong class="tree-label">${label}</strong>
           </span>`;
         },
       },
       {
-        title: 'Tên Khách Hàng / SKU / Diễn Giải',
+        title: 'Khách Hàng / Diễn Giải / SKU',
         field: 'customerName',
-        widthGrow: 2.0,
+        widthGrow: 2.2,
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
           if (type === 'SO') {
             const email = rowData.partnerEmail || rowData.partner_email || rowData.customerEmail || rowData.customer_email || rowData.email || rowData.partner?.email || rowData.customer?.email || '';
-            const emailHtml = email ? ` <span class="text-cyan text-sm" style="font-weight: normal; margin-left: 6px;">&lt;${email}&gt;</span>` : '';
-            return (rowData.customerName || '<span class="text-muted">-</span>') + emailHtml;
+            const emailHtml = email ? ` <span class="customer-email-badge" title="Email liên hệ">&lt;${email}&gt;</span>` : '';
+            const cust = rowData.customerName || '<span class="text-muted">Không có tên KH</span>';
+            return `<div class="customer-cell"><span class="cust-name">${cust}</span>${emailHtml}</div>`;
           }
           if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
-            return `<span class="sku-cell" title="${rowData.description || ''}">${rowData.description || rowData.productName || rowData.itemCode || '-'}</span>`;
+            const desc = rowData.description || rowData.productName || rowData.itemCode || '-';
+            const skuTag = rowData.sku && rowData.sku !== rowData.itemCode ? ` <span class="badge-item-sub">SKU: ${rowData.sku}</span>` : '';
+            return `<div class="item-desc-cell"><span class="sku-cell" title="${desc}">${desc}</span>${skuTag}</div>`;
           }
           if (type === 'DEVICE' || type === 'SERIAL_NUMBER' || type === 'SERIAL') {
-            const waTag = rowData.waNumber || rowData.waCode ? `<span class="badge-wa-sm" style="margin-left:6px;" title="Work Authorization">WA: ${rowData.waNumber || rowData.waCode}</span>` : '';
-            return `<span class="sku-cell">${rowData.sku || rowData.itemCode || '-'}</span>${waTag}`;
+            const waTag = rowData.waNumber || rowData.waCode ? `<span class="badge-wa-sm" title="Work Authorization">WA: ${rowData.waNumber || rowData.waCode}</span>` : '';
+            const macTag = rowData.macAddress || rowData.mac ? ` <span class="mono-font text-muted" style="font-size:11px;">[MAC: ${rowData.macAddress || rowData.mac}]</span>` : '';
+            return `<div class="device-cell"><span class="sku-cell">${rowData.sku || rowData.itemCode || '-'}</span>${waTag}${macTag}</div>`;
           }
           return '<span class="text-muted">-</span>';
         },
       },
       {
-        title: 'SL Kế Hoạch / DevEUI',
+        title: 'SL / DevEUI',
         field: 'plannedQuantity',
-        widthGrow: 1.4,
+        widthGrow: 1.3,
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
-          if (type === 'SO' || type === 'WA' || type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+          if (type === 'SO') {
+            const count = rowData.totalDevices != null ? rowData.totalDevices : (rowData.deviceCount ?? rowData.plannedQuantity ?? 0);
+            const items = rowData.itemCount != null ? ` (${rowData.itemCount} items)` : '';
+            return `<span class="quantity-badge so">${count} thiết bị${items}</span>`;
+          }
+          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+            const planned = rowData.plannedQuantity ?? rowData.quantity ?? 0;
+            const tested = rowData.testedCount ?? rowData.totalDevices ?? (rowData.devices ? rowData.devices.length : 0);
+            return `<span class="quantity-badge item" title="Đã có ${tested} / Kế hoạch ${planned}">${tested}/${planned} chiếc</span>`;
+          }
+          if (type === 'WA') {
             const count = rowData.plannedQuantity ?? rowData.quantity ?? rowData.deviceCount ?? 0;
-            return `<span class="quantity-badge">${count} chiếc</span>`;
+            return `<span class="quantity-badge wa">${count} chiếc</span>`;
           }
           if (type === 'DEVICE' || type === 'SERIAL_NUMBER' || type === 'SERIAL') {
-            return `<span class="mono-font">${rowData.devEui || '-'}</span>`;
+            return `<span class="mono-font deveui-code">${rowData.devEui || '<span class="text-muted">-</span>'}</span>`;
           }
           return '-';
         },
       },
       {
-        title: 'Trạng Thái Test',
+        title: 'Tiến Độ / Trạng Thái Test',
         field: 'testResult',
-        widthGrow: 1.3,
+        widthGrow: 1.8,
         hozAlign: 'center',
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
-          if (type === 'SO' || type === 'WA' || type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+
+          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+            const planned = Number(rowData.plannedQuantity ?? rowData.quantity ?? 0);
+            const passCount = Number(rowData.passCount != null ? rowData.passCount : (rowData.testPassCount ?? rowData.devicePassCount ?? 0));
+            const failCount = Number(rowData.failCount != null ? rowData.failCount : (rowData.testFailCount ?? rowData.deviceFailCount ?? 0));
+            const totalTested = Number(rowData.testedCount ?? rowData.totalDevices ?? (passCount + failCount));
+            const denom = planned > 0 ? planned : (totalTested > 0 ? totalTested : 1);
+            const pct = Math.min(100, Math.round((passCount / denom) * 100));
+
+            return `
+              <div class="progress-cell-wrapper" title="PASS: ${passCount} | FAIL: ${failCount} | Kế hoạch: ${planned}">
+                <div class="mini-progress-bar">
+                  <div class="progress-fill ${pct >= 100 ? 'complete' : ''}" style="width: ${pct}%"></div>
+                </div>
+                <div class="progress-labels">
+                  <span class="pct-text">${pct}%</span>
+                  <span class="count-badge pass">PASS: ${passCount}</span>
+                  ${failCount > 0 ? `<span class="count-badge fail">FAIL: ${failCount}</span>` : ''}
+                </div>
+              </div>`;
+          }
+
+          if (type === 'SO') {
+            const passCount = rowData.passCount != null ? rowData.passCount : (rowData.testPassCount ?? rowData.devicePassCount ?? 0);
+            const failCount = rowData.failCount != null ? rowData.failCount : (rowData.testFailCount ?? rowData.deviceFailCount ?? 0);
+            const total = rowData.totalDevices ?? (passCount + failCount);
+            const pct = total > 0 ? Math.min(100, Math.round((passCount / total) * 100)) : 0;
+            return `
+              <div class="progress-cell-wrapper" title="Tổng PASS: ${passCount}/${total}">
+                <div class="mini-progress-bar">
+                  <div class="progress-fill so-fill ${pct >= 100 && total > 0 ? 'complete' : ''}" style="width: ${pct}%"></div>
+                </div>
+                <div class="progress-labels">
+                  <span class="pct-text">${pct}%</span>
+                  <span class="count-badge pass">PASS: ${passCount}</span>
+                  ${failCount > 0 ? `<span class="count-badge fail">FAIL: ${failCount}</span>` : ''}
+                </div>
+              </div>`;
+          }
+
+          if (type === 'WA') {
             const passCount = rowData.passCount != null ? rowData.passCount : (rowData.testPassCount ?? rowData.devicePassCount ?? 0);
             const failCount = rowData.failCount != null ? rowData.failCount : (rowData.testFailCount ?? rowData.deviceFailCount ?? 0);
             return `<span class="count-badge pass">PASS: ${passCount}</span>${failCount > 0 ? ` <span class="count-badge fail">FAIL: ${failCount}</span>` : ''}`;
           }
+
           const res = (rowData.testResult || rowData.testStatus || 'NONE').toUpperCase();
           if (res === 'PASS') return '<span class="status-pill pass">PASS</span>';
           if (res === 'FAIL') return '<span class="status-pill fail">FAIL</span>';
@@ -1508,16 +1567,16 @@ const initSoTreeTable = () => {
         },
       },
       {
-        title: 'Trạng Thái Config',
+        title: 'Final Config',
         field: 'configStatus',
-        widthGrow: 1.4,
+        widthGrow: 1.3,
         hozAlign: 'center',
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
-          if (type === 'SO' || type === 'WA' || type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+          if (type === 'SO' || type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU' || type === 'WA') {
             const cfgPass = rowData.configPassCount != null ? rowData.configPassCount : (rowData.deviceConfigPassCount ?? 0);
-            return `<span class="count-badge pass">PASS: ${cfgPass}</span>`;
+            return `<span class="count-badge pass" title="Số lượng thiết bị đã cấu hình đạt">CFG PASS: ${cfgPass}</span>`;
           }
           const res = (rowData.configStatus || rowData.finalConfigStatus || 'NONE').toUpperCase();
           if (res === 'CONFIGURED_PASS' || res === 'PASS') return '<span class="status-pill pass">CONFIG PASS</span>';
@@ -2618,9 +2677,9 @@ onBeforeUnmount(() => {
 }
 
 .badge-item .tree-type-tag {
-  background: #f9f0ff;
-  color: #722ed1;
-  border: 1px solid #d3adf7;
+  background: #fff7e6;
+  color: #d46b08;
+  border: 1px solid #ffd591;
 }
 
 .badge-wa .tree-type-tag {
@@ -2630,9 +2689,9 @@ onBeforeUnmount(() => {
 }
 
 .badge-device .tree-type-tag {
-  background: #fff7e6;
-  color: #fa8c16;
-  border: 1px solid #ffd591;
+  background: #f9f0ff;
+  color: #722ed1;
+  border: 1px solid #d3adf7;
 }
 
 .badge-so-sm {
@@ -2644,6 +2703,16 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
+.badge-item-sub {
+  background: #fffbe6;
+  color: #d48806;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  border: 1px solid #ffe58f;
+  margin-left: 6px;
+}
+
 .badge-wa-sm {
   background: #f6ffed;
   color: #52c41a;
@@ -2651,6 +2720,29 @@ onBeforeUnmount(() => {
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
+  margin-left: 6px;
+}
+
+.customer-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.customer-email-badge {
+  background: rgba(0, 240, 255, 0.1);
+  color: #00f0ff;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: Consolas, monospace;
+}
+
+.deveui-code {
+  color: #fa8c16;
+  font-weight: 600;
 }
 
 .quantity-badge {
@@ -2659,6 +2751,74 @@ onBeforeUnmount(() => {
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 12px;
+  font-weight: 500;
+}
+
+.quantity-badge.so {
+  background: #e6f7ff;
+  color: #096dd9;
+  border: 1px solid #bae7ff;
+}
+
+.quantity-badge.item {
+  background: #fff7e6;
+  color: #d46b08;
+  border: 1px solid #ffd591;
+}
+
+.quantity-badge.wa {
+  background: #f6ffed;
+  color: #389e0d;
+  border: 1px solid #b7eb8f;
+}
+
+.progress-cell-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.mini-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.mini-progress-bar .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1890ff 0%, #52c41a 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.mini-progress-bar .progress-fill.complete {
+  background: #52c41a;
+}
+
+.mini-progress-bar .progress-fill.so-fill {
+  background: linear-gradient(90deg, #722ed1 0%, #1890ff 100%);
+}
+
+.mini-progress-bar .progress-fill.so-fill.complete {
+  background: #52c41a;
+}
+
+.progress-labels {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pct-text {
+  font-size: 11px;
+  font-weight: bold;
+  color: #00f0ff;
+  min-width: 32px;
 }
 
 .count-badge.pass {
@@ -2666,9 +2826,19 @@ onBeforeUnmount(() => {
   color: #67c23a;
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   border: 1px solid #e1f3d8;
+}
+
+.count-badge.fail {
+  background: #fef0f0;
+  color: #f56c6c;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid #fde2e2;
 }
 
 .status-pill {
