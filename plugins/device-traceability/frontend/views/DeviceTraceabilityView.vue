@@ -1429,7 +1429,7 @@ const initSoTreeTable = () => {
           let typeLabel = 'SO';
           let label = rowData.code || rowData.soNumber || '';
 
-          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'ITEM-CODE' || type === 'SKU' || type === 'PRODUCT') {
             icon = '📦';
             badgeClass = 'badge-item';
             typeLabel = 'ITEM';
@@ -1466,7 +1466,7 @@ const initSoTreeTable = () => {
             const cust = rowData.customerName || '<span class="text-muted">Không có tên KH</span>';
             return `<div class="customer-cell"><span class="cust-name">${cust}</span>${emailHtml}</div>`;
           }
-          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'ITEM-CODE' || type === 'SKU' || type === 'PRODUCT') {
             const desc = rowData.description || rowData.productName || rowData.itemCode || '-';
             const skuTag = rowData.sku && rowData.sku !== rowData.itemCode ? ` <span class="badge-item-sub">SKU: ${rowData.sku}</span>` : '';
             return `<div class="item-desc-cell"><span class="sku-cell" title="${desc}">${desc}</span>${skuTag}</div>`;
@@ -1491,7 +1491,7 @@ const initSoTreeTable = () => {
             const items = rowData.itemCount != null ? ` (${rowData.itemCount} items)` : '';
             return `<span class="quantity-badge so">${count} thiết bị${items}</span>`;
           }
-          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'ITEM-CODE' || type === 'SKU' || type === 'PRODUCT') {
             const planned = rowData.plannedQuantity ?? rowData.quantity ?? 0;
             const tested = rowData.testedCount ?? rowData.totalDevices ?? (rowData.devices ? rowData.devices.length : 0);
             return `<span class="quantity-badge item" title="Đã có ${tested} / Kế hoạch ${planned}">${tested}/${planned} chiếc</span>`;
@@ -1515,7 +1515,7 @@ const initSoTreeTable = () => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
 
-          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'SKU') {
+          if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'ITEM-CODE' || type === 'SKU' || type === 'PRODUCT') {
             const planned = Number(rowData.plannedQuantity ?? rowData.quantity ?? 0);
             const passCount = Number(rowData.passCount != null ? rowData.passCount : (rowData.testPassCount ?? rowData.devicePassCount ?? 0));
             const failCount = Number(rowData.failCount != null ? rowData.failCount : (rowData.testFailCount ?? rowData.deviceFailCount ?? 0));
@@ -2948,6 +2948,21 @@ onBeforeUnmount(() => {
   border: none;
   font-size: 13px;
   background-color: transparent;
+}
+
+:deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control) {
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  background: rgba(0, 240, 255, 0.15) !important;
+}
+
+:deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control:hover) {
+  background: rgba(0, 240, 255, 0.3) !important;
+}
+
+:deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control .tabulator-data-tree-control-collapse:after),
+:deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control .tabulator-data-tree-control-expand),
+:deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control .tabulator-data-tree-control-expand:after) {
+  background: #00f0ff !important;
 }
 
 :deep(.tabulator-header) {
