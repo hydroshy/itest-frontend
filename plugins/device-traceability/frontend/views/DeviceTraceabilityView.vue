@@ -786,16 +786,36 @@
           >
             <el-table-column prop="line_type" label="Loại Dòng" width="100" align="center">
               <template #default="{ row }">
-                <el-tag v-if="row.line_type === 'product'" type="success" size="small">Product</el-tag>
+                <el-tag v-if="row.line_type === 'product' || row.line_type === 'item'" type="success" size="small">{{ row.line_type === 'item' ? 'Item' : 'Product' }}</el-tag>
                 <el-tag v-else-if="row.line_type === 'section'" type="info" size="small">Section</el-tag>
                 <el-tag v-else type="warning" size="small">{{ row.line_type || 'Note' }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="sku" label="SKU Sản Phẩm" width="180" show-overflow-tooltip />
-            <el-table-column prop="product_name" label="Tên Sản Phẩm / Diễn Giải" min-width="220" show-overflow-tooltip />
-            <el-table-column prop="product_uom_qty" label="SL Yêu Cầu" width="110" align="right" />
-            <el-table-column prop="qty_delivered" label="Đã Giao" width="90" align="right" />
-            <el-table-column prop="price_unit" label="Đơn Giá" width="110" align="right" />
+            <el-table-column label="SKU / Mã đặt hàng" width="180" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ row.ordering_code || row.sku || row.product_code || row.default_code || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Tên Sản Phẩm / Diễn Giải" min-width="220" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ row.description || row.product_name || row.name || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="SL Yêu Cầu" width="110" align="right">
+              <template #default="{ row }">
+                {{ row.quantity != null ? row.quantity : (row.product_uom_qty ?? 0) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Đã Giao" width="90" align="right">
+              <template #default="{ row }">
+                {{ row.delivered_quantity != null ? row.delivered_quantity : (row.qty_delivered ?? 0) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Đơn Giá" width="110" align="right">
+              <template #default="{ row }">
+                {{ (row.price_unit != null ? row.price_unit : row.unit_price) ? Number(row.price_unit != null ? row.price_unit : row.unit_price).toLocaleString('vi-VN') : '-' }}
+              </template>
+            </el-table-column>
           </el-table>
         </div>
       </div>
@@ -1203,9 +1223,19 @@ const searchDisOrders = async () => {
     if (disFilterState.value) params.append('state', disFilterState.value);
     if (disFilterQuery.value) params.append('q', disFilterQuery.value.trim());
 
-    let res = await fetch(`/api/plugins/device-traceability/dis/so/search?${params.toString()}`, {
+    let res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/search?${params.toString()}`, {
       headers: getAuthHeaders(),
     });
+    if (!res.ok) {
+      res = await fetch(`/api/plugins/device-traceability/dis/so/search?${params.toString()}`, {
+        headers: getAuthHeaders(),
+      });
+    }
+    if (!res.ok) {
+      res = await fetch(`/api/dis/sales-orders/search?${params.toString()}`, {
+        headers: getAuthHeaders(),
+      });
+    }
     if (!res.ok) {
       res = await fetch(`/api/dis/so/search?${params.toString()}`, {
         headers: getAuthHeaders(),
@@ -1241,9 +1271,19 @@ const handleDisOrderSelect = async (row: any) => {
   loadingDisDetail.value = true;
   try {
     const odooId = row.odoo_id || row.id;
-    let res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}`, {
+    let res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/${odooId}`, {
       headers: getAuthHeaders(),
     });
+    if (!res.ok) {
+      res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}`, {
+        headers: getAuthHeaders(),
+      });
+    }
+    if (!res.ok) {
+      res = await fetch(`/api/dis/sales-orders/${odooId}`, {
+        headers: getAuthHeaders(),
+      });
+    }
     if (!res.ok) {
       res = await fetch(`/api/dis/so/${odooId}`, {
         headers: getAuthHeaders(),
@@ -1271,13 +1311,31 @@ const syncSelectedDisOrderToDatabase = async () => {
   const odooId = selectedDisOrder.value.odoo_id || selectedDisOrder.value.id;
   syncingDisOrder.value = true;
   try {
-    let res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}/sync`, {
+    let res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/${odooId}/sync`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({
         autoCreateWa: true,
       }),
     });
+    if (!res.ok) {
+      res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}/sync`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          autoCreateWa: true,
+        }),
+      });
+    }
+    if (!res.ok) {
+      res = await fetch(`/api/dis/sales-orders/${odooId}/sync`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          autoCreateWa: true,
+        }),
+      });
+    }
     if (!res.ok) {
       res = await fetch(`/api/dis/so/${odooId}/sync`, {
         method: 'POST',

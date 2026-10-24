@@ -718,7 +718,17 @@ const searchOrders = async () => {
       headers: getAuthHeaders(),
     });
     if (!res.ok) {
+      res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/search?${params.toString()}`, {
+        headers: getAuthHeaders(),
+      });
+    }
+    if (!res.ok) {
       res = await fetch(`/api/plugins/device-traceability/dis/so/search?${params.toString()}`, {
+        headers: getAuthHeaders(),
+      });
+    }
+    if (!res.ok) {
+      res = await fetch(`/api/dis/sales-orders/search?${params.toString()}`, {
         headers: getAuthHeaders(),
       });
     }
@@ -770,7 +780,17 @@ const handleOrderSelect = async (row: any) => {
       headers: getAuthHeaders(),
     });
     if (!res.ok) {
+      res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/${odooId}`, {
+        headers: getAuthHeaders(),
+      });
+    }
+    if (!res.ok) {
       res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}`, {
+        headers: getAuthHeaders(),
+      });
+    }
+    if (!res.ok) {
+      res = await fetch(`/api/dis/sales-orders/${odooId}`, {
         headers: getAuthHeaders(),
       });
     }
@@ -786,8 +806,8 @@ const handleOrderSelect = async (row: any) => {
       orderLineList.value = (Array.isArray(lines) ? lines : []).map((l: any, idx: number) => ({
         ...l,
         id: l.id ?? idx + 1,
-        default_code: l.default_code || l.sku || l.product?.sku || l.product?.default_code || 'N/A',
-        product_name: l.product_name || l.name || l.product?.name || '',
+        default_code: l.default_code || l.ordering_code || l.sku || l.product?.sku || l.product?.default_code || 'N/A',
+        product_name: l.product_name || l.description || l.name || l.product?.name || '',
         product_uom_qty: l.product_uom_qty ?? l.quantity ?? 0,
         qty_delivered: l.qty_delivered ?? l.delivered_quantity ?? 0,
         qty_invoiced: l.qty_invoiced ?? l.invoiced_quantity ?? 0,
@@ -816,7 +836,21 @@ const syncCurrentOrder = async () => {
       body: JSON.stringify({ autoCreateWa: true }),
     });
     if (!res.ok) {
+      res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/${odooId}/sync`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ autoCreateWa: true }),
+      });
+    }
+    if (!res.ok) {
       res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}/sync`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ autoCreateWa: true }),
+      });
+    }
+    if (!res.ok) {
+      res = await fetch(`/api/dis/sales-orders/${odooId}/sync`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ autoCreateWa: true }),
@@ -890,9 +924,15 @@ const executeSandboxQuery = async () => {
         if (sandboxParams.year) params.append('year', String(sandboxParams.year));
         if (sandboxParams.month) params.append('month', String(sandboxParams.month));
         if (sandboxParams.q) params.append('q', sandboxParams.q.trim());
-        res = await fetch(`/api/plugins/device-traceability/dis/so/search?${params.toString()}`, { headers: getAuthHeaders() });
+        res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/search?${params.toString()}`, { headers: getAuthHeaders() });
+        if (!res.ok) {
+          res = await fetch(`/api/plugins/device-traceability/dis/so/search?${params.toString()}`, { headers: getAuthHeaders() });
+        }
       } else if (sandboxAction.value === 'detail') {
-        res = await fetch(`/api/plugins/device-traceability/dis/so/${sandboxParams.soId}`, { headers: getAuthHeaders() });
+        res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/${sandboxParams.soId}`, { headers: getAuthHeaders() });
+        if (!res.ok) {
+          res = await fetch(`/api/plugins/device-traceability/dis/so/${sandboxParams.soId}`, { headers: getAuthHeaders() });
+        }
       }
     }
 
