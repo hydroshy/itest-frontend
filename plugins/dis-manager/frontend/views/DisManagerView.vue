@@ -319,14 +319,14 @@
                       {{ row.customer?.name || row.partner_name || '-' }}
                     </template>
                   </el-table-column>
+                  <el-table-column prop="partner_email" label="Email KH" min-width="160" show-overflow-tooltip>
+                    <template #default="{ row }">
+                      <span class="text-cyan">{{ row.partner_email || row.customer?.email || row.email || '-' }}</span>
+                    </template>
+                  </el-table-column>
                   <el-table-column prop="date_order" label="Ngày đặt" width="130" align="center">
                     <template #default="{ row }">
                       {{ formatDate(row.order_date || row.date_order) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="amount_total" label="Tổng tiền" width="130" align="right">
-                    <template #default="{ row }">
-                      <span class="text-amount">{{ formatCurrency(row.amount_total != null ? row.amount_total : (row.amount || '-')) }}</span>
                     </template>
                   </el-table-column>
                   <el-table-column prop="state" label="Trạng thái" width="120" align="center">
@@ -367,8 +367,8 @@
                       <strong class="metric-value">{{ selectedOrder.partner_name || 'Khách vãng lai' }}</strong>
                     </div>
                     <div class="summary-metric-box">
-                      <span class="metric-label">Tổng giá trị:</span>
-                      <strong class="metric-value text-gold">{{ formatCurrency(selectedOrder.amount_total) }}</strong>
+                      <span class="metric-label">Email:</span>
+                      <strong class="metric-value text-cyan">{{ selectedOrder.partner_email || selectedOrder.email || '-' }}</strong>
                     </div>
                   </div>
 
@@ -381,9 +381,9 @@
                     style="width: 100%"
                     max-height="400"
                   >
-                    <el-table-column prop="product_code" label="Mã SP" width="130" show-overflow-tooltip>
+                    <el-table-column prop="default_code" label="ITEM-CODE" width="160" show-overflow-tooltip>
                       <template #default="{ row }">
-                        <code class="cyber-code-sm">{{ row.sku || row.product_code || '-' }}</code>
+                        <code class="cyber-code-sm font-bold text-cyan">{{ row.default_code || row.sku || row.product_code || '-' }}</code>
                       </template>
                     </el-table-column>
                     <el-table-column prop="name" label="Tên Mặt Hàng" min-width="150" show-overflow-tooltip>
@@ -391,14 +391,9 @@
                         <span>{{ row.product_name || row.name || '-' }}</span>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="product_uom_qty" label="SL" width="60" align="right">
+                    <el-table-column prop="product_uom_qty" label="SL" width="70" align="right">
                       <template #default="{ row }">
                         <span class="font-bold text-cyan">{{ row.quantity != null ? row.quantity : (row.product_uom_qty || 0) }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="price_unit" label="Đơn giá" width="100" align="right">
-                      <template #default="{ row }">
-                        {{ formatCurrency(row.price_unit != null ? row.price_unit : row.unit_price) }}
                       </template>
                     </el-table-column>
                   </el-table>
@@ -802,17 +797,28 @@ const handleOrderSelect = async (row: any) => {
 
     if (res.ok) {
       const detail = await res.json();
-      const lines = detail.lines || detail.items || detail.order_line || [];
-      orderLineList.value = (Array.isArray(lines) ? lines : []).map((l: any, idx: number) => ({
-        ...l,
-        id: l.id ?? idx + 1,
-        default_code: l.default_code || l.ordering_code || l.sku || l.product?.sku || l.product?.default_code || 'N/A',
-        product_name: l.product_name || l.description || l.name || l.product?.name || '',
-        product_uom_qty: l.product_uom_qty ?? l.quantity ?? 0,
-        qty_delivered: l.qty_delivered ?? l.delivered_quantity ?? 0,
-        qty_invoiced: l.qty_invoiced ?? l.invoiced_quantity ?? 0,
-        price_unit: l.price_unit ?? l.unit_price ?? 0,
-      }));
+      const rawLines = detail.lines || detail.items || detail.order_line || [];
+      const linesArray = Array.isArray(rawLines) ? rawLines : [];
+      // Lọc bỏ các dòng có default_code === 'N/A' hoặc rỗng và map ITEM-CODE từ default_code
+      orderLineList.value = linesArray
+        .filter((l: any) => {
+          const code = String(l.default_code || l.ordering_code || l.sku || l.product?.default_code || '').trim().toUpperCase();
+          return code && code !== 'N/A';
+        })
+        .map((l: any, idx: number) => {
+          const itemCode = l.default_code || l.ordering_code || l.sku || l.product?.default_code || '';
+          return {
+            ...l,
+            id: l.id ?? idx + 1,
+            default_code: itemCode,
+            ordering_code: itemCode,
+            sku: itemCode,
+            product_name: l.product_name || l.description || l.name || l.product?.name || '',
+            product_uom_qty: l.product_uom_qty ?? l.quantity ?? 0,
+            qty_delivered: l.qty_delivered ?? l.delivered_quantity ?? 0,
+            qty_invoiced: l.qty_invoiced ?? l.invoiced_quantity ?? 0,
+          };
+        });
     } else {
       orderLineList.value = [];
     }

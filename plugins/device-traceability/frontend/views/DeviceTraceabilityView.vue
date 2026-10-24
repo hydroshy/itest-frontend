@@ -747,7 +747,12 @@
               <span style="color: #00f0ff; font-weight: bold">{{ row.name }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="partner_name" label="Khách Hàng" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="partner_name" label="Khách Hàng" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="partner_email" label="Email Khách Hàng" min-width="170" show-overflow-tooltip>
+            <template #default="{ row }">
+              {{ row.partner_email || row.email || '-' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="date_order" label="Ngày Đặt Hàng" width="160" align="center" />
           <el-table-column prop="state" label="Trạng Thái" width="110" align="center">
             <template #default="{ row }">
@@ -791,9 +796,11 @@
                 <el-tag v-else type="warning" size="small">{{ row.line_type || 'Note' }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="SKU / Mã đặt hàng" width="180" show-overflow-tooltip>
+            <el-table-column label="ITEM-CODE (Mã Đặt Hàng)" width="200" show-overflow-tooltip>
               <template #default="{ row }">
-                {{ row.ordering_code || row.sku || row.product_code || row.default_code || '-' }}
+                <span style="font-weight: 600; color: #409eff">
+                  {{ row.default_code || row.ordering_code || row.sku || row.product_code || '-' }}
+                </span>
               </template>
             </el-table-column>
             <el-table-column label="Tên Sản Phẩm / Diễn Giải" min-width="220" show-overflow-tooltip>
@@ -809,11 +816,6 @@
             <el-table-column label="Đã Giao" width="90" align="right">
               <template #default="{ row }">
                 {{ row.delivered_quantity != null ? row.delivered_quantity : (row.qty_delivered ?? 0) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="Đơn Giá" width="110" align="right">
-              <template #default="{ row }">
-                {{ (row.price_unit != null ? row.price_unit : row.unit_price) ? Number(row.price_unit != null ? row.price_unit : row.unit_price).toLocaleString('vi-VN') : '-' }}
               </template>
             </el-table-column>
           </el-table>
@@ -1294,7 +1296,18 @@ const handleDisOrderSelect = async (row: any) => {
       const data = await res.json();
       const detail = data.data || data;
       const rawLines = detail.lines || detail.items || detail.order_line || [];
-      selectedDisOrderLines.value = Array.isArray(rawLines) ? rawLines : [];
+      const linesArray = Array.isArray(rawLines) ? rawLines : [];
+      // Lọc bỏ line có default_code === 'N/A' hoặc rỗng và map item_code từ default_code
+      selectedDisOrderLines.value = linesArray
+        .filter((l: any) => {
+          const code = String(l.default_code || l.ordering_code || l.sku || '').trim().toUpperCase();
+          return code && code !== 'N/A';
+        })
+        .map((l: any) => ({
+          ...l,
+          default_code: l.default_code || l.ordering_code || l.sku || '',
+          ordering_code: l.default_code || l.ordering_code || l.sku || '',
+        }));
     } else {
       selectedDisOrderLines.value = [];
     }
