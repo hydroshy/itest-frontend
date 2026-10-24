@@ -243,12 +243,9 @@
             </div>
           </div>
 
-          <!-- Micro-Dots Track -->
+          <!-- Cyber Micro-Dots Track (Sleek dark slot without static dots) -->
           <div class="cyber-microdots-track">
-            <!-- Ambient micro-dots background pattern -->
-            <div class="ambient-microdots-grid"></div>
-
-            <!-- Active progress bar fill with moving micro-dots particles -->
+            <!-- Active progress bar fill -->
             <div
               class="cyber-microdots-fill"
               :class="{
@@ -258,10 +255,42 @@
               }"
               :style="{ width: fcProgress + '%' }"
             >
-              <!-- Moving tiny particle dots layer -->
-              <div class="moving-particles-layer" :class="{ 'fast-drift': isRunningFinalConfig }"></div>
               <!-- Glowing head pulse beacon -->
               <div class="fill-lead-beacon" v-if="fcProgress > 0 && fcProgress < 100"></div>
+            </div>
+
+            <!-- Dynamic Chase Micro-Dots Stream (ONLY visible when running) -->
+            <div v-if="isRunningFinalConfig" class="cyber-chase-layer">
+              <div class="chase-wave wave-1">
+                <span class="chase-dot d-7"></span>
+                <span class="chase-dot d-6"></span>
+                <span class="chase-dot d-5"></span>
+                <span class="chase-dot d-4"></span>
+                <span class="chase-dot d-3"></span>
+                <span class="chase-dot d-2"></span>
+                <span class="chase-dot d-1"></span>
+                <span class="chase-dot d-lead"></span>
+              </div>
+              <div class="chase-wave wave-2">
+                <span class="chase-dot d-7"></span>
+                <span class="chase-dot d-6"></span>
+                <span class="chase-dot d-5"></span>
+                <span class="chase-dot d-4"></span>
+                <span class="chase-dot d-3"></span>
+                <span class="chase-dot d-2"></span>
+                <span class="chase-dot d-1"></span>
+                <span class="chase-dot d-lead"></span>
+              </div>
+              <div class="chase-wave wave-3">
+                <span class="chase-dot d-7"></span>
+                <span class="chase-dot d-6"></span>
+                <span class="chase-dot d-5"></span>
+                <span class="chase-dot d-4"></span>
+                <span class="chase-dot d-3"></span>
+                <span class="chase-dot d-2"></span>
+                <span class="chase-dot d-1"></span>
+                <span class="chase-dot d-lead"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -1048,18 +1077,6 @@ const statusTagType = computed(() => {
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
 }
 
-/* Ambient micro-dots background pattern */
-.ambient-microdots-grid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: radial-gradient(circle, rgba(148, 163, 184, 0.25) 1px, transparent 1px);
-  background-size: 6px 6px;
-  pointer-events: none;
-}
-
 /* Active progress bar fill */
 .cyber-microdots-fill {
   position: relative;
@@ -1081,32 +1098,134 @@ const statusTagType = computed(() => {
   box-shadow: 0 0 14px rgba(239, 68, 68, 0.6);
 }
 
-/* Moving tiny particle dots layer */
-.moving-particles-layer {
+/* Dynamic Chasing Micro-Dots Layer (Active only when running) */
+.cyber-chase-layer {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.95) 1.2px, transparent 1.2px),
-    radial-gradient(circle, rgba(56, 189, 248, 0.7) 1px, transparent 1px);
-  background-size: 8px 8px, 16px 16px;
-  background-position: 0 0, 4px 4px;
-  animation: microdots-drift 0.7s linear infinite;
-  opacity: 0.9;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 3;
 }
 
-.moving-particles-layer.fast-drift {
-  animation-duration: 0.35s;
+.chase-wave {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: chase-run 2.4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+  opacity: 0;
 }
 
-@keyframes microdots-drift {
+.chase-wave.wave-1 {
+  animation-delay: 0s;
+}
+
+.chase-wave.wave-2 {
+  animation-delay: 0.8s;
+}
+
+.chase-wave.wave-3 {
+  animation-delay: 1.6s;
+}
+
+@keyframes chase-run {
+  0% {
+    left: -160px;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+.chase-dot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.chase-dot.d-lead {
+  width: 7px;
+  height: 7px;
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff, 0 0 16px #38bdf8, 0 0 24px #0284c7;
+  animation: dot-sparkle 0.4s ease-in-out infinite alternate;
+}
+
+.chase-dot.d-1 {
+  width: 5.5px;
+  height: 5.5px;
+  background: #bae6fd;
+  box-shadow: 0 0 6px #38bdf8;
+  opacity: 0.95;
+}
+
+.chase-dot.d-2 {
+  width: 5px;
+  height: 5px;
+  background: #7dd3fc;
+  box-shadow: 0 0 5px #0284c7;
+  opacity: 0.85;
+}
+
+.chase-dot.d-3 {
+  width: 4.5px;
+  height: 4.5px;
+  background: #38bdf8;
+  box-shadow: 0 0 4px #0284c7;
+  opacity: 0.75;
+}
+
+.chase-dot.d-4 {
+  width: 4px;
+  height: 4px;
+  background: #0ea5e9;
+  opacity: 0.65;
+}
+
+.chase-dot.d-5 {
+  width: 3.5px;
+  height: 3.5px;
+  background: #0284c7;
+  opacity: 0.5;
+}
+
+.chase-dot.d-6 {
+  width: 3px;
+  height: 3px;
+  background: #0369a1;
+  opacity: 0.35;
+}
+
+.chase-dot.d-7 {
+  width: 2.5px;
+  height: 2.5px;
+  background: #075985;
+  opacity: 0.2;
+}
+
+@keyframes dot-sparkle {
   from {
-    background-position: 0 0, 4px 4px;
+    transform: scale(0.9);
   }
   to {
-    background-position: 16px 0, 20px 0;
+    transform: scale(1.2);
   }
 }
 
