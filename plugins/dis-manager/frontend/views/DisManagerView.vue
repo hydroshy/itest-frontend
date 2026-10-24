@@ -108,9 +108,12 @@
               <div class="cyber-card-body">
                 <div class="status-row mb-3">
                   <span class="text-secondary">Trạng thái Token:</span>
-                  <el-tag size="small" :type="disStatus.tokenConfigured ? 'success' : 'danger'">
-                    {{ disStatus.tokenConfigured ? 'Đã gán biến' : 'Chưa cấu hình' }}
-                  </el-tag>
+                  <div class="d-flex align-items-center gap-1">
+                    <el-tag size="small" :type="disStatus.tokenConfigured ? 'success' : 'danger'">
+                      {{ disStatus.tokenConfigured ? 'Đã gán biến' : 'Chưa cấu hình' }}
+                    </el-tag>
+                    <code v-if="disStatus.tokenMasked" class="cyber-code-sm ml-1" title="Token Masked">{{ disStatus.tokenMasked }}</code>
+                  </div>
                 </div>
                 <div class="status-row mb-3">
                   <span class="text-secondary">Chuẩn hóa Auth:</span>
@@ -218,8 +221,9 @@
                 v-model="filterYear"
                 :min="2020"
                 :max="2035"
-                placeholder="Năm"
-                style="width: 120px"
+                placeholder="Năm (để trống: tất cả)"
+                clearable
+                style="width: 140px"
               />
               <el-select
                 v-model="filterMonth"
@@ -305,26 +309,30 @@
                       <code class="cyber-code-sm">{{ row.odoo_id || row.id }}</code>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="name" label="Mã Đơn (SO)" width="150">
+                  <el-table-column prop="name" label="Mã Đơn (SO)" width="160">
                     <template #default="{ row }">
-                      <span class="so-code-highlight">{{ row.name }}</span>
+                      <span class="so-code-highlight">{{ row.number || row.name }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="partner_name" label="Khách hàng" min-width="160" show-overflow-tooltip />
-                  <el-table-column prop="date_order" label="Ngày đặt" width="120" align="center">
+                  <el-table-column prop="partner_name" label="Khách hàng" min-width="160" show-overflow-tooltip>
                     <template #default="{ row }">
-                      {{ formatDate(row.date_order) }}
+                      {{ row.customer?.name || row.partner_name || '-' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="date_order" label="Ngày đặt" width="130" align="center">
+                    <template #default="{ row }">
+                      {{ formatDate(row.order_date || row.date_order) }}
                     </template>
                   </el-table-column>
                   <el-table-column prop="amount_total" label="Tổng tiền" width="130" align="right">
                     <template #default="{ row }">
-                      <span class="text-amount">{{ formatCurrency(row.amount_total) }}</span>
+                      <span class="text-amount">{{ formatCurrency(row.amount_total != null ? row.amount_total : (row.amount || '-')) }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="state" label="Trạng thái" width="110" align="center">
+                  <el-table-column prop="state" label="Trạng thái" width="120" align="center">
                     <template #default="{ row }">
-                      <el-tag :type="getStateTag(row.state)" size="small" class="cyber-tag-state">
-                        {{ row.state || 'N/A' }}
+                      <el-tag :type="getStateTag(row.state?.code || row.state)" size="small" class="cyber-tag-state">
+                        {{ row.state?.label || (typeof row.state === 'string' ? row.state : 'N/A') }}
                       </el-tag>
                     </template>
                   </el-table-column>
@@ -375,18 +383,22 @@
                   >
                     <el-table-column prop="product_code" label="Mã SP" width="130" show-overflow-tooltip>
                       <template #default="{ row }">
-                        <code class="cyber-code-sm">{{ row.product_code || '-' }}</code>
+                        <code class="cyber-code-sm">{{ row.sku || row.product_code || '-' }}</code>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="name" label="Tên Mặt Hàng" min-width="150" show-overflow-tooltip />
+                    <el-table-column prop="name" label="Tên Mặt Hàng" min-width="150" show-overflow-tooltip>
+                      <template #default="{ row }">
+                        <span>{{ row.product_name || row.name || '-' }}</span>
+                      </template>
+                    </el-table-column>
                     <el-table-column prop="product_uom_qty" label="SL" width="60" align="right">
                       <template #default="{ row }">
-                        <span class="font-bold text-cyan">{{ row.product_uom_qty }}</span>
+                        <span class="font-bold text-cyan">{{ row.quantity != null ? row.quantity : (row.product_uom_qty || 0) }}</span>
                       </template>
                     </el-table-column>
                     <el-table-column prop="price_unit" label="Đơn giá" width="100" align="right">
                       <template #default="{ row }">
-                        {{ formatCurrency(row.price_unit) }}
+                        {{ formatCurrency(row.price_unit != null ? row.price_unit : row.unit_price) }}
                       </template>
                     </el-table-column>
                   </el-table>
@@ -530,11 +542,12 @@ const disStatus = reactive({
   isMock: true,
   baseUrl: 'https://dis-so.daviteq.com',
   tokenConfigured: false,
+  tokenMasked: '' as string,
   latency: null as number | null,
 });
 
 // Orders filter
-const filterYear = ref<number | undefined>(new Date().getFullYear());
+const filterYear = ref<number | undefined>(undefined);
 const filterMonth = ref<number | undefined>(undefined);
 const filterState = ref('');
 const filterQuery = ref('');
@@ -640,11 +653,19 @@ const fetchStatus = async () => {
 
     if (res.ok) {
       const data = await res.json();
-      disStatus.connected = !!data.connected;
-      disStatus.isMock = !!data.isMock;
-      disStatus.baseUrl = data.baseUrl || data.apiUrl || 'https://dis-so.daviteq.com';
-      disStatus.tokenConfigured = !!data.tokenConfigured;
-      disStatus.latency = typeof data.latency === 'number' ? data.latency : null;
+      const disObj = data.dis || {};
+      disStatus.connected = typeof data.connected === 'boolean' 
+        ? data.connected 
+        : (typeof disObj.enabled === 'boolean' ? (disObj.enabled && disObj.tokenConfigured) : data.status === 'online');
+      disStatus.isMock = typeof data.isMock === 'boolean' 
+        ? data.isMock 
+        : (typeof disObj.mockMode === 'boolean' ? disObj.mockMode : false);
+      disStatus.baseUrl = data.baseUrl || data.apiUrl || disObj.apiUrl || 'https://dis-so.daviteq.com';
+      disStatus.tokenConfigured = typeof data.tokenConfigured === 'boolean' 
+        ? data.tokenConfigured 
+        : !!disObj.tokenConfigured;
+      disStatus.tokenMasked = data.tokenMasked || disObj.tokenMasked || '';
+      disStatus.latency = typeof data.latency === 'number' ? data.latency : (typeof disObj.latency === 'number' ? disObj.latency : null);
     } else {
       disStatus.connected = false;
       disStatus.isMock = true;
@@ -709,7 +730,9 @@ const searchOrders = async () => {
 
     if (res.ok) {
       const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.data || []);
+      const list = Array.isArray(data) 
+        ? data 
+        : (data.items || data.data || (data.result && data.result.items) || []);
       orderList.value = Array.isArray(list) ? list : [];
     } else {
       orderList.value = [];

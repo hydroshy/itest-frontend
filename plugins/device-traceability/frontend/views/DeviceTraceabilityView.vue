@@ -922,7 +922,7 @@ const disStatus = reactive<{
   isMock: false,
   baseUrl: '',
 });
-const disFilterYear = ref<number | undefined>(new Date().getFullYear());
+const disFilterYear = ref<number | undefined>(undefined);
 const disFilterMonth = ref<number | undefined>(undefined);
 const disFilterState = ref('sale');
 const disFilterQuery = ref('');
@@ -1146,25 +1146,34 @@ const getDisStateTag = (state: string): string => {
 
 const checkDisStatus = async () => {
   try {
-    const res = await fetch('/api/plugins/device-traceability/dis/status', {
+    let res = await fetch('/api/plugins/device-traceability/dis/status', {
       headers: getAuthHeaders(),
     });
-    if (res.ok) {
-      const data = await res.json();
-      disStatus.connected = !!data.connected;
-      disStatus.isMock = !!data.isMock;
-      disStatus.baseUrl = data.baseUrl || 'https://dis-so.daviteq.com';
-    } else {
-      // Fallback route alias
-      const resFallback = await fetch('/api/dis/status', {
+    if (!res.ok) {
+      res = await fetch('/api/plugins/dis-manager/status', {
         headers: getAuthHeaders(),
       });
-      if (resFallback.ok) {
-        const data = await resFallback.json();
-        disStatus.connected = !!data.connected;
-        disStatus.isMock = !!data.isMock;
-        disStatus.baseUrl = data.baseUrl || 'https://dis-so.daviteq.com';
-      }
+    }
+    if (!res.ok) {
+      // Fallback route alias
+      res = await fetch('/api/dis/status', {
+        headers: getAuthHeaders(),
+      });
+    }
+
+    if (res.ok) {
+      const data = await res.json();
+      const disObj = data.dis || {};
+      disStatus.connected = typeof data.connected === 'boolean'
+        ? data.connected
+        : (typeof disObj.enabled === 'boolean' ? (disObj.enabled && disObj.tokenConfigured) : data.status === 'online');
+      disStatus.isMock = typeof data.isMock === 'boolean'
+        ? data.isMock
+        : (typeof disObj.mockMode === 'boolean' ? disObj.mockMode : false);
+      disStatus.baseUrl = data.baseUrl || data.apiUrl || disObj.apiUrl || 'https://dis-so.daviteq.com';
+    } else {
+      disStatus.connected = false;
+      disStatus.isMock = true;
     }
   } catch (err) {
     console.warn('Lỗi kiểm tra DIS API status, fallback sang Mock:', err);
@@ -1204,7 +1213,9 @@ const searchDisOrders = async () => {
 
     if (res.ok) {
       const result = await res.json();
-      const list = Array.isArray(result) ? result : (result.data || []);
+      const list = Array.isArray(result)
+        ? result
+        : (result.items || result.data || (result.result && result.result.items) || []);
       disOrdersList.value = Array.isArray(list) ? list : [];
     } else {
       ElMessage.warning('Không tải được danh sách đơn hàng từ DIS API.');
@@ -1241,7 +1252,8 @@ const handleDisOrderSelect = async (row: any) => {
     if (res.ok) {
       const data = await res.json();
       const detail = data.data || data;
-      selectedDisOrderLines.value = Array.isArray(detail.lines) ? detail.lines : [];
+      const rawLines = detail.lines || detail.items || detail.order_line || [];
+      selectedDisOrderLines.value = Array.isArray(rawLines) ? rawLines : [];
     } else {
       selectedDisOrderLines.value = [];
     }
