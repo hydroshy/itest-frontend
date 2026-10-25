@@ -372,31 +372,139 @@
                     </div>
                   </div>
 
-                  <el-table
-                    :data="orderLineList"
-                    v-loading="loadingLines"
-                    border
-                    size="small"
-                    class="cyber-table"
-                    style="width: 100%"
-                    max-height="400"
-                  >
-                    <el-table-column prop="default_code" label="ITEM-CODE" width="160" show-overflow-tooltip>
-                      <template #default="{ row }">
-                        <code class="cyber-code-sm font-bold text-cyan">{{ row.default_code || row.sku || row.product_code || '-' }}</code>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="name" label="Tên Mặt Hàng" min-width="150" show-overflow-tooltip>
-                      <template #default="{ row }">
-                        <span>{{ row.product_name || row.name || '-' }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="product_uom_qty" label="SL" width="70" align="right">
-                      <template #default="{ row }">
-                        <span class="font-bold text-cyan">{{ row.quantity != null ? row.quantity : (row.product_uom_qty || 0) }}</span>
-                      </template>
-                    </el-table-column>
-                  </el-table>
+                  <el-tabs v-model="orderDetailTab" class="mt-2 cyber-subtabs">
+                    <el-tab-pane :label="`Mặt hàng / Lines (${orderLineList.length})`" name="lines">
+                      <el-table
+                        :data="orderLineList"
+                        v-loading="loadingLines"
+                        border
+                        size="small"
+                        class="cyber-table"
+                        style="width: 100%"
+                        max-height="380"
+                      >
+                        <el-table-column prop="default_code" label="ITEM-CODE" width="160" show-overflow-tooltip>
+                          <template #default="{ row }">
+                            <code class="cyber-code-sm font-bold text-cyan">{{ row.default_code || row.sku || row.product_code || '-' }}</code>
+                          </template>
+                        </el-table-column>
+                        <el-table-column prop="name" label="Tên Mặt Hàng" min-width="150" show-overflow-tooltip>
+                          <template #default="{ row }">
+                            <span>{{ row.product_name || row.name || '-' }}</span>
+                          </template>
+                        </el-table-column>
+                        <el-table-column prop="product_uom_qty" label="SL" width="70" align="right">
+                          <template #default="{ row }">
+                            <span class="font-bold text-cyan">{{ row.quantity != null ? row.quantity : (row.product_uom_qty || 0) }}</span>
+                          </template>
+                        </el-table-column>
+                      </el-table>
+                    </el-tab-pane>
+
+                    <el-tab-pane :label="`Work Authorization (WA) (${orderWaList.length})`" name="wa">
+                      <!-- DIS v1 OpenAPI 1.3.0 WA list -->
+                      <div v-if="orderWaList.length > 0">
+                        <el-table
+                          :data="orderWaList"
+                          v-loading="loadingLines"
+                          border
+                          size="small"
+                          class="cyber-table"
+                          style="width: 100%"
+                          max-height="380"
+                        >
+                          <el-table-column prop="wa_code" label="Mã WA" width="150" show-overflow-tooltip>
+                            <template #default="{ row }">
+                              <code class="cyber-code-sm font-bold text-cyan">{{ row.wa_code || row.wa_number || row.name || '-' }}</code>
+                            </template>
+                          </el-table-column>
+                          <el-table-column prop="warranty_status" label="Trạng thái" width="105" align="center">
+                            <template #default="{ row }">
+                              <el-tag size="small" :type="row.warranty_status === 'Active' ? 'success' : 'info'">
+                                {{ row.warranty_status || row.status || 'Active' }}
+                              </el-tag>
+                            </template>
+                          </el-table-column>
+                          <el-table-column label="Mặt hàng / Lines" min-width="130" show-overflow-tooltip>
+                            <template #default="{ row }">
+                              <span v-if="row.lines && row.lines.length > 0">
+                                {{ row.lines.map((l: any) => l.item_code || l.default_code || l.product_name || l.name).join(', ') }}
+                              </span>
+                              <span v-else class="text-muted">-</span>
+                            </template>
+                          </el-table-column>
+                          <el-table-column label="Lots / Serials" width="110" show-overflow-tooltip>
+                            <template #default="{ row }">
+                              <span v-if="row.lots && row.lots.length > 0">
+                                {{ row.lots.map((lt: any) => lt.lot_name || lt.name).join(', ') }}
+                              </span>
+                              <span v-else class="text-muted">-</span>
+                            </template>
+                          </el-table-column>
+                          <el-table-column label="Phụ trách KT" min-width="120" show-overflow-tooltip>
+                            <template #default="{ row }">
+                              <span v-if="row.technical_contact">
+                                {{ row.technical_contact.name || row.technical_contact.email || '-' }}
+                              </span>
+                              <span v-else class="text-muted">-</span>
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                      </div>
+
+                      <!-- Trường hợp DIS chưa có WA: hiển thị giải thích & preview WA tự động sinh khi sync -->
+                      <div v-else class="p-2">
+                        <el-alert
+                          type="info"
+                          :closable="false"
+                          show-icon
+                          title="Đơn hàng trên DIS chưa tạo lệnh WA riêng biệt"
+                          class="mb-3"
+                        >
+                          <template #default>
+                            <div class="text-xs" style="line-height: 1.5">
+                              Trên hệ thống DIS (Odoo), đơn hàng này chưa liên kết lệnh Work Authorization riêng (<code>wa: []</code>).
+                              <br />
+                              Khi bấm <strong>"Đồng bộ SO sang Traceability"</strong>, backend iTest sẽ tự động phân rã các dòng mặt hàng thành các WA tương ứng (<code>WA/&lt;SO&gt;/&lt;STT&gt;</code>) để sẵn sàng gán thiết bị tested.
+                            </div>
+                          </template>
+                        </el-alert>
+
+                        <div class="expected-wa-preview">
+                          <div class="text-xs font-bold text-muted mb-2">DANH SÁCH WA DỰ KIẾN TỰ ĐỘNG KHỞI TẠO KHI SYNC:</div>
+                          <el-table
+                            :data="orderLineList"
+                            border
+                            size="small"
+                            class="cyber-table"
+                            style="width: 100%"
+                            max-height="240"
+                          >
+                            <el-table-column label="Mã WA dự kiến" width="180">
+                              <template #default="{ $index }">
+                                <code class="cyber-code-sm text-gold font-bold">WA/{{ selectedOrder?.name || 'SO' }}/{{ String($index + 1).padStart(3, '0') }}</code>
+                              </template>
+                            </el-table-column>
+                            <el-table-column prop="default_code" label="Mã sản phẩm" width="130">
+                              <template #default="{ row }">
+                                <code class="cyber-code-sm text-cyan">{{ row.default_code || '-' }}</code>
+                              </template>
+                            </el-table-column>
+                            <el-table-column prop="product_name" label="Tên sản phẩm" min-width="130" show-overflow-tooltip>
+                              <template #default="{ row }">
+                                {{ row.product_name || row.name || '-' }}
+                              </template>
+                            </el-table-column>
+                            <el-table-column prop="product_uom_qty" label="SL kế hoạch" width="95" align="right">
+                              <template #default="{ row }">
+                                <span class="text-cyan font-bold">{{ row.quantity != null ? row.quantity : (row.product_uom_qty || 0) }}</span>
+                              </template>
+                            </el-table-column>
+                          </el-table>
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                  </el-tabs>
                 </div>
               </div>
             </el-col>
@@ -549,9 +657,11 @@ const filterQuery = ref('');
 const loadingOrders = ref(false);
 const orderList = ref<any[]>([]);
 
-// Order detail & lines
+// Order detail & lines & WA
 const selectedOrder = ref<any>(null);
+const orderDetailTab = ref<'lines' | 'wa'>('lines');
 const orderLineList = ref<any[]>([]);
+const orderWaList = ref<any[]>([]);
 const loadingLines = ref(false);
 const syncingOrder = ref(false);
 
@@ -767,6 +877,8 @@ const handleOrderSelect = async (row: any) => {
   if (!row) return;
   selectedOrder.value = row;
   orderLineList.value = [];
+  orderWaList.value = [];
+  orderDetailTab.value = 'lines';
   loadingLines.value = true;
 
   const odooId = row.odoo_id || row.id;
@@ -820,6 +932,8 @@ const handleOrderSelect = async (row: any) => {
       };
       const rawLines = detail.lines || detail.items || detail.order_line || [];
       const linesArray = Array.isArray(rawLines) ? rawLines : [];
+      const rawWas = detail.wa || detail.work_authorizations || detail.workAuthorizations || [];
+      orderWaList.value = Array.isArray(rawWas) ? rawWas : [];
       // Lọc bỏ các dòng có default_code === 'N/A' hoặc rỗng và map ITEM-CODE từ default_code
       orderLineList.value = linesArray
         .filter((l: any) => {
@@ -842,10 +956,12 @@ const handleOrderSelect = async (row: any) => {
         });
     } else {
       orderLineList.value = [];
+      orderWaList.value = [];
     }
   } catch (err) {
     console.error('Lỗi lấy chi tiết đơn hàng:', err);
     orderLineList.value = [];
+    orderWaList.value = [];
   } finally {
     loadingLines.value = false;
   }

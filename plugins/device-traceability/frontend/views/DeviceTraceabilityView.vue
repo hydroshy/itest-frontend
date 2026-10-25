@@ -483,6 +483,7 @@
               allow-create
               default-first-option
               style="width: 100%"
+              @change="onImportSoChanged"
             >
               <el-option
                 v-for="so in saleOrdersList"
@@ -491,6 +492,29 @@
                 :value="so.id"
               />
             </el-select>
+          </el-form-item>
+
+          <el-form-item v-if="importAssignMode === 'SO' && selectedImportSoId" label="Work Authorization (WA)">
+            <el-select
+              v-model="selectedImportWaId"
+              placeholder="Chọn WA thuộc SO này (khuyên dùng để liên kết chính xác)..."
+              filterable
+              clearable
+              style="width: 100%"
+            >
+              <el-option
+                v-for="wa in availableWasForSelectedSo"
+                :key="wa.id"
+                :label="`${wa.waNumber} - ${wa.itemCode || 'Không có Item Code'} (Kế hoạch: ${wa.plannedQuantity || 0} pcs)`"
+                :value="wa.id"
+              />
+            </el-select>
+            <div v-if="availableWasForSelectedSo.length === 0" class="text-xs text-warning mt-1">
+              ⚠️ Đơn hàng này chưa có WA. Thiết bị sẽ được gán trực tiếp vào SO.
+            </div>
+            <div v-else class="text-xs text-info mt-1">
+              ℹ️ Đã tìm thấy {{ availableWasForSelectedSo.length }} WA của SO này. Chọn WA giúp liên kết thiết bị theo từng mặt hàng/lệnh sản xuất cụ thể.
+            </div>
           </el-form-item>
 
           <el-form-item label="Chọn File CSV" required>
@@ -781,6 +805,62 @@
             </div>
           </div>
 
+          <!-- Work Authorization (WA) on DIS & Fallback Info -->
+          <div class="dis-wa-info mb-3">
+            <div v-if="selectedDisOrderWas.length > 0">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span style="font-weight: 600; color: #67c23a; font-size: 13px">
+                  <el-icon class="mr-1"><Tickets /></el-icon>
+                  Lệnh Work Authorization (WA) trên DIS ({{ selectedDisOrderWas.length }} lệnh sẵn có):
+                </span>
+              </div>
+              <el-table
+                :data="selectedDisOrderWas"
+                max-height="130px"
+                border
+                size="small"
+                class="mb-2"
+                style="width: 100%"
+              >
+                <el-table-column prop="wa_code" label="Mã Lệnh WA" width="180">
+                  <template #default="{ row }">
+                    <strong style="color: #e6a23c">{{ row.wa_code }}</strong>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="warranty_status" label="Trạng Thái Bảo Hành" width="160" align="center">
+                  <template #default="{ row }">
+                    <el-tag size="small" :type="row.warranty_status === 'under_warranty' ? 'success' : 'info'">
+                      {{ row.warranty_status || 'Chưa xác định' }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="Mặt hàng / Chi tiết Lots" min-width="200" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <span v-if="row.lines && row.lines.length > 0">
+                      {{ row.lines.map((l: any) => `${l.item_code || l.product_name || 'Item'} (${l.quantity || 1} pcs)`).join(', ') }}
+                    </span>
+                    <span v-else class="text-muted">-</span>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+            <div v-else>
+              <el-alert
+                type="info"
+                :closable="false"
+                show-icon
+                class="mb-2"
+                title="Thông tin Work Authorization (WA) cho Đơn Hàng này:"
+                description="Đơn hàng này trên DIS chưa liên kết lệnh sản xuất/bảo hành (wa: []). Khi bấm 'Đồng Bộ Vào Traceability Database', hệ thống sẽ tự động bóc tách từng dòng sản phẩm (lines) bên dưới để sinh WA tương ứng (định dạng WA/<NĂM>/<MÃ_SO>-<STT>) cho từng mặt hàng để sẵn sàng gán thiết bị tested."
+              />
+            </div>
+          </div>
+
+          <div style="font-weight: 600; color: #a0cfff; font-size: 13px" class="mb-1">
+            <el-icon class="mr-1"><List /></el-icon>
+            Danh sách Mặt hàng / Lines trong Đơn ({{ selectedDisOrderLines.length }} dòng):
+          </div>
+
           <el-table
             v-loading="loadingDisDetail"
             :data="selectedDisOrderLines"
@@ -849,6 +929,7 @@ import {
   InfoFilled,
   Loading,
   ArrowLeft,
+  Tickets,
 } from '@element-plus/icons-vue';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
@@ -952,6 +1033,7 @@ const disFilterQuery = ref('');
 const disOrdersList = ref<any[]>([]);
 const selectedDisOrder = ref<any | null>(null);
 const selectedDisOrderLines = ref<any[]>([]);
+const selectedDisOrderWas = ref<any[]>([]);
 
 // Dialog Data States
 const editDeviceDialogVisible = ref(false);
@@ -1094,7 +1176,7 @@ const loadingSoDetail = ref(false);
 
 const importCsvVisible = ref(false);
 const submittingImport = ref(false);
-const importAssignMode = ref('NONE');
+const importAssignMode = ref('WA');
 const selectedImportSoId = ref('');
 const selectedImportWaId = ref('');
 const parsedCsvDevices = ref<any[]>([]);
@@ -1104,6 +1186,7 @@ const selectedFileName = ref('');
 const parsedAutoSo = ref('');
 const saleOrdersList = ref<any[]>([]);
 const allAvailableWas = ref<any[]>([]);
+const availableWasForSelectedSo = ref<any[]>([]);
 const viewingRawData = ref<any>(null);
 
 const formatWaNumberInput = () => {
@@ -1113,10 +1196,61 @@ const formatWaNumberInput = () => {
 
 const handleImportWaChanged = (waId: string) => {
   const found = allAvailableWas.value.find(w => w.id === waId || w.waNumber === waId);
-  if (found && found.soNumber) {
-    parsedAutoSo.value = found.soNumber;
+  if (found) {
+    parsedAutoSo.value = found.soNumber || '';
+    if (found.soId) {
+      selectedImportSoId.value = found.soId;
+    }
   } else {
     parsedAutoSo.value = '';
+  }
+};
+
+const onImportSoChanged = async (soIdVal: string) => {
+  selectedImportWaId.value = '';
+  if (!soIdVal) {
+    availableWasForSelectedSo.value = [];
+    return;
+  }
+  const found = saleOrdersList.value.find((s) => s.id === soIdVal || s.soNumber === soIdVal);
+  if (found && Array.isArray(found.workAuthorizations) && found.workAuthorizations.length > 0) {
+    availableWasForSelectedSo.value = found.workAuthorizations;
+    if (found.workAuthorizations.length === 1) {
+      selectedImportWaId.value = found.workAuthorizations[0].id;
+    }
+    return;
+  }
+  try {
+    const res = await fetch(`/api/plugins/device-traceability/so/${encodeURIComponent(soIdVal)}/wa`, {
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.data || []);
+      availableWasForSelectedSo.value = list;
+      if (list.length === 1) {
+        selectedImportWaId.value = list[0].id;
+      }
+    } else {
+      availableWasForSelectedSo.value = [];
+    }
+  } catch (err) {
+    console.warn('Lỗi tải danh sách WA của SO:', err);
+    availableWasForSelectedSo.value = [];
+  }
+};
+
+const fetchAllWas = async () => {
+  try {
+    const res = await fetch('/api/plugins/device-traceability/wa?limit=500', {
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      allAvailableWas.value = Array.isArray(data) ? data : (data.items || data.data || []);
+    }
+  } catch (err) {
+    console.warn('Lỗi tải danh sách WA:', err);
   }
 };
 
@@ -1210,6 +1344,7 @@ const openDisSyncDialog = async () => {
   disSyncDialogVisible.value = true;
   selectedDisOrder.value = null;
   selectedDisOrderLines.value = [];
+  selectedDisOrderWas.value = [];
   await checkDisStatus();
   await searchDisOrders();
 };
@@ -1218,6 +1353,7 @@ const searchDisOrders = async () => {
   loadingDisList.value = true;
   selectedDisOrder.value = null;
   selectedDisOrderLines.value = [];
+  selectedDisOrderWas.value = [];
   try {
     const params = new URLSearchParams();
     if (disFilterYear.value) params.append('year', String(disFilterYear.value));
@@ -1267,6 +1403,7 @@ const handleDisOrderSelect = async (row: any) => {
   if (!row) {
     selectedDisOrder.value = null;
     selectedDisOrderLines.value = [];
+    selectedDisOrderWas.value = [];
     return;
   }
   selectedDisOrder.value = row;
@@ -1328,12 +1465,17 @@ const handleDisOrderSelect = async (row: any) => {
           default_code: l.default_code || l.ordering_code || l.sku || '',
           ordering_code: l.default_code || l.ordering_code || l.sku || '',
         }));
+
+      const rawWas = detail.wa || row.wa || [];
+      selectedDisOrderWas.value = Array.isArray(rawWas) ? rawWas : [];
     } else {
       selectedDisOrderLines.value = [];
+      selectedDisOrderWas.value = [];
     }
   } catch (err) {
     console.error('Lỗi khi tải chi tiết SO từ DIS:', err);
     selectedDisOrderLines.value = [];
+    selectedDisOrderWas.value = [];
   } finally {
     loadingDisDetail.value = false;
   }
@@ -2228,6 +2370,7 @@ const submitCreateWa = async () => {
     const targetSoId = targetSoForWa.value.id;
     const payload = {
       waNumber: newWaForm.waNumber,
+      itemCode: newWaForm.itemCode ? newWaForm.itemCode.trim() : undefined,
       plannedQuantity: newWaForm.plannedQuantity,
       notes: newWaForm.notes,
       soId: targetSoId,
@@ -2280,7 +2423,9 @@ const fetchSoOptions = async () => {
     });
     if (res.ok) {
       const data = await res.json();
-      soOptions.value = Array.isArray(data) ? data : (data.items || data.data || []);
+      const list = Array.isArray(data) ? data : (data.items || data.data || []);
+      soOptions.value = list;
+      saleOrdersList.value = list;
     }
   } catch (e) {
     console.warn('Could not fetch SO options', e);
@@ -2288,11 +2433,17 @@ const fetchSoOptions = async () => {
 };
 
 const openImportCsvDialog = async () => {
-  importAssignMode.value = 'NONE';
+  importAssignMode.value = 'WA';
   selectedImportSoId.value = '';
   selectedImportWaId.value = '';
+  availableWasForSelectedSo.value = [];
   parsedCsvDevices.value = [];
-  await fetchSoOptions();
+  parsedAutoSo.value = '';
+  selectedFileName.value = '';
+  if (csvFileInputRef.value) {
+    csvFileInputRef.value.value = '';
+  }
+  await Promise.all([fetchSoOptions(), fetchAllWas()]);
   importCsvVisible.value = true;
 };
 
@@ -2300,6 +2451,7 @@ const openImportCsvForSo = async (soId: string) => {
   await openImportCsvDialog();
   importAssignMode.value = 'SO';
   selectedImportSoId.value = soId;
+  await onImportSoChanged(soId);
 };
 
 const openImportCsvForWa = async (soId: string, waId: string) => {
@@ -2307,15 +2459,21 @@ const openImportCsvForWa = async (soId: string, waId: string) => {
   importAssignMode.value = 'WA';
   selectedImportSoId.value = soId;
   selectedImportWaId.value = waId;
+  handleImportWaChanged(waId);
 };
 
 const onImportModeChange = () => {
   selectedImportSoId.value = '';
   selectedImportWaId.value = '';
+  availableWasForSelectedSo.value = [];
+  parsedAutoSo.value = '';
 };
 
 const onImportSoChange = () => {
   selectedImportWaId.value = '';
+  if (selectedImportSoId.value) {
+    onImportSoChanged(selectedImportSoId.value);
+  }
 };
 
 const getSelectedSoWas = () => {
@@ -2418,14 +2576,20 @@ const submitCsvImport = async () => {
   let soId: string | undefined = undefined;
   let soNumber: string | undefined = undefined;
 
-  if (importAssignMode.value === 'WA') {
+  if (selectedImportWaId.value) {
     const target = selectedImportWaId.value;
     if (target && target.length >= 32) waId = target;
     else if (target) waNumber = target;
-  } else if (importAssignMode.value === 'SO') {
+  }
+
+  if (selectedImportSoId.value) {
     const target = selectedImportSoId.value;
     if (target && target.length >= 32) soId = target;
     else if (target) soNumber = target;
+  }
+
+  if (!soId && !soNumber && parsedAutoSo.value) {
+    soNumber = parsedAutoSo.value;
   }
 
   submittingImport.value = true;
