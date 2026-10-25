@@ -1120,11 +1120,11 @@ const statusTagType = computed(() => {
   }
 }
 
-/* Micro-dots particle emitter shooting forward from moving head */
+/* Micro-dots particle emitter shooting backward (exhaust spray) from moving head */
 .lead-spark-emitter {
   position: absolute;
   top: 50%;
-  right: -2px;
+  right: 0;
   width: 0;
   height: 0;
   pointer-events: none;
@@ -1141,31 +1141,31 @@ const statusTagType = computed(() => {
   opacity: 0;
 }
 
-/* Shooting trajectory animations */
+/* Backward shooting trajectory animations with diagonal angles */
 @keyframes spark-spray-1 {
   0% {
     transform: translate(0, 0) scale(1.4);
     opacity: 1;
   }
-  40% {
-    opacity: 0.9;
+  35% {
+    opacity: 0.95;
   }
   100% {
-    transform: translate(34px, -4px) scale(0.2);
+    transform: translate(-36px, -4px) scale(0.2);
     opacity: 0;
   }
 }
 
 @keyframes spark-spray-2 {
   0% {
-    transform: translate(0, 0) scale(1.1);
+    transform: translate(0, 0) scale(1.2);
     opacity: 1;
   }
-  40% {
+  35% {
     opacity: 0.9;
   }
   100% {
-    transform: translate(22px, 5px) scale(0.2);
+    transform: translate(-28px, 7px) scale(0.2);
     opacity: 0;
   }
 }
@@ -1179,49 +1179,49 @@ const statusTagType = computed(() => {
     opacity: 0.95;
   }
   100% {
-    transform: translate(44px, -1px) scale(0.15);
+    transform: translate(-52px, -2px) scale(0.15);
     opacity: 0;
   }
 }
 
 @keyframes spark-spray-4 {
   0% {
-    transform: translate(0, 0) scale(1.2);
+    transform: translate(0, 0) scale(1.3);
     opacity: 1;
   }
-  40% {
+  35% {
     opacity: 0.9;
   }
   100% {
-    transform: translate(18px, -7px) scale(0.2);
+    transform: translate(-24px, -8px) scale(0.2);
     opacity: 0;
   }
 }
 
 @keyframes spark-spray-5 {
   0% {
-    transform: translate(0, 0) scale(1.3);
+    transform: translate(0, 0) scale(1.4);
     opacity: 1;
   }
-  40% {
+  35% {
     opacity: 0.9;
   }
   100% {
-    transform: translate(38px, 6px) scale(0.2);
+    transform: translate(-32px, 8px) scale(0.2);
     opacity: 0;
   }
 }
 
 @keyframes spark-spray-6 {
   0% {
-    transform: translate(0, 0) scale(1.0);
+    transform: translate(0, 0) scale(1.2);
     opacity: 1;
   }
-  40% {
+  35% {
     opacity: 0.9;
   }
   100% {
-    transform: translate(28px, 0px) scale(0.2);
+    transform: translate(-42px, 3px) scale(0.2);
     opacity: 0;
   }
 }
@@ -1235,21 +1235,21 @@ const statusTagType = computed(() => {
     opacity: 0.95;
   }
   100% {
-    transform: translate(50px, -3px) scale(0.1);
+    transform: translate(-58px, -6px) scale(0.1);
     opacity: 0;
   }
 }
 
 @keyframes spark-spray-8 {
   0% {
-    transform: translate(0, 0) scale(1.2);
+    transform: translate(0, 0) scale(1.3);
     opacity: 1;
   }
-  40% {
+  35% {
     opacity: 0.9;
   }
   100% {
-    transform: translate(26px, 7px) scale(0.2);
+    transform: translate(-34px, -7px) scale(0.2);
     opacity: 0;
   }
 }
