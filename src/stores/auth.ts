@@ -79,6 +79,27 @@ export const useAuthStore = defineStore('auth', () => {
     setAuthData(accessToken, userProfile);
   }
 
+  function updateUser(partial: Partial<UserProfile>) {
+    if (!user.value) return;
+    user.value = { ...user.value, ...partial };
+    localStorage.setItem('itest_user', JSON.stringify(user.value));
+  }
+
+  async function fetchProfile(): Promise<void> {
+    try {
+      const res: any = await httpClient.get('/auth/profile');
+      const profileData = res?.data || res;
+      if (profileData && user.value) {
+        updateUser({
+          fullName: profileData.fullName || user.value.fullName,
+          email: profileData.email || user.value.email,
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to fetch profile', e);
+    }
+  }
+
   async function logout(): Promise<void> {
     try {
       // Send logout to backend. If backend returns 404/redirect/error, client state still clears cleanly.
@@ -111,6 +132,8 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     login,
     logout,
+    updateUser,
+    fetchProfile,
     hasPermission,
     hasRole,
   };

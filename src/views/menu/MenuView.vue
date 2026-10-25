@@ -1,5 +1,16 @@
 <template>
   <div class="menu-launcher-container">
+    <!-- Pending Role Warning Banner for users without roles -->
+    <el-alert
+      v-if="!authStore.roles.length"
+      type="warning"
+      show-icon
+      :closable="false"
+      class="pending-role-alert"
+      title="Tài khoản đang chờ phân quyền"
+      description="Tài khoản của bạn đã kích hoạt thành công nhưng chưa được gán vai trò chức năng. Bạn có thể nhấn vào biểu tượng Avatar ở góc phải trên để xem hồ sơ hoặc đổi mật khẩu. Vui lòng liên hệ Quản trị viên để được cấp quyền sử dụng các phân hệ."
+    />
+
     <!-- Header Greeting & Search -->
     <div class="launcher-header">
       <div class="header-actions">

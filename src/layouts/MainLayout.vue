@@ -193,6 +193,9 @@
         </CModuleBoundary>
       </el-main>
     </el-container>
+
+    <!-- User Profile & Password Modal -->
+    <UserProfileModal v-model="profileModalVisible" />
   </el-container>
 </template>
 
@@ -201,6 +204,7 @@ import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { usePluginStore } from '@/stores/plugin';
+import UserProfileModal from '@/components/shared/UserProfileModal.vue';
 import {
   Platform,
   Odometer,
@@ -222,6 +226,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const pluginStore = usePluginStore();
 
+const profileModalVisible = ref(false);
 const isCollapse = ref(false);
 
 const activeRoute = computed(() => route.path);
@@ -289,7 +294,7 @@ async function handleUserCommand(cmd: string) {
   } else if (cmd === 'roles') {
     router.push('/roles');
   } else if (cmd === 'profile') {
-    router.push('/users');
+    profileModalVisible.value = true;
   }
 }
 </script>

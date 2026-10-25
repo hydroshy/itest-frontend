@@ -81,8 +81,18 @@ router.beforeEach((to, from) => {
   }
 
   if (to.name === 'Login' && authStore.isAuthenticated) {
-    console.info('[Router] authenticated user on login route, redirecting to dashboard');
-    return { name: 'Dashboard' };
+    // Nếu user có quyền/role thì chuyển về Dashboard, ngược lại về Menu Launcher
+    const hasRole = authStore.roles.length > 0;
+    return { name: hasRole ? 'Dashboard' : 'MenuLauncher' };
+  }
+
+  // Guard Dashboard cho người dùng chưa có role
+  if (to.name === 'Dashboard' && authStore.isAuthenticated) {
+    const hasRole = authStore.roles.length > 0;
+    if (!hasRole) {
+      console.warn('[Router] User has no roles, redirecting from Dashboard to MenuLauncher');
+      return { name: 'MenuLauncher' };
+    }
   }
 
   return true;
