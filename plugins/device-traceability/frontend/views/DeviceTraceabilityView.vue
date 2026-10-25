@@ -55,7 +55,7 @@
           <div class="filter-right">
             <el-button size="small" @click="expandAllSoTree">Mở rộng tất cả</el-button>
             <el-button size="small" @click="collapseAllSoTree">Thu gọn tất cả</el-button>
-            <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải vào dòng để mở Menu Thao tác (Tạo WA, Đổi trạng thái, Xóa...)</span>
+            <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Nhấp đúp hoặc chuột phải vào dòng SO để xem chi tiết & danh sách WA</span>
           </div>
         </div>
 
@@ -216,7 +216,7 @@
             <div class="filter-right">
               <el-button size="small" @click="expandAllSoTree">Mở rộng tất cả</el-button>
               <el-button size="small" @click="collapseAllSoTree">Thu gọn tất cả</el-button>
-              <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải vào dòng để mở Menu Thao tác (Tạo WA, Đổi trạng thái, Xóa...)</span>
+              <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Nhấp đúp hoặc chuột phải vào dòng SO để xem chi tiết & danh sách WA</span>
             </div>
           </div>
 
@@ -430,6 +430,109 @@
       <template #footer>
         <el-button @click="createWaVisible = false">Hủy</el-button>
         <el-button type="primary" :loading="submittingWa" @click="submitCreateWa">Tạo WA</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- DIALOG: CHI TIẾT SALE ORDER & DANH SÁCH WORK AUTHORIZATIONS (WA) -->
+    <el-dialog
+      v-model="soDetailVisible"
+      :title="`Chi Tiết Sale Order: ${selectedSo?.soNumber || ''}`"
+      width="820px"
+      top="5vh"
+    >
+      <div v-loading="loadingSoDetail" class="so-detail-container">
+        <div v-if="selectedSo" class="so-detail-content">
+          <!-- Summary Header -->
+          <div class="so-summary-box mb-3 p-3" style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 6px;">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div><span class="text-muted">Mã Đơn Hàng (SO):</span> <strong class="text-cyan font-mono" style="font-size: 15px;">{{ selectedSo.soNumber }}</strong></div>
+                <div><span class="text-muted">Khách Hàng:</span> <strong>{{ selectedSo.customerName || 'Không có tên' }}</strong></div>
+                <div v-if="selectedSo.partnerEmail || selectedSo.partner_email"><span class="text-muted">Email:</span> <span class="font-mono text-cyan">{{ selectedSo.partnerEmail || selectedSo.partner_email }}</span></div>
+              </div>
+              <div class="col-md-6">
+                <div><span class="text-muted">Tổng Lệnh WA:</span> <el-tag type="warning" size="small" effect="dark">{{ selectedSo.workAuthorizations?.length || selectedSo.waCount || 0 }} WA</el-tag></div>
+                <div><span class="text-muted">Tổng Thiết Bị:</span> <strong>{{ selectedSo.stats?.totalDevices ?? 0 }} thiết bị</strong></div>
+                <div>
+                  <span class="text-muted">Trạng Thái Test:</span>
+                  <span class="text-success font-bold ml-1">PASS: {{ selectedSo.stats?.testPassCount ?? 0 }}</span>,
+                  <span class="text-info font-bold ml-1">Config PASS: {{ selectedSo.stats?.configPassCount ?? 0 }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-if="selectedSo.notes" class="mt-2 text-xs text-muted border-top pt-2">
+              <strong>Ghi chú / Nguồn:</strong> {{ selectedSo.notes }}
+            </div>
+          </div>
+
+          <!-- WA Table Section -->
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span style="font-weight: 600; color: #e6a23c; font-size: 14px;">
+              <el-icon class="mr-1"><Tickets /></el-icon>
+              Danh Sách Lệnh Work Authorization (WA) ({{ selectedSo.workAuthorizations?.length || 0 }} lệnh):
+            </span>
+            <el-button
+              type="primary"
+              size="small"
+              :icon="Plus"
+              @click="openCreateWaDialog(selectedSo)"
+            >
+              Thêm WA Mới
+            </el-button>
+          </div>
+
+          <el-table
+            :data="selectedSo.workAuthorizations || []"
+            border
+            size="small"
+            style="width: 100%"
+            max-height="280px"
+          >
+            <el-table-column prop="waNumber" label="Mã Lệnh WA" width="180">
+              <template #default="{ row }">
+                <code class="cyber-code-sm font-bold text-gold">{{ row.waNumber }}</code>
+              </template>
+            </el-table-column>
+            <el-table-column prop="itemCode" label="Item Code / Sản Phẩm" min-width="160" show-overflow-tooltip>
+              <template #default="{ row }">
+                <span class="font-bold text-primary">{{ row.itemCode || '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="plannedQuantity" label="Kế Hoạch" width="100" align="right">
+              <template #default="{ row }">
+                <span>{{ row.plannedQuantity || 0 }} pcs</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="notes" label="Ghi Chú" min-width="130" show-overflow-tooltip>
+              <template #default="{ row }">
+                <span class="text-xs text-muted">{{ row.notes || '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="Thao Tác" width="130" align="center">
+              <template #default="{ row }">
+                <el-button
+                  type="success"
+                  size="small"
+                  link
+                  :icon="Upload"
+                  @click="openImportCsvForWa(selectedSo.id, row.id)"
+                >
+                  Import CSV
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="soDetailVisible = false">Đóng</el-button>
+        <el-button
+          type="primary"
+          :icon="Upload"
+          @click="openImportCsvForSo(selectedSo?.id)"
+        >
+          Import CSV Cho SO Này
+        </el-button>
       </template>
     </el-dialog>
 
@@ -1571,6 +1674,21 @@ const initSoTreeTable = () => {
           let typeLabel = 'SO';
           let label = rowData.code || rowData.soNumber || '';
 
+          if (type === 'SO') {
+            const waCount = rowData.waCount ?? (Array.isArray(rowData.workAuthorizations) ? rowData.workAuthorizations.length : (Array.isArray(rowData.was) ? rowData.was.length : 0));
+            const waList = Array.isArray(rowData.workAuthorizations) ? rowData.workAuthorizations : (Array.isArray(rowData.was) ? rowData.was : []);
+            const waNumbers = waList.map((w: any) => w.waNumber || w.wa_number).filter(Boolean);
+            const waTooltip = waNumbers.length > 0 ? `Danh sách WA:\n- ${waNumbers.join('\n- ')}\n(Nhấp đúp hoặc chuột phải để xem chi tiết)` : 'Chưa có lệnh WA';
+            const waBadge = `<span class="badge-so-wa-count" title="${waTooltip}">📑 ${waCount} WA</span>`;
+
+            return `<span class="tree-node ${badgeClass}">
+              <span class="tree-icon">${icon}</span>
+              <span class="tree-type-tag">${typeLabel}</span>
+              <strong class="tree-label">${label}</strong>
+              ${waBadge}
+            </span>`;
+          }
+
           if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'ITEM-CODE' || type === 'SKU' || type === 'PRODUCT') {
             icon = '📦';
             badgeClass = 'badge-item';
@@ -1611,7 +1729,8 @@ const initSoTreeTable = () => {
           if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'ITEM-CODE' || type === 'SKU' || type === 'PRODUCT') {
             const desc = rowData.description || rowData.productName || rowData.itemCode || '-';
             const skuTag = rowData.sku && rowData.sku !== rowData.itemCode ? ` <span class="badge-item-sub">SKU: ${rowData.sku}</span>` : '';
-            return `<div class="item-desc-cell"><span class="sku-cell" title="${desc}">${desc}</span>${skuTag}</div>`;
+            const waTag = rowData.waNumber ? ` <span class="badge-wa-sm" title="Lệnh WA gắn kèm: ${rowData.waNumber}">WA: ${rowData.waNumber}</span>` : '';
+            return `<div class="item-desc-cell"><span class="sku-cell" title="${desc}">${desc}</span>${skuTag}${waTag}</div>`;
           }
           if (type === 'DEVICE' || type === 'SERIAL_NUMBER' || type === 'SERIAL') {
             const waTag = rowData.waNumber || rowData.waCode ? `<span class="badge-wa-sm" title="Work Authorization">WA: ${rowData.waNumber || rowData.waCode}</span>` : '';
@@ -1631,7 +1750,11 @@ const initSoTreeTable = () => {
           if (type === 'SO') {
             const count = rowData.totalDevices != null ? rowData.totalDevices : (rowData.deviceCount ?? rowData.plannedQuantity ?? 0);
             const items = rowData.itemCount != null ? ` (${rowData.itemCount} items)` : '';
-            return `<span class="quantity-badge so">${count} thiết bị${items}</span>`;
+            const waCount = rowData.waCount ?? (Array.isArray(rowData.workAuthorizations) ? rowData.workAuthorizations.length : (Array.isArray(rowData.was) ? rowData.was.length : 0));
+            return `<div class="d-flex align-items-center gap-1">
+              <span class="quantity-badge so">${count} thiết bị${items}</span>
+              <span class="badge-so-wa-pill" title="Tổng số lệnh Work Authorization">${waCount} WA</span>
+            </div>`;
           }
           if (type === 'ITEM' || type === 'ITEM_CODE' || type === 'ITEM-CODE' || type === 'SKU' || type === 'PRODUCT') {
             const planned = rowData.plannedQuantity ?? rowData.quantity ?? 0;
@@ -1835,6 +1958,14 @@ const initSoTreeTable = () => {
       }
 
       return menu;
+    },
+    rowDblClick: (e, row) => {
+      const data = row.getData();
+      if (data.type === 'SO') {
+        viewSoDetail(data.id);
+      } else if (data.type === 'DEVICE') {
+        openEditDeviceDialog(data);
+      }
     },
   });
 };
@@ -2885,6 +3016,38 @@ onBeforeUnmount(() => {
   font-size: 11px;
   font-weight: 500;
   margin-left: 6px;
+}
+
+.badge-so-wa-count {
+  background: rgba(230, 162, 60, 0.15);
+  color: #e6a23c;
+  border: 1px solid rgba(230, 162, 60, 0.4);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s ease;
+}
+
+.badge-so-wa-count:hover {
+  background: rgba(230, 162, 60, 0.25);
+  border-color: #e6a23c;
+  transform: translateY(-1px);
+}
+
+.badge-so-wa-pill {
+  background: #fdf6ec;
+  color: #d48806;
+  border: 1px solid #f5dab1;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .customer-cell {
