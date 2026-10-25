@@ -22,12 +22,13 @@
       <div class="serial-port-top-bar">
         <div class="port-bar-left">
           <el-button-group class="port-btn-group">
-            <el-button type="primary" :icon="Cpu" @click="fcSelectSerialPort" class="btn-uniform">
+            <el-button type="primary" size="large" :icon="Cpu" @click="fcSelectSerialPort" class="btn-uniform">
               Select Port
             </el-button>
             <el-button
               v-if="fcSerialPort && !fcSerialConnected"
               type="success"
+              size="large"
               :icon="Link"
               :loading="fcSerialConnecting || fcIsAutoReconnecting"
               @click="fcConnectSerial(fcSerialPort)"
@@ -38,6 +39,7 @@
             <el-button
               v-if="fcSerialConnected"
               type="danger"
+              size="large"
               :icon="SwitchButton"
               @click="fcDisconnectSerial(true)"
               class="btn-uniform"
@@ -51,7 +53,7 @@
             <span class="item-label">Baud:</span>
             <el-select
               v-model="fcSerialConfig.baudRate"
-              size="default"
+              size="large"
               style="width: 130px;"
               :disabled="fcSerialConnected || fcSerialConnecting || isRunningFinalConfig"
             >
@@ -90,7 +92,7 @@
           <!-- Port connection info -->
           <el-tag
             :type="fcSerialConnected ? 'success' : 'info'"
-            size="default"
+            size="large"
             effect="light"
             class="port-status-tag"
           >
@@ -660,8 +662,9 @@ const statusTagType = computed(() => {
 }
 
 .port-btn-group .btn-uniform {
-  height: 36px;
-  font-weight: 600;
+  height: 44px;
+  font-weight: 700;
+  font-size: 14px;
 }
 
 .inline-item {
@@ -693,13 +696,16 @@ const statusTagType = computed(() => {
 }
 
 .port-status-tag {
+  height: 44px;
   font-family: monospace;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 16px;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  border-radius: 6px;
+  box-sizing: border-box;
 }
 
 .status-indicator-dot {
