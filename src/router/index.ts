@@ -102,7 +102,7 @@ import { useCtosTransition } from '@/composables/useCtosTransition';
 
 router.afterEach((to, from) => {
   const title = (to.meta.title as string) || 'iTEST 2.0';
-  document.title = `${title} - iTEST 2.0`;
+  document.title = 'ITEST 2.0';
   if (from.path && from.path !== to.path) {
     const { triggerTransition } = useCtosTransition();
     triggerTransition(title, 'BREACHING_SECTOR');

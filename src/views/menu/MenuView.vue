@@ -56,9 +56,11 @@
       >
         <div class="card-top">
           <div class="card-icon-box" :style="{ backgroundColor: getIconBg(card) }">
-            <el-icon :size="24" :color="getIconColor(card)">
-              <component :is="getIconComponent(card.icon)" />
-            </el-icon>
+            <CyberIcon
+              :name="resolveCyberIconName(card)"
+              :size="26"
+              :color="getIconColor(card)"
+            />
           </div>
           <span v-if="card.category" class="card-tag">{{ card.category }}</span>
         </div>
@@ -81,6 +83,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Refresh, ArrowRight } from '@element-plus/icons-vue';
+import CyberIcon from '@/components/shared/CyberIcon.vue';
 import { httpClient } from '@/api/client';
 import { useAuthStore } from '@/stores/auth';
 import { useCtosTransition } from '@/composables/useCtosTransition';
@@ -277,9 +280,16 @@ function navigateTo(card: MenuCardItem) {
   }
 }
 
-function getIconComponent(iconName?: string) {
-  if (iconName === 'DataBoard') return 'Odometer';
-  return iconName || 'SetUp';
+function resolveCyberIconName(card: MenuCardItem): string {
+  const raw = `${card.id} ${card.icon || ''} ${card.title || ''}`.toLowerCase();
+  if (raw.includes('dashboard') || raw.includes('odometer') || raw.includes('databoard')) return 'dashboard';
+  if (raw.includes('cpu') || raw.includes('final-config') || raw.includes('chip')) return 'cpu';
+  if (raw.includes('trace') || raw.includes('tools') || raw.includes('barcode') || raw.includes('scan')) return 'traceability';
+  if (raw.includes('chirp') || raw.includes('lora') || raw.includes('radio') || raw.includes('antenna')) return 'chirpstack';
+  if (raw.includes('user')) return 'users';
+  if (raw.includes('role') || raw.includes('lock') || raw.includes('shield')) return 'roles';
+  if (raw.includes('plugin') || raw.includes('setup')) return 'plugins';
+  return 'monitor';
 }
 
 function getIconBg(card: MenuCardItem): string {

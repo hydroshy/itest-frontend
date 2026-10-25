@@ -521,22 +521,25 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: #ffffff;
+  background: var(--cyber-card-bg, rgba(10, 18, 32, 0.85));
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
+  backdrop-filter: blur(12px);
 }
 
 .dashboard-title {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--cyber-text-primary, #e2e8f0);
+  font-family: var(--cyber-font-header, 'Orbitron', sans-serif);
+  letter-spacing: 0.5px;
 }
 
 .dashboard-subtitle {
   margin: 4px 0 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--cyber-text-secondary, #94a3b8);
 }
 
 .metric-row {
@@ -545,7 +548,15 @@ onMounted(() => {
 
 .metric-card {
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
+  background: var(--cyber-card-bg, rgba(10, 18, 32, 0.85));
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  border-color: var(--cyber-cyan-neon, #00f0ff);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
 }
 
 .metric-content {
@@ -561,18 +572,20 @@ onMounted(() => {
 
 .metric-label {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--cyber-text-secondary, #94a3b8);
   margin-bottom: 6px;
 }
 
 .metric-value {
   font-size: 22px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--cyber-text-primary, #f8fafc);
+  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
 }
 
 .status-online {
   color: #10b981;
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
 .metric-icon-box {
@@ -585,15 +598,18 @@ onMounted(() => {
   font-size: 24px;
 }
 
-.bg-blue { background-color: #ebf5ff; color: #3b82f6; }
-.bg-green { background-color: #ecfdf5; color: #10b981; }
-.bg-orange { background-color: #fff7ed; color: #f97316; }
-.bg-purple { background-color: #f5f3ff; color: #8b5cf6; }
+.bg-blue { background-color: rgba(59, 130, 246, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+.bg-green { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+.bg-orange { background-color: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3); }
+.bg-purple { background-color: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
 
 .dashboard-tabs {
-  background: #ffffff;
+  background: var(--cyber-card-bg, rgba(10, 18, 32, 0.85));
+  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
   border-radius: 8px;
   min-height: 450px;
+  backdrop-filter: blur(12px);
+  padding: 8px 16px;
 }
 
 .tab-pane-content {
@@ -606,6 +622,9 @@ onMounted(() => {
 
 .widget-card {
   border-radius: 8px;
+  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
+  background: var(--cyber-card-bg, rgba(10, 18, 32, 0.85));
+  backdrop-filter: blur(10px);
   min-height: 200px;
 }
 
@@ -618,6 +637,7 @@ onMounted(() => {
 .widget-title {
   font-weight: 600;
   font-size: 15px;
+  color: var(--cyber-text-primary, #e2e8f0);
 }
 
 .menu-permission-section {
@@ -637,13 +657,14 @@ onMounted(() => {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--cyber-text-primary, #f8fafc);
+  font-family: var(--cyber-font-header, 'Orbitron', sans-serif);
 }
 
 .perm-desc {
   margin: 4px 0 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--cyber-text-secondary, #94a3b8);
   max-width: 650px;
 }
 
@@ -657,7 +678,7 @@ onMounted(() => {
 .role-label {
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--cyber-text-primary, #e2e8f0);
 }
 
 .menu-item-info {
@@ -668,7 +689,7 @@ onMounted(() => {
 
 .menu-name {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--cyber-text-primary, #e2e8f0);
 }
 
 .perm-footer-summary {
@@ -677,10 +698,10 @@ onMounted(() => {
   gap: 16px;
   margin-top: 16px;
   padding: 10px 14px;
-  background: #f8fafc;
+  background: rgba(15, 23, 42, 0.7);
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
   font-size: 13px;
-  color: #475569;
+  color: var(--cyber-text-secondary, #94a3b8);
 }
 </style>

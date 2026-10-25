@@ -23,27 +23,27 @@
         >
           <!-- Core Menu Group -->
           <el-menu-item index="/menu">
-            <el-icon><Grid /></el-icon>
+            <el-icon><CyberIcon name="grid" size="18" /></el-icon>
             <template #title>Trung tâm Ứng dụng</template>
           </el-menu-item>
 
           <el-menu-item v-if="canAccessDashboard" index="/dashboard">
-            <el-icon><Odometer /></el-icon>
+            <el-icon><CyberIcon name="dashboard" size="18" /></el-icon>
             <template #title>Bảng điều khiển</template>
           </el-menu-item>
 
           <el-menu-item v-if="canAccessAdmin" index="/users">
-            <el-icon><User /></el-icon>
+            <el-icon><CyberIcon name="users" size="18" /></el-icon>
             <template #title>Quản lý Người dùng</template>
           </el-menu-item>
 
           <el-menu-item v-if="canAccessAdmin" index="/roles">
-            <el-icon><Lock /></el-icon>
+            <el-icon><CyberIcon name="roles" size="18" /></el-icon>
             <template #title>Quản lý Phân quyền</template>
           </el-menu-item>
 
           <el-menu-item v-if="canAccessAdmin" index="/plugins">
-            <el-icon><SetUp /></el-icon>
+            <el-icon><CyberIcon name="plugins" size="18" /></el-icon>
             <template #title>Quản lý Plugin</template>
           </el-menu-item>
 
@@ -61,7 +61,7 @@
             >
               <template #title>
                 <el-icon>
-                  <component :is="resolveIcon(menu.icon)" />
+                  <CyberIcon :name="resolveCyberIconName(menu.icon)" size="18" />
                 </el-icon>
                 <span>{{ menu.title }}</span>
               </template>
@@ -71,7 +71,7 @@
                 :index="sub.path"
               >
                 <el-icon v-if="sub.icon">
-                  <component :is="resolveIcon(sub.icon)" />
+                  <CyberIcon :name="resolveCyberIconName(sub.icon)" size="18" />
                 </el-icon>
                 <template #title>{{ sub.title }}</template>
               </el-menu-item>
@@ -80,7 +80,7 @@
             <!-- Single Item -->
             <el-menu-item v-else :index="menu.path">
               <el-icon>
-                <component :is="resolveIcon(menu.icon)" />
+                <CyberIcon :name="resolveCyberIconName(menu.icon)" size="18" />
               </el-icon>
               <template #title>
                 <span>{{ menu.title }}</span>
@@ -206,19 +206,11 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { usePluginStore } from '@/stores/plugin';
 import UserProfileModal from '@/components/shared/UserProfileModal.vue';
+import CyberIcon from '@/components/shared/CyberIcon.vue';
 import {
-  Platform,
-  Odometer,
-  SetUp,
-  User,
-  Lock,
   Fold,
   Expand,
   ArrowDown,
-  Monitor,
-  Cpu,
-  Tools,
-  Grid,
   SwitchButton,
 } from '@element-plus/icons-vue';
 
@@ -275,17 +267,18 @@ const headerRightExtensions = computed(() => {
   return pluginStore.getExtensionPoints('header-right');
 });
 
-// Icon mapping helper
-function resolveIcon(iconName?: string) {
-  if (!iconName) return Monitor;
-  const map: Record<string, any> = {
-    Cpu,
-    Tools,
-    SetUp,
-    Monitor,
-    Odometer,
-  };
-  return map[iconName] || Monitor;
+// Cyber Icon mapping helper
+function resolveCyberIconName(iconName?: string): string {
+  if (!iconName) return 'monitor';
+  const lower = iconName.toLowerCase();
+  if (lower.includes('cpu') || lower.includes('config')) return 'cpu';
+  if (lower.includes('trace') || lower.includes('tool') || lower.includes('barcode')) return 'traceability';
+  if (lower.includes('chirp') || lower.includes('lora') || lower.includes('radio') || lower.includes('antenna')) return 'chirpstack';
+  if (lower.includes('data') || lower.includes('odometer') || lower.includes('board')) return 'dashboard';
+  if (lower.includes('setup') || lower.includes('plugin')) return 'plugins';
+  if (lower.includes('user')) return 'users';
+  if (lower.includes('role') || lower.includes('lock')) return 'roles';
+  return 'monitor';
 }
 
 async function handleUserCommand(cmd: string) {
