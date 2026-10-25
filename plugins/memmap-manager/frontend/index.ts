@@ -28,9 +28,17 @@ export const memmapManagerPlugin: FrontendPluginDefinition = {
     context.registerMenu({
       id: 'menu-memmap-manager',
       title: 'MemMap Manager',
-      path: '/plugins/memmap-manager',
+      path: '/plugins/memmap-manager?tab=manager',
       icon: 'Files',
       order: 22,
+    });
+
+    context.registerMenu({
+      id: 'menu-memmap-upload',
+      title: 'Memmap Upload',
+      path: '/plugins/memmap-manager?tab=upload',
+      icon: 'Upload',
+      order: 23,
     });
 
     context.logger.info('MemMap Manager frontend plugin initialized');

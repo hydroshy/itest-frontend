@@ -177,13 +177,25 @@ const defaultStaticCards: MenuCardItem[] = [
   },
   {
     id: 'memmap-payload:manager',
-    title: 'Memmap Profiles',
-    description: 'Quản lý template thanh ghi Modbus định hình payload thiết bị.',
+    title: 'Memmap Manager',
+    description: 'Quản lý danh sách profile bản đồ bộ nhớ thiết bị Modbus và payload IEC485.',
     icon: 'Collection',
-    route: '/plugins/memmap-payload',
-    pluginId: 'memmap-payload',
+    route: '/plugins/memmap-manager?tab=manager',
+    pluginId: 'memmap-manager',
+    tab: 'manager',
     category: 'plugin',
     order: 7,
+  },
+  {
+    id: 'memmap-payload:upload',
+    title: 'Memmap Upload',
+    description: 'Tải lên và tiền kiểm tra tệp CSV Memmap Payload trước khi lưu trữ.',
+    icon: 'Upload',
+    route: '/plugins/memmap-manager?tab=upload',
+    pluginId: 'memmap-manager',
+    tab: 'upload',
+    category: 'plugin',
+    order: 8,
   },
   {
     id: 'lorawan-chirpstack:integration',
@@ -193,7 +205,7 @@ const defaultStaticCards: MenuCardItem[] = [
     route: '/plugins/lorawan-chirpstack',
     pluginId: 'lorawan-chirpstack',
     category: 'plugin',
-    order: 8,
+    order: 9,
   },
 ];
 
