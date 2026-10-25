@@ -452,11 +452,11 @@
               </div>
               <div class="col-md-6">
                 <div><span class="text-muted">Tổng Lệnh WA:</span> <el-tag type="warning" size="small" effect="dark">{{ selectedSo.workAuthorizations?.length || selectedSo.waCount || 0 }} WA</el-tag></div>
-                <div><span class="text-muted">Tổng Thiết Bị:</span> <strong>{{ selectedSo.stats?.totalDevices ?? 0 }} thiết bị</strong></div>
+                <div><span class="text-muted">Tổng Thiết Bị:</span> <strong>{{ selectedSo.stats?.totalDevices ?? selectedSo.totalDevices ?? 0 }} thiết bị</strong></div>
                 <div>
                   <span class="text-muted">Trạng Thái Test:</span>
-                  <span class="text-success font-bold ml-1">PASS: {{ selectedSo.stats?.testPassCount ?? 0 }}</span>,
-                  <span class="text-info font-bold ml-1">Config PASS: {{ selectedSo.stats?.configPassCount ?? 0 }}</span>
+                  <span class="text-success font-bold ml-1">PASS: {{ selectedSo.stats?.testPassCount ?? selectedSo.testPassCount ?? 0 }}</span>,
+                  <span class="text-info font-bold ml-1">Config PASS: {{ selectedSo.stats?.configPassCount ?? selectedSo.configPassCount ?? 0 }}</span>
                 </div>
               </div>
             </div>
@@ -1626,9 +1626,13 @@ const syncSelectedDisOrderToDatabase = async () => {
 
     if (res.ok) {
       const result = await res.json();
-      ElMessage.success(result.message || `Đồng bộ thành công Sales Order ${selectedDisOrder.value.name}!`);
+      const syncedWa = result.syncedWaCount || (Array.isArray(result.workAuthorizations) ? result.workAuthorizations.length : 0);
+      ElMessage.success(result.message || `Đồng bộ thành công Sales Order ${selectedDisOrder.value.name} (${syncedWa} lệnh WA)!`);
       disSyncDialogVisible.value = false;
       await loadSoTreeData();
+      if (result.so?.id) {
+        await viewSoDetail(result.so.id);
+      }
     } else {
       const err = await res.json().catch(() => ({}));
       ElMessage.error(err.message || 'Không thể đồng bộ Sales Order từ DIS.');
@@ -1666,6 +1670,13 @@ const initSoTreeTable = () => {
         field: 'code',
         widthGrow: 2.4,
         responsive: 0,
+        cellClick: (e, cell) => {
+          const target = e.target as HTMLElement;
+          const rowData = cell.getRow().getData();
+          if (target.closest('.badge-so-wa-count') && rowData.type === 'SO' && rowData.id) {
+            viewSoDetail(rowData.id);
+          }
+        },
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
@@ -1744,6 +1755,13 @@ const initSoTreeTable = () => {
         title: 'SL / DevEUI',
         field: 'plannedQuantity',
         widthGrow: 1.3,
+        cellClick: (e, cell) => {
+          const target = e.target as HTMLElement;
+          const rowData = cell.getRow().getData();
+          if (target.closest('.badge-so-wa-pill') && rowData.type === 'SO' && rowData.id) {
+            viewSoDetail(rowData.id);
+          }
+        },
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
           const type = (rowData.type || '').toUpperCase();
@@ -3048,6 +3066,14 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   font-size: 11px;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.badge-so-wa-pill:hover {
+  background: #faecd8;
+  border-color: #e6a23c;
+  transform: translateY(-1px);
 }
 
 .customer-cell {
