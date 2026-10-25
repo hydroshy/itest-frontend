@@ -336,18 +336,23 @@ onMounted(async () => {
 .page-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--cyber-text-primary, #e2e8f0);
   margin: 0 0 4px 0;
+  letter-spacing: 0.5px;
 }
 
 .page-subtitle {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--cyber-text-secondary, #94a3b8);
   margin: 0;
 }
 
-.filter-card {
+.filter-card,
+.table-card {
   border-radius: 8px;
+  background: var(--cyber-card-bg, #0b1329) !important;
+  border: 1px solid var(--cyber-border-color, #1e293b) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
 .filter-form {
@@ -356,13 +361,11 @@ onMounted(async () => {
   gap: 8px;
 }
 
-.table-card {
-  border-radius: 8px;
-}
-
 .font-medium {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--cyber-cyan-neon, #00f0ff) !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+  font-family: var(--font-family-mono, monospace);
 }
 
 .role-tags {
@@ -373,6 +376,42 @@ onMounted(async () => {
 
 .text-muted {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--cyber-text-secondary, #64748b);
+}
+
+/* Dark mode table deep enhancements */
+:deep(.el-table) {
+  --el-table-bg-color: transparent !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-header-bg-color: rgba(15, 23, 42, 0.75) !important;
+  --el-table-row-hover-bg-color: rgba(0, 240, 255, 0.06) !important;
+  --el-table-border-color: var(--cyber-border-color, #1e293b) !important;
+  --el-table-text-color: var(--cyber-text-primary, #e2e8f0) !important;
+  --el-table-header-text-color: var(--cyber-cyan-neon, #00f0ff) !important;
+}
+
+:deep(.el-table th.el-table__cell) {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  color: var(--cyber-cyan-neon, #00f0ff) !important;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--cyber-border-color, #1e293b) !important;
+}
+
+:deep(.el-table td.el-table__cell) {
+  border-bottom: 1px solid rgba(30, 41, 59, 0.6) !important;
+  color: var(--cyber-text-primary, #e2e8f0) !important;
+}
+
+:deep(.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell) {
+  background-color: rgba(0, 240, 255, 0.08) !important;
+}
+
+:deep(.el-card__body) {
+  padding: 16px 20px;
+}
+
+:deep(.el-form-item__label) {
+  color: var(--cyber-text-secondary, #94a3b8) !important;
 }
 </style>
