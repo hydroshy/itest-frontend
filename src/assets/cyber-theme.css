@@ -127,7 +127,7 @@ body {
   box-shadow: 0 0 0 1px var(--cyber-cyan), 0 0 8px rgba(0, 240, 255, 0.25) !important;
 }
 
-/* Standard Buttons - Exactly 38px */
+/* Standard Buttons - Exactly 38px with Cyberpunk HUD accents */
 .el-button,
 .p-button {
   height: var(--cyber-control-height) !important;
@@ -136,10 +136,139 @@ body {
   padding: 0 18px !important;
   font-size: 13px !important;
   font-weight: 600 !important;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   box-sizing: border-box !important;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: rgba(13, 20, 36, 0.7);
+  color: #e2e8f0;
+  backdrop-filter: blur(8px);
+}
+
+.el-button:hover,
+.p-button:hover {
+  border-color: var(--cyber-cyan) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.el-button:active,
+.p-button:active {
+  transform: translateY(1px);
+}
+
+/* Primary Button - Sci-Fi Neon Cyan */
+.el-button--primary,
+.p-button.p-button-primary {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.22) 0%, rgba(0, 163, 255, 0.35) 100%) !important;
+  border: 1px solid var(--cyber-cyan) !important;
+  color: #00f0ff !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2) !important;
+  font-weight: 700 !important;
+}
+
+.el-button--primary:hover,
+.p-button.p-button-primary:hover {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.4) 0%, rgba(0, 163, 255, 0.55) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.45) !important;
+}
+
+/* Success Button - Cyber Emerald */
+.el-button--success,
+.p-button.p-button-success {
+  background: linear-gradient(135deg, rgba(0, 255, 159, 0.2) 0%, rgba(16, 185, 129, 0.35) 100%) !important;
+  border: 1px solid #00ff9f !important;
+  color: #00ff9f !important;
+  box-shadow: 0 0 10px rgba(0, 255, 159, 0.2) !important;
+  font-weight: 700 !important;
+}
+
+.el-button--success:hover,
+.p-button.p-button-success:hover {
+  background: linear-gradient(135deg, rgba(0, 255, 159, 0.4) 0%, rgba(16, 185, 129, 0.55) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(0, 255, 159, 0.45) !important;
+}
+
+/* Warning Button - Cyber Amber */
+.el-button--warning,
+.p-button.p-button-warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.35) 100%) !important;
+  border: 1px solid #f59e0b !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2) !important;
+  font-weight: 700 !important;
+}
+
+.el-button--warning:hover,
+.p-button.p-button-warning:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.4) 0%, rgba(217, 119, 6, 0.55) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.45) !important;
+}
+
+/* Danger Button - Cyber Crimson */
+.el-button--danger,
+.p-button.p-button-danger {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.35) 100%) !important;
+  border: 1px solid #ef4444 !important;
+  color: #fca5a5 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2) !important;
+  font-weight: 700 !important;
+}
+
+.el-button--danger:hover,
+.p-button.p-button-danger:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.4) 0%, rgba(185, 28, 28, 0.55) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.45) !important;
+}
+
+/* Info / Default Ghost Button */
+.el-button--info {
+  background: rgba(148, 163, 184, 0.15) !important;
+  border: 1px solid rgba(148, 163, 184, 0.3) !important;
+  color: #cbd5e1 !important;
+}
+
+.el-button--info:hover {
+  background: rgba(148, 163, 184, 0.25) !important;
+  border-color: #cbd5e1 !important;
+  color: #ffffff !important;
+}
+
+/* Link Button Exception */
+.el-button.is-link {
+  height: auto !important;
+  min-height: auto !important;
+  line-height: normal !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 4px 8px !important;
+  color: var(--cyber-cyan) !important;
+}
+
+.el-button.is-link:hover {
+  transform: none !important;
+  text-decoration: underline;
+  box-shadow: none !important;
+}
+
+/* Circle / Round Buttons */
+.el-button.is-circle {
+  width: var(--cyber-control-height) !important;
+  height: var(--cyber-control-height) !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
 }
 
 .el-button--small,
@@ -149,6 +278,11 @@ body {
   line-height: 30px !important;
   padding: 0 12px !important;
   font-size: 12px !important;
+}
+
+.el-button--small.is-circle {
+  width: 30px !important;
+  height: 30px !important;
 }
 
 .el-button--large,
@@ -270,7 +404,8 @@ body {
 
 /* Cyber Button with Chamfered Corners */
 .cyber-btn,
-.p-button.cyber-btn {
+.p-button.cyber-btn,
+.cyber-button {
   --aug-border-all: 1px;
   --aug-border-bg: var(--cyber-cyan);
   --aug-tl: 6px;
@@ -281,13 +416,62 @@ body {
   font-weight: 700 !important;
   letter-spacing: 0.8px !important;
   border: none !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .cyber-btn:hover,
-.p-button.cyber-btn:hover {
+.p-button.cyber-btn:hover,
+.cyber-button:hover {
   background: var(--cyber-cyan) !important;
   color: #07090e !important;
   box-shadow: var(--cyber-cyan-glow) !important;
+}
+
+.cyber-btn--warning,
+.cyber-button--warning {
+  --aug-border-bg: #f59e0b !important;
+  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
+.cyber-btn--warning:hover,
+.cyber-button--warning:hover {
+  background: #f59e0b !important;
+  color: #07090e !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.5) !important;
+}
+
+.cyber-btn--danger,
+.cyber-button--danger {
+  --aug-border-bg: #ef4444 !important;
+  color: #fca5a5 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.cyber-btn--danger:hover,
+.cyber-button--danger:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.5) !important;
+}
+
+.cyber-btn--success,
+.cyber-button--success {
+  --aug-border-bg: #00ff9f !important;
+  color: #00ff9f !important;
+  background: rgba(0, 255, 159, 0.1) !important;
+}
+
+.cyber-btn--success:hover,
+.cyber-button--success:hover {
+  background: #00ff9f !important;
+  color: #07090e !important;
+  box-shadow: 0 0 16px rgba(0, 255, 159, 0.5) !important;
 }
 
 /* ==========================================================================

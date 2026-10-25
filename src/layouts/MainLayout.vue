@@ -120,6 +120,7 @@
             class="app-center-brand"
             @click="router.push('/menu')"
           >
+            <el-icon class="brand-icon"><Grid /></el-icon>
             <span class="brand-title">iTEST 2.0</span>
           </el-button>
 
@@ -403,8 +404,23 @@ async function handleUserCommand(cmd: string) {
   font-weight: 800;
   font-size: 17px;
   color: #f1f5f9;
-  padding: 0;
+  padding: 4px 10px;
   letter-spacing: 0.5px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  background: rgba(0, 240, 255, 0.05);
+  transition: all 0.25s ease;
+}
+
+.app-center-brand:hover {
+  border-color: var(--cyber-cyan);
+  background: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+}
+
+.brand-icon {
+  font-size: 16px;
+  color: var(--cyber-cyan);
 }
 
 .app-center-brand:hover {

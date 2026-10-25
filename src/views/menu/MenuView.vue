@@ -283,19 +283,19 @@ function getIconComponent(iconName?: string) {
 }
 
 function getIconBg(card: MenuCardItem): string {
-  if (card.id === 'dashboard') return 'rgba(64, 158, 255, 0.12)';
-  if (card.id.includes('final-config')) return 'rgba(103, 194, 58, 0.12)';
-  if (card.id.includes('device-traceability')) return 'rgba(230, 162, 60, 0.12)';
-  if (card.id.includes('chirpstack')) return 'rgba(142, 68, 173, 0.12)';
-  return 'rgba(64, 158, 255, 0.1)';
+  if (card.id === 'dashboard') return 'rgba(0, 240, 255, 0.15)';
+  if (card.id.includes('final-config')) return 'rgba(0, 255, 159, 0.15)';
+  if (card.id.includes('device-traceability')) return 'rgba(245, 158, 11, 0.15)';
+  if (card.id.includes('chirpstack')) return 'rgba(168, 85, 247, 0.15)';
+  return 'rgba(0, 240, 255, 0.12)';
 }
 
 function getIconColor(card: MenuCardItem): string {
-  if (card.id === 'dashboard') return '#409EFF';
-  if (card.id.includes('final-config')) return '#67C23A';
-  if (card.id.includes('device-traceability')) return '#E6A23C';
-  if (card.id.includes('chirpstack')) return '#8E44AD';
-  return '#409EFF';
+  if (card.id === 'dashboard') return 'var(--cyber-cyan, #00f0ff)';
+  if (card.id.includes('final-config')) return '#00ff9f';
+  if (card.id.includes('device-traceability')) return '#fbbf24';
+  if (card.id.includes('chirpstack')) return '#c084fc';
+  return 'var(--cyber-cyan, #00f0ff)';
 }
 
 onMounted(() => {
@@ -375,13 +375,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s ease;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.1);
 }
 
 .menu-card:hover .card-icon-box {
-  transform: scale(1.08);
-  border-color: rgba(0, 240, 255, 0.4);
+  transform: scale(1.1) rotate(2deg);
+  border-color: var(--cyber-cyan, #00f0ff);
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.4);
 }
 
 .card-tag {
