@@ -23,21 +23,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="description" label="Mô tả" min-width="220" />
-        <el-table-column prop="permissions" label="Quyền hạn" min-width="260">
-          <template #default="{ row }">
-            <div class="perm-tags">
-              <el-tag
-                v-for="perm in (row.permissions || [])"
-                :key="perm.id || perm.code || perm"
-                size="small"
-                type="info"
-              >
-                {{ perm.name || perm.code || perm }}
-              </el-tag>
-              <span v-if="!row.permissions || row.permissions.length === 0" class="text-muted">Chưa gán quyền</span>
-            </div>
-          </template>
-        </el-table-column>
         <el-table-column label="Thao tác" width="280" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btn-group">

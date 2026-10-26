@@ -122,7 +122,7 @@
           </div>
         </div>
 
-        <div class="permissions-scroll-container">
+        <el-scrollbar height="500px" class="permissions-scroll-container">
           <div
             v-for="group in filteredPermissionGroups"
             :key="group.module"
@@ -203,7 +203,7 @@
             v-if="filteredPermissionGroups.length === 0"
             description="Không tìm thấy quyền nào phù hợp từ khóa"
           />
-        </div>
+        </el-scrollbar>
       </div>
 
       <!-- STEP 3: Plugin Menu Views Visibility -->
@@ -230,7 +230,7 @@
           </div>
         </div>
 
-        <div class="menus-scroll-container">
+        <el-scrollbar height="500px" class="menus-scroll-container">
           <el-row :gutter="14">
             <el-col
               v-for="menu in filteredMenuItems"
@@ -283,7 +283,7 @@
             v-if="filteredMenuItems.length === 0"
             description="Không tìm thấy mục menu nào phù hợp từ khóa"
           />
-        </div>
+        </el-scrollbar>
       </div>
     </div>
 
@@ -1034,34 +1034,13 @@ async function submitWizard() {
 
 /* Step 2: Permissions */
 .permissions-scroll-container {
-  height: 520px;
-  max-height: 58vh;
-  overflow-y: scroll !important;
-  overflow-x: hidden;
-  padding-right: 8px;
+  padding-right: 6px;
+}
+
+.permissions-scroll-container :deep(.el-scrollbar__view) {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  scroll-behavior: smooth;
-  overscroll-behavior: contain;
-}
-
-.permissions-scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.permissions-scroll-container::-webkit-scrollbar-track {
-  background: #0b1329;
-  border-radius: 3px;
-}
-
-.permissions-scroll-container::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
-}
-
-.permissions-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #38bdf8;
 }
 
 .permission-group-card {
@@ -1163,31 +1142,7 @@ async function submitWizard() {
 
 /* Step 3: Menus */
 .menus-scroll-container {
-  height: 520px;
-  max-height: 58vh;
-  overflow-y: scroll !important;
-  overflow-x: hidden;
-  padding-right: 8px;
-  scroll-behavior: smooth;
-  overscroll-behavior: contain;
-}
-
-.menus-scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.menus-scroll-container::-webkit-scrollbar-track {
-  background: #0b1329;
-  border-radius: 3px;
-}
-
-.menus-scroll-container::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
-}
-
-.menus-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #38bdf8;
+  padding-right: 6px;
 }
 
 .menu-col-card {
