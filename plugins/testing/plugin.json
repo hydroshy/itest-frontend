@@ -1,0 +1,28 @@
+{
+  "id": "testing",
+  "name": "TESTING SYSTEM",
+  "version": "1.0.0",
+  "sdkVersion": "^1.0.0",
+  "type": "FRONTEND",
+  "description": "Quản lý thiết bị kiểm thử liên kết Traceability (SO/WA/Item Code), giám sát luồng gói tin Dual Payload (Raw/Decoded JSONB, RF metrics) và phiên test Gateway.",
+  "author": "ITEST IoT Platform Team",
+  "frontend": "frontend/index.ts",
+  "enabledByDefault": true,
+  "permissions": [
+    {
+      "namespace": "testing",
+      "resource": "device",
+      "action": "manage"
+    },
+    {
+      "namespace": "testing",
+      "resource": "packet",
+      "action": "view"
+    },
+    {
+      "namespace": "testing",
+      "resource": "gateway-session",
+      "action": "manage"
+    }
+  ]
+}
