@@ -1,0 +1,45 @@
+{
+  "name": "decoder",
+  "displayName": "Bộ Giải Mã (Decoder)",
+  "version": "1.0.0",
+  "description": "Quản lý và thực thi script JS giải mã payload LoRaWAN theo SKU & LONG_FW từ MemMap",
+  "author": "ITEST Team",
+  "type": "frontend",
+  "entry": "frontend/index.ts",
+  "enabled": true,
+  "routes": [
+    {
+      "path": "/decoder",
+      "name": "DecoderManagement",
+      "component": "frontend/views/DecoderView.vue",
+      "meta": {
+        "title": "Bộ Giải Mã (Decoder)",
+        "icon": "Cpu",
+        "requiresAuth": true,
+        "permissions": ["decoder.view"]
+      }
+    }
+  ],
+  "menuItems": [
+    {
+      "id": "decoder-management",
+      "title": "Bộ Giải Mã (Decoder)",
+      "path": "/decoder",
+      "icon": "Cpu",
+      "order": 5,
+      "permissions": ["decoder.view"]
+    }
+  ],
+  "permissions": [
+    {
+      "action": "decoder.view",
+      "resource": "decoder",
+      "description": "Xem danh sách và kiểm thử bộ giải mã payload"
+    },
+    {
+      "action": "decoder.manage",
+      "resource": "decoder",
+      "description": "Thêm, cập nhật, xóa script giải mã payload"
+    }
+  ]
+}
