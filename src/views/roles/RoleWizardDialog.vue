@@ -2,7 +2,8 @@
   <el-dialog
     v-model="visible"
     :title="`Cấu hình Phân quyền & Vai trò: ${roleData?.name || roleData?.code || ''}`"
-    width="860px"
+    width="1000px"
+    top="5vh"
     class="role-wizard-dialog"
     destroy-on-close
     :close-on-click-modal="false"
@@ -843,10 +844,17 @@ async function submitWizard() {
 </script>
 
 <style scoped>
+.role-wizard-dialog :deep(.el-dialog) {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
 .role-wizard-dialog :deep(.el-dialog__header) {
   border-bottom: 1px solid var(--border-color, #334155);
   padding: 16px 20px;
   margin-right: 0;
+  flex-shrink: 0;
 }
 
 .role-wizard-dialog :deep(.el-dialog__title) {
@@ -857,11 +865,15 @@ async function submitWizard() {
 
 .role-wizard-dialog :deep(.el-dialog__body) {
   padding: 18px 24px 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .role-wizard-dialog :deep(.el-dialog__footer) {
   border-top: 1px solid var(--border-color, #334155);
   padding: 14px 20px;
+  flex-shrink: 0;
 }
 
 /* Cyber Stepper Indicator */
@@ -1022,8 +1034,9 @@ async function submitWizard() {
 
 /* Step 2: Permissions */
 .permissions-scroll-container {
-  max-height: 520px;
-  overflow-y: auto !important;
+  height: 520px;
+  max-height: 58vh;
+  overflow-y: scroll !important;
   overflow-x: hidden;
   padding-right: 8px;
   display: flex;
@@ -1150,8 +1163,9 @@ async function submitWizard() {
 
 /* Step 3: Menus */
 .menus-scroll-container {
-  max-height: 520px;
-  overflow-y: auto !important;
+  height: 520px;
+  max-height: 58vh;
+  overflow-y: scroll !important;
   overflow-x: hidden;
   padding-right: 8px;
   scroll-behavior: smooth;

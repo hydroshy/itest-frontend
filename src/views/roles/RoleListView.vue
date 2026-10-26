@@ -91,22 +91,6 @@
         <el-form-item label="Mô tả" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="3" placeholder="Mô tả trách nhiệm của vai trò" />
         </el-form-item>
-        <el-form-item v-if="!isEdit" label="Danh sách quyền" prop="permissionIds">
-          <el-select
-            v-model="form.permissionIds"
-            multiple
-            filterable
-            placeholder="Chọn các quyền được phép thực hiện"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="p in availablePermissions"
-              :key="p.id"
-              :label="`${p.name} (${p.code})`"
-              :value="p.id"
-            />
-          </el-select>
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">Hủy</el-button>
@@ -164,7 +148,6 @@ const form = reactive({
   code: '',
   name: '',
   description: '',
-  permissionIds: [] as string[],
 });
 
 const formRules: FormRules = {
@@ -199,7 +182,6 @@ function openCreateDialog() {
   form.code = '';
   form.name = '';
   form.description = '';
-  form.permissionIds = [];
   dialogVisible.value = true;
 }
 
@@ -209,7 +191,6 @@ function openEditDialog(row: RoleItem) {
   form.code = row.code;
   form.name = row.name;
   form.description = row.description || '';
-  form.permissionIds = (row.permissions || []).map((p) => p.id);
   dialogVisible.value = true;
 }
 
@@ -241,7 +222,6 @@ async function submitForm() {
           code: form.code,
           name: form.name,
           description: form.description,
-          permissionIds: form.permissionIds,
         });
         ElMessage.success('Tạo vai trò thành công.');
       }
