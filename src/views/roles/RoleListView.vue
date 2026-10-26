@@ -38,30 +38,37 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="Thao tác" width="260" fixed="right" align="center">
+        <el-table-column label="Thao tác" width="280" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button
-              type="primary"
-              size="small"
-              effect="plain"
-              class="wizard-action-btn"
-              @click="openWizard(row)"
-            >
-              Phân quyền (3 bước)
-            </el-button>
-            <el-button link type="primary" size="small" :icon="Edit" @click="openEditDialog(row)">
-              Sửa
-            </el-button>
-            <el-button
-              v-if="row.code !== 'admin'"
-              link
-              type="danger"
-              size="small"
-              :icon="Delete"
-              @click="deleteRole(row)"
-            >
-              Xóa
-            </el-button>
+            <div class="action-btn-group">
+              <el-button
+                type="primary"
+                size="small"
+                class="action-btn wizard-btn"
+                @click="openWizard(row)"
+              >
+                Phân quyền
+              </el-button>
+              <el-button
+                type="info"
+                size="small"
+                class="action-btn edit-btn"
+                :icon="Edit"
+                @click="openEditDialog(row)"
+              >
+                Sửa
+              </el-button>
+              <el-button
+                v-if="row.code !== 'admin'"
+                type="danger"
+                size="small"
+                class="action-btn delete-btn"
+                :icon="Delete"
+                @click="deleteRole(row)"
+              >
+                Xóa
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -84,7 +91,7 @@
         <el-form-item label="Mô tả" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="3" placeholder="Mô tả trách nhiệm của vai trò" />
         </el-form-item>
-        <el-form-item label="Danh sách quyền" prop="permissionIds">
+        <el-form-item v-if="!isEdit" label="Danh sách quyền" prop="permissionIds">
           <el-select
             v-model="form.permissionIds"
             multiple
@@ -227,7 +234,6 @@ async function submitForm() {
         await httpClient.patch(`/roles/${editId.value}`, {
           name: form.name,
           description: form.description,
-          permissionIds: form.permissionIds,
         });
         ElMessage.success('Cập nhật vai trò thành công.');
       } else {
@@ -355,18 +361,53 @@ onMounted(async () => {
   padding: 16px 20px;
 }
 
-.wizard-action-btn {
-  margin-right: 6px;
-  font-weight: 600;
-  font-size: 11px;
-  border-color: #38bdf8;
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.08);
+.action-btn-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.wizard-action-btn:hover {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: #38bdf8;
-  color: #ffffff;
+.action-btn {
+  font-weight: 600;
+  font-size: 12px;
+  border-radius: 4px;
+  padding: 5px 10px;
+  transition: all 0.2s ease;
+}
+
+.wizard-btn {
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+}
+
+.wizard-btn:hover {
+  background: #38bdf8 !important;
+  color: #0f172a !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.edit-btn {
+  border-color: #64748b !important;
+  color: #cbd5e1 !important;
+  background: rgba(100, 116, 139, 0.15) !important;
+}
+
+.edit-btn:hover {
+  background: #475569 !important;
+  color: #ffffff !important;
+}
+
+.delete-btn {
+  border-color: #f43f5e !important;
+  color: #f43f5e !important;
+  background: rgba(244, 63, 94, 0.12) !important;
+}
+
+.delete-btn:hover {
+  background: #f43f5e !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.4);
 }
 </style>

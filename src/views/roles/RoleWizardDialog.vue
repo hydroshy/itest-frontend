@@ -1022,12 +1022,33 @@ async function submitWizard() {
 
 /* Step 2: Permissions */
 .permissions-scroll-container {
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: 6px;
+  max-height: 520px;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  padding-right: 8px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+.permissions-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.permissions-scroll-container::-webkit-scrollbar-track {
+  background: #0b1329;
+  border-radius: 3px;
+}
+
+.permissions-scroll-container::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+.permissions-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
 }
 
 .permission-group-card {
@@ -1129,9 +1150,30 @@ async function submitWizard() {
 
 /* Step 3: Menus */
 .menus-scroll-container {
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: 6px;
+  max-height: 520px;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  padding-right: 8px;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+.menus-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.menus-scroll-container::-webkit-scrollbar-track {
+  background: #0b1329;
+  border-radius: 3px;
+}
+
+.menus-scroll-container::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+.menus-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
 }
 
 .menu-col-card {
