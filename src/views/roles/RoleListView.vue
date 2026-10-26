@@ -38,8 +38,17 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="Thao tác" width="160" fixed="right" align="center">
+        <el-table-column label="Thao tác" width="260" fixed="right" align="center">
           <template #default="{ row }">
+            <el-button
+              type="primary"
+              size="small"
+              effect="plain"
+              class="wizard-action-btn"
+              @click="openWizard(row)"
+            >
+              Phân quyền (3 bước)
+            </el-button>
             <el-button link type="primary" size="small" :icon="Edit" @click="openEditDialog(row)">
               Sửa
             </el-button>
@@ -99,6 +108,13 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- Role Wizard Dialog 3 bước -->
+    <RoleWizardDialog
+      v-model="wizardVisible"
+      :role="selectedRoleForWizard"
+      @saved="loadRoles"
+    />
   </div>
 </template>
 
@@ -107,6 +123,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { Plus, Edit, Delete } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { httpClient } from '@/api/client';
+import RoleWizardDialog, { type RoleData } from './RoleWizardDialog.vue';
 
 interface PermissionItem {
   id: string;
@@ -132,6 +149,9 @@ const dialogVisible = ref(false);
 const isEdit = ref(false);
 const editId = ref('');
 const formRef = ref<FormInstance>();
+
+const wizardVisible = ref(false);
+const selectedRoleForWizard = ref<RoleData | null>(null);
 
 const form = reactive({
   code: '',
@@ -184,6 +204,17 @@ function openEditDialog(row: RoleItem) {
   form.description = row.description || '';
   form.permissionIds = (row.permissions || []).map((p) => p.id);
   dialogVisible.value = true;
+}
+
+function openWizard(row: RoleItem) {
+  selectedRoleForWizard.value = {
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    description: row.description,
+    permissions: row.permissions,
+  };
+  wizardVisible.value = true;
 }
 
 async function submitForm() {
@@ -322,5 +353,20 @@ onMounted(async () => {
 
 :deep(.el-card__body) {
   padding: 16px 20px;
+}
+
+.wizard-action-btn {
+  margin-right: 6px;
+  font-weight: 600;
+  font-size: 11px;
+  border-color: #38bdf8;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.wizard-action-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
 }
 </style>
