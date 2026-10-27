@@ -83,26 +83,30 @@
           <el-table :data="deviceList" v-loading="loadingDevices" stripe border style="width: 100%">
             <el-table-column prop="serialNumber" label="Serial Number" min-width="160">
               <template #default="{ row }">
-                <span class="font-mono text-primary font-bold">{{ row.serialNumber }}</span>
+                <span class="font-mono text-primary font-bold">{{ row.serialNumber || row.serial_number || '—' }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="networkId" label="Network ID / DevEUI" min-width="170">
               <template #default="{ row }">
-                <span class="font-mono text-secondary">{{ row.networkId || '—' }}</span>
+                <span class="font-mono text-secondary">{{ row.networkId || row.network_id || row.devEui || row.dev_eui || '—' }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="deviceName" label="Tên Thiết Bị" min-width="180" />
+            <el-table-column prop="deviceName" label="Tên Thiết Bị" min-width="180">
+              <template #default="{ row }">
+                <span>{{ row.deviceName || row.device_name || '—' }}</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="deviceType" label="Loại" min-width="130">
               <template #default="{ row }">
-                <el-tag size="small" effect="plain">{{ row.deviceType }}</el-tag>
+                <el-tag size="small" effect="plain">{{ row.deviceType || row.device_type || '—' }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="Truy Vết Traceability" min-width="220">
               <template #default="{ row }">
                 <div class="trace-info text-xs">
-                  <div><strong>SO:</strong> <span class="text-info">{{ row.soNumber || '—' }}</span></div>
-                  <div><strong>WA:</strong> <span class="text-warning">{{ row.waNumber || '—' }}</span></div>
-                  <div><strong>Item:</strong> {{ row.itemCode || '—' }}</div>
+                  <div><strong>SO:</strong> <span class="text-info">{{ row.soNumber || row.so_number || '—' }}</span></div>
+                  <div><strong>WA:</strong> <span class="text-warning">{{ row.waNumber || row.wa_number || '—' }}</span></div>
+                  <div><strong>Item:</strong> {{ row.itemCode || row.item_code || '—' }}</div>
                 </div>
               </template>
             </el-table-column>
@@ -201,7 +205,7 @@
                           <el-icon><Document /></el-icon>
                           <span>Raw Payload</span>
                         </div>
-                        <div class="raw-code font-mono">{{ row.rawPayload || '(Empty raw payload)' }}</div>
+                        <div class="raw-code font-mono">{{ row.rawPayload || row.raw_payload || '(Empty raw payload)' }}</div>
                       </div>
                       <div class="expand-section mt-3">
                         <div class="section-title">
@@ -209,7 +213,7 @@
                           <span>RF Metrics & Gateway Info</span>
                         </div>
                         <div class="json-code">
-                          <pre>{{ JSON.stringify(row.rfInfo || {}, null, 2) }}</pre>
+                          <pre>{{ JSON.stringify(row.rfInfo || row.rf_info || {}, null, 2) }}</pre>
                         </div>
                       </div>
                     </el-col>
@@ -220,7 +224,7 @@
                           <span>Decoded Payload (JSONB)</span>
                         </div>
                         <div class="json-code">
-                          <pre>{{ JSON.stringify(row.decodedPayload || {}, null, 2) }}</pre>
+                          <pre>{{ JSON.stringify(row.decodedPayload || row.decoded_payload || {}, null, 2) }}</pre>
                         </div>
                       </div>
                     </el-col>
@@ -231,32 +235,32 @@
             <el-table-column prop="id" label="ID" width="80" align="center" />
             <el-table-column prop="createdAt" label="Thời Gian" min-width="160">
               <template #default="{ row }">
-                {{ formatDateTime(row.createdAt) }}
+                {{ formatDateTime(row.createdAt || row.created_at) }}
               </template>
             </el-table-column>
             <el-table-column prop="packetType" label="Loại" min-width="120" align="center">
               <template #default="{ row }">
-                <el-tag size="small" :type="row.packetType === 'uplink' ? 'success' : 'warning'">
-                  {{ (row.packetType || 'unknown').toUpperCase() }}
+                <el-tag size="small" :type="(row.packetType || row.packet_type) === 'uplink' ? 'success' : 'warning'">
+                  {{ (row.packetType || row.packet_type || 'unknown').toUpperCase() }}
                 </el-tag>
               </template>
             </el-table-column>
             <el-table-column label="Cổng & FCNT" min-width="130" align="center">
               <template #default="{ row }">
-                <span>Port: {{ row.fPort ?? '—' }} | FCnt: {{ row.fCnt ?? '—' }}</span>
+                <span>Port: {{ row.fPort ?? row.f_port ?? '—' }} | FCnt: {{ row.fCnt ?? row.f_cnt ?? '—' }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="rawPayload" label="Raw Payload Preview" min-width="200">
               <template #default="{ row }">
-                <span class="font-mono text-xs truncate block max-w-xs">{{ row.rawPayload || '—' }}</span>
+                <span class="font-mono text-xs truncate block max-w-xs">{{ row.rawPayload || row.raw_payload || '—' }}</span>
               </template>
             </el-table-column>
             <el-table-column label="RF Metrics" min-width="180">
               <template #default="{ row }">
-                <div v-if="row.rfInfo" class="text-xs">
-                  <span v-if="row.rfInfo.rssi !== undefined">RSSI: <strong>{{ row.rfInfo.rssi }} dBm</strong> | </span>
-                  <span v-if="row.rfInfo.snr !== undefined">SNR: <strong>{{ row.rfInfo.snr }} dB</strong></span>
-                  <div v-if="row.rfInfo.gatewayEui" class="text-secondary font-mono">GW: {{ row.rfInfo.gatewayEui }}</div>
+                <div v-if="row.rfInfo || row.rf_info" class="text-xs">
+                  <span v-if="(row.rfInfo?.rssi ?? row.rf_info?.rssi) !== undefined">RSSI: <strong>{{ row.rfInfo?.rssi ?? row.rf_info?.rssi }} dBm</strong> | </span>
+                  <span v-if="(row.rfInfo?.snr ?? row.rf_info?.snr) !== undefined">SNR: <strong>{{ row.rfInfo?.snr ?? row.rf_info?.snr }} dB</strong></span>
+                  <div v-if="row.rfInfo?.gatewayEui || row.rf_info?.gateway_eui" class="text-secondary font-mono">GW: {{ row.rfInfo?.gatewayEui || row.rf_info?.gateway_eui }}</div>
                 </div>
                 <span v-else class="text-secondary">—</span>
               </template>
@@ -301,7 +305,8 @@
             </el-table-column>
             <el-table-column prop="gatewayId" label="Gateway EUI / ID" min-width="170">
               <template #default="{ row }">
-                <span class="font-mono text-primary font-bold">{{ row.gatewayId }}</span>
+                <span class="font-mono text-primary font-bold">{{ row.gatewayId || row.gateway_id || '—' }}</span>
+                <div v-if="row.gatewayName || row.gateway_name" class="text-xs text-secondary">{{ row.gatewayName || row.gateway_name }}</div>
               </template>
             </el-table-column>
             <el-table-column prop="status" label="Trạng Thái" min-width="120" align="center">
@@ -314,7 +319,7 @@
             <el-table-column label="Kết Quả Summary" min-width="250">
               <template #default="{ row }">
                 <div v-if="row.summary" class="text-xs">
-                  <div>Tỷ lệ đạt: <strong>{{ row.summary.passedSteps || 0 }}/{{ row.summary.totalSteps || 5 }}</strong></div>
+                  <div>Tỷ lệ đạt: <strong>{{ row.summary.passedSteps || row.summary.passed_steps || 0 }}/{{ row.summary.totalSteps || row.summary.total_steps || 5 }}</strong></div>
                   <div class="text-secondary">{{ row.summary.note || '' }}</div>
                 </div>
                 <span v-else>—</span>
@@ -322,7 +327,7 @@
             </el-table-column>
             <el-table-column prop="createdAt" label="Thời Gian" min-width="160">
               <template #default="{ row }">
-                {{ formatDateTime(row.createdAt) }}
+                {{ formatDateTime(row.createdAt || row.created_at || row.startedAt || row.started_at) }}
               </template>
             </el-table-column>
           </el-table>
