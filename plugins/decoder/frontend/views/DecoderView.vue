@@ -553,11 +553,34 @@ function refreshData() {
   loadMemmaps();
 }
 
+// Helper with fallback for both /plugins/decoder and /plugins/decode
+async function requestWithFallback(method: 'get' | 'post' | 'put' | 'delete', path: string, dataOrConfig?: any, config?: any) {
+  const decoderPath = `/plugins/decoder${path}`;
+  const decodePath = `/plugins/decode${path}`;
+  try {
+    if (method === 'get' || method === 'delete') {
+      return await (httpClient as any)[method](decoderPath, dataOrConfig);
+    } else {
+      return await (httpClient as any)[method](decoderPath, dataOrConfig, config);
+    }
+  } catch (err: any) {
+    // If 404, fallback to /plugins/decode
+    if (err?.response?.status === 404 || err?.status === 404) {
+      if (method === 'get' || method === 'delete') {
+        return await (httpClient as any)[method](decodePath, dataOrConfig);
+      } else {
+        return await (httpClient as any)[method](decodePath, dataOrConfig, config);
+      }
+    }
+    throw err;
+  }
+}
+
 // Load Scripts
 async function loadScripts() {
   loading.value = true;
   try {
-    const res: any = await httpClient.get('/plugins/decode/scripts', {
+    const res: any = await requestWithFallback('get', '/scripts', {
       params: {
         search: filters.search || undefined,
         sku: filters.sku || undefined,
@@ -577,7 +600,7 @@ async function loadScripts() {
 async function loadMemmaps() {
   loadingMemmaps.value = true;
   try {
-    const res: any = await httpClient.get('/plugins/decode/memmaps');
+    const res: any = await requestWithFallback('get', '/memmaps');
     memmapList.value = res?.data || (Array.isArray(res) ? res : []);
   } catch (err: any) {
     console.error('Error loading memmaps:', err);
@@ -596,7 +619,7 @@ function resetFilters() {
 // Toggle status
 async function toggleScriptStatus(row: any) {
   try {
-    await httpClient.put(`/plugins/decode/scripts/${row.id}`, {
+    await requestWithFallback('put', `/scripts/${row.id}`, {
       isActive: row.isActive,
     });
     ElMessage.success(`Đã ${row.isActive ? 'kích hoạt' : 'tạm ngưng'} script thành công`);
@@ -614,7 +637,7 @@ async function confirmDelete(row: any) {
       cancelButtonText: 'Hủy',
       type: 'warning',
     });
-    await httpClient.delete(`/plugins/decode/scripts/${row.id}`);
+    await requestWithFallback('delete', `/scripts/${row.id}`);
     ElMessage.success('Đã xóa bộ giải mã thành công');
     loadScripts();
   } catch (err: any) {
@@ -734,7 +757,7 @@ async function runSandboxTest() {
   testError.value = '';
   testResult.value = null;
   try {
-    const res: any = await httpClient.post('/plugins/decode/test', {
+    const res: any = await requestWithFallback('post', '/test', {
       script: sandboxForm.script,
       payload: sandboxForm.payload,
       fPort: sandboxForm.fPort,
@@ -751,7 +774,7 @@ async function runSandboxTest() {
 async function testCurrentFormScript() {
   testingFormScript.value = true;
   try {
-    const res: any = await httpClient.post('/plugins/decode/test', {
+    const res: any = await requestWithFallback('post', '/test', {
       script: form.script,
       payload: form.samplePayload || '01020304',
       fPort: form.sampleFport || 1,
@@ -777,7 +800,7 @@ async function submitForm() {
     submittingForm.value = true;
     try {
       if (isEditing.value && editingId.value) {
-        await httpClient.put(`/plugins/decode/scripts/${editingId.value}`, {
+        await requestWithFallback('put', `/scripts/${editingId.value}`, {
           name: form.name,
           sku: form.sku,
           longFw: form.longFw,
@@ -789,7 +812,7 @@ async function submitForm() {
         });
         ElMessage.success('Cập nhật bộ giải mã thành công');
       } else {
-        await httpClient.post('/plugins/decode/scripts', {
+        await requestWithFallback('post', '/scripts', {
           name: form.name,
           sku: form.sku,
           longFw: form.longFw,
