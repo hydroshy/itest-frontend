@@ -626,8 +626,8 @@ async function loadDevices() {
       },
     });
     if (res?.data) {
-      deviceList.value = res.data.items || [];
-      devicePagination.total = res.data.total || 0;
+      deviceList.value = Array.isArray(res.data) ? res.data : (res.data.items || []);
+      devicePagination.total = res.total ?? (res.data.total ?? deviceList.value.length);
     } else if (Array.isArray(res)) {
       deviceList.value = res;
       devicePagination.total = res.length;
@@ -654,8 +654,8 @@ async function loadPackets() {
       },
     });
     if (res?.data) {
-      packetList.value = res.data.items || [];
-      packetPagination.total = res.data.total || 0;
+      packetList.value = Array.isArray(res.data) ? res.data : (res.data.items || []);
+      packetPagination.total = res.total ?? (res.data.total ?? packetList.value.length);
     } else if (Array.isArray(res)) {
       packetList.value = res;
       packetPagination.total = res.length;
@@ -694,7 +694,7 @@ async function loadGatewaySessions() {
   loadingSessions.value = true;
   try {
     const res: any = await httpClient.get('/plugins/testing/gateway-sessions');
-    sessionList.value = res?.data?.items || (Array.isArray(res) ? res : []);
+    sessionList.value = Array.isArray(res?.data) ? res.data : (res?.data?.items || (Array.isArray(res) ? res : []));
   } catch (err: any) {
     console.error('Error loading gateway sessions:', err);
   } finally {

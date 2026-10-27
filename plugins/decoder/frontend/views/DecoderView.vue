@@ -528,9 +528,21 @@ const availableFwOptions = computed(() => {
 });
 
 const filteredMemmaps = computed(() => {
-  if (!memmapSearch.value) return memmapList.value;
+  const scripts = scriptList.value;
+  const list = memmapList.value.map((m) => {
+    const sku = m.sku;
+    const fw = m.longFw || m.long_fw;
+    const hasDecoder = scripts.some(
+      (s) => s.sku === sku && (!s.longFw || !fw || s.longFw === fw)
+    );
+    return {
+      ...m,
+      hasDecoder: m.hasDecoder !== undefined ? m.hasDecoder : hasDecoder,
+    };
+  });
+  if (!memmapSearch.value) return list;
   const q = memmapSearch.value.toLowerCase();
-  return memmapList.value.filter(
+  return list.filter(
     (m) =>
       (m.sku && m.sku.toLowerCase().includes(q)) ||
       ((m.longFw || m.long_fw) && (m.longFw || m.long_fw).toLowerCase().includes(q)) ||
@@ -600,8 +612,16 @@ async function loadScripts() {
 async function loadMemmaps() {
   loadingMemmaps.value = true;
   try {
-    const res: any = await requestWithFallback('get', '/memmaps');
-    memmapList.value = res?.data || (Array.isArray(res) ? res : []);
+    // 1. Ưu tiên tải trực tiếp từ Memmap Manager (hệ thống quản lý memmap chính thức)
+    let res: any;
+    try {
+      res = await httpClient.get('/plugins/memmap-manager/profiles');
+    } catch {
+      // 2. Fallback về endpoint của decoder
+      res = await requestWithFallback('get', '/memmaps');
+    }
+    const rawList = res?.data || (Array.isArray(res) ? res : []);
+    memmapList.value = Array.isArray(rawList) ? rawList : [];
   } catch (err: any) {
     console.error('Error loading memmaps:', err);
   } finally {
