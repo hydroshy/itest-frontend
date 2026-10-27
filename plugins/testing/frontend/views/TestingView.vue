@@ -31,15 +31,46 @@
             </el-button>
           </div>
           <el-table :data="sessionList" v-loading="loadingSessions" stripe border style="width: 100%">
-            <el-table-column prop="id" label="Session ID" min-width="150">
+            <el-table-column prop="id" label="Session ID" min-width="140">
               <template #default="{ row }">
-                <span class="font-mono">{{ row.id }}</span>
+                <span class="font-mono text-xs">{{ row.id }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="gatewayId" label="Gateway EUI / ID" min-width="170">
+            <el-table-column prop="gatewayId" label="Gateway EUI / Serial" min-width="190">
               <template #default="{ row }">
                 <span class="font-mono text-primary font-bold">{{ row.gatewayId || row.gateway_id || '—' }}</span>
-                <div v-if="row.gatewayName || row.gateway_name" class="text-xs text-secondary">{{ row.gatewayName || row.gateway_name }}</div>
+                <div v-if="row.serialNumber || row.serial_number" class="text-xs text-info font-mono">
+                  SN: {{ row.serialNumber || row.serial_number }}
+                </div>
+                <div v-if="row.gatewayName || row.gateway_name" class="text-xs text-secondary">
+                  {{ row.gatewayName || row.gateway_name }}
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="SO / WA" min-width="160">
+              <template #default="{ row }">
+                <div v-if="row.so || row.wa" class="text-xs">
+                  <div v-if="row.so"><span class="text-secondary">SO:</span> <span class="font-mono font-bold">{{ row.so }}</span></div>
+                  <div v-if="row.wa"><span class="text-secondary">WA:</span> <span class="font-mono">{{ row.wa }}</span></div>
+                </div>
+                <span v-else class="text-xs text-muted">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="Mạng / IP / Region" min-width="180">
+              <template #default="{ row }">
+                <div class="text-xs">
+                  <div v-if="row.ip || row.gatewayIp || row.gateway_ip" class="font-mono">
+                    IP: {{ row.ip || row.gatewayIp || row.gateway_ip }}
+                  </div>
+                  <div>
+                    <el-tag size="small" :type="row.internetTestType === 'lte_4g' || row.internet_test_type === 'lte_4g' ? 'warning' : 'primary'">
+                      {{ (row.internetTestType || row.internet_test_type || 'ethernet').toUpperCase() }}
+                    </el-tag>
+                    <el-tag v-if="row.region" size="small" type="info" class="ml-1">
+                      {{ row.region }}
+                    </el-tag>
+                  </div>
+                </div>
               </template>
             </el-table-column>
             <el-table-column prop="status" label="Trạng Thái" width="130" align="center">
@@ -49,7 +80,7 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="Thống Kê Gói Tin" min-width="180">
+            <el-table-column label="Thống Kê Gói Tin" min-width="160">
               <template #default="{ row }">
                 <div class="text-xs">
                   <div><strong>Tổng:</strong> {{ row.totalPackets ?? row.total_packets ?? 0 }}</div>
@@ -60,17 +91,17 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="startedAt" label="Bắt Đầu" min-width="160">
+            <el-table-column prop="startedAt" label="Bắt Đầu" min-width="150">
               <template #default="{ row }">
-                {{ formatDateTime(row.startedAt || row.started_at) }}
+                <span class="text-xs">{{ formatDateTime(row.startedAt || row.started_at) }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="endedAt" label="Kết Thúc" min-width="160">
+            <el-table-column prop="endedAt" label="Kết Thúc" min-width="150">
               <template #default="{ row }">
-                {{ formatDateTime(row.endedAt || row.ended_at) }}
+                <span class="text-xs">{{ formatDateTime(row.endedAt || row.ended_at) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="Thao Tác" width="150" fixed="right" align="center">
+            <el-table-column label="Thao Tác" width="130" fixed="right" align="center">
               <template #default="{ row }">
                 <el-button link type="primary" size="small" :icon="View" @click="viewSessionPackets(row)">
                   Gói Tin
@@ -225,24 +256,11 @@
       </template>
     </el-dialog>
 
-    <!-- Dialog Tạo Phiên Test Gateway Mới -->
-    <el-dialog v-model="createSessionDialogVisible" title="Tạo Phiên Test Gateway" width="500px">
-      <el-form ref="sessionFormRef" :model="sessionForm" :rules="sessionRules" label-width="130px">
-        <el-form-item label="Gateway EUI / ID" prop="gatewayId">
-          <el-input v-model="sessionForm.gatewayId" placeholder="VD: 0016c001f1122334" />
-        </el-form-item>
-        <el-form-item label="Tên Gateway" prop="gatewayName">
-          <el-input v-model="sessionForm.gatewayName" placeholder="VD: Gateway Outdoor SX1302" />
-        </el-form-item>
-        <el-form-item label="Ghi Chú" prop="notes">
-          <el-input v-model="sessionForm.notes" type="textarea" :rows="3" placeholder="Ghi chú cấu hình kiểm thử..." />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createSessionDialogVisible = false">Hủy</el-button>
-        <el-button type="primary" :loading="submittingSession" @click="submitCreateSession">Tạo Phiên</el-button>
-      </template>
-    </el-dialog>
+    <!-- Dialog Đăng Ký Gateway Testing & Tạo Phiên Mới -->
+    <GatewayRegistrationModal
+      v-model="createSessionDialogVisible"
+      @success="handleGatewayRegistrationSuccess"
+    />
   </div>
 </template>
 
@@ -259,8 +277,9 @@ import {
   Document,
   DataAnalysis,
 } from '@element-plus/icons-vue';
-import { ElMessage, type FormInstance } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { httpClient } from '@/api/client';
+import GatewayRegistrationModal from '../components/GatewayRegistrationModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -288,16 +307,13 @@ const selectedPacket = ref<any>(null);
 const loadingSessions = ref(false);
 const sessionList = ref<any[]>([]);
 const createSessionDialogVisible = ref(false);
-const submittingSession = ref(false);
-const sessionFormRef = ref<FormInstance>();
-const sessionForm = reactive({
-  gatewayId: '',
-  gatewayName: '',
-  notes: '',
-});
-const sessionRules = {
-  gatewayId: [{ required: true, message: 'Vui lòng nhập Gateway EUI / ID', trigger: 'blur' }],
-};
+
+function handleGatewayRegistrationSuccess(createdSession: any) {
+  loadGatewaySessions();
+  if (createdSession?.gatewayId) {
+    ElMessage.success(`Phiên test cho Gateway ${createdSession.gatewayId} đã được khởi tạo!`);
+  }
+}
 
 function formatDateTime(isoStr?: string) {
   if (!isoStr) return '—';
@@ -433,29 +449,6 @@ function viewSessionPackets(session: any) {
 
 function openCreateSessionDialog() {
   createSessionDialogVisible.value = true;
-}
-
-async function submitCreateSession() {
-  if (!sessionFormRef.value) return;
-  await sessionFormRef.value.validate(async (valid) => {
-    if (!valid) return;
-    submittingSession.value = true;
-    try {
-      await httpClient.post('/plugins/testing/gateway-sessions', {
-        gatewayId: sessionForm.gatewayId,
-        gatewayName: sessionForm.gatewayName || undefined,
-        notes: sessionForm.notes || undefined,
-      });
-      ElMessage.success('Đã tạo phiên test Gateway thành công!');
-      createSessionDialogVisible.value = false;
-      loadGatewaySessions();
-    } catch (err: any) {
-      console.error('Error creating gateway session:', err);
-      ElMessage.error(err?.message || 'Không thể tạo phiên test Gateway');
-    } finally {
-      submittingSession.value = false;
-    }
-  });
 }
 
 onMounted(() => {
