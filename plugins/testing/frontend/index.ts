@@ -4,21 +4,12 @@ import TestingView from './views/TestingView.vue';
 export const testingPlugin: FrontendPluginDefinition = {
   manifest: {
     id: 'testing',
-    name: 'TESTING SYSTEM',
+    name: 'GATEWAY TESTING',
     version: '1.0.0',
     sdkVersion: '^1.0.0',
-    description: 'Quản lý thiết bị kiểm thử liên kết Traceability (SO/WA/Item Code), giám sát luồng gói tin Dual Payload (Raw/Decoded JSONB, RF metrics) và phiên test Gateway.',
+    description: 'Hệ thống Gateway Testing chuyên biệt: giám sát luồng gói tin Dual Payload (Raw/Decoded JSONB, RF metrics) từ ChirpStack và quản lý phiên kiểm thử Gateway.',
     author: 'ITEST IoT Platform Team',
     features: [
-      {
-        id: 'testing:devices',
-        title: 'Thiết Bị Kiểm Thử',
-        description: 'Quản lý và đăng ký thiết bị kiểm thử liên kết SO/WA/Item Code từ Traceability',
-        icon: 'Cpu',
-        tab: 'devices',
-        route: '/plugins/testing?tab=devices',
-        order: 1,
-      },
       {
         id: 'testing:packets',
         title: 'Giám Sát Gói Tin (Packets)',
@@ -26,7 +17,7 @@ export const testingPlugin: FrontendPluginDefinition = {
         icon: 'Connection',
         tab: 'packets',
         route: '/plugins/testing?tab=packets',
-        order: 2,
+        order: 1,
       },
       {
         id: 'testing:gateway-sessions',
@@ -35,48 +26,43 @@ export const testingPlugin: FrontendPluginDefinition = {
         icon: 'Odometer',
         tab: 'gateway-sessions',
         route: '/plugins/testing?tab=gateway-sessions',
-        order: 3,
+        order: 2,
       },
     ],
   },
 
   async setup(context) {
-    context.logger.info('Initializing Testing System frontend plugin');
+    context.logger.info('Initializing Gateway Testing frontend plugin');
 
     context.registerRoute({
       path: '/plugins/testing',
       name: 'testing-plugin',
       component: TestingView,
       meta: {
-        title: 'Testing System',
+        title: 'Gateway Testing',
+        icon: 'Odometer',
         requiresAuth: true,
       },
     });
 
     context.registerMenu({
       id: 'testing-menu',
-      title: 'Testing System',
-      icon: 'Cpu',
+      title: 'Gateway Testing',
+      icon: 'Odometer',
       path: '/plugins/testing',
       order: 15,
       children: [
         {
-          id: 'testing-menu-devices',
-          title: 'Thiết Bị Kiểm Thử',
-          icon: 'List',
-          path: '/plugins/testing?tab=devices',
+          id: 'testing-menu-gateways',
+          title: 'Gateway Sessions',
+          icon: 'Odometer',
+          path: '/plugins/testing?tab=gateway-sessions',
         },
         {
           id: 'testing-menu-packets',
           title: 'Gói Tin (Packets)',
           icon: 'Connection',
           path: '/plugins/testing?tab=packets',
-        },
-        {
-          id: 'testing-menu-gateways',
-          title: 'Gateway Sessions',
-          icon: 'Odometer',
-          path: '/plugins/testing?tab=gateway-sessions',
         },
       ],
     });

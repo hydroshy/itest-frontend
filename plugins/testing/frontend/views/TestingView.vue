@@ -4,14 +4,14 @@
     <div class="view-header">
       <div class="header-left">
         <h2 class="title">
-          <el-icon class="mr-2"><Cpu /></el-icon>
-          Testing System
+          <el-icon class="mr-2"><Odometer /></el-icon>
+          Gateway Testing
         </h2>
-        <span class="subtitle">Quản lý kiểm thử thiết bị, liên kết truy vết Traceability (SO/WA/Item Code) & giám sát gói tin</span>
+        <span class="subtitle">Giám sát gói tin Dual Payload (Raw/Decoded) & phiên kiểm thử Gateway kết nối ChirpStack</span>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openRegisterDialog">
-          Đăng Ký Thiết Bị Kiểm Thử
+        <el-button type="primary" :icon="Plus" @click="openCreateSessionDialog">
+          Tạo Phiên Test Mới
         </el-button>
         <el-button :icon="Refresh" @click="refreshActiveTab" :loading="loading">
           Làm Mới
@@ -21,128 +21,63 @@
 
     <!-- Main Tabs -->
     <el-tabs v-model="activeTab" class="custom-tabs" @tab-change="handleTabChange">
-      <!-- TAB 1: Danh sách thiết bị -->
-      <el-tab-pane label="Thiết Bị Kiểm Thử" name="devices">
-        <el-card shadow="never" class="filter-card">
-          <el-row :gutter="16">
-            <el-col :xs="24" :sm="8" :md="6">
-              <el-input
-                v-model="filters.search"
-                placeholder="Tìm Serial, EUI, Tên..."
-                clearable
-                :prefix-icon="Search"
-                @clear="loadDevices"
-                @keyup.enter="loadDevices"
-              />
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-select v-model="filters.deviceType" placeholder="Loại thiết bị" clearable @change="loadDevices">
-                <el-option label="Tất cả loại" value="" />
-                <el-option label="LoRaWAN Node" value="lorawan_node" />
-                <el-option label="LoRaWAN Gateway" value="lorawan_gateway" />
-                <el-option label="End Device" value="end_device" />
-                <el-option label="Sensor" value="sensor" />
-                <el-option label="Meter" value="meter" />
-              </el-select>
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-select v-model="filters.status" placeholder="Trạng thái" clearable @change="loadDevices">
-                <el-option label="Tất cả trạng thái" value="" />
-                <el-option label="ACTIVE" value="active" />
-                <el-option label="REGISTERED" value="registered" />
-                <el-option label="IN_TEST" value="in_test" />
-                <el-option label="PASSED" value="passed" />
-                <el-option label="FAILED" value="failed" />
-              </el-select>
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-input
-                v-model="filters.soNumber"
-                placeholder="Lọc theo Sale Order (SO)"
-                clearable
-                @clear="loadDevices"
-                @keyup.enter="loadDevices"
-              />
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-input
-                v-model="filters.waNumber"
-                placeholder="Lọc theo WA"
-                clearable
-                @clear="loadDevices"
-                @keyup.enter="loadDevices"
-              />
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="2">
-              <el-button type="primary" :icon="Search" @click="loadDevices">Lọc</el-button>
-            </el-col>
-          </el-row>
-        </el-card>
-
-        <el-card shadow="never" class="table-card mt-3">
-          <el-table :data="deviceList" v-loading="loadingDevices" stripe border style="width: 100%">
-            <el-table-column prop="serialNumber" label="Serial Number" min-width="160">
+      <!-- TAB 1: Gateway Test Sessions -->
+      <el-tab-pane label="Gateway Test Sessions" name="gateway-sessions">
+        <el-card shadow="never" class="table-card">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-md font-bold">Lịch Sử Phiên Test Gateway (ChirpStack)</h3>
+            <el-button type="primary" :icon="Plus" size="small" @click="openCreateSessionDialog">
+              Tạo Phiên Mới
+            </el-button>
+          </div>
+          <el-table :data="sessionList" v-loading="loadingSessions" stripe border style="width: 100%">
+            <el-table-column prop="id" label="Session ID" min-width="150">
               <template #default="{ row }">
-                <span class="font-mono text-primary font-bold">{{ row.serialNumber || row.serial_number || '—' }}</span>
+                <span class="font-mono">{{ row.id }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="networkId" label="Network ID / DevEUI" min-width="170">
+            <el-table-column prop="gatewayId" label="Gateway EUI / ID" min-width="170">
               <template #default="{ row }">
-                <span class="font-mono text-secondary">{{ row.networkId || row.network_id || row.devEui || row.dev_eui || '—' }}</span>
+                <span class="font-mono text-primary font-bold">{{ row.gatewayId || row.gateway_id || '—' }}</span>
+                <div v-if="row.gatewayName || row.gateway_name" class="text-xs text-secondary">{{ row.gatewayName || row.gateway_name }}</div>
               </template>
             </el-table-column>
-            <el-table-column prop="deviceName" label="Tên Thiết Bị" min-width="180">
+            <el-table-column prop="status" label="Trạng Thái" width="130" align="center">
               <template #default="{ row }">
-                <span>{{ row.deviceName || row.device_name || '—' }}</span>
+                <el-tag :type="getStatusTagType(row.status)">
+                  {{ (row.status || '').toUpperCase() }}
+                </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="deviceType" label="Loại" min-width="130">
+            <el-table-column label="Thống Kê Gói Tin" min-width="180">
               <template #default="{ row }">
-                <el-tag size="small" effect="plain">{{ row.deviceType || row.device_type || '—' }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Truy Vết Traceability" min-width="220">
-              <template #default="{ row }">
-                <div class="trace-info text-xs">
-                  <div><strong>SO:</strong> <span class="text-info">{{ row.soNumber || row.so_number || '—' }}</span></div>
-                  <div><strong>WA:</strong> <span class="text-warning">{{ row.waNumber || row.wa_number || '—' }}</span></div>
-                  <div><strong>Item:</strong> {{ row.itemCode || row.item_code || '—' }}</div>
+                <div class="text-xs">
+                  <div><strong>Tổng:</strong> {{ row.totalPackets ?? row.total_packets ?? 0 }}</div>
+                  <div>
+                    <span class="text-success font-bold">Pass: {{ row.passedPackets ?? row.passed_packets ?? 0 }}</span> |
+                    <span class="text-danger font-bold">Fail: {{ row.failedPackets ?? row.failed_packets ?? 0 }}</span>
+                  </div>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="status" label="Trạng Thái" min-width="120" align="center">
+            <el-table-column prop="startedAt" label="Bắt Đầu" min-width="160">
               <template #default="{ row }">
-                <el-tag :type="getStatusTagType(row.status)">{{ (row.status || '').toUpperCase() }}</el-tag>
+                {{ formatDateTime(row.startedAt || row.started_at) }}
               </template>
             </el-table-column>
-            <el-table-column prop="updatedAt" label="Cập Nhật" min-width="160">
+            <el-table-column prop="endedAt" label="Kết Thúc" min-width="160">
               <template #default="{ row }">
-                {{ formatDateTime(row.updatedAt || row.createdAt) }}
+                {{ formatDateTime(row.endedAt || row.ended_at) }}
               </template>
             </el-table-column>
-            <el-table-column label="Thao Tác" min-width="180" fixed="right" align="center">
+            <el-table-column label="Thao Tác" width="150" fixed="right" align="center">
               <template #default="{ row }">
-                <el-button link type="primary" size="small" :icon="View" @click="viewDevicePackets(row)">
-                  Xem Gói Tin
-                </el-button>
-                <el-button link type="danger" size="small" :icon="Delete" @click="confirmDeleteDevice(row)">
-                  Xóa
+                <el-button link type="primary" size="small" :icon="View" @click="viewSessionPackets(row)">
+                  Gói Tin
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
-
-          <div class="pagination-container">
-            <el-pagination
-              v-model:current-page="devicePagination.page"
-              v-model:page-size="devicePagination.limit"
-              :total="devicePagination.total"
-              :page-sizes="[10, 20, 50, 100]"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="loadDevices"
-              @current-change="loadDevices"
-            />
-          </div>
         </el-card>
       </el-tab-pane>
 
@@ -180,95 +115,66 @@
               />
             </el-col>
             <el-col :xs="24" :sm="8" :md="4">
-              <el-button type="primary" :icon="Search" @click="loadPackets">Lọc Gói Tin</el-button>
-              <el-button :icon="Refresh" @click="resetPacketFilters">Reset</el-button>
+              <el-button type="primary" :icon="Search" @click="loadPackets">Lọc</el-button>
+              <el-button :icon="Refresh" @click="resetPacketFilters">Đặt Lại</el-button>
             </el-col>
           </el-row>
         </el-card>
 
         <el-card shadow="never" class="table-card mt-3">
-          <el-table
-            :data="packetList"
-            v-loading="loadingPackets"
-            stripe
-            border
-            style="width: 100%"
-            row-key="id"
-          >
-            <el-table-column type="expand">
+          <el-table :data="packetList" v-loading="loadingPackets" stripe border style="width: 100%">
+            <el-table-column prop="id" label="ID" width="70" align="center" />
+            <el-table-column prop="networkId" label="DevEUI / Network ID" min-width="160">
               <template #default="{ row }">
-                <div class="packet-expand-box p-3">
-                  <el-row :gutter="16">
-                    <el-col :xs="24" :md="12">
-                      <div class="expand-section">
-                        <div class="section-title">
-                          <el-icon><Document /></el-icon>
-                          <span>Raw Payload</span>
-                        </div>
-                        <div class="raw-code font-mono">{{ row.rawPayload || row.raw_payload || '(Empty raw payload)' }}</div>
-                      </div>
-                      <div class="expand-section mt-3">
-                        <div class="section-title">
-                          <el-icon><Connection /></el-icon>
-                          <span>RF Metrics & Gateway Info</span>
-                        </div>
-                        <div class="json-code">
-                          <pre>{{ JSON.stringify(row.rfInfo || row.rf_info || {}, null, 2) }}</pre>
-                        </div>
-                      </div>
-                    </el-col>
-                    <el-col :xs="24" :md="12">
-                      <div class="expand-section">
-                        <div class="section-title">
-                          <el-icon><DataAnalysis /></el-icon>
-                          <span>Decoded Payload (JSONB)</span>
-                        </div>
-                        <div class="json-code">
-                          <pre>{{ JSON.stringify(row.decodedPayload || row.decoded_payload || {}, null, 2) }}</pre>
-                        </div>
-                      </div>
-                    </el-col>
-                  </el-row>
-                </div>
+                <el-tag type="info" class="font-mono">{{ row.networkId || row.network_id || '—' }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="id" label="ID" width="80" align="center" />
-            <el-table-column prop="createdAt" label="Thời Gian" min-width="160">
+            <el-table-column prop="packetType" label="Loại Gói" width="120" align="center">
               <template #default="{ row }">
-                {{ formatDateTime(row.createdAt || row.created_at) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="packetType" label="Loại" min-width="120" align="center">
-              <template #default="{ row }">
-                <el-tag size="small" :type="(row.packetType || row.packet_type) === 'uplink' ? 'success' : 'warning'">
-                  {{ (row.packetType || row.packet_type || 'unknown').toUpperCase() }}
+                <el-tag size="small" :type="getPacketTypeTag(row.packetType || row.packet_type)">
+                  {{ (row.packetType || row.packet_type || '').toUpperCase() }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="Cổng & FCNT" min-width="130" align="center">
+            <el-table-column label="Dual Payload Preview (Raw vs Decoded)" min-width="320">
               <template #default="{ row }">
-                <span>Port: {{ row.fPort ?? row.f_port ?? '—' }} | FCnt: {{ row.fCnt ?? row.f_cnt ?? '—' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="rawPayload" label="Raw Payload Preview" min-width="200">
-              <template #default="{ row }">
-                <span class="font-mono text-xs truncate block max-w-xs">{{ row.rawPayload || row.raw_payload || '—' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="RF Metrics" min-width="180">
-              <template #default="{ row }">
-                <div v-if="row.rfInfo || row.rf_info" class="text-xs">
-                  <span v-if="(row.rfInfo?.rssi ?? row.rf_info?.rssi) !== undefined">RSSI: <strong>{{ row.rfInfo?.rssi ?? row.rf_info?.rssi }} dBm</strong> | </span>
-                  <span v-if="(row.rfInfo?.snr ?? row.rf_info?.snr) !== undefined">SNR: <strong>{{ row.rfInfo?.snr ?? row.rf_info?.snr }} dB</strong></span>
-                  <div v-if="row.rfInfo?.gatewayEui || row.rf_info?.gateway_eui" class="text-secondary font-mono">GW: {{ row.rfInfo?.gatewayEui || row.rf_info?.gateway_eui }}</div>
+                <div class="payload-preview">
+                  <div class="raw-preview text-xs">
+                    <span class="label font-bold text-info">RAW:</span>
+                    <span class="code font-mono ml-1">{{ truncateStr(row.rawPayload || row.raw_payload, 40) }}</span>
+                  </div>
+                  <div v-if="row.decodedPayload || row.decoded_payload" class="decoded-preview text-xs mt-1">
+                    <span class="label font-bold text-success">DECODED:</span>
+                    <span class="code font-mono ml-1">{{ truncateStr(JSON.stringify(row.decodedPayload || row.decoded_payload), 50) }}</span>
+                  </div>
                 </div>
-                <span v-else class="text-secondary">—</span>
               </template>
             </el-table-column>
-            <el-table-column label="Hành Động" width="100" align="center">
+            <el-table-column label="Chỉ Số RF (RSSI / SNR)" min-width="150" align="center">
               <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="inspectPacket(row)">
-                  Chi tiết
+                <div class="rf-stats text-xs">
+                  <span v-if="row.rssi !== null && row.rssi !== undefined">RSSI: <b>{{ row.rssi }} dBm</b></span>
+                  <span v-if="row.snr !== null && row.snr !== undefined" class="ml-2">SNR: <b>{{ row.snr }} dB</b></span>
+                  <span v-if="row.rssi === null && row.snr === null" class="text-secondary">—</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="Kết Quả" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="getStatusTagType(row.status)">
+                  {{ (row.status || '').toUpperCase() }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="receivedAt" label="Thời Gian" min-width="160">
+              <template #default="{ row }">
+                {{ formatDateTime(row.receivedAt || row.received_at || row.createdAt || row.created_at) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Thao Tác" width="100" fixed="right" align="center">
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" :icon="View" @click="inspectPacket(row)">
+                  Chi Tiết
                 </el-button>
               </template>
             </el-table-column>
@@ -287,187 +193,55 @@
           </div>
         </el-card>
       </el-tab-pane>
-
-      <!-- TAB 3: Gateway Test Sessions -->
-      <el-tab-pane label="Gateway Test Sessions" name="gateway-sessions">
-        <el-card shadow="never" class="table-card">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="text-md font-bold">Lịch Sử Phiên Test Gateway (ChirpStack)</h3>
-            <el-button type="primary" :icon="Plus" @click="openCreateSessionDialog">
-              Tạo Phiên Test Mới
-            </el-button>
-          </div>
-          <el-table :data="sessionList" v-loading="loadingSessions" stripe border style="width: 100%">
-            <el-table-column prop="id" label="Session ID" min-width="150">
-              <template #default="{ row }">
-                <span class="font-mono">{{ row.id }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="gatewayId" label="Gateway EUI / ID" min-width="170">
-              <template #default="{ row }">
-                <span class="font-mono text-primary font-bold">{{ row.gatewayId || row.gateway_id || '—' }}</span>
-                <div v-if="row.gatewayName || row.gateway_name" class="text-xs text-secondary">{{ row.gatewayName || row.gateway_name }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="Trạng Thái" min-width="120" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.status === 'completed' ? 'success' : row.status === 'failed' ? 'danger' : 'warning'">
-                  {{ (row.status || '').toUpperCase() }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Kết Quả Summary" min-width="250">
-              <template #default="{ row }">
-                <div v-if="row.summary" class="text-xs">
-                  <div>Tỷ lệ đạt: <strong>{{ row.summary.passedSteps || row.summary.passed_steps || 0 }}/{{ row.summary.totalSteps || row.summary.total_steps || 5 }}</strong></div>
-                  <div class="text-secondary">{{ row.summary.note || '' }}</div>
-                </div>
-                <span v-else>—</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createdAt" label="Thời Gian" min-width="160">
-              <template #default="{ row }">
-                {{ formatDateTime(row.createdAt || row.created_at || row.startedAt || row.started_at) }}
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-tab-pane>
     </el-tabs>
 
-    <!-- DIALOG: Đăng Ký Thiết Bị Mới (Cascading SO -> WA -> Item Code) -->
-    <el-dialog
-      v-model="registerDialogVisible"
-      title="Đăng Ký Thiết Bị Kiểm Thử (Liên Kết Traceability)"
-      width="650px"
-      :before-close="handleCloseRegisterDialog"
-      destroy-on-close
-    >
-      <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" label-width="150px" label-position="left">
-        <!-- 1. Cụm liên kết Traceability -->
-        <div class="form-section-title">
-          <el-icon class="mr-1"><Files /></el-icon>
-          Truy Vết Traceability (ERP Link)
-        </div>
-        
-        <el-form-item label="Sale Order (SO)" prop="soNumber" required>
-          <el-select
-            v-model="registerForm.soNumber"
-            filterable
-            remote
-            placeholder="Tìm hoặc chọn SO..."
-            :remote-method="searchSOs"
-            :loading="loadingSOs"
-            style="width: 100%"
-            @change="handleSOChange"
-          >
-            <el-option
-              v-for="so in soOptions"
-              :key="so.id || so.soNumber"
-              :label="`${so.soNumber} - ${so.customerName || 'ERP'}`"
-              :value="so.soNumber"
-            />
-          </el-select>
-        </el-form-item>
+    <!-- Dialog Chi Tiết Gói Tin Dual Payload -->
+    <el-dialog v-model="packetDetailVisible" title="Chi Tiết Gói Tin Dual Payload" width="700px">
+      <div v-if="selectedPacket" class="packet-detail-body">
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="ID">{{ selectedPacket.id }}</el-descriptions-item>
+          <el-descriptions-item label="Loại Gói">{{ selectedPacket.packetType || selectedPacket.packet_type }}</el-descriptions-item>
+          <el-descriptions-item label="Network ID / EUI">{{ selectedPacket.networkId || selectedPacket.network_id }}</el-descriptions-item>
+          <el-descriptions-item label="Trạng Thái">
+            <el-tag :type="getStatusTagType(selectedPacket.status)">{{ (selectedPacket.status || '').toUpperCase() }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="RSSI">{{ selectedPacket.rssi ?? '—' }} dBm</el-descriptions-item>
+          <el-descriptions-item label="SNR">{{ selectedPacket.snr ?? '—' }} dB</el-descriptions-item>
+          <el-descriptions-item label="Thời Gian">{{ formatDateTime(selectedPacket.receivedAt || selectedPacket.received_at) }}</el-descriptions-item>
+        </el-descriptions>
 
-        <el-form-item label="Work Auth (WA)" prop="waNumber" required>
-          <el-select
-            v-model="registerForm.waNumber"
-            filterable
-            placeholder="Chọn WA thuộc SO đã chọn..."
-            :disabled="!registerForm.soNumber"
-            :loading="loadingWAs"
-            style="width: 100%"
-            @change="handleWAChange"
-          >
-            <el-option
-              v-for="wa in waOptions"
-              :key="wa.id || wa.waNumber"
-              :label="`${wa.waNumber} ${wa.plannedQuantity ? '(SL: ' + wa.plannedQuantity + ')' : ''}`"
-              :value="wa.waNumber"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="Item Code" prop="itemCode" required>
-          <el-select
-            v-model="registerForm.itemCode"
-            filterable
-            allow-create
-            placeholder="Chọn hoặc nhập Item Code..."
-            :disabled="!registerForm.waNumber && waOptions.length > 0"
-            :loading="loadingItems"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in itemOptions"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-
-        <!-- 2. Thông tin định danh thiết bị -->
-        <div class="form-section-title mt-4">
-          <el-icon class="mr-1"><Cpu /></el-icon>
-          Thông Số Định Danh Thiết Bị
+        <div class="mt-4">
+          <div class="section-title"><el-icon><Document /></el-icon> Raw Payload (HEX / Base64)</div>
+          <pre class="raw-code">{{ selectedPacket.rawPayload || selectedPacket.raw_payload || 'Trống' }}</pre>
         </div>
 
-        <el-form-item label="Serial Number" prop="serialNumber" required>
-          <el-input v-model="registerForm.serialNumber" placeholder="Nhập Serial Number duy nhất..." />
-        </el-form-item>
-
-        <el-form-item label="Network ID / DevEUI" prop="networkId">
-          <el-input v-model="registerForm.networkId" placeholder="Ví dụ: DevEUI, MAC, Gateway EUI..." />
-        </el-form-item>
-
-        <el-form-item label="Tên Thiết Bị" prop="deviceName" required>
-          <el-input v-model="registerForm.deviceName" placeholder="Tên gợi nhớ của thiết bị..." />
-        </el-form-item>
-
-        <el-form-item label="Loại Thiết Bị" prop="deviceType" required>
-          <el-select v-model="registerForm.deviceType" style="width: 100%">
-            <el-option label="LoRaWAN End Device" value="lorawan_node" />
-            <el-option label="LoRaWAN Gateway" value="lorawan_gateway" />
-            <el-option label="Generic Sensor" value="sensor" />
-            <el-option label="Smart Meter" value="meter" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-
+        <div class="mt-4">
+          <div class="section-title"><el-icon><DataAnalysis /></el-icon> Decoded Payload (JSONB)</div>
+          <pre class="json-code">{{ JSON.stringify(selectedPacket.decodedPayload || selectedPacket.decoded_payload || {}, null, 2) }}</pre>
+        </div>
+      </div>
       <template #footer>
-        <el-button @click="registerDialogVisible = false">Hủy</el-button>
-        <el-button type="primary" :loading="submittingRegister" @click="submitRegisterDevice">
-          Đăng Ký
-        </el-button>
+        <el-button @click="packetDetailVisible = false">Đóng</el-button>
       </template>
     </el-dialog>
 
-    <!-- DIALOG: Chi Tiết Gói Tin / Inspect JSON -->
-    <el-dialog v-model="packetDetailVisible" title="Chi Tiết Gói Tin" width="700px">
-      <div v-if="selectedPacket">
-        <el-descriptions border :column="2" class="mb-3">
-          <el-descriptions-item label="Packet ID">{{ selectedPacket.id }}</el-descriptions-item>
-          <el-descriptions-item label="Loại Gói">{{ selectedPacket.packetType }}</el-descriptions-item>
-          <el-descriptions-item label="FPort">{{ selectedPacket.fPort ?? '—' }}</el-descriptions-item>
-          <el-descriptions-item label="FCnt">{{ selectedPacket.fCnt ?? '—' }}</el-descriptions-item>
-          <el-descriptions-item label="Thời Gian" :span="2">{{ formatDateTime(selectedPacket.createdAt) }}</el-descriptions-item>
-        </el-descriptions>
-
-        <div class="font-bold mb-1">Raw Payload:</div>
-        <div class="raw-code p-2 mb-3 font-mono">{{ selectedPacket.rawPayload || '(Empty)' }}</div>
-
-        <div class="font-bold mb-1">Decoded Payload (JSONB):</div>
-        <div class="json-code p-2 mb-3">
-          <pre>{{ JSON.stringify(selectedPacket.decodedPayload || {}, null, 2) }}</pre>
-        </div>
-
-        <div class="font-bold mb-1">RF Info:</div>
-        <div class="json-code p-2">
-          <pre>{{ JSON.stringify(selectedPacket.rfInfo || {}, null, 2) }}</pre>
-        </div>
-      </div>
+    <!-- Dialog Tạo Phiên Test Gateway Mới -->
+    <el-dialog v-model="createSessionDialogVisible" title="Tạo Phiên Test Gateway" width="500px">
+      <el-form ref="sessionFormRef" :model="sessionForm" :rules="sessionRules" label-width="130px">
+        <el-form-item label="Gateway EUI / ID" prop="gatewayId">
+          <el-input v-model="sessionForm.gatewayId" placeholder="VD: 0016c001f1122334" />
+        </el-form-item>
+        <el-form-item label="Tên Gateway" prop="gatewayName">
+          <el-input v-model="sessionForm.gatewayName" placeholder="VD: Gateway Outdoor SX1302" />
+        </el-form-item>
+        <el-form-item label="Ghi Chú" prop="notes">
+          <el-input v-model="sessionForm.notes" type="textarea" :rows="3" placeholder="Ghi chú cấu hình kiểm thử..." />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createSessionDialogVisible = false">Hủy</el-button>
+        <el-button type="primary" :loading="submittingSession" @click="submitCreateSession">Tạo Phiên</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -476,42 +250,23 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  Cpu,
   Connection,
   Odometer,
-  Files,
   Search,
   Plus,
   Refresh,
-  Delete,
   View,
   Document,
   DataAnalysis,
 } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus';
+import { ElMessage, type FormInstance } from 'element-plus';
 import { httpClient } from '@/api/client';
 
 const route = useRoute();
 const router = useRouter();
 
-const activeTab = ref('devices');
+const activeTab = ref('gateway-sessions');
 const loading = ref(false);
-
-// Devices State
-const loadingDevices = ref(false);
-const deviceList = ref<any[]>([]);
-const filters = reactive({
-  search: '',
-  deviceType: '',
-  status: '',
-  soNumber: '',
-  waNumber: '',
-});
-const devicePagination = reactive({
-  page: 1,
-  limit: 20,
-  total: 0,
-});
 
 // Packets State
 const loadingPackets = ref(false);
@@ -532,41 +287,18 @@ const selectedPacket = ref<any>(null);
 // Gateway Sessions State
 const loadingSessions = ref(false);
 const sessionList = ref<any[]>([]);
-
-// Register Dialog State
-const registerDialogVisible = ref(false);
-const submittingRegister = ref(false);
-const registerFormRef = ref<FormInstance>();
-const loadingSOs = ref(false);
-const loadingWAs = ref(false);
-const loadingItems = ref(false);
-
-const soOptions = ref<any[]>([]);
-const waOptions = ref<any[]>([]);
-const itemOptions = ref<string[]>([]);
-
-const registerForm = reactive({
-  soId: '',
-  soNumber: '',
-  waId: '',
-  waNumber: '',
-  itemCode: '',
-  serialNumber: '',
-  networkId: '',
-  deviceName: '',
-  deviceType: 'lorawan_node',
+const createSessionDialogVisible = ref(false);
+const submittingSession = ref(false);
+const sessionFormRef = ref<FormInstance>();
+const sessionForm = reactive({
+  gatewayId: '',
+  gatewayName: '',
+  notes: '',
 });
-
-const registerRules = {
-  soNumber: [{ required: true, message: 'Vui lòng chọn Sale Order (SO)', trigger: 'change' }],
-  waNumber: [{ required: true, message: 'Vui lòng chọn Work Authorization (WA)', trigger: 'change' }],
-  itemCode: [{ required: true, message: 'Vui lòng nhập hoặc chọn Item Code', trigger: 'change' }],
-  serialNumber: [{ required: true, message: 'Vui lòng nhập Serial Number', trigger: 'blur' }],
-  deviceName: [{ required: true, message: 'Vui lòng nhập Tên Thiết Bị', trigger: 'blur' }],
-  deviceType: [{ required: true, message: 'Vui lòng chọn Loại Thiết Bị', trigger: 'change' }],
+const sessionRules = {
+  gatewayId: [{ required: true, message: 'Vui lòng nhập Gateway EUI / ID', trigger: 'blur' }],
 };
 
-// Formatting
 function formatDateTime(isoStr?: string) {
   if (!isoStr) return '—';
   try {
@@ -590,62 +322,54 @@ function getStatusTagType(status?: string) {
     case 'passed':
       return 'success';
     case 'in_test':
+    case 'in_progress':
       return 'warning';
     case 'failed':
       return 'danger';
-    case 'registered':
     default:
       return 'info';
   }
 }
 
-// Tab handling
-function handleTabChange(tab: string) {
-  router.replace({ query: { ...route.query, tab } });
+function getPacketTypeTag(type?: string) {
+  switch (type?.toLowerCase()) {
+    case 'uplink':
+      return 'success';
+    case 'downlink':
+      return 'warning';
+    case 'join_request':
+      return 'primary';
+    case 'ack':
+      return 'info';
+    default:
+      return '';
+  }
+}
+
+function truncateStr(str?: string, max = 30) {
+  if (!str) return '—';
+  return str.length > max ? `${str.slice(0, max)}...` : str;
+}
+
+function handleTabChange(tab: any) {
+  router.replace({
+    query: {
+      ...route.query,
+      tab: tab.paneName || tab,
+    },
+  });
   refreshActiveTab();
 }
 
 function refreshActiveTab() {
-  if (activeTab.value === 'devices') {
-    loadDevices();
-  } else if (activeTab.value === 'packets') {
+  if (activeTab.value === 'packets') {
     loadPackets();
   } else if (activeTab.value === 'gateway-sessions') {
     loadGatewaySessions();
   }
 }
 
-// Load Devices
-async function loadDevices() {
-  loadingDevices.value = true;
-  try {
-    const res: any = await httpClient.get('/plugins/testing/devices', {
-      params: {
-        page: devicePagination.page,
-        limit: devicePagination.limit,
-        search: filters.search || undefined,
-        deviceType: filters.deviceType || undefined,
-        status: filters.status || undefined,
-        soNumber: filters.soNumber || undefined,
-        waNumber: filters.waNumber || undefined,
-      },
-    });
-    if (res?.data) {
-      deviceList.value = Array.isArray(res.data) ? res.data : (res.data.items || []);
-      devicePagination.total = res.total ?? (res.data.total ?? deviceList.value.length);
-    } else if (Array.isArray(res)) {
-      deviceList.value = res;
-      devicePagination.total = res.length;
-    }
-  } catch (err: any) {
-    console.error('Error loading devices:', err);
-    ElMessage.error(err?.message || 'Không thể tải danh sách thiết bị kiểm thử');
-  } finally {
-    loadingDevices.value = false;
-  }
-}
-
-// Load Packets
+// Packets loading
 async function loadPackets() {
   loadingPackets.value = true;
   try {
@@ -681,14 +405,6 @@ function resetPacketFilters() {
   loadPackets();
 }
 
-function viewDevicePackets(device: any) {
-  activeTab.value = 'packets';
-  packetFilters.networkId = device.networkId || '';
-  packetFilters.search = device.serialNumber || '';
-  packetPagination.page = 1;
-  loadPackets();
-}
-
 function inspectPacket(packet: any) {
   selectedPacket.value = packet;
   packetDetailVisible.value = true;
@@ -699,153 +415,56 @@ async function loadGatewaySessions() {
   loadingSessions.value = true;
   try {
     const res: any = await httpClient.get('/plugins/testing/gateway-sessions');
-    sessionList.value = Array.isArray(res?.data) ? res.data : (res?.data?.items || (Array.isArray(res) ? res : []));
+    sessionList.value = res?.data || (Array.isArray(res) ? res : []);
   } catch (err: any) {
     console.error('Error loading gateway sessions:', err);
+    ElMessage.error(err?.message || 'Không thể tải danh sách phiên test Gateway');
   } finally {
     loadingSessions.value = false;
   }
 }
 
+function viewSessionPackets(session: any) {
+  activeTab.value = 'packets';
+  packetFilters.networkId = session.gatewayId || session.gateway_id || '';
+  packetPagination.page = 1;
+  handleTabChange('packets');
+}
+
 function openCreateSessionDialog() {
-  ElMessage.info('Tính năng đo kiểm 5 bước Gateway đang đồng bộ với server ChirpStack.');
+  createSessionDialogVisible.value = true;
 }
 
-// Delete device
-async function confirmDeleteDevice(device: any) {
-  try {
-    await ElMessageBox.confirm(
-      `Bạn có chắc chắn muốn xóa thiết bị ${device.serialNumber} (${device.deviceName})?`,
-      'Xác nhận xóa',
-      {
-        confirmButtonText: 'Xóa',
-        cancelButtonText: 'Hủy',
-        type: 'warning',
-      }
-    );
-    await httpClient.delete(`/plugins/testing/devices/${device.id}`);
-    ElMessage.success('Đã xóa thiết bị thành công');
-    loadDevices();
-  } catch (err: any) {
-    if (err !== 'cancel') {
-      ElMessage.error(err?.message || 'Lỗi khi xóa thiết bị');
-    }
-  }
-}
-
-// Lookup functions for Register Dialog
-async function searchSOs(query: string = '') {
-  loadingSOs.value = true;
-  try {
-    const res: any = await httpClient.get('/plugins/testing/lookup/so', {
-      params: { search: query, limit: 50 },
-    });
-    soOptions.value = res?.data || (Array.isArray(res) ? res : []);
-  } catch (err: any) {
-    console.error('Error fetching SOs:', err);
-  } finally {
-    loadingSOs.value = false;
-  }
-}
-
-async function handleSOChange(soNumber: string) {
-  registerForm.waNumber = '';
-  registerForm.itemCode = '';
-  waOptions.value = [];
-  itemOptions.value = [];
-
-  const foundSO = soOptions.value.find((s) => s.soNumber === soNumber);
-  if (foundSO) {
-    registerForm.soId = foundSO.id;
-  }
-
-  if (!soNumber) return;
-
-  loadingWAs.value = true;
-  try {
-    const res: any = await httpClient.get('/plugins/testing/lookup/wa', {
-      params: { soNumber, limit: 100 },
-    });
-    waOptions.value = res?.data || (Array.isArray(res) ? res : []);
-  } catch (err: any) {
-    console.error('Error fetching WAs:', err);
-  } finally {
-    loadingWAs.value = false;
-  }
-}
-
-async function handleWAChange(waNumber: string) {
-  registerForm.itemCode = '';
-  itemOptions.value = [];
-
-  const foundWA = waOptions.value.find((w) => w.waNumber === waNumber);
-  if (foundWA) {
-    registerForm.waId = foundWA.id;
-  }
-
-  if (!waNumber) return;
-
-  loadingItems.value = true;
-  try {
-    const res: any = await httpClient.get('/plugins/testing/lookup/items', {
-      params: {
-        soId: registerForm.soId || undefined,
-        waId: registerForm.waId || undefined,
-      },
-    });
-    itemOptions.value = res?.data || (Array.isArray(res) ? res : []);
-  } catch (err: any) {
-    console.error('Error fetching items:', err);
-  } finally {
-    loadingItems.value = false;
-  }
-}
-
-function openRegisterDialog() {
-  registerDialogVisible.value = true;
-  searchSOs('');
-}
-
-function handleCloseRegisterDialog() {
-  registerDialogVisible.value = false;
-  if (registerFormRef.value) {
-    registerFormRef.value.resetFields();
-  }
-}
-
-async function submitRegisterDevice() {
-  if (!registerFormRef.value) return;
-  await registerFormRef.value.validate(async (valid) => {
+async function submitCreateSession() {
+  if (!sessionFormRef.value) return;
+  await sessionFormRef.value.validate(async (valid) => {
     if (!valid) return;
-    submittingRegister.value = true;
+    submittingSession.value = true;
     try {
-      await httpClient.post('/plugins/testing/devices', {
-        soId: registerForm.soId || undefined,
-        soNumber: registerForm.soNumber,
-        waId: registerForm.waId || undefined,
-        waNumber: registerForm.waNumber,
-        itemCode: registerForm.itemCode,
-        serialNumber: registerForm.serialNumber,
-        networkId: registerForm.networkId || undefined,
-        deviceName: registerForm.deviceName,
-        deviceType: registerForm.deviceType,
+      await httpClient.post('/plugins/testing/gateway-sessions', {
+        gatewayId: sessionForm.gatewayId,
+        gatewayName: sessionForm.gatewayName || undefined,
+        notes: sessionForm.notes || undefined,
       });
-      ElMessage.success('Đăng ký thiết bị kiểm thử thành công!');
-      registerDialogVisible.value = false;
-      loadDevices();
+      ElMessage.success('Đã tạo phiên test Gateway thành công!');
+      createSessionDialogVisible.value = false;
+      loadGatewaySessions();
     } catch (err: any) {
-      console.error('Error registering device:', err);
-      ElMessage.error(err?.message || 'Không thể đăng ký thiết bị kiểm thử');
+      console.error('Error creating gateway session:', err);
+      ElMessage.error(err?.message || 'Không thể tạo phiên test Gateway');
     } finally {
-      submittingRegister.value = false;
+      submittingSession.value = false;
     }
   });
 }
 
 onMounted(() => {
   const queryTab = route.query.tab as string;
-  if (queryTab && ['devices', 'packets', 'gateway-sessions'].includes(queryTab)) {
+  if (queryTab && ['packets', 'gateway-sessions'].includes(queryTab)) {
     activeTab.value = queryTab;
+  }
+  if (route.query.networkId) {
+    packetFilters.networkId = String(route.query.networkId);
   }
   refreshActiveTab();
 });
@@ -894,17 +513,6 @@ onMounted(() => {
   margin-top: 16px;
 }
 
-.form-section-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--el-color-primary);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  border-bottom: 1px dashed var(--el-border-color);
-  padding-bottom: 4px;
-}
-
 .raw-code,
 .json-code {
   background: var(--el-fill-color-darker, #1e1e1e);
@@ -940,6 +548,14 @@ onMounted(() => {
 
 .text-info {
   color: var(--el-color-info);
+}
+
+.text-success {
+  color: var(--el-color-success);
+}
+
+.text-danger {
+  color: var(--el-color-danger);
 }
 
 .text-warning {

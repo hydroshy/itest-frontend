@@ -1,0 +1,23 @@
+{
+  "id": "device",
+  "name": "DEVICE MANAGEMENT",
+  "version": "1.0.0",
+  "sdkVersion": "^1.0.0",
+  "type": "FRONTEND",
+  "description": "Quản lý danh sách thiết bị IoT, liên kết dữ liệu Traceability (SO/WA/Item Code) và trạng thái hoạt động độc lập.",
+  "author": "ITEST IoT Platform Team",
+  "frontend": "frontend/index.ts",
+  "enabledByDefault": true,
+  "permissions": [
+    {
+      "namespace": "device",
+      "resource": "device",
+      "action": "manage"
+    },
+    {
+      "namespace": "device",
+      "resource": "device",
+      "action": "view"
+    }
+  ]
+}

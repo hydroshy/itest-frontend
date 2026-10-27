@@ -1,19 +1,14 @@
 {
   "id": "testing",
-  "name": "TESTING SYSTEM",
+  "name": "GATEWAY TESTING",
   "version": "1.0.0",
   "sdkVersion": "^1.0.0",
   "type": "FRONTEND",
-  "description": "Quản lý thiết bị kiểm thử liên kết Traceability (SO/WA/Item Code), giám sát luồng gói tin Dual Payload (Raw/Decoded JSONB, RF metrics) và phiên test Gateway.",
+  "description": "Hệ thống Gateway Testing chuyên biệt: giám sát luồng gói tin Dual Payload (Raw/Decoded JSONB, RF metrics) từ ChirpStack và quản lý phiên kiểm thử Gateway.",
   "author": "ITEST IoT Platform Team",
   "frontend": "frontend/index.ts",
   "enabledByDefault": true,
   "permissions": [
-    {
-      "namespace": "testing",
-      "resource": "device",
-      "action": "manage"
-    },
     {
       "namespace": "testing",
       "resource": "packet",
