@@ -3,13 +3,16 @@
     <!-- Sidebar (Ẩn hoàn toàn khi ở trang Launcher /menu, hoặc khi truy cập plugin từ menu) -->
     <aside
       v-if="showSidebar"
-      class="layout-aside flex flex-col flex-shrink-0 bg-[#051321] border-r border-[#1d3b5a] transition-all duration-300 select-none z-20"
+      class="layout-aside flex flex-col flex-shrink-0 bg-[#051321] border-r border-[#1d3b5a] transition-[width] duration-300 ease-in-out select-none z-20 overflow-hidden will-change-[width]"
       :class="isCollapse ? 'w-16' : 'w-60'"
     >
       <!-- Logo Box -->
-      <div class="logo-box h-14 flex items-center justify-center gap-2 border-b border-[#1d3b5a] bg-[#051321]">
-        <div class="w-2.5 h-2.5 rounded-full bg-[#00f0ff] shadow-[0_0_8px_#00f0ff] animate-pulse"></div>
-        <span v-show="!isCollapse" class="font-black text-sm tracking-widest text-[#00f0ff] font-mono">
+      <div class="logo-box h-14 flex items-center justify-center gap-2 border-b border-[#1d3b5a] bg-[#051321] flex-shrink-0 overflow-hidden px-2">
+        <div class="w-2.5 h-2.5 rounded-full bg-[#00f0ff] shadow-[0_0_8px_#00f0ff] animate-pulse flex-shrink-0"></div>
+        <span
+          class="font-black text-sm tracking-widest text-[#00f0ff] font-mono truncate transition-opacity duration-200"
+          :class="isCollapse ? 'opacity-0 w-0 pointer-events-none hidden' : 'opacity-100'"
+        >
           iTEST 2.0
         </span>
       </div>
@@ -75,47 +78,59 @@
 
           <!-- Dynamic Plugin Menus -->
           <template v-if="pluginStore.menus.length > 0">
-            <li v-show="!isCollapse" class="menu-title px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-wider text-[#5f7e97]">
+            <li v-show="!isCollapse" class="menu-title px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-wider text-[#5f7e97] truncate">
               Ứng dụng mở rộng
             </li>
 
             <template v-for="menu in pluginStore.menus" :key="menu.id">
               <!-- Sub-menu if has children -->
               <li v-if="menu.children && menu.children.length > 0">
-                <details :open="activeRoute.startsWith(menu.path)">
+                <!-- Khi mở rộng: dùng details accordion -->
+                <details v-if="!isCollapse" :open="activeRoute.startsWith(menu.path)">
                   <summary class="flex items-center gap-3 px-3 py-2.5 rounded-md text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]">
-                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" color="#94a3b8" />
-                    <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">{{ menu.title }}</span>
+                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" color="#94a3b8" class="flex-shrink-0" />
+                    <span class="font-medium text-xs tracking-wide truncate">{{ menu.title }}</span>
                   </summary>
                   <ul class="pl-4 mt-1 border-l border-[#1d3b5a] ml-4 gap-1">
                     <li v-for="sub in menu.children" :key="sub.id">
                       <a
-                        class="flex items-center gap-2 px-3 py-2 rounded text-xs transition-all"
+                        class="flex items-center gap-2 px-3 py-2 rounded text-xs transition-colors duration-150"
                         :class="activeRoute === sub.path ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
                         @click="router.push(sub.path)"
                       >
-                        <CyberIcon v-if="sub.icon" :name="resolveCyberIconName(sub.icon)" :size="14" :color="activeRoute === sub.path ? '#00f0ff' : '#94a3b8'" />
-                        <span>{{ sub.title }}</span>
+                        <CyberIcon v-if="sub.icon" :name="resolveCyberIconName(sub.icon)" :size="14" :color="activeRoute === sub.path ? '#00f0ff' : '#94a3b8'" class="flex-shrink-0" />
+                        <span class="truncate">{{ sub.title }}</span>
                       </a>
                     </li>
                   </ul>
                 </details>
+                <!-- Khi thu gọn: chỉ hiển thị icon đơn, không mở submenu details gây kẹt/tràn icon -->
+                <a
+                  v-else
+                  class="flex items-center justify-center px-3 py-2.5 rounded-md transition-colors duration-150"
+                  :class="activeRoute.startsWith(menu.path) ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+                  :title="menu.title"
+                  @click="router.push(menu.children[0]?.path || menu.path)"
+                >
+                  <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute.startsWith(menu.path) ? '#00f0ff' : '#94a3b8'" class="flex-shrink-0" />
+                </a>
               </li>
 
               <!-- Single item -->
               <li v-else>
                 <a
-                  class="flex items-center justify-between px-3 py-2.5 rounded-md transition-all"
+                  class="flex items-center justify-between px-3 py-2.5 rounded-md transition-colors duration-150"
                   :class="activeRoute === menu.path ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+                  :title="isCollapse ? menu.title : undefined"
                   @click="router.push(menu.path)"
                 >
-                  <div class="flex items-center gap-3">
-                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute === menu.path ? '#00f0ff' : '#94a3b8'" />
-                    <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">{{ menu.title }}</span>
+                  <div class="flex items-center gap-3 min-w-0">
+                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute === menu.path ? '#00f0ff' : '#94a3b8'" class="flex-shrink-0" />
+                    <span v-show="!isCollapse" class="font-medium text-xs tracking-wide truncate">{{ menu.title }}</span>
                   </div>
                   <span
                     v-if="menu.badge && !isCollapse"
-                    class="badge badge-xs font-mono bg-[#00f0ff]/20 text-[#00f0ff] border-[#00f0ff]/40"
+                    class="badge badge-xs font-mono bg-[#00f0ff]/20 text-[#00f0ff] border-[#00f0ff]/40 flex-shrink-0"
                   >
                     {{ menu.badge }}
                   </span>
@@ -342,6 +357,33 @@ async function handleUserCommand(cmd: string) {
 </script>
 
 <style scoped>
+.layout-aside {
+  contain: layout paint;
+}
+
+.sidebar-menu-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #1d3b5a transparent;
+  contain: content;
+}
+
+.sidebar-menu-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-menu-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-menu-wrapper::-webkit-scrollbar-thumb {
+  background: #1d3b5a;
+  border-radius: 2px;
+}
+
+.sidebar-menu-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #7fdbca;
+}
+
 .layout-main-wrapper {
   background-color: var(--owl-bg-canvas, #011627);
   background-image:
