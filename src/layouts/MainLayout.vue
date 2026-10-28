@@ -1,190 +1,247 @@
 <template>
-  <el-container class="layout-container">
-  <!-- Sidebar (Ẩn hoàn toàn khi ở trang Launcher /menu, chỉ hiển thị khi chuyển sang dashboard/trang quản trị/plugin) -->
-  <el-aside
-    v-if="showSidebar"
-    :width="isCollapse ? '64px' : '240px'"
-    class="layout-aside"
-  >
-      <div class="logo-box">
-        <span v-show="!isCollapse" class="logo-text">iTEST 2.0</span>
+  <div class="layout-container flex h-screen w-screen overflow-hidden bg-[#011627] text-[#d6deeb]">
+    <!-- Sidebar (Ẩn hoàn toàn khi ở trang Launcher /menu, hoặc khi truy cập plugin từ menu) -->
+    <aside
+      v-if="showSidebar"
+      class="layout-aside flex flex-col flex-shrink-0 bg-[#051321] border-r border-[#1d3b5a] transition-all duration-300 select-none z-20"
+      :class="isCollapse ? 'w-16' : 'w-60'"
+    >
+      <!-- Logo Box -->
+      <div class="logo-box h-14 flex items-center justify-center gap-2 border-b border-[#1d3b5a] bg-[#051321]">
+        <div class="w-2.5 h-2.5 rounded-full bg-[#00f0ff] shadow-[0_0_8px_#00f0ff] animate-pulse"></div>
+        <span v-show="!isCollapse" class="font-black text-sm tracking-widest text-[#00f0ff] font-mono">
+          iTEST 2.0
+        </span>
       </div>
 
-      <el-scrollbar>
-        <el-menu
-          :default-active="activeRoute"
-          :collapse="isCollapse"
-          :collapse-transition="false"
-          router
-          background-color="#0b101c"
-          text-color="#94a3b8"
-          active-text-color="#00f0ff"
-          class="sidebar-menu"
-        >
+      <!-- Navigation Menu -->
+      <div class="sidebar-menu-wrapper flex-1 overflow-y-auto overflow-x-hidden p-2">
+        <ul class="menu menu-compact w-full p-0 gap-1">
           <!-- Core Menu Group -->
-          <el-menu-item index="/menu">
-            <el-icon><CyberIcon name="grid" size="18" /></el-icon>
-            <template #title>Trung tâm Ứng dụng</template>
-          </el-menu-item>
+          <li>
+            <a
+              class="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all"
+              :class="activeRoute === '/menu' ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+              @click="router.push('/menu')"
+            >
+              <CyberIcon name="grid" :size="18" :color="activeRoute === '/menu' ? '#00f0ff' : '#94a3b8'" />
+              <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">Trung tâm Ứng dụng</span>
+            </a>
+          </li>
 
-          <el-menu-item v-if="canAccessDashboard" index="/dashboard">
-            <el-icon><CyberIcon name="dashboard" size="18" /></el-icon>
-            <template #title>Bảng điều khiển</template>
-          </el-menu-item>
+          <li v-if="canAccessDashboard">
+            <a
+              class="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all"
+              :class="activeRoute === '/dashboard' ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+              @click="router.push('/dashboard')"
+            >
+              <CyberIcon name="dashboard" :size="18" :color="activeRoute === '/dashboard' ? '#00f0ff' : '#94a3b8'" />
+              <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">Bảng điều khiển</span>
+            </a>
+          </li>
 
-          <el-menu-item v-if="canAccessAdmin" index="/users">
-            <el-icon><CyberIcon name="users" size="18" /></el-icon>
-            <template #title>Quản lý Người dùng</template>
-          </el-menu-item>
+          <li v-if="canAccessAdmin">
+            <a
+              class="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all"
+              :class="activeRoute === '/users' ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+              @click="router.push('/users')"
+            >
+              <CyberIcon name="users" :size="18" :color="activeRoute === '/users' ? '#00f0ff' : '#94a3b8'" />
+              <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">Quản lý Người dùng</span>
+            </a>
+          </li>
 
-          <el-menu-item v-if="canAccessAdmin" index="/roles">
-            <el-icon><CyberIcon name="roles" size="18" /></el-icon>
-            <template #title>Quản lý Phân quyền</template>
-          </el-menu-item>
+          <li v-if="canAccessAdmin">
+            <a
+              class="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all"
+              :class="activeRoute === '/roles' ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+              @click="router.push('/roles')"
+            >
+              <CyberIcon name="roles" :size="18" :color="activeRoute === '/roles' ? '#00f0ff' : '#94a3b8'" />
+              <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">Quản lý Phân quyền</span>
+            </a>
+          </li>
 
-          <el-menu-item v-if="canAccessAdmin" index="/plugins">
-            <el-icon><CyberIcon name="plugins" size="18" /></el-icon>
-            <template #title>Quản lý Plugin</template>
-          </el-menu-item>
-
-          <!-- Divider if there are plugin menus -->
-          <div v-if="pluginStore.menus.length > 0" class="menu-divider">
-            <span v-show="!isCollapse">MÔ-ĐUN MỞ RỘNG</span>
-          </div>
+          <li v-if="canAccessAdmin">
+            <a
+              class="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all"
+              :class="activeRoute === '/plugins' ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+              @click="router.push('/plugins')"
+            >
+              <CyberIcon name="plugins" :size="18" :color="activeRoute === '/plugins' ? '#00f0ff' : '#94a3b8'" />
+              <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">Quản lý Plugin</span>
+            </a>
+          </li>
 
           <!-- Dynamic Plugin Menus -->
-          <template v-for="menu in pluginStore.menus" :key="menu.id">
-            <!-- Submenu -->
-            <el-sub-menu
-              v-if="menu.children && menu.children.length > 0"
-              :index="menu.id"
-            >
-              <template #title>
-                <el-icon>
-                  <CyberIcon :name="resolveCyberIconName(menu.icon)" size="18" />
-                </el-icon>
-                <span>{{ menu.title }}</span>
-              </template>
-              <el-menu-item
-                v-for="sub in menu.children"
-                :key="sub.id"
-                :index="sub.path"
-              >
-                <el-icon v-if="sub.icon">
-                  <CyberIcon :name="resolveCyberIconName(sub.icon)" size="18" />
-                </el-icon>
-                <template #title>{{ sub.title }}</template>
-              </el-menu-item>
-            </el-sub-menu>
+          <template v-if="pluginStore.menus.length > 0">
+            <li v-show="!isCollapse" class="menu-title px-3 pt-3 pb-1 text-[10px] font-mono uppercase tracking-wider text-[#5f7e97]">
+              Ứng dụng mở rộng
+            </li>
 
-            <!-- Single Item -->
-            <el-menu-item v-else :index="menu.path">
-              <el-icon>
-                <CyberIcon :name="resolveCyberIconName(menu.icon)" size="18" />
-              </el-icon>
-              <template #title>
-                <span>{{ menu.title }}</span>
-                <el-badge
-                  v-if="menu.badge"
-                  :value="menu.badge"
-                  class="menu-badge"
-                  type="danger"
-                />
-              </template>
-            </el-menu-item>
+            <template v-for="menu in pluginStore.menus" :key="menu.id">
+              <!-- Sub-menu if has children -->
+              <li v-if="menu.children && menu.children.length > 0">
+                <details :open="activeRoute.startsWith(menu.path)">
+                  <summary class="flex items-center gap-3 px-3 py-2.5 rounded-md text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]">
+                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" color="#94a3b8" />
+                    <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">{{ menu.title }}</span>
+                  </summary>
+                  <ul class="pl-4 mt-1 border-l border-[#1d3b5a] ml-4 gap-1">
+                    <li v-for="sub in menu.children" :key="sub.id">
+                      <a
+                        class="flex items-center gap-2 px-3 py-2 rounded text-xs transition-all"
+                        :class="activeRoute === sub.path ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+                        @click="router.push(sub.path)"
+                      >
+                        <CyberIcon v-if="sub.icon" :name="resolveCyberIconName(sub.icon)" :size="14" :color="activeRoute === sub.path ? '#00f0ff' : '#94a3b8'" />
+                        <span>{{ sub.title }}</span>
+                      </a>
+                    </li>
+                  </ul>
+                </details>
+              </li>
+
+              <!-- Single item -->
+              <li v-else>
+                <a
+                  class="flex items-center justify-between px-3 py-2.5 rounded-md transition-all"
+                  :class="activeRoute === menu.path ? 'active bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/40 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+                  @click="router.push(menu.path)"
+                >
+                  <div class="flex items-center gap-3">
+                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute === menu.path ? '#00f0ff' : '#94a3b8'" />
+                    <span v-show="!isCollapse" class="font-medium text-xs tracking-wide">{{ menu.title }}</span>
+                  </div>
+                  <span
+                    v-if="menu.badge && !isCollapse"
+                    class="badge badge-xs font-mono bg-[#00f0ff]/20 text-[#00f0ff] border-[#00f0ff]/40"
+                  >
+                    {{ menu.badge }}
+                  </span>
+                </a>
+              </li>
+            </template>
           </template>
-        </el-menu>
-      </el-scrollbar>
-    </el-aside>
+        </ul>
+      </div>
+    </aside>
 
-    <el-container class="layout-main-wrapper">
-      <!-- Header -->
-      <el-header class="layout-header">
-        <div class="header-left">
-          <el-button
+    <!-- Main Content Wrapper -->
+    <div class="layout-main-wrapper flex flex-col flex-1 min-w-0 h-full overflow-hidden">
+      <!-- Navbar / Header -->
+      <header class="navbar h-14 min-h-[3.5rem] bg-[#081d32]/90 backdrop-blur-md border-b border-[#1d3b5a] px-4 justify-between z-10">
+        <!-- Left: Collapse toggle, Brand & Breadcrumb -->
+        <div class="flex items-center gap-3">
+          <button
             v-if="showSidebar"
-            link
-            class="collapse-btn"
+            class="btn btn-sm btn-ghost btn-square text-[#7fdbca] hover:bg-[#0b2942]"
             @click="isCollapse = !isCollapse"
+            title="Đóng / Mở menu"
           >
-            <el-icon :size="20">
-              <Fold v-if="!isCollapse" />
-              <Expand v-else />
-            </el-icon>
-          </el-button>
+            <CyberIcon :name="isCollapse ? 'grid' : 'monitor'" :size="18" color="#7fdbca" />
+          </button>
 
-          <!-- Nút truy cập nhanh khi không ở trang /menu -->
-          <el-button
+          <!-- Nút trở về /menu khi không có sidebar -->
+          <button
             v-if="!showSidebar"
-            link
-            class="app-center-brand"
+            class="btn btn-sm btn-outline border-[#7fdbca]/30 text-[#7fdbca] hover:bg-[#7fdbca]/10 gap-2 font-mono text-xs"
             @click="router.push('/menu')"
           >
-            <el-icon class="brand-icon"><Grid /></el-icon>
-            <span class="brand-title">iTEST 2.0</span>
-          </el-button>
+            <CyberIcon name="grid" :size="14" color="#7fdbca" />
+            <span class="font-bold">iTEST 2.0</span>
+          </button>
 
-          <el-breadcrumb separator="/" class="breadcrumb breadcrumb-cyber">
-            <el-breadcrumb-item v-if="route.path !== '/menu'">{{ currentRouteTitle }}</el-breadcrumb-item>
-          </el-breadcrumb>
+          <!-- Breadcrumb -->
+          <div class="text-xs breadcrumbs py-0 text-[#94a3b8] font-mono">
+            <ul>
+              <li>
+                <a @click="router.push('/menu')" class="hover:text-[#00f0ff] flex items-center gap-1 cursor-pointer">
+                  <span>Hệ thống</span>
+                </a>
+              </li>
+              <li v-if="route.path !== '/menu'" class="text-[#00f0ff] font-semibold">
+                {{ currentRouteTitle }}
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div class="header-right">
+        <!-- Right: Header Extensions & User Profile Dropdown -->
+        <div class="flex items-center gap-3">
           <!-- Dynamic Header Extension Slot -->
           <template v-for="ext in headerRightExtensions" :key="ext.id">
             <component :is="ext.component" />
           </template>
 
-          <el-dropdown trigger="click" @command="handleUserCommand" popper-class="user-dropdown-popper">
-            <div class="user-profile">
-              <el-avatar :size="28" class="user-avatar">
-                {{ userInitial }}
-              </el-avatar>
-              <div class="user-info-text">
-                <span class="user-name">{{ authStore.user?.fullName || authStore.user?.username || 'User' }}</span>
-                <span class="user-role-badge">{{ primaryRole }}</span>
+          <!-- User Dropdown (daisyUI dropdown-end) -->
+          <div class="dropdown dropdown-end">
+            <label
+              tabindex="0"
+              class="btn btn-ghost btn-sm h-10 px-2 rounded-lg border border-[#1d3b5a] bg-[#081d32] hover:bg-[#0b2942] hover:border-[#7fdbca] flex items-center gap-2.5 cursor-pointer shadow-md transition-all"
+            >
+              <!-- Avatar -->
+              <div class="avatar placeholder">
+                <div class="bg-gradient-to-br from-[#7fdbca] to-[#00f0ff] text-[#011627] font-black rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-[0_0_8px_rgba(127,219,202,0.4)]">
+                  <span>{{ userInitial }}</span>
+                </div>
               </div>
-              <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
-            </div>
-            <template #dropdown>
-              <div class="cyber-dropdown-wrapper">
-                <el-dropdown-menu class="cyber-dropdown-menu">
-                  <div class="dropdown-header">
-                    <div class="dropdown-sys-tag">
-                      <span class="pulse-indicator"></span>
-                      <span class="sys-label">SYS.OPERATOR // ACTIVE</span>
-                    </div>
-                    <div class="dropdown-user-name">{{ authStore.user?.fullName || authStore.user?.username }}</div>
-                    <div class="dropdown-user-sub">
-                      <span class="sub-role">{{ primaryRole }}</span>
-                      <span class="sub-sep">•</span>
-                      <span class="sub-id">{{ authStore.user?.email || 'SYS_ID: 0x' + (authStore.user?.id || '409').slice(0, 8) }}</span>
-                    </div>
-                  </div>
-                  <el-dropdown-item command="profile">
-                    <el-icon><User /></el-icon>
-                    <span class="item-label">Hồ sơ cá nhân</span>
-                    <span class="item-code">01</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="canAccessAdmin" command="roles">
-                    <el-icon><Lock /></el-icon>
-                    <span class="item-label">Phân quyền ({{ primaryRole }})</span>
-                    <span class="item-code">02</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item divided command="logout" class="logout-item">
-                    <el-icon><SwitchButton /></el-icon>
-                    <span class="item-label">Đăng xuất</span>
-                    <span class="item-code">EXIT</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
+              <!-- User Info -->
+              <div class="flex flex-col text-left leading-tight hidden sm:flex">
+                <span class="text-xs font-semibold text-[#ffffff] font-sans">
+                  {{ authStore.user?.fullName || authStore.user?.username || 'User' }}
+                </span>
+                <span class="text-[10px] font-mono text-[#7fdbca] tracking-wider uppercase">
+                  {{ primaryRole }}
+                </span>
               </div>
-            </template>
-          </el-dropdown>
+              <!-- Caret Icon -->
+              <span class="text-[10px] text-[#7fdbca] ml-1">▼</span>
+            </label>
+
+            <!-- Dropdown Menu -->
+            <ul
+              tabindex="0"
+              class="dropdown-content menu p-2 shadow-2xl bg-[#081d32] border border-[#1d3b5a] rounded-box w-56 mt-2 gap-1 backdrop-blur-xl z-50 text-xs font-sans"
+            >
+              <!-- Header info in dropdown -->
+              <li class="menu-title px-3 py-1.5 border-b border-[#1d3b5a]/60 pb-2 mb-1">
+                <span class="text-[10px] font-mono text-[#00f0ff] uppercase tracking-wider">Tài khoản cá nhân</span>
+                <span class="text-xs text-[#d6deeb] font-semibold mt-0.5 truncate">{{ authStore.user?.email || authStore.user?.username }}</span>
+              </li>
+
+              <li>
+                <a class="flex items-center gap-2.5 py-2 px-3 rounded hover:bg-[#0b2942] hover:text-[#00f0ff]" @click="handleUserCommand('profile')">
+                  <CyberIcon name="users" :size="16" color="#00f0ff" />
+                  <span class="flex-1 font-medium">Hồ sơ người dùng</span>
+                  <span class="badge badge-xs badge-outline font-mono text-[#7fdbca] border-[#7fdbca]/40">INFO</span>
+                </a>
+              </li>
+
+              <li v-if="canAccessAdmin">
+                <a class="flex items-center gap-2.5 py-2 px-3 rounded hover:bg-[#0b2942] hover:text-[#00f0ff]" @click="handleUserCommand('roles')">
+                  <CyberIcon name="roles" :size="16" color="#7fdbca" />
+                  <span class="flex-1 font-medium">Quản trị phân quyền</span>
+                  <span class="badge badge-xs badge-outline font-mono text-[#00f0ff] border-[#00f0ff]/40">SEC</span>
+                </a>
+              </li>
+
+              <div class="divider my-1 border-[#1d3b5a]/40"></div>
+
+              <li>
+                <a class="flex items-center gap-2.5 py-2 px-3 rounded text-[#ef5350] hover:bg-[#ef5350]/10 hover:text-[#ff869a]" @click="handleUserCommand('logout')">
+                  <span class="font-bold">⏻</span>
+                  <span class="flex-1 font-medium">Đăng xuất</span>
+                  <span class="badge badge-xs badge-outline font-mono text-[#ef5350] border-[#ef5350]/40">EXIT</span>
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
-      </el-header>
+      </header>
 
       <!-- Content Area protected by CModuleBoundary -->
-      <el-main class="layout-content" :class="{ 'from-menu': route.query.from === 'menu' || isFromMenu }">
+      <main class="layout-content flex-1 overflow-y-auto p-4 sm:p-6" :class="{ 'from-menu': route.query.from === 'menu' || isFromMenu }">
         <CModuleBoundary moduleName="AppContent">
           <router-view v-slot="{ Component }">
             <transition name="fade-transform" mode="out-in">
@@ -192,12 +249,12 @@
             </transition>
           </router-view>
         </CModuleBoundary>
-      </el-main>
-    </el-container>
+      </main>
+    </div>
 
     <!-- User Profile & Password Modal -->
     <UserProfileModal v-model="profileModalVisible" />
-  </el-container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -207,12 +264,6 @@ import { useAuthStore } from '@/stores/auth';
 import { usePluginStore } from '@/stores/plugin';
 import UserProfileModal from '@/components/shared/UserProfileModal.vue';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
-import {
-  Fold,
-  Expand,
-  ArrowDown,
-  SwitchButton,
-} from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -224,10 +275,7 @@ const isCollapse = ref(false);
 
 const activeRoute = computed(() => route.path);
 const isFromMenu = computed(() => route.query.from === 'menu');
-// Ẩn sidebar khi:
-// 1. Ở trang /menu (Launcher/Portal)
-// 2. Truy cập vào các plugin từ /menu (có query param from=menu hoặc điều hướng từ menu)
-// Khi truy cập plugin từ /dashboard hoặc thanh quản lý (không có from=menu), sidebar vẫn hiện bình thường.
+
 const showSidebar = computed(() => {
   if (route.path === '/menu') {
     return false;
@@ -237,6 +285,7 @@ const showSidebar = computed(() => {
   }
   return true;
 });
+
 const currentRouteTitle = computed(() => (route.meta?.title as string) || 'Trang');
 
 const userInitial = computed(() => {
@@ -267,7 +316,6 @@ const headerRightExtensions = computed(() => {
   return pluginStore.getExtensionPoints('header-right');
 });
 
-// Cyber Icon mapping helper
 function resolveCyberIconName(iconName?: string): string {
   if (!iconName) return 'monitor';
   const lower = iconName.toLowerCase();
@@ -294,58 +342,6 @@ async function handleUserCommand(cmd: string) {
 </script>
 
 <style scoped>
-.layout-container {
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-}
-
-.layout-aside {
-  background-color: var(--owl-bg-aside, #051321);
-  border-right: 1px solid var(--owl-border, #1d3b5a);
-  color: var(--owl-text-primary, #d6deeb);
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-}
-
-.logo-box {
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background-color: var(--owl-bg-aside, #051321);
-  border-bottom: 1px solid var(--owl-border, #1d3b5a);
-  font-family: var(--cyber-font-display, sans-serif);
-  font-weight: 700;
-  font-size: 17px;
-  color: var(--owl-text-bright, #ffffff);
-  letter-spacing: 0.5px;
-}
-
-.logo-icon {
-  font-size: 22px;
-  color: var(--owl-teal, #7fdbca);
-}
-
-.sidebar-menu {
-  border-right: none;
-  background-color: transparent !important;
-}
-
-.menu-divider {
-  padding: 12px 16px 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--owl-text-muted, #5f7e97);
-  letter-spacing: 0.5px;
-}
-
-.menu-badge {
-  margin-left: 8px;
-}
-
 .layout-main-wrapper {
   background-color: var(--owl-bg-canvas, #011627);
   background-image:
@@ -353,156 +349,8 @@ async function handleUserCommand(cmd: string) {
     linear-gradient(rgba(29, 59, 90, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(29, 59, 90, 0.08) 1px, transparent 1px);
   background-size: 100% 100%, 32px 32px, 32px 32px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
-.layout-header {
-  height: 56px;
-  background: rgba(8, 29, 50, 0.85);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--owl-border, #1d3b5a);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.collapse-btn {
-  font-size: 18px;
-  color: var(--owl-teal, #7fdbca);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.collapse-btn:hover {
-  color: #ffffff;
-}
-
-.app-center-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--cyber-font-display, sans-serif);
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--owl-text-bright, #ffffff);
-  padding: 4px 10px;
-  letter-spacing: 0.5px;
-  border-radius: var(--cyber-radius-sm, 6px);
-  border: 1px solid rgba(127, 219, 202, 0.25);
-  background: rgba(127, 219, 202, 0.08);
-  transition: all 0.25s ease;
-}
-
-.app-center-brand:hover {
-  border-color: var(--owl-teal, #7fdbca);
-  background: rgba(127, 219, 202, 0.16);
-  color: var(--owl-teal, #7fdbca);
-}
-
-.brand-icon {
-  font-size: 16px;
-  color: var(--owl-teal, #7fdbca);
-}
-
-.app-center-brand .logo-icon {
-  font-size: 20px;
-  color: var(--owl-teal, #7fdbca);
-}
-
-.brand-title {
-  letter-spacing: -0.2px;
-}
-
-.back-menu-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.user-profile {
-  background: var(--owl-bg-surface, #081d32) !important;
-  border: 1px solid var(--owl-border, #1d3b5a);
-  border-radius: var(--cyber-radius, 8px);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 5px 12px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.user-profile:hover {
-  border-color: var(--owl-teal, #7fdbca);
-  background: var(--owl-bg-card-hover, #0f3152) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-}
-
-.user-avatar {
-  background: linear-gradient(135deg, #7fdbca 0%, #57c7b1 100%);
-  color: #011627;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(127, 219, 202, 0.25);
-}
-
-.user-info-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-  text-align: left;
-}
-
-.user-name {
-  font-family: var(--cyber-font-display, sans-serif);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--owl-text-bright, #ffffff);
-}
-
-.user-role-badge {
-  font-family: var(--cyber-font-mono, monospace);
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--owl-teal, #7fdbca);
-  letter-spacing: 0.5px;
-}
-
-.dropdown-arrow {
-  font-size: 12px;
-  color: var(--owl-text-secondary, #7e97b8);
-  transition: transform 0.2s;
-}
-
-.user-profile:hover .dropdown-arrow {
-  color: var(--owl-teal, #7fdbca);
-  transform: translateY(2px);
-}
-
-.layout-content {
-  padding: 20px;
-  overflow-y: auto;
-}
-
-/* Khi truy cập plugin từ /menu (có query from=menu hoặc isolate), ẩn thanh tab header của plugin để mỗi mục hoạt động chuyên biệt */
 body:has([data-from-menu="true"]) .layout-content :deep(.el-tabs__header),
 .layout-content.from-menu :deep(.el-tabs__header) {
   display: none !important;

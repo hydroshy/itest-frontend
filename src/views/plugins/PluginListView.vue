@@ -1,100 +1,137 @@
 <template>
-  <div class="plugin-list-container">
-    <div class="page-header">
+  <div class="plugin-list-container flex flex-col gap-6 p-4 sm:p-6 bg-[#011627] min-h-full text-[#d6deeb]">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0b2942]/60 p-5 rounded-lg border border-[#1d3b5a]/60 shadow-lg backdrop-blur-md">
       <div>
-        <h2 class="page-title">Quản lý Plugin Frontend</h2>
-        <p class="page-desc">
+        <h2 class="text-xl sm:text-2xl font-black text-[#00f0ff] uppercase tracking-wider flex items-center gap-2">
+          <CyberIcon name="plugins" :size="24" color="#00f0ff" />
+          Quản lý Plugin Frontend
+        </h2>
+        <p class="text-xs text-[#94a3b8] mt-1 font-mono">
           Danh sách các plugin được biên dịch tại build-time cùng Frontend Shell
         </p>
       </div>
-      <el-tag type="info" size="large">
+      <div class="badge badge-info badge-outline gap-2 font-mono text-xs py-3 px-4 border-[#00f0ff]/40 bg-[#081d32]/80">
+        <span class="w-2 h-2 rounded-full bg-[#00f0ff] animate-pulse"></span>
         SDK v{{ pluginStore.diagnostics.sdkVersion }} | Tự động sinh lúc: {{ formattedDate }}
-      </el-tag>
+      </div>
     </div>
 
-    <el-card shadow="never" class="table-card">
-      <el-table :data="pluginStore.plugins" style="width: 100%" stripe>
-        <el-table-column prop="definition.manifest.id" label="Mã Plugin (ID)" width="180">
-          <template #default="{ row }">
-            <span class="plugin-id">{{ row.definition.manifest.id }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="definition.manifest.name" label="Tên hiển thị" width="200">
-          <template #default="{ row }">
-            <strong>{{ row.definition.manifest.name }}</strong>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="definition.manifest.version" label="Phiên bản" width="110">
-          <template #default="{ row }">
-            <el-tag size="small">{{ row.definition.manifest.version }}</el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="definition.manifest.description" label="Mô tả">
-          <template #default="{ row }">
-            {{ row.definition.manifest.description || 'Không có mô tả' }}
-          </template>
-        </el-table-column>
-
-        <el-table-column label="Trạng thái" width="130">
-          <template #default="{ row }">
-            <el-tag
-              :type="row.status === 'active' ? 'success' : row.status === 'disabled' ? 'info' : 'danger'"
-              size="small"
+    <!-- Table Card Container -->
+    <div class="card bg-[#0b2942]/80 border border-[#1d3b5a] shadow-2xl rounded-lg overflow-hidden backdrop-blur-md">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full text-left">
+          <!-- head -->
+          <thead>
+            <tr class="bg-[#081d32] border-b border-[#1d3b5a] text-[#7fdbca] font-mono text-xs uppercase tracking-wider">
+              <th class="py-3 px-4">Mã Plugin (ID)</th>
+              <th class="py-3 px-4">Tên hiển thị</th>
+              <th class="py-3 px-4 text-center">Phiên bản</th>
+              <th class="py-3 px-4">Mô tả</th>
+              <th class="py-3 px-4 text-center">Trạng thái</th>
+              <th class="py-3 px-4 text-center">Điểm gắn (Slots)</th>
+              <th class="py-3 px-4 text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#1d3b5a]/50 text-xs font-sans">
+            <tr
+              v-for="row in pluginStore.plugins"
+              :key="row.definition.manifest.id"
+              class="hover:bg-[#133e63]/40 transition-colors"
             >
-              {{ row.status === 'active' ? 'Đang bật' : row.status === 'disabled' ? 'Đã tắt' : 'Lỗi' }}
-            </el-tag>
-          </template>
-        </el-table-column>
+              <!-- Plugin ID -->
+              <td class="py-3 px-4 font-mono font-bold text-[#00f0ff]">
+                {{ row.definition.manifest.id }}
+              </td>
 
-        <el-table-column label="Thao tác" width="160" align="center">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'active'"
-              type="danger"
-              size="small"
-              plain
-              @click="togglePlugin(row, false)"
-            >
-              Vô hiệu hóa
-            </el-button>
-            <el-button
-              v-else
-              type="primary"
-              size="small"
-              plain
-              @click="togglePlugin(row, true)"
-            >
-              Kích hoạt
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+              <!-- Display Name -->
+              <td class="py-3 px-4 font-semibold text-[#d6deeb]">
+                {{ row.definition.manifest.name }}
+              </td>
+
+              <!-- Version -->
+              <td class="py-3 px-4 text-center">
+                <span class="badge badge-sm badge-outline font-mono border-[#7fdbca]/60 text-[#7fdbca] bg-[#011627]/50">
+                  {{ row.definition.manifest.version }}
+                </span>
+              </td>
+
+              <!-- Description -->
+              <td class="py-3 px-4 text-[#94a3b8] max-w-xs truncate" :title="row.definition.manifest.description">
+                {{ row.definition.manifest.description || 'Không có mô tả' }}
+              </td>
+
+              <!-- Status -->
+              <td class="py-3 px-4 text-center">
+                <span
+                  class="badge badge-sm font-mono font-semibold"
+                  :class="row.status === 'active' ? 'badge-success bg-[#7fdbca]/20 text-[#7fdbca] border-[#7fdbca]/40' : 'badge-ghost text-[#94a3b8] border-[#94a3b8]/40'"
+                >
+                  {{ row.status === 'active' ? 'Đang hoạt động' : 'Tắt' }}
+                </span>
+              </td>
+
+              <!-- Extension Points -->
+              <td class="py-3 px-4 text-center">
+                <div class="flex flex-wrap gap-1 justify-center">
+                  <span
+                    v-for="ext in (row.definition.manifest.extensions || [])"
+                    :key="ext.slot"
+                    class="badge badge-xs badge-info font-mono bg-[#00f0ff]/10 text-[#00f0ff] border-[#00f0ff]/30"
+                  >
+                    {{ ext.slot }}
+                  </span>
+                  <span
+                    v-if="!(row.definition.manifest.extensions?.length)"
+                    class="text-[#5f7e97] text-[11px] italic"
+                  >
+                    (Không có)
+                  </span>
+                </div>
+              </td>
+
+              <!-- Toggle Action -->
+              <td class="py-3 px-4 text-center">
+                <input
+                  type="checkbox"
+                  class="toggle toggle-sm toggle-info bg-[#081d32] border-[#1d3b5a] checked:bg-[#00f0ff] checked:border-[#00f0ff]"
+                  :checked="row.status === 'active'"
+                  @change="togglePlugin(row)"
+                />
+              </td>
+            </tr>
+
+            <tr v-if="pluginStore.plugins.length === 0">
+              <td colspan="7" class="py-8 text-center text-[#5f7e97] font-mono">
+                Không tìm thấy plugin nào được nạp.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { usePluginStore } from '@/stores/plugin';
-import { ElMessage } from 'element-plus';
 import type { FrontendPluginInstance } from '@itest/frontend-sdk';
+import CyberIcon from '@/components/shared/CyberIcon.vue';
+import { ElMessage } from 'element-plus';
 
-const router = useRouter();
 const pluginStore = usePluginStore();
 
 const formattedDate = computed(() => {
-  const d = pluginStore.diagnostics.generatedAt;
-  return d ? new Date(d).toLocaleString('vi-VN') : 'N/A';
+  const ts = pluginStore.diagnostics.generatedAt;
+  if (!ts) return 'N/A';
+  return new Date(ts).toLocaleString('vi-VN');
 });
 
-async function togglePlugin(plugin: FrontendPluginInstance, enable: boolean) {
+async function togglePlugin(plugin: FrontendPluginInstance) {
   try {
-    if (enable) {
-      await pluginStore.enablePlugin(plugin.definition.manifest.id, router);
+    if (plugin.status === 'disabled') {
+      await pluginStore.enablePlugin(plugin.definition.manifest.id);
       ElMessage.success(`Đã kích hoạt plugin "${plugin.definition.manifest.name}"`);
     } else {
       await pluginStore.disablePlugin(plugin.definition.manifest.id);
@@ -105,40 +142,3 @@ async function togglePlugin(plugin: FrontendPluginInstance, enable: boolean) {
   }
 }
 </script>
-
-<style scoped>
-.plugin-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 4px 0;
-}
-
-.page-desc {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 0;
-}
-
-.table-card {
-  border-radius: 8px;
-}
-
-.plugin-id {
-  font-family: monospace;
-  color: #2563eb;
-  font-weight: 600;
-}
-</style>
