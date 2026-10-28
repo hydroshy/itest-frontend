@@ -548,6 +548,160 @@ body {
 }
 
 /* ==========================================================================
+   10b. CYBER USER DROPDOWN & MENU POPPER (Midnight Owl HUD)
+   ========================================================================== */
+.el-popper.user-dropdown-popper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.el-popper.user-dropdown-popper .el-popper__arrow {
+  display: none !important;
+}
+
+.cyber-dropdown-wrapper {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(127, 219, 202, 0.45);
+  --aug-tl: 10px;
+  --aug-br: 10px;
+  background: var(--owl-bg-surface, #081d32) !important;
+  border: 1px solid var(--owl-border, #1d3b5a);
+  border-radius: var(--cyber-radius, 8px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(127, 219, 202, 0.15);
+  min-width: 250px;
+  padding: 4px;
+}
+
+.cyber-dropdown-menu {
+  background: transparent !important;
+  border: none !important;
+  padding: 6px !important;
+}
+
+.dropdown-header {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--owl-border, #1d3b5a);
+  margin-bottom: 6px;
+}
+
+.dropdown-sys-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.pulse-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--owl-teal, #7fdbca);
+  box-shadow: 0 0 8px var(--owl-teal, #7fdbca);
+  display: inline-block;
+  animation: cyber-pulse 2s infinite;
+}
+
+@keyframes cyber-pulse {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+.sys-label {
+  font-family: var(--cyber-font-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--owl-teal, #7fdbca);
+  letter-spacing: 0.8px;
+}
+
+.dropdown-user-name {
+  font-family: var(--cyber-font-display, sans-serif);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--owl-text-bright, #ffffff);
+  letter-spacing: 0.2px;
+}
+
+.dropdown-user-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-family: var(--cyber-font-mono, monospace);
+  font-size: 11px;
+}
+
+.dropdown-user-sub .sub-role {
+  color: var(--owl-amber, #ecc48d);
+  font-weight: 600;
+}
+
+.dropdown-user-sub .sub-sep {
+  color: var(--owl-border, #1d3b5a);
+}
+
+.dropdown-user-sub .sub-id {
+  color: var(--owl-text-secondary, #7e97b8);
+}
+
+/* Cyber Menu Items */
+.cyber-dropdown-menu .el-dropdown-menu__item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  border-radius: 4px;
+  color: var(--owl-text-primary, #d6deeb) !important;
+  font-size: 13px !important;
+  font-weight: 500;
+  transition: all 0.15s ease !important;
+  background: transparent !important;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item .item-label {
+  flex: 1;
+  margin-left: 8px;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item .item-code {
+  font-family: var(--cyber-font-mono, monospace);
+  font-size: 10px;
+  color: var(--owl-text-muted, #5f7e97);
+  letter-spacing: 0.5px;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item:hover {
+  background: var(--owl-teal-dim, rgba(127, 219, 202, 0.12)) !important;
+  color: var(--owl-teal, #7fdbca) !important;
+  transform: translateX(3px);
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item:hover .item-code {
+  color: var(--owl-teal, #7fdbca);
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item.logout-item {
+  color: var(--owl-coral, #ef5350) !important;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item.logout-item:hover {
+  background: var(--owl-coral-dim, rgba(239, 83, 80, 0.15)) !important;
+  color: #ff7976 !important;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item.logout-item:hover .item-code {
+  color: #ff7976;
+}
+
+.cyber-dropdown-menu .el-dropdown-menu__item--divided {
+  border-top: 1px solid var(--owl-border, #1d3b5a) !important;
+  margin-top: 6px !important;
+}
+
+/* ==========================================================================
    11. AUGMENTED-UI CYBER HUD & CARD PRESETS
    Preserves crisp cyber geometric clip-paths and glowing tech borders
    harmonized with the Midnight Owl palette.

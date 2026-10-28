@@ -497,17 +497,6 @@ async function handleUserCommand(cmd: string) {
   transform: translateY(2px);
 }
 
-:deep(.user-dropdown-popper) {
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-:deep(.user-dropdown-popper .el-popper__arrow) {
-  display: none !important;
-}
-
 .layout-content {
   padding: 20px;
   overflow-y: auto;
