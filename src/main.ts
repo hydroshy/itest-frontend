@@ -6,6 +6,7 @@ import 'element-plus/theme-chalk/dark/css-vars.css';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import PrimeVue from 'primevue/config';
 import Aura from '@primevue/themes/aura';
+import './assets/tailwind.css';
 import './assets/cyber-theme.css';
 
 import App from './App.vue';
