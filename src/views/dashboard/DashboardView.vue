@@ -11,91 +11,81 @@
       </el-button>
     </div>
 
-    <!-- Summary Metrics -->
-    <el-row :gutter="20" class="metric-row">
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="metric-card">
-          <div class="metric-content">
-            <div class="metric-info">
-              <span class="metric-label">Trạng thái Shell</span>
-              <span class="metric-value status-online">Hoạt động</span>
-            </div>
-            <div class="metric-icon-box bg-blue">
-              <CyberIcon name="monitor" :size="24" />
-            </div>
+    <!-- Summary Metrics with daisyUI Stats & Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
+        <div class="stat p-4">
+          <div class="stat-figure text-[#38bdf8] p-2.5 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/20">
+            <CyberIcon name="monitor" :size="24" />
           </div>
-        </el-card>
-      </el-col>
+          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Trạng thái Shell</div>
+          <div class="stat-value text-xl font-bold font-mono text-[#22da6e] drop-shadow-[0_0_8px_rgba(34,218,110,0.4)]">Hoạt động</div>
+          <div class="stat-desc text-[11px] text-[#7fdbca] font-mono mt-1">SYS.OK // ONLINE</div>
+        </div>
+      </div>
 
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="metric-card">
-          <div class="metric-content">
-            <div class="metric-info">
-              <span class="metric-label">Plugins đã nạp</span>
-              <span class="metric-value">{{ pluginStore.plugins.length }}</span>
-            </div>
-            <div class="metric-icon-box bg-green">
-              <CyberIcon name="blocks" :size="24" />
-            </div>
+      <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
+        <div class="stat p-4">
+          <div class="stat-figure text-[#34d399] p-2.5 rounded-lg bg-[#34d399]/10 border border-[#34d399]/20">
+            <CyberIcon name="blocks" :size="24" />
           </div>
-        </el-card>
-      </el-col>
+          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Plugins đã nạp</div>
+          <div class="stat-value text-xl font-bold font-mono text-[#ffffff]">{{ pluginStore.plugins.length }}</div>
+          <div class="stat-desc text-[11px] text-[#5f7e97] font-mono mt-1">REGISTRY LOADED</div>
+        </div>
+      </div>
 
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="metric-card">
-          <div class="metric-content">
-            <div class="metric-info">
-              <span class="metric-label">Mô-đun kích hoạt</span>
-              <span class="metric-value">{{ pluginStore.activePlugins.length }}</span>
-            </div>
-            <div class="metric-icon-box bg-orange">
-              <CyberIcon name="radio" :size="24" />
-            </div>
+      <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
+        <div class="stat p-4">
+          <div class="stat-figure text-[#fb923c] p-2.5 rounded-lg bg-[#fb923c]/10 border border-[#fb923c]/20">
+            <CyberIcon name="radio" :size="24" />
           </div>
-        </el-card>
-      </el-col>
+          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Mô-đun kích hoạt</div>
+          <div class="stat-value text-xl font-bold font-mono text-[#ecc48d]">{{ pluginStore.activePlugins.length }}</div>
+          <div class="stat-desc text-[11px] text-[#5f7e97] font-mono mt-1">SERVICES RUNNING</div>
+        </div>
+      </div>
 
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="metric-card">
-          <div class="metric-content">
-            <div class="metric-info">
-              <span class="metric-label">SDK Version</span>
-              <span class="metric-value">v{{ pluginStore.diagnostics.sdkVersion }}</span>
-            </div>
-            <div class="metric-icon-box bg-purple">
-              <CyberIcon name="cpu" :size="24" />
-            </div>
+      <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
+        <div class="stat p-4">
+          <div class="stat-figure text-[#c084fc] p-2.5 rounded-lg bg-[#c084fc]/10 border border-[#c084fc]/20">
+            <CyberIcon name="cpu" :size="24" />
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">SDK Version</div>
+          <div class="stat-value text-xl font-bold font-mono text-[#00f0ff]">v{{ pluginStore.diagnostics.sdkVersion }}</div>
+          <div class="stat-desc text-[11px] text-[#5f7e97] font-mono mt-1">PLUGIN CORE RUNTIME</div>
+        </div>
+      </div>
+    </div>
 
     <!-- Main Content Tabs: Widgets & Menu Assignment Management -->
     <el-tabs v-model="activeTab" class="dashboard-tabs" type="border-card">
       <!-- Tab 1: Plugin Widgets -->
       <el-tab-pane label="TIỆN ÍCH HỆ THỐNG (WIDGETS)" name="widgets">
         <div class="tab-pane-content">
-          <el-row v-if="pluginStore.widgets.length > 0" :gutter="20">
-            <el-col
+          <div v-if="pluginStore.widgets.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
               v-for="widget in pluginStore.widgets"
               :key="widget.id"
-              :xs="24"
-              :sm="widget.width === 'half' ? 12 : 24"
-              :md="widget.width === 'third' ? 8 : widget.width === 'half' ? 12 : 24"
-              class="widget-col"
+              class="card bg-[#0b2942]/85 border border-[#1d3b5a] shadow-xl backdrop-blur-md rounded-lg overflow-hidden flex flex-col"
+              :class="{
+                'md:col-span-2 lg:col-span-2': widget.width === 'half',
+                'md:col-span-2 lg:col-span-3': widget.width === 'full'
+              }"
             >
-              <el-card shadow="hover" class="widget-card">
-                <template #header>
-                  <div class="widget-header">
-                    <span class="widget-title">{{ widget.title }}</span>
-                  </div>
-                </template>
-                <CModuleBoundary :module-name="`Widget: ${widget.title}`">
-                  <component :is="widget.component" />
-                </CModuleBoundary>
-              </el-card>
-            </el-col>
-          </el-row>
+              <div class="card-body p-4 flex flex-col h-full">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#1d3b5a]/60">
+                  <span class="card-title text-sm font-semibold text-[#d6deeb] font-sans m-0">{{ widget.title }}</span>
+                  <span class="badge badge-xs badge-info badge-outline font-mono text-[10px]">WIDGET</span>
+                </div>
+                <div class="flex-1">
+                  <CModuleBoundary :module-name="`Widget: ${widget.title}`">
+                    <component :is="widget.component" />
+                  </CModuleBoundary>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <el-empty
             v-else
@@ -149,14 +139,17 @@
           <el-divider style="margin: 16px 0;" />
 
           <div v-loading="loadingPerms" class="perm-tables-container">
-            <el-alert
+            <!-- daisyUI Alert thay cho el-alert -->
+            <div
               v-if="selectedRole === 'SUPER_ADMIN'"
-              title="SUPER_ADMIN có toàn quyền truy cập tất cả menu và tính năng trong hệ thống."
-              type="info"
-              show-icon
-              :closable="false"
-              style="margin-bottom: 16px;"
-            />
+              class="alert bg-[#0b2942]/90 border border-[#82aaff]/40 text-[#d6deeb] shadow-md rounded-md p-3.5 mb-4 flex items-center gap-3"
+            >
+              <CyberIcon name="shield" :size="20" color="#82aaff" />
+              <div class="text-xs">
+                <span class="font-bold text-[#82aaff]">SUPER_ADMIN:</span>
+                Toàn quyền truy cập tất cả menu và tính năng trong hệ thống.
+              </div>
+            </div>
 
             <!-- Bảng phân quyền chi tiết -->
             <el-table
@@ -213,22 +206,28 @@
               </el-table-column>
             </el-table>
 
-            <div class="perm-footer-summary">
-              <span>Đã chọn: <strong>{{ checkedIds.length }}</strong> / {{ menuItemsList.length }} mục cho vai trò <strong>{{ selectedRole }}</strong></span>
-              <el-button
-                v-if="selectedRole !== 'SUPER_ADMIN'"
-                size="small"
-                @click="selectAllItems"
-              >
-                Chọn tất cả
-              </el-button>
-              <el-button
-                v-if="selectedRole !== 'SUPER_ADMIN'"
-                size="small"
-                @click="clearAllItems"
-              >
-                Bỏ chọn tất cả
-              </el-button>
+            <div class="perm-footer-summary flex items-center justify-between mt-4 p-3 bg-[#0b2942]/60 rounded-md border border-[#1d3b5a] text-xs text-[#94a3b8]">
+              <div>
+                Đã chọn: <span class="badge badge-sm badge-primary font-mono font-bold">{{ checkedIds.length }}</span> / {{ menuItemsList.length }} mục cho vai trò: <strong class="text-[#ecc48d]">{{ selectedRole }}</strong>
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  v-if="selectedRole !== 'SUPER_ADMIN'"
+                  type="button"
+                  class="btn btn-xs btn-outline btn-info font-mono"
+                  @click="selectAllItems"
+                >
+                  Chọn tất cả
+                </button>
+                <button
+                  v-if="selectedRole !== 'SUPER_ADMIN'"
+                  type="button"
+                  class="btn btn-xs btn-outline btn-ghost text-[#ef5350] hover:bg-[#ef5350]/20 font-mono"
+                  @click="clearAllItems"
+                >
+                  Bỏ chọn tất cả
+                </button>
+              </div>
             </div>
           </div>
         </div>

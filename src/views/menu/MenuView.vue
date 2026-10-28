@@ -1,38 +1,74 @@
 <template>
   <div class="menu-launcher-container">
-    <!-- Pending Role Warning Banner for users without roles -->
-    <el-alert
+    <!-- Pending Role Warning Banner with daisyUI Alert -->
+    <div
       v-if="!authStore.roles.length"
-      type="warning"
-      show-icon
-      :closable="false"
-      class="pending-role-alert"
-      title="Tài khoản đang chờ phân quyền"
-      description="Tài khoản của bạn đã kích hoạt thành công nhưng chưa được gán vai trò chức năng. Bạn có thể nhấn vào biểu tượng Avatar ở góc phải trên để xem hồ sơ hoặc đổi mật khẩu. Vui lòng liên hệ Quản trị viên để được cấp quyền sử dụng các phân hệ."
-    />
-
-    <!-- Header Greeting & Search -->
-    <div class="launcher-header">
-      <div class="header-actions">
-        <el-input
-          v-model="searchQuery"
-          placeholder="Tìm nhanh tính năng, công cụ..."
-          prefix-icon="Search"
-          clearable
-          class="search-input"
-        />
-        <el-button :icon="Refresh" circle :loading="loading" @click="fetchMenuCards" title="Làm mới" />
+      class="alert bg-[#0b2942]/95 border border-[#ecc48d]/60 text-[#d6deeb] shadow-xl rounded-lg p-4 mb-6 flex items-start gap-3 backdrop-blur-md"
+    >
+      <CyberIcon name="alert-triangle" :size="24" color="#ecc48d" class="shrink-0 mt-0.5" />
+      <div class="flex-1">
+        <h3 class="font-bold text-[#ecc48d] text-sm mb-1 tracking-wide">TÀI KHOẢN ĐANG CHỜ PHÂN QUYỀN</h3>
+        <p class="text-xs text-[#94a3b8] leading-relaxed">
+          Tài khoản của bạn đã kích hoạt thành công nhưng chưa được gán vai trò chức năng. Bạn có thể nhấn vào biểu tượng Avatar ở góc phải trên để xem hồ sơ hoặc đổi mật khẩu. Vui lòng liên hệ Quản trị viên để được cấp quyền sử dụng các phân hệ.
+        </p>
       </div>
     </div>
 
-    <!-- Category Filter Tabs -->
-    <div class="category-bar">
-      <el-radio-group v-model="selectedCategory" size="default">
-        <el-radio-button label="all">Tất cả ({{ filteredCards.length }})</el-radio-button>
-        <el-radio-button v-for="cat in categories" :key="cat" :label="cat">
+    <!-- Header Greeting & Search -->
+    <div class="launcher-header">
+      <div class="header-actions flex items-center gap-3">
+        <div class="relative flex-1 sm:w-80">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Tìm nhanh tính năng, công cụ..."
+            class="input input-sm w-full bg-[#081d32] border-[#1d3b5a] text-[#d6deeb] placeholder-[#5f7e97] focus:border-[#00f0ff] focus:outline-none rounded-md font-sans text-xs h-[38px] pl-9"
+          />
+          <CyberIcon name="search" :size="16" color="#5f7e97" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <button
+            v-if="searchQuery"
+            type="button"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#5f7e97] hover:text-[#d6deeb] text-xs"
+            @click="searchQuery = ''"
+          >
+            ✕
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-sm btn-square bg-[#081d32] hover:bg-[#0b2942] border-[#1d3b5a] hover:border-[#00f0ff] text-[#7fdbca] h-[38px] w-[38px] rounded-md transition-all shadow-md"
+          :class="{ 'loading': loading }"
+          title="Làm mới danh sách"
+          @click="fetchMenuCards"
+        >
+          <CyberIcon v-if="!loading" name="refresh" :size="16" />
+        </button>
+      </div>
+    </div>
+
+    <!-- Category Filter Tabs with daisyUI Tabs -->
+    <div class="category-bar my-4 overflow-x-auto pb-1">
+      <div class="join bg-[#081d32] p-1 rounded-lg border border-[#1d3b5a]/60 shadow-inner">
+        <button
+          type="button"
+          class="join-item btn btn-xs sm:btn-sm border-0 font-medium transition-all"
+          :class="selectedCategory === 'all' ? 'bg-[#7fdbca] text-[#011627] font-bold shadow-md' : 'btn-ghost text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+          @click="selectedCategory = 'all'"
+        >
+          Tất cả ({{ filteredCards.length }})
+        </button>
+        <button
+          v-for="cat in categories"
+          :key="cat"
+          type="button"
+          class="join-item btn btn-xs sm:btn-sm border-0 font-medium transition-all"
+          :class="selectedCategory === cat ? 'bg-[#7fdbca] text-[#011627] font-bold shadow-md' : 'btn-ghost text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
+          @click="selectedCategory = cat"
+        >
           {{ cat }}
-        </el-radio-button>
-      </el-radio-group>
+        </button>
+      </div>
     </div>
 
     <!-- Loading Skeleton -->
