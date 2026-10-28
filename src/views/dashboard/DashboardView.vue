@@ -21,7 +21,7 @@
               <span class="metric-value status-online">Hoạt động</span>
             </div>
             <div class="metric-icon-box bg-blue">
-              <el-icon><Platform /></el-icon>
+              <CyberIcon name="monitor" :size="24" />
             </div>
           </div>
         </el-card>
@@ -35,7 +35,7 @@
               <span class="metric-value">{{ pluginStore.plugins.length }}</span>
             </div>
             <div class="metric-icon-box bg-green">
-              <el-icon><SetUp /></el-icon>
+              <CyberIcon name="blocks" :size="24" />
             </div>
           </div>
         </el-card>
@@ -49,7 +49,7 @@
               <span class="metric-value">{{ pluginStore.activePlugins.length }}</span>
             </div>
             <div class="metric-icon-box bg-orange">
-              <el-icon><Connection /></el-icon>
+              <CyberIcon name="radio" :size="24" />
             </div>
           </div>
         </el-card>
@@ -63,7 +63,7 @@
               <span class="metric-value">v{{ pluginStore.diagnostics.sdkVersion }}</span>
             </div>
             <div class="metric-icon-box bg-purple">
-              <el-icon><Cpu /></el-icon>
+              <CyberIcon name="cpu" :size="24" />
             </div>
           </div>
         </el-card>
@@ -241,6 +241,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePluginStore } from '@/stores/plugin';
+import CyberIcon from '@/components/shared/CyberIcon.vue';
 import {
   Platform,
   SetUp,

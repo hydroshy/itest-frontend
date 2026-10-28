@@ -8,7 +8,7 @@
     append-to-body
     destroy-on-close
   >
-    <div class="profile-modal-container">
+    <div class="profile-modal-container" data-augmented-ui="tl-clip br-clip border">
       <!-- Modal Header -->
       <div class="modal-cyber-header">
         <div class="header-tag">
@@ -20,7 +20,7 @@
       </div>
 
       <!-- Identity Summary Card -->
-      <div class="user-summary-card">
+      <div class="user-summary-card" data-augmented-ui="tl-clip br-clip border">
         <el-avatar :size="52" class="cyber-avatar">
           {{ userInitial }}
         </el-avatar>
@@ -346,13 +346,17 @@ async function handleChangePassword() {
 }
 
 .profile-modal-container {
-  background: var(--owl-bg-surface, #081d32);
-  border: 1px solid var(--owl-border, #1d3b5a);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(0, 240, 255, 0.35);
+  --aug-tl: 14px;
+  --aug-br: 14px;
+  background: rgba(8, 29, 50, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 240, 255, 0.15);
   padding: 24px;
   color: var(--owl-text-primary, #d6deeb);
   position: relative;
-  border-radius: var(--cyber-radius-lg, 12px);
 }
 
 .modal-cyber-header {
@@ -398,13 +402,17 @@ async function handleChangePassword() {
 }
 
 .user-summary-card {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(0, 240, 255, 0.25);
+  --aug-tl: 8px;
+  --aug-br: 8px;
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 14px 16px;
-  background: var(--owl-bg-card, #0b253e);
-  border: 1px solid var(--owl-border, #1d3b5a);
-  border-radius: var(--cyber-radius, 8px);
+  background: rgba(11, 37, 62, 0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
   margin-bottom: 20px;
 }
 

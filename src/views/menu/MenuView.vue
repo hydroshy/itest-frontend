@@ -51,6 +51,7 @@
         :key="card.id"
         class="menu-card"
         :class="{ 'card-highlight': card.id === 'dashboard' }"
+        data-augmented-ui="tl-clip br-clip border"
         @click="navigateTo(card)"
       >
         <div class="card-top">
@@ -359,9 +360,11 @@ onMounted(() => {
 }
 
 .menu-card {
-  background: var(--owl-bg-card, #0b253e) !important;
-  border: 1px solid var(--owl-border, #1d3b5a);
-  border-radius: var(--cyber-radius-lg, 12px);
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(0, 240, 255, 0.22);
+  --aug-tl: 12px;
+  --aug-br: 12px;
+  background: rgba(11, 37, 62, 0.75) !important;
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
   padding: 22px;
@@ -370,14 +373,24 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 .menu-card:hover {
-  border-color: var(--owl-teal, #7fdbca);
-  background: var(--owl-bg-card-hover, #0f3152) !important;
-  transform: translateY(-3px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 16px var(--owl-teal-dim, rgba(127, 219, 202, 0.15));
+  --aug-border-bg: var(--cyber-cyan, #00f0ff);
+  background: rgba(15, 49, 82, 0.88) !important;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.25);
+}
+
+.menu-card.card-highlight {
+  --aug-border-bg: rgba(0, 240, 255, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 14px rgba(0, 240, 255, 0.15);
+}
+
+.menu-card.card-highlight:hover {
+  --aug-border-bg: #00f0ff;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 24px rgba(0, 240, 255, 0.35);
 }
 
 .card-top {
