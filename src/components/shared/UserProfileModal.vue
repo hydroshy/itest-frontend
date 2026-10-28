@@ -8,12 +8,12 @@
     append-to-body
     destroy-on-close
   >
-    <div class="profile-modal-container" data-augmented-ui="tl-clip br-clip border">
+    <div class="profile-modal-container">
       <!-- Modal Header -->
       <div class="modal-cyber-header">
         <div class="header-tag">
           <span class="pulse-indicator"></span>
-          <span class="sys-code">SYS.OPERATOR // IDENTITY PROFILE</span>
+          <span class="sys-code">ACCOUNT PROFILE</span>
         </div>
         <h3 class="header-title">Hồ sơ & Thông tin cá nhân</h3>
         <p class="header-desc">Quản lý định danh tài khoản, thông tin hiển thị và mật khẩu truy cập hệ thống</p>
@@ -346,18 +346,18 @@ async function handleChangePassword() {
 }
 
 .profile-modal-container {
-  background: #0f172a;
-  border: 1px solid rgba(0, 240, 255, 0.4);
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.2);
+  background: var(--owl-bg-surface, #081d32);
+  border: 1px solid var(--owl-border, #1d3b5a);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   padding: 24px;
-  color: #e2e8f0;
+  color: var(--owl-text-primary, #d6deeb);
   position: relative;
-  border-radius: 4px;
+  border-radius: var(--cyber-radius-lg, 12px);
 }
 
 .modal-cyber-header {
   margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--owl-border, #1d3b5a);
   padding-bottom: 14px;
 }
 
@@ -369,37 +369,32 @@ async function handleChangePassword() {
 }
 
 .pulse-indicator {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: #00f0ff;
-  box-shadow: 0 0 8px #00f0ff;
-  animation: cyberPulse 2s infinite;
-}
-
-@keyframes cyberPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+  background: var(--owl-teal, #7fdbca);
+  box-shadow: 0 0 6px var(--owl-teal, #7fdbca);
 }
 
 .sys-code {
   font-family: var(--cyber-font-mono, monospace);
   font-size: 11px;
-  color: #00f0ff;
-  letter-spacing: 1px;
+  font-weight: 600;
+  color: var(--owl-teal, #7fdbca);
+  letter-spacing: 0.8px;
 }
 
 .header-title {
   margin: 0 0 4px;
   font-size: 18px;
-  font-weight: 700;
-  color: #f8fafc;
+  font-weight: 600;
+  color: var(--owl-text-bright, #ffffff);
 }
 
 .header-desc {
   margin: 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--owl-text-secondary, #7e97b8);
 }
 
 .user-summary-card {
@@ -407,18 +402,18 @@ async function handleChangePassword() {
   align-items: center;
   gap: 16px;
   padding: 14px 16px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  border-radius: 6px;
+  background: var(--owl-bg-card, #0b253e);
+  border: 1px solid var(--owl-border, #1d3b5a);
+  border-radius: var(--cyber-radius, 8px);
   margin-bottom: 20px;
 }
 
 .cyber-avatar {
-  background: linear-gradient(135deg, #00f0ff 0%, #0077ff 100%);
-  color: #020617;
-  font-weight: 800;
+  background: linear-gradient(135deg, #7fdbca 0%, #57c7b1 100%);
+  color: #011627;
+  font-weight: 700;
   font-size: 20px;
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(127, 219, 202, 0.25);
 }
 
 .summary-details {
@@ -426,9 +421,9 @@ async function handleChangePassword() {
 }
 
 .summary-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #f1f5f9;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--owl-text-bright, #ffffff);
   margin-bottom: 4px;
 }
 
@@ -442,37 +437,36 @@ async function handleChangePassword() {
 .username-tag {
   font-family: var(--cyber-font-mono, monospace);
   font-size: 12px;
-  color: #38bdf8;
+  color: var(--owl-text-muted, #5f7e97);
 }
 
 .cyber-role-tag {
-  background: rgba(0, 240, 255, 0.1);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  color: #00f0ff;
+  background: var(--owl-teal-dim, rgba(127, 219, 202, 0.12));
+  border: 1px solid rgba(127, 219, 202, 0.3);
+  color: var(--owl-teal, #7fdbca);
+  font-family: var(--cyber-font-mono, monospace);
   font-size: 11px;
 }
 
 /* Tabs styling */
 :deep(.cyber-tabs .el-tabs__nav-wrap::after) {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--owl-border, #1d3b5a);
   height: 1px;
 }
 
 :deep(.cyber-tabs .el-tabs__item) {
-  color: #94a3b8;
+  color: var(--owl-text-secondary, #7e97b8);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   transition: all 0.2s ease;
 }
 
 :deep(.cyber-tabs .el-tabs__item.is-active) {
-  color: #00f0ff;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+  color: var(--owl-teal, #7fdbca);
 }
 
 :deep(.cyber-tabs .el-tabs__active-bar) {
-  background-color: #00f0ff;
-  box-shadow: 0 0 8px #00f0ff;
+  background-color: var(--owl-teal, #7fdbca);
 }
 
 /* Form styling */
@@ -481,7 +475,7 @@ async function handleChangePassword() {
 }
 
 :deep(.cyber-form .el-form-item__label) {
-  color: #cbd5e1;
+  color: var(--owl-text-primary, #d6deeb);
   font-size: 13px;
   font-weight: 500;
   margin-bottom: 4px;
@@ -489,33 +483,33 @@ async function handleChangePassword() {
 
 .field-hint {
   font-size: 11px;
-  color: #64748b;
+  color: var(--owl-text-muted, #5f7e97);
   margin-top: 4px;
 }
 
 :deep(.cyber-input .el-input__wrapper) {
-  background-color: #1e293b !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
-  border-radius: 4px;
+  background-color: var(--owl-bg-input, #0b253e) !important;
+  box-shadow: 0 0 0 1px var(--owl-border, #1d3b5a) inset !important;
+  border-radius: var(--cyber-radius-sm, 6px);
   padding: 4px 12px;
 }
 
 :deep(.cyber-input .el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.4) inset !important;
+  box-shadow: 0 0 0 1px var(--owl-border-focus, #7fdbca) inset !important;
 }
 
 :deep(.cyber-input .el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #00f0ff inset, 0 0 10px rgba(0, 240, 255, 0.25) !important;
+  box-shadow: 0 0 0 1px var(--owl-teal, #7fdbca) inset, 0 0 0 3px var(--owl-teal-dim, rgba(127, 219, 202, 0.15)) !important;
 }
 
 :deep(.cyber-input .el-input__inner) {
-  color: #f8fafc;
+  color: var(--owl-text-bright, #ffffff);
   font-size: 14px;
 }
 
 :deep(.disabled-input .el-input__wrapper) {
-  background-color: #0b1120 !important;
-  opacity: 0.75;
+  background-color: rgba(5, 19, 33, 0.6) !important;
+  opacity: 0.7;
 }
 
 .form-actions {
@@ -524,32 +518,35 @@ async function handleChangePassword() {
   gap: 12px;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--owl-border, #1d3b5a);
 }
 
 .cyber-btn-cancel {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #cbd5e1;
+  border: 1px solid var(--owl-border, #1d3b5a);
+  color: var(--owl-text-secondary, #7e97b8);
+  border-radius: var(--cyber-radius-sm, 6px);
 }
 
 .cyber-btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.4);
-  color: #fff;
+  background: var(--owl-bg-card, #0b253e);
+  border-color: var(--owl-text-secondary, #7e97b8);
+  color: var(--owl-text-bright, #ffffff);
 }
 
 .cyber-btn-submit {
-  background: linear-gradient(135deg, #00f0ff 0%, #0088ff 100%);
+  background: var(--owl-teal, #7fdbca);
   border: none;
-  color: #020617;
-  font-weight: 700;
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+  color: #011627;
+  font-weight: 600;
+  border-radius: var(--cyber-radius-sm, 6px);
+  box-shadow: 0 2px 8px rgba(127, 219, 202, 0.25);
   transition: all 0.2s ease;
 }
 
 .cyber-btn-submit:hover {
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.6);
+  background: #9cf0e0;
+  box-shadow: 0 4px 14px rgba(127, 219, 202, 0.4);
   transform: translateY(-1px);
 }
 </style>

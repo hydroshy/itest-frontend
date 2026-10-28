@@ -124,7 +124,7 @@
             <span class="brand-title">iTEST 2.0</span>
           </el-button>
 
-          <el-breadcrumb separator="//" class="breadcrumb breadcrumb-cyber">
+          <el-breadcrumb separator="/" class="breadcrumb breadcrumb-cyber">
             <el-breadcrumb-item v-if="route.path !== '/menu'">{{ currentRouteTitle }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
@@ -136,7 +136,7 @@
           </template>
 
           <el-dropdown trigger="click" @command="handleUserCommand" popper-class="user-dropdown-popper">
-            <div class="user-profile" data-augmented-ui="tl-clip br-clip border">
+            <div class="user-profile">
               <el-avatar :size="28" class="user-avatar">
                 {{ userInitial }}
               </el-avatar>
@@ -147,7 +147,7 @@
               <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
-              <div class="cyber-dropdown-wrapper" data-augmented-ui="tl-clip br-clip border">
+              <div class="cyber-dropdown-wrapper">
                 <el-dropdown-menu class="cyber-dropdown-menu">
                   <div class="dropdown-header">
                     <div class="dropdown-sys-tag">
@@ -301,9 +301,9 @@ async function handleUserCommand(cmd: string) {
 }
 
 .layout-aside {
-  background-color: #0b101c;
-  border-right: 1px solid rgba(0, 240, 255, 0.15);
-  color: #fff;
+  background-color: var(--owl-bg-aside, #051321);
+  border-right: 1px solid var(--owl-border, #1d3b5a);
+  color: var(--owl-text-primary, #d6deeb);
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
@@ -315,18 +315,18 @@ async function handleUserCommand(cmd: string) {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background-color: #080c14;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.18);
+  background-color: var(--owl-bg-aside, #051321);
+  border-bottom: 1px solid var(--owl-border, #1d3b5a);
   font-family: var(--cyber-font-display, sans-serif);
-  font-weight: 800;
-  font-size: 18px;
-  color: #f1f5f9;
-  letter-spacing: 1px;
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--owl-text-bright, #ffffff);
+  letter-spacing: 0.5px;
 }
 
 .logo-icon {
   font-size: 22px;
-  color: var(--cyber-cyan, #00f0ff);
+  color: var(--owl-teal, #7fdbca);
 }
 
 .sidebar-menu {
@@ -338,7 +338,7 @@ async function handleUserCommand(cmd: string) {
   padding: 12px 16px 6px;
   font-size: 11px;
   font-weight: 600;
-  color: #5a6678;
+  color: var(--owl-text-muted, #5f7e97);
   letter-spacing: 0.5px;
 }
 
@@ -347,11 +347,11 @@ async function handleUserCommand(cmd: string) {
 }
 
 .layout-main-wrapper {
-  background-color: #080c14;
+  background-color: var(--owl-bg-canvas, #011627);
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.05) 0%, transparent 70%),
-    linear-gradient(rgba(0, 240, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 240, 255, 0.02) 1px, transparent 1px);
+    radial-gradient(circle at 50% 0%, rgba(127, 219, 202, 0.04) 0%, transparent 65%),
+    linear-gradient(rgba(29, 59, 90, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 59, 90, 0.08) 1px, transparent 1px);
   background-size: 100% 100%, 32px 32px, 32px 32px;
   display: flex;
   flex-direction: column;
@@ -360,15 +360,15 @@ async function handleUserCommand(cmd: string) {
 
 .layout-header {
   height: 56px;
-  background: rgba(11, 16, 28, 0.85);
+  background: rgba(8, 29, 50, 0.85);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(0, 240, 255, 0.18);
+  border-bottom: 1px solid var(--owl-border, #1d3b5a);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .header-left {
@@ -379,14 +379,13 @@ async function handleUserCommand(cmd: string) {
 
 .collapse-btn {
   font-size: 18px;
-  color: var(--cyber-cyan, #00f0ff);
+  color: var(--owl-teal, #7fdbca);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .collapse-btn:hover {
   color: #ffffff;
-  text-shadow: 0 0 8px var(--cyber-cyan);
 }
 
 .app-center-brand {
@@ -394,36 +393,31 @@ async function handleUserCommand(cmd: string) {
   align-items: center;
   gap: 8px;
   font-family: var(--cyber-font-display, sans-serif);
-  font-weight: 800;
-  font-size: 17px;
-  color: #f1f5f9;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--owl-text-bright, #ffffff);
   padding: 4px 10px;
   letter-spacing: 0.5px;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  background: rgba(0, 240, 255, 0.05);
+  border-radius: var(--cyber-radius-sm, 6px);
+  border: 1px solid rgba(127, 219, 202, 0.25);
+  background: rgba(127, 219, 202, 0.08);
   transition: all 0.25s ease;
 }
 
 .app-center-brand:hover {
-  border-color: var(--cyber-cyan);
-  background: rgba(0, 240, 255, 0.15);
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+  border-color: var(--owl-teal, #7fdbca);
+  background: rgba(127, 219, 202, 0.16);
+  color: var(--owl-teal, #7fdbca);
 }
 
 .brand-icon {
   font-size: 16px;
-  color: var(--cyber-cyan);
-}
-
-.app-center-brand:hover {
-  color: var(--cyber-cyan);
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  color: var(--owl-teal, #7fdbca);
 }
 
 .app-center-brand .logo-icon {
   font-size: 20px;
-  color: var(--cyber-cyan, #00f0ff);
+  color: var(--owl-teal, #7fdbca);
 }
 
 .brand-title {
@@ -444,11 +438,9 @@ async function handleUserCommand(cmd: string) {
 }
 
 .user-profile {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.25);
-  --aug-tl: 8px;
-  --aug-br: 8px;
-  background: rgba(13, 20, 36, 0.65) !important;
+  background: var(--owl-bg-surface, #081d32) !important;
+  border: 1px solid var(--owl-border, #1d3b5a);
+  border-radius: var(--cyber-radius, 8px);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
@@ -460,16 +452,16 @@ async function handleUserCommand(cmd: string) {
 }
 
 .user-profile:hover {
-  --aug-border-bg: #00f0ff;
-  background: rgba(18, 27, 48, 0.85) !important;
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+  border-color: var(--owl-teal, #7fdbca);
+  background: var(--owl-bg-card-hover, #0f3152) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
-  color: #0d131f;
-  font-weight: 800;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  background: linear-gradient(135deg, #7fdbca 0%, #57c7b1 100%);
+  color: #011627;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(127, 219, 202, 0.25);
 }
 
 .user-info-text {
@@ -482,27 +474,26 @@ async function handleUserCommand(cmd: string) {
 .user-name {
   font-family: var(--cyber-font-display, sans-serif);
   font-size: 13px;
-  font-weight: 700;
-  color: #f1f5f9;
-  letter-spacing: 0.3px;
+  font-weight: 600;
+  color: var(--owl-text-bright, #ffffff);
 }
 
 .user-role-badge {
   font-family: var(--cyber-font-mono, monospace);
   font-size: 10px;
-  font-weight: 700;
-  color: var(--cyber-cyan, #00f0ff);
+  font-weight: 600;
+  color: var(--owl-teal, #7fdbca);
   letter-spacing: 0.5px;
 }
 
 .dropdown-arrow {
   font-size: 12px;
-  color: var(--cyber-cyan, #00f0ff);
+  color: var(--owl-text-secondary, #7e97b8);
   transition: transform 0.2s;
 }
 
 .user-profile:hover .dropdown-arrow {
-  color: #ffffff;
+  color: var(--owl-teal, #7fdbca);
   transform: translateY(2px);
 }
 

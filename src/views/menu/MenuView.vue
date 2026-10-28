@@ -51,7 +51,6 @@
         :key="card.id"
         class="menu-card"
         :class="{ 'card-highlight': card.id === 'dashboard' }"
-        data-augmented-ui="tl-clip br-clip border"
         @click="navigateTo(card)"
       >
         <div class="card-top">
@@ -360,11 +359,9 @@ onMounted(() => {
 }
 
 .menu-card {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.2);
-  --aug-tl: 12px;
-  --aug-br: 12px;
-  background: rgba(13, 20, 36, 0.65) !important;
+  background: var(--owl-bg-card, #0b253e) !important;
+  border: 1px solid var(--owl-border, #1d3b5a);
+  border-radius: var(--cyber-radius-lg, 12px);
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
   padding: 22px;
@@ -373,14 +370,14 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .menu-card:hover {
-  --aug-border-bg: #00f0ff;
-  background: rgba(18, 27, 48, 0.85) !important;
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.25);
+  border-color: var(--owl-teal, #7fdbca);
+  background: var(--owl-bg-card-hover, #0f3152) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 16px var(--owl-teal-dim, rgba(127, 219, 202, 0.15));
 }
 
 .card-top {
@@ -393,30 +390,30 @@ onMounted(() => {
 .card-icon-box {
   width: 48px;
   height: 48px;
-  border-radius: 8px;
+  border-radius: var(--cyber-radius, 8px);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.25s ease;
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.1);
+  border: 1px solid var(--owl-border, #1d3b5a);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
 }
 
 .menu-card:hover .card-icon-box {
-  transform: scale(1.1) rotate(2deg);
-  border-color: var(--cyber-cyan, #00f0ff);
-  box-shadow: 0 0 14px rgba(0, 240, 255, 0.4);
+  transform: scale(1.06);
+  border-color: var(--owl-teal, #7fdbca);
+  box-shadow: 0 0 12px var(--owl-teal-dim, rgba(127, 219, 202, 0.2));
 }
 
 .card-tag {
   font-family: var(--cyber-font-mono, monospace);
   font-size: 11px;
   font-weight: 600;
-  color: var(--cyber-cyan, #00f0ff);
-  background: rgba(0, 240, 255, 0.1);
-  border: 1px solid rgba(0, 240, 255, 0.25);
+  color: var(--owl-teal, #7fdbca);
+  background: var(--owl-teal-dim, rgba(127, 219, 202, 0.12));
+  border: 1px solid rgba(127, 219, 202, 0.25);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--cyber-radius-xs, 4px);
   letter-spacing: 0.5px;
 }
 
@@ -427,16 +424,16 @@ onMounted(() => {
 
 .card-title {
   font-family: var(--cyber-font-display, sans-serif);
-  font-size: 18px;
-  font-weight: 700;
-  color: #f1f5f9;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--owl-text-bright, #ffffff);
   margin: 0 0 8px 0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .card-desc {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--owl-text-secondary, #7e97b8);
   margin: 0;
   line-height: 1.5;
   display: -webkit-box;
@@ -450,12 +447,12 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--cyber-cyan, #00f0ff);
-  font-family: var(--cyber-font-mono, monospace);
+  border-top: 1px solid var(--owl-border, #1d3b5a);
+  color: var(--owl-teal, #7fdbca);
+  font-family: var(--cyber-font-body, sans-serif);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .arrow-icon {

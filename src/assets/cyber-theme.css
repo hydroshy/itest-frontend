@@ -1,1147 +1,576 @@
 /* ==========================================================================
-   Cyber Watch Dogs 2 / Augmented-UI Design System for iTest 2.0
-   Minimalist, implicit, high-tech HUD aesthetic with uniform field metrics
+   Midnight Owl (Night Owl) Design System for iTest 2.0
+   Modern, sleek, and eye-friendly dark palette with refined typography,
+   balanced 8px grid spacing, and polished component alignment.
    ========================================================================== */
 @import 'augmented-ui/augmented-ui.min.css';
 
 :root {
-  /* Cyber Watch Dogs 2 Palette */
-  --cyber-bg-darkest: #05070b;
-  --cyber-bg-darker: #0a0e17;
-  --cyber-bg-panel: #0f1422;
-  --cyber-bg-card: #141b2d;
-  --cyber-border: #1e293b;
-  --cyber-border-highlight: #00f0ff;
-  --cyber-cyan: #00f0ff;
-  --cyber-cyan-dim: rgba(0, 240, 255, 0.12);
-  --cyber-cyan-glow: 0 0 10px rgba(0, 240, 255, 0.35);
-  --cyber-yellow: #fcee0a;
-  --cyber-yellow-dim: rgba(252, 238, 10, 0.12);
-  --cyber-pink: #ff0055;
-  --cyber-green: #00ff66;
-  --cyber-text-main: #f1f5f9;
-  --cyber-text-secondary: #94a3b8;
-  --cyber-text-muted: #64748b;
-  
-  /* Authentic Cyber Typography */
-  --cyber-font-display: 'Rajdhani', 'Chakra Petch', 'Orbitron', -apple-system, sans-serif;
-  --cyber-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  /* ==========================================================================
+     1. MIDNIGHT OWL COLOR TOKENS
+     ========================================================================== */
+  --owl-bg-canvas: #011627;          /* Deep Night Owl Navy (Main Canvas) */
+  --owl-bg-aside: #051321;           /* Darker Slate Navy (Sidebar) */
+  --owl-bg-surface: #081d32;         /* Panel / Card / Header Surface */
+  --owl-bg-card: #0b253e;            /* Inner Card & Form Control Fill */
+  --owl-bg-card-hover: #0f3152;      /* Hover State for Cards & Rows */
+  --owl-border: #1d3b5a;             /* Subtle Slate Navy Border */
+  --owl-border-light: rgba(29, 59, 90, 0.5);
+  --owl-border-focus: #7fdbca;       /* Focus Border & Highlight */
 
-  /* Form & Control Metrics */
+  /* Text & Typography Colors */
+  --owl-text-primary: #d6deeb;       /* Soft Off-White (Primary Text) */
+  --owl-text-secondary: #7e97b8;     /* Cool Slate Blue (Subtitles / Labels) */
+  --owl-text-muted: #5f7e97;         /* Muted Slate (Placeholders / Footers) */
+  --owl-text-bright: #ffffff;        /* Pure White (Headers / Active Items) */
+
+  /* Accents & Semantic Statuses */
+  --owl-teal: #7fdbca;               /* Soft Teal / Cyan (Primary Brand Accent) */
+  --owl-teal-dim: rgba(127, 219, 202, 0.12);
+  --owl-amber: #ecc48d;              /* Warm Golden Amber (Warning / Attention) */
+  --owl-amber-dim: rgba(236, 196, 141, 0.12);
+  --owl-mint: #addb67;               /* Fresh Mint Green (Success / Online / Pass) */
+  --owl-mint-dim: rgba(173, 219, 103, 0.12);
+  --owl-coral: #ef5350;              /* Soft Coral Red (Danger / Error / Fail) */
+  --owl-coral-dim: rgba(239, 83, 80, 0.12);
+  --owl-lavender: #c792ea;           /* Soft Lavender Purple (Code / Tags / Meta) */
+  --owl-lavender-dim: rgba(199, 146, 234, 0.12);
+  --owl-blue: #82aaff;               /* Soft Sky Blue (Links / Info) */
+  --owl-blue-dim: rgba(130, 170, 255, 0.12);
+
+  /* ==========================================================================
+     2. LEGACY & COMPONENT ALIASES (Full Backward Compatibility)
+     ========================================================================== */
+  --cyber-bg-darkest: var(--owl-bg-aside);
+  --cyber-bg-darker: var(--owl-bg-canvas);
+  --cyber-bg-panel: var(--owl-bg-surface);
+  --cyber-bg-card: var(--owl-bg-card);
+  --cyber-card-bg: var(--owl-bg-surface);
+  --cyber-border: var(--owl-border);
+  --cyber-border-color: var(--owl-border);
+  --cyber-border-highlight: var(--owl-border-focus);
+  --cyber-cyan: var(--owl-teal);
+  --cyber-cyan-neon: var(--owl-teal);
+  --cyber-cyan-dim: var(--owl-teal-dim);
+  --cyber-cyan-glow: 0 0 10px rgba(127, 219, 202, 0.25);
+  --cyber-yellow: var(--owl-amber);
+  --cyber-yellow-dim: var(--owl-amber-dim);
+  --cyber-pink: var(--owl-coral);
+  --cyber-green: var(--owl-mint);
+  --cyber-green-dim: var(--owl-mint-dim);
+  --cyber-text-main: var(--owl-text-primary);
+  --cyber-text-primary: var(--owl-text-primary);
+  --cyber-text-secondary: var(--owl-text-secondary);
+  --cyber-text-muted: var(--owl-text-muted);
+
+  /* Refined Typography Tokens */
+  --cyber-font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --cyber-font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --cyber-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --font-family-mono: var(--cyber-font-mono);
+
+  /* Form & Component Metrics */
   --cyber-control-height: 38px;
   --cyber-filter-width: 220px;
+  --cyber-radius-sm: 6px;
+  --cyber-radius: 8px;
+  --cyber-radius-lg: 12px;
+
+  /* ==========================================================================
+     3. ELEMENT PLUS THEME VARIABLES OVERRIDE
+     ========================================================================== */
+  --el-color-primary: #7fdbca;
+  --el-color-primary-light-3: #9be2d5;
+  --el-color-primary-light-5: #b7e9e0;
+  --el-color-primary-light-7: #d4f1eb;
+  --el-color-primary-light-8: #e2f6f2;
+  --el-color-primary-light-9: #f0faf8;
+  --el-color-primary-dark-2: #57c7b1;
+  --el-color-success: #addb67;
+  --el-color-warning: #ecc48d;
+  --el-color-danger: #ef5350;
+  --el-color-info: #82aaff;
+
+  --el-bg-color: #011627;
+  --el-bg-color-overlay: #081d32;
+  --el-bg-color-page: #011627;
+  --el-text-color-primary: #d6deeb;
+  --el-text-color-regular: #7e97b8;
+  --el-text-color-secondary: #5f7e97;
+  --el-text-color-placeholder: #5f7e97;
+  --el-border-color: #1d3b5a;
+  --el-border-color-light: #162c44;
+  --el-border-color-lighter: #102133;
+  --el-fill-color-blank: #0b253e;
+  --el-fill-color: #081d32;
+  --el-fill-color-light: #0d2e4c;
 }
 
-/* Global Font & Body Theme */
+/* ==========================================================================
+   4. GLOBAL RESET & BASE TYPOGRAPHY
+   ========================================================================== */
+html,
 body {
-  font-family: var(--cyber-font-display), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  letter-spacing: 0.2px;
+  margin: 0;
+  padding: 0;
+  background-color: var(--owl-bg-canvas);
+  color: var(--owl-text-primary);
+  font-family: var(--cyber-font-body);
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Cyber Watch Dogs 2 subtle HUD grid background for App */
+/* Smooth Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--owl-bg-canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--owl-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--owl-teal);
+}
+
+/* Modern App Wrapper Background */
 .layout-main-wrapper {
-  background-color: #0b0f19 !important;
-  background-image: 
-    radial-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px) !important;
-  background-size: 24px 24px, 48px 48px, 48px 48px !important;
-  background-position: 0 0, 0 0, 0 0 !important;
-}
-
-.layout-header {
-  background-color: #090d16 !important;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.15) !important;
-}
-
-.layout-aside {
-  background-color: #070a10 !important;
-  border-right: 1px solid rgba(0, 240, 255, 0.12) !important;
-}
-
-.logo-box {
-  background-color: #05070c !important;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.12) !important;
-}
-
-.logo-text, .brand-title {
-  font-family: var(--cyber-font-display) !important;
-  font-weight: 700 !important;
-  letter-spacing: 1.5px !important;
-  color: #ffffff !important;
-  text-transform: uppercase;
-}
-
-.breadcrumb-cyber {
-  font-family: var(--cyber-font-mono) !important;
-  font-size: 13px !important;
-  letter-spacing: 0.5px;
-}
-
-.breadcrumb-cyber :deep(.el-breadcrumb__separator) {
-  color: var(--cyber-cyan) !important;
-  font-weight: 700;
-  margin: 0 8px;
-}
-
-.breadcrumb-cyber :deep(.el-breadcrumb__inner) {
-  color: #94a3b8 !important;
-  font-weight: 500;
+  background-color: var(--owl-bg-canvas) !important;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(127, 219, 202, 0.04) 0%, transparent 65%),
+    linear-gradient(rgba(29, 59, 90, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 59, 90, 0.08) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 32px 32px, 32px 32px !important;
+  color: var(--owl-text-primary);
 }
 
 /* ==========================================================================
-   1. UNIFORM FORM CONTROLS (Input, Select, Button, DatePicker)
-   All interactive fields share the exact 38px height and uniform metrics
+   5. UNIFORM METRICS FOR FILTERS, FORMS & CONTROLS
    ========================================================================== */
-.cyber-input,
-.el-input__wrapper,
-.el-select__wrapper,
-.p-inputtext,
-.p-select,
-.el-date-editor.el-input,
-.el-date-editor.el-input__wrapper {
-  height: var(--cyber-control-height) !important;
-  min-height: var(--cyber-control-height) !important;
-  max-height: var(--cyber-control-height) !important;
-  line-height: var(--cyber-control-height) !important;
-  box-sizing: border-box !important;
-  font-family: inherit;
-  border-radius: 4px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.el-input__inner,
-.el-select__placeholder,
-.p-inputtext,
-.p-select-label {
-  font-size: 13.5px !important;
-}
-
-/* Neon Focus Rings for Inputs */
-.el-input__wrapper.is-focus,
-.el-select__wrapper.is-focused,
-.p-inputtext:focus,
-.p-select:focus {
-  border-color: var(--cyber-cyan) !important;
-  box-shadow: 0 0 0 1px var(--cyber-cyan), 0 0 8px rgba(0, 240, 255, 0.25) !important;
-}
-
-/* Standard Buttons - Exactly 38px with Cyberpunk HUD accents */
-.el-button,
-.p-button {
-  height: var(--cyber-control-height) !important;
-  min-height: var(--cyber-control-height) !important;
-  line-height: var(--cyber-control-height) !important;
-  padding: 0 18px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.5px;
-  box-sizing: border-box !important;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  background: rgba(13, 20, 36, 0.7);
-  color: #e2e8f0;
-  backdrop-filter: blur(8px);
-}
-
-.el-button:hover,
-.p-button:hover {
-  border-color: var(--cyber-cyan) !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35) !important;
-  transform: translateY(-1px);
-}
-
-.el-button:active,
-.p-button:active {
-  transform: translateY(1px);
-}
-
-/* Primary Button - Sci-Fi Neon Cyan */
-.el-button--primary,
-.p-button.p-button-primary {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.22) 0%, rgba(0, 163, 255, 0.35) 100%) !important;
-  border: 1px solid var(--cyber-cyan) !important;
-  color: #00f0ff !important;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2) !important;
-  font-weight: 700 !important;
-}
-
-.el-button--primary:hover,
-.p-button.p-button-primary:hover {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.4) 0%, rgba(0, 163, 255, 0.55) 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.45) !important;
-}
-
-/* Success Button - Cyber Emerald */
-.el-button--success,
-.p-button.p-button-success {
-  background: linear-gradient(135deg, rgba(0, 255, 159, 0.2) 0%, rgba(16, 185, 129, 0.35) 100%) !important;
-  border: 1px solid #00ff9f !important;
-  color: #00ff9f !important;
-  box-shadow: 0 0 10px rgba(0, 255, 159, 0.2) !important;
-  font-weight: 700 !important;
-}
-
-.el-button--success:hover,
-.p-button.p-button-success:hover {
-  background: linear-gradient(135deg, rgba(0, 255, 159, 0.4) 0%, rgba(16, 185, 129, 0.55) 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 18px rgba(0, 255, 159, 0.45) !important;
-}
-
-/* Warning Button - Cyber Amber */
-.el-button--warning,
-.p-button.p-button-warning {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.35) 100%) !important;
-  border: 1px solid #f59e0b !important;
-  color: #fbbf24 !important;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2) !important;
-  font-weight: 700 !important;
-}
-
-.el-button--warning:hover,
-.p-button.p-button-warning:hover {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.4) 0%, rgba(217, 119, 6, 0.55) 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 18px rgba(245, 158, 11, 0.45) !important;
-}
-
-/* Danger Button - Cyber Crimson */
-.el-button--danger,
-.p-button.p-button-danger {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.35) 100%) !important;
-  border: 1px solid #ef4444 !important;
-  color: #fca5a5 !important;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2) !important;
-  font-weight: 700 !important;
-}
-
-.el-button--danger:hover,
-.p-button.p-button-danger:hover {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.4) 0%, rgba(185, 28, 28, 0.55) 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 18px rgba(239, 68, 68, 0.45) !important;
-}
-
-/* Info / Default Ghost Button */
-.el-button--info {
-  background: rgba(148, 163, 184, 0.15) !important;
-  border: 1px solid rgba(148, 163, 184, 0.3) !important;
-  color: #cbd5e1 !important;
-}
-
-.el-button--info:hover {
-  background: rgba(148, 163, 184, 0.25) !important;
-  border-color: #cbd5e1 !important;
-  color: #ffffff !important;
-}
-
-/* Link Button Exception */
-.el-button.is-link {
-  height: auto !important;
-  min-height: auto !important;
-  line-height: normal !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 4px 8px !important;
-  color: var(--cyber-cyan) !important;
-}
-
-.el-button.is-link:hover {
-  transform: none !important;
-  text-decoration: underline;
-  box-shadow: none !important;
-}
-
-/* Circle / Round Buttons */
-.el-button.is-circle {
-  width: var(--cyber-control-height) !important;
-  height: var(--cyber-control-height) !important;
-  padding: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 50% !important;
-}
-
-.el-button--small,
-.p-button-sm {
-  height: 30px !important;
-  min-height: 30px !important;
-  line-height: 30px !important;
-  padding: 0 12px !important;
-  font-size: 12px !important;
-}
-
-.el-button--small.is-circle {
-  width: 30px !important;
-  height: 30px !important;
-}
-
-.el-button--large,
-.p-button-lg {
-  height: 44px !important;
-  min-height: 44px !important;
-  line-height: 44px !important;
-  padding: 0 24px !important;
-}
-
-/* ==========================================================================
-   2. FILTER BARS & QUERY ROWS (All inputs/selects uniform 220px)
-   ========================================================================== */
-.filter-bar,
-.table-filter-bar,
-.query-bar,
-.filter-card .el-form,
-.filter-form,
-.el-form--inline {
-  display: flex !important;
-  align-items: center !important;
-  flex-wrap: wrap !important;
-  gap: 12px !important;
-}
-
+/* Unified Filter Bar */
 .filter-card,
-.filter-bar,
-.table-filter-bar,
-.query-bar {
-  margin-bottom: 16px !important;
+.cyber-filter-bar,
+.filter-form-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--owl-bg-surface) !important;
+  border: 1px solid var(--owl-border) !important;
+  border-radius: var(--cyber-radius) !important;
   padding: 14px 18px !important;
-  background: rgba(13, 20, 36, 0.6) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 240, 255, 0.15) !important;
+  margin-bottom: 16px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Equal width for all search/filter controls */
-.filter-bar .el-input,
-.filter-bar .el-select,
-.table-filter-bar .el-input,
-.table-filter-bar .el-select,
-.query-bar .el-input,
-.query-bar .el-select,
-.filter-form .el-input,
-.filter-form .el-select,
-.el-form--inline .el-input,
-.el-form--inline .el-select {
-  width: var(--cyber-filter-width) !important;
-  max-width: var(--cyber-filter-width) !important;
+.filter-card .el-card__body,
+.cyber-filter-bar .el-card__body {
+  padding: 0 !important;
+  width: 100%;
 }
 
-.filter-form .el-form-item,
-.el-form--inline .el-form-item {
+.filter-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  width: 100%;
+}
+
+.filter-form .el-form-item {
+  margin-bottom: 0 !important;
   margin-right: 0 !important;
-  margin-bottom: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 8px !important;
+  display: inline-flex;
+  align-items: center;
 }
 
-.el-card,
-.cyber-card,
-.p-card {
-  background: rgba(13, 20, 36, 0.6) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(0, 240, 255, 0.15) !important;
-  color: #f1f5f9 !important;
+.filter-form .el-form-item__label {
+  color: var(--owl-text-secondary) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding-right: 8px !important;
 }
 
-.filter-form .el-form-item__label,
-.el-form--inline .el-form-item__label {
+/* Form Controls Uniform Styling */
+.el-input__wrapper,
+.el-select .el-input__wrapper,
+.el-date-editor.el-input__wrapper {
+  background-color: var(--owl-bg-card) !important;
+  box-shadow: 0 0 0 1px var(--owl-border) inset !important;
+  border-radius: var(--cyber-radius-sm) !important;
   height: var(--cyber-control-height) !important;
-  line-height: var(--cyber-control-height) !important;
-  font-weight: 500;
-  color: #94a3b8 !important;
-  font-size: 13px;
-  margin-bottom: 0 !important;
-  padding-right: 0 !important;
+  padding: 1px 12px !important;
+  transition: all 0.2s ease !important;
 }
 
-/* Dialog / Modal Forms: Equal 100% width for all inputs in form rows */
-.el-dialog .el-form .el-input,
-.el-dialog .el-form .el-select,
-.el-dialog .el-form .el-date-editor,
-.el-dialog .el-form .el-input-number,
-.p-dialog .p-inputtext,
-.p-dialog .p-select {
-  width: 100% !important;
-  max-width: 100% !important;
+.el-input__inner {
+  color: var(--owl-text-primary) !important;
+  font-family: var(--cyber-font-body) !important;
+  font-size: 13px !important;
+}
+
+.el-input__inner::placeholder {
+  color: var(--owl-text-muted) !important;
+}
+
+.el-input__wrapper:hover,
+.el-select .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--owl-text-secondary) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1.5px var(--owl-teal) inset, 0 0 8px rgba(127, 219, 202, 0.2) !important;
 }
 
 /* ==========================================================================
-   3. AUGMENTED-UI CYBER STYLING & HUD PRESETS
+   6. BUTTONS & ACTIONS
    ========================================================================== */
-/* Augmented card / HUD panel */
-.cyber-card,
-.cyber-hud-panel,
-[data-augmented-ui~="tl-clip"][data-augmented-ui~="br-clip"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.25);
-  --aug-tl: 8px;
-  --aug-br: 8px;
-  background: rgba(13, 20, 36, 0.65) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  color: #f1f5f9;
-  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.cyber-card:hover,
-.cyber-hud-panel:hover,
-[data-augmented-ui~="tl-clip"][data-augmented-ui~="br-clip"]:hover {
-  --aug-border-bg: var(--cyber-cyan);
-  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.25);
-}
-
-/* Cyber Button with Chamfered Corners */
-.cyber-btn,
-.p-button.cyber-btn,
-.cyber-button {
-  --aug-border-all: 1px;
-  --aug-border-bg: var(--cyber-cyan);
-  --aug-tl: 6px;
-  --aug-br: 6px;
-  background: rgba(0, 240, 255, 0.08) !important;
-  color: var(--cyber-cyan) !important;
-  font-family: var(--cyber-font-mono) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.8px !important;
-  border: none !important;
-  cursor: pointer;
+.el-button {
+  height: var(--cyber-control-height);
+  border-radius: var(--cyber-radius-sm);
+  font-family: var(--cyber-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--owl-border);
+  background: var(--owl-bg-card);
+  color: var(--owl-text-primary);
 }
 
-.cyber-btn:hover,
-.p-button.cyber-btn:hover,
-.cyber-button:hover {
-  background: var(--cyber-cyan) !important;
-  color: #07090e !important;
-  box-shadow: var(--cyber-cyan-glow) !important;
+.el-button:hover {
+  border-color: var(--owl-teal);
+  color: var(--owl-teal);
+  background: var(--owl-bg-card-hover);
 }
 
-.cyber-btn--warning,
-.cyber-button--warning {
-  --aug-border-bg: #f59e0b !important;
-  color: #fbbf24 !important;
-  background: rgba(245, 158, 11, 0.1) !important;
+/* Primary Button */
+.el-button--primary {
+  background: linear-gradient(135deg, #7fdbca 0%, #57c7b1 100%) !important;
+  border: 1px solid #7fdbca !important;
+  color: #011627 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(127, 219, 202, 0.2) !important;
 }
 
-.cyber-btn--warning:hover,
-.cyber-button--warning:hover {
-  background: #f59e0b !important;
-  color: #07090e !important;
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.5) !important;
+.el-button--primary:hover {
+  background: linear-gradient(135deg, #94e2d3 0%, #68d0bb 100%) !important;
+  border-color: #94e2d3 !important;
+  color: #011627 !important;
+  box-shadow: 0 4px 14px rgba(127, 219, 202, 0.35) !important;
+  transform: translateY(-1px);
 }
 
-.cyber-btn--danger,
-.cyber-button--danger {
-  --aug-border-bg: #ef4444 !important;
-  color: #fca5a5 !important;
-  background: rgba(239, 68, 68, 0.1) !important;
+.el-button--primary:active {
+  transform: translateY(0);
 }
 
-.cyber-btn--danger:hover,
-.cyber-button--danger:hover {
-  background: #ef4444 !important;
+/* Success Button */
+.el-button--success {
+  background: rgba(173, 219, 103, 0.15) !important;
+  border: 1px solid #addb67 !important;
+  color: #addb67 !important;
+  font-weight: 600 !important;
+}
+
+.el-button--success:hover {
+  background: #addb67 !important;
+  color: #011627 !important;
+  box-shadow: 0 4px 14px rgba(173, 219, 103, 0.35) !important;
+}
+
+/* Warning Button */
+.el-button--warning {
+  background: rgba(236, 196, 141, 0.15) !important;
+  border: 1px solid #ecc48d !important;
+  color: #ecc48d !important;
+  font-weight: 600 !important;
+}
+
+.el-button--warning:hover {
+  background: #ecc48d !important;
+  color: #011627 !important;
+  box-shadow: 0 4px 14px rgba(236, 196, 141, 0.35) !important;
+}
+
+/* Danger Button */
+.el-button--danger {
+  background: rgba(239, 83, 80, 0.15) !important;
+  border: 1px solid #ef5350 !important;
+  color: #ef5350 !important;
+  font-weight: 600 !important;
+}
+
+.el-button--danger:hover {
+  background: #ef5350 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(239, 83, 80, 0.35) !important;
 }
 
-.cyber-btn--success,
-.cyber-button--success {
-  --aug-border-bg: #00ff9f !important;
-  color: #00ff9f !important;
-  background: rgba(0, 255, 159, 0.1) !important;
-}
-
-.cyber-btn--success:hover,
-.cyber-button--success:hover {
-  background: #00ff9f !important;
-  color: #07090e !important;
-  box-shadow: 0 0 16px rgba(0, 255, 159, 0.5) !important;
+/* Small Action Buttons */
+.el-button--small {
+  height: 30px;
+  padding: 4px 10px;
+  font-size: 12px;
 }
 
 /* ==========================================================================
-   4. CYBER WATCH DOGS 2 USER DROPDOWN (HUD Style)
+   7. CARDS & CONTAINERS
    ========================================================================== */
-.user-profile[data-augmented-ui] {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.25);
-  --aug-tl: 6px;
-  --aug-br: 6px;
-  background: rgba(15, 23, 42, 0.6);
-  padding: 4px 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.user-profile[data-augmented-ui]:hover {
-  --aug-border-bg: var(--cyber-cyan);
-  background: rgba(15, 23, 42, 0.9);
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
-}
-
-.user-profile .user-name {
-  color: #f1f5f9 !important;
-  font-family: var(--cyber-font-display) !important;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.cyber-dropdown-wrapper {
-  --aug-border-all: 1px;
-  --aug-border-bg: #00f0ff;
-  --aug-tl: 10px;
-  --aug-br: 10px;
-  background: #0d131f;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 240, 255, 0.2);
-  min-width: 250px;
-  padding: 4px;
-}
-
-.cyber-dropdown-menu {
-  background: transparent !important;
-  border: none !important;
-  padding: 6px !important;
-}
-
-.dropdown-header {
-  padding: 10px 12px 12px;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
-  margin-bottom: 6px;
-}
-
-.dropdown-sys-tag {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.pulse-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--cyber-cyan);
-  box-shadow: 0 0 8px var(--cyber-cyan);
-  display: inline-block;
-  animation: cyber-pulse 2s infinite;
-}
-
-@keyframes cyber-pulse {
-  0% { transform: scale(0.95); opacity: 0.7; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.7; }
-}
-
-.sys-label {
-  font-family: var(--cyber-font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--cyber-cyan);
-  letter-spacing: 0.8px;
-}
-
-.dropdown-user-name {
-  font-weight: 700;
-  font-size: 14px;
-  color: #ffffff;
-  letter-spacing: 0.2px;
-}
-
-.dropdown-user-sub {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  font-family: var(--cyber-font-mono);
-  font-size: 11px;
-}
-
-.dropdown-user-sub .sub-role {
-  color: var(--cyber-yellow);
-  font-weight: 600;
-}
-
-.dropdown-user-sub .sub-sep {
-  color: #475569;
-}
-
-.dropdown-user-sub .sub-id {
-  color: #94a3b8;
-}
-
-/* Cyber Menu Items */
-.cyber-dropdown-menu .el-dropdown-menu__item {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  padding: 8px 12px !important;
-  border-radius: 4px;
-  color: #cbd5e1 !important;
-  font-size: 13px !important;
-  font-weight: 500;
-  transition: all 0.15s ease !important;
-  background: transparent !important;
-}
-
-.cyber-dropdown-menu .el-dropdown-menu__item .item-label {
-  flex: 1;
-  margin-left: 8px;
-}
-
-.cyber-dropdown-menu .el-dropdown-menu__item .item-code {
-  font-family: var(--cyber-font-mono);
-  font-size: 10px;
-  color: #64748b;
-  letter-spacing: 0.5px;
-}
-
-.cyber-dropdown-menu .el-dropdown-menu__item:hover {
-  background: rgba(0, 240, 255, 0.1) !important;
-  color: var(--cyber-cyan) !important;
-  transform: translateX(3px);
-}
-
-.cyber-dropdown-menu .el-dropdown-menu__item:hover .item-code {
-  color: var(--cyber-cyan);
-}
-
-.cyber-dropdown-menu .el-dropdown-menu__item.logout-item {
-  color: #f87171 !important;
-}
-
-.cyber-dropdown-menu .el-dropdown-menu__item.logout-item:hover {
-  background: rgba(255, 0, 85, 0.12) !important;
-  color: var(--cyber-pink) !important;
-}
-
-.cyber-dropdown-menu .el-dropdown-menu__item.logout-item:hover .item-code {
-  color: var(--cyber-pink);
-}
-
-.cyber-dropdown-menu :deep(.el-dropdown-menu__item--divided) {
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  margin-top: 6px !important;
-}
-
-/* ==========================================================================
-   5. MINIMALIST CYBER BADGES & BREADCRUMBS
-   ========================================================================== */
-.cyber-badge {
-  font-family: var(--cyber-font-mono);
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 3px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.cyber-badge.cyan {
-  background: rgba(0, 240, 255, 0.1);
-  color: var(--cyber-cyan);
-  border: 1px solid rgba(0, 240, 255, 0.4);
-}
-
-.cyber-badge.yellow {
-  background: rgba(252, 238, 10, 0.1);
-  color: #ca8a04;
-  border: 1px solid rgba(252, 238, 10, 0.4);
-}
-
-/* Breadcrumb Cyber Enhancements */
-.breadcrumb-cyber :deep(.el-breadcrumb__separator) {
-  font-family: var(--cyber-font-mono);
-  font-weight: 700;
-  color: #94a3b8;
-}
-
-/* ==========================================================================
-   6. DARK HUD & GLASSMORPHISM FOR SYSTEM & PLUGINS
-   Comprehensive coverage for Tables, Modals, Cards, Forms, and Tabulator
-   ========================================================================== */
-
-/* Universal Dark HUD Card Containers across all views & plugins */
 .el-card,
 .cyber-card,
-.p-card,
-.box-card,
-.page-card,
-.panel-card {
-  background: rgba(13, 20, 36, 0.65) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  border: 1px solid rgba(0, 240, 255, 0.18) !important;
-  border-radius: 6px !important;
-  color: #f1f5f9 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+.panel-card,
+.table-card {
+  background: var(--owl-bg-surface) !important;
+  border: 1px solid var(--owl-border) !important;
+  border-radius: var(--cyber-radius) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+  color: var(--owl-text-primary) !important;
 }
 
 .el-card__header {
-  background: rgba(8, 12, 20, 0.5) !important;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.15) !important;
-  color: var(--cyber-cyan) !important;
+  background: var(--owl-bg-aside) !important;
+  border-bottom: 1px solid var(--owl-border) !important;
+  padding: 14px 18px !important;
+  color: var(--owl-text-bright) !important;
   font-family: var(--cyber-font-display) !important;
   font-weight: 600 !important;
-  letter-spacing: 0.5px;
+  font-size: 15px !important;
 }
 
 .el-card__body {
-  color: #cbd5e1 !important;
+  padding: 18px !important;
 }
 
-/* Dark Cyber Tables (Element Plus & PrimeVue) */
-.el-table,
-.el-table__expanded-cell,
-.p-datatable,
-.p-datatable-table {
-  background: rgba(13, 20, 36, 0.55) !important;
-  color: #e2e8f0 !important;
-  border: 1px solid rgba(0, 240, 255, 0.15) !important;
-  border-radius: 6px;
+/* ==========================================================================
+   8. DATA TABLES (ELEMENT PLUS, PRIMEVUE & TABULATOR)
+   ========================================================================== */
+.el-table {
+  background-color: transparent !important;
+  --el-table-border-color: var(--owl-border) !important;
+  --el-table-header-bg-color: var(--owl-bg-aside) !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-row-hover-bg-color: rgba(127, 219, 202, 0.08) !important;
+  --el-table-text-color: var(--owl-text-primary) !important;
+  --el-table-header-text-color: var(--owl-teal) !important;
+  border-radius: var(--cyber-radius);
   overflow: hidden;
 }
 
-.el-table th.el-table__cell,
-.p-datatable-thead > tr > th {
-  background: rgba(8, 12, 20, 0.85) !important;
-  color: var(--cyber-cyan) !important;
+.el-table th.el-table__cell {
+  background-color: var(--owl-bg-aside) !important;
+  color: var(--owl-teal) !important;
   font-family: var(--cyber-font-display) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.25) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid var(--owl-border) !important;
+  padding: 12px 14px !important;
 }
 
-.el-table tr,
-.el-table td.el-table__cell,
-.p-datatable-tbody > tr > td {
-  background: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  color: #cbd5e1 !important;
+.el-table td.el-table__cell {
+  background-color: var(--owl-bg-surface) !important;
+  border-bottom: 1px solid var(--owl-border-light) !important;
+  color: var(--owl-text-primary) !important;
+  padding: 12px 14px !important;
+  font-size: 13px !important;
 }
 
-.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell,
-.p-datatable-tbody > tr:hover > td {
-  background: rgba(0, 240, 255, 0.08) !important;
-  color: #ffffff !important;
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background-color: var(--owl-bg-card) !important;
 }
 
-.el-table__inner-wrapper::before {
-  display: none !important;
+.el-table__body tr:hover > td.el-table__cell {
+  background-color: var(--owl-bg-card-hover) !important;
 }
 
-/* Tabulator Dark Cyber Grid & Popup / Context Menu (Used in Plugins) */
+/* Tabulator Theme */
 .tabulator {
-  background-color: rgba(13, 20, 36, 0.75) !important;
-  border: 1px solid rgba(0, 240, 255, 0.25) !important;
-  color: #e2e8f0 !important;
-  border-radius: 6px;
-  position: relative;
+  background-color: var(--owl-bg-surface) !important;
+  border: 1px solid var(--owl-border) !important;
+  border-radius: var(--cyber-radius) !important;
+  font-family: var(--cyber-font-body) !important;
 }
 
 .tabulator .tabulator-header {
-  background-color: rgba(8, 12, 22, 0.95) !important;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.35) !important;
-  color: var(--cyber-cyan) !important;
+  background-color: var(--owl-bg-aside) !important;
+  border-bottom: 1px solid var(--owl-border) !important;
+  color: var(--owl-teal) !important;
   font-family: var(--cyber-font-display) !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 .tabulator .tabulator-header .tabulator-col {
   background-color: transparent !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-}
-
-.tabulator .tabulator-header .tabulator-col .tabulator-col-content {
+  border-right: 1px solid var(--owl-border-light) !important;
   padding: 10px 12px !important;
-}
-
-.tabulator .tabulator-tableholder {
-  background-color: transparent !important;
-}
-
-.tabulator .tabulator-table {
-  background-color: transparent !important;
-  color: #cbd5e1 !important;
 }
 
 .tabulator .tabulator-row {
-  background-color: rgba(15, 23, 42, 0.4) !important;
-  color: #cbd5e1 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  background-color: var(--owl-bg-surface) !important;
+  color: var(--owl-text-primary) !important;
+  border-bottom: 1px solid var(--owl-border-light) !important;
 }
 
-.tabulator .tabulator-row:nth-child(even),
-.tabulator .tabulator-row.tabulator-row-even {
-  background-color: rgba(11, 17, 33, 0.6) !important;
-}
-
-.tabulator .tabulator-row:nth-child(odd),
-.tabulator .tabulator-row.tabulator-row-odd {
-  background-color: rgba(15, 23, 42, 0.35) !important;
+.tabulator .tabulator-row:nth-child(even) {
+  background-color: var(--owl-bg-card) !important;
 }
 
 .tabulator .tabulator-row:hover {
-  background-color: rgba(0, 240, 255, 0.12) !important;
+  background-color: var(--owl-bg-card-hover) !important;
   color: #ffffff !important;
 }
 
-.tabulator .tabulator-row.tabulator-selected {
-  background-color: rgba(0, 240, 255, 0.18) !important;
-  color: #ffffff !important;
-}
-
-.tabulator .tabulator-cell {
-  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-  padding: 10px 12px !important;
-}
-
-.tabulator .tabulator-placeholder {
-  background-color: transparent !important;
-}
-
-.tabulator .tabulator-placeholder span {
-  color: rgba(255, 255, 255, 0.45) !important;
-  font-family: var(--cyber-font-mono, monospace) !important;
-}
-
-.tabulator .tabulator-footer {
-  background-color: rgba(8, 12, 22, 0.95) !important;
-  border-top: 1px solid rgba(0, 240, 255, 0.25) !important;
-  color: #94a3b8 !important;
-}
-
-/* ==========================================================
-   Tabulator Context Menu & Popups (Directly attached to body)
-   Cyber Dark Glassmorphism Override
-   ========================================================== */
-.tabulator-popup-container {
-  background: rgba(11, 16, 28, 0.96) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(0, 240, 255, 0.35) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 16px rgba(0, 240, 255, 0.15) !important;
-  padding: 4px !important;
-  z-index: 100000 !important;
-}
-
-.tabulator-popup {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 2px !important;
-}
-
-.tabulator-menu {
-  background: transparent !important;
-  border: none !important;
-  color: #e2e8f0 !important;
-  font-family: var(--cyber-font-body, inherit) !important;
-  font-size: 13px !important;
-  min-width: 150px !important;
-}
-
-.tabulator-menu .tabulator-menu-item {
-  color: #cbd5e1 !important;
-  padding: 8px 14px !important;
-  border-radius: 4px !important;
-  margin: 2px 0 !important;
-  transition: all 0.15s ease !important;
-  display: flex !important;
-  align-items: center !important;
-  font-weight: 500 !important;
-}
-
-.tabulator-menu .tabulator-menu-item:hover,
-.tabulator-menu .tabulator-menu-item:not(.tabulator-menu-item-disabled):hover {
-  background: rgba(0, 240, 255, 0.16) !important;
-  color: var(--cyber-cyan, #00f0ff) !important;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2) !important;
-  cursor: pointer !important;
-}
-
-.tabulator-menu .tabulator-menu-item.tabulator-menu-item-disabled {
-  color: rgba(255, 255, 255, 0.3) !important;
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-}
-
-.tabulator-menu .tabulator-menu-separator {
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  margin: 4px 0 !important;
-}
-
-/* Tabulator Edit Select / Auto-complete dropdowns */
-.tabulator-edit-select-list {
-  background: rgba(11, 16, 28, 0.96) !important;
-  border: 1px solid rgba(0, 240, 255, 0.3) !important;
-  border-radius: 6px !important;
-  color: #e2e8f0 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7) !important;
-  padding: 4px !important;
-  z-index: 100000 !important;
-}
-
-.tabulator-edit-select-list .tabulator-edit-select-list-item {
-  color: #cbd5e1 !important;
-  padding: 6px 12px !important;
-  border-radius: 4px !important;
-}
-
-.tabulator-edit-select-list .tabulator-edit-select-list-item:hover,
-.tabulator-edit-select-list .tabulator-edit-select-list-item.active {
-  background: rgba(0, 240, 255, 0.15) !important;
-  color: #00f0ff !important;
-}
-
-/* Modals & Dialogs (Element Plus & PrimeVue) */
+/* ==========================================================================
+   9. DIALOGS, MODALS & POPPERS
+   ========================================================================== */
 .el-dialog,
-.p-dialog,
-.el-message-box,
-.el-drawer {
-  background: rgba(11, 16, 28, 0.96) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(0, 240, 255, 0.35) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 24px rgba(0, 240, 255, 0.15) !important;
-  color: #f1f5f9 !important;
+.el-overlay-dialog .el-dialog {
+  background: var(--owl-bg-surface) !important;
+  border: 1px solid var(--owl-border) !important;
+  border-radius: var(--cyber-radius-lg) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+  overflow: hidden;
 }
 
-.el-dialog__header,
-.p-dialog-header {
-  border-bottom: 1px solid rgba(0, 240, 255, 0.2) !important;
+.el-dialog__header {
+  background: var(--owl-bg-aside) !important;
+  border-bottom: 1px solid var(--owl-border) !important;
   padding: 16px 20px !important;
-  margin-right: 0 !important;
+  margin: 0 !important;
 }
 
-.el-dialog__title,
-.p-dialog-title {
-  color: var(--cyber-cyan) !important;
+.el-dialog__title {
+  color: var(--owl-text-bright) !important;
   font-family: var(--cyber-font-display) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.8px !important;
   font-size: 16px !important;
-}
-
-.el-dialog__body,
-.p-dialog-content {
-  color: #cbd5e1 !important;
-  padding: 20px !important;
-}
-
-.el-dialog__footer,
-.p-dialog-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  padding: 14px 20px !important;
-}
-
-/* Form Descriptions (el-descriptions) */
-.el-descriptions__body {
-  background: transparent !important;
-  color: #e2e8f0 !important;
-}
-
-.el-descriptions__label {
-  background: rgba(8, 12, 20, 0.7) !important;
-  color: var(--cyber-cyan) !important;
-  font-weight: 600;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-.el-descriptions__content {
-  background: rgba(13, 20, 36, 0.4) !important;
-  color: #f1f5f9 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-/* Dark Tabs Navigation */
-.el-tabs__header {
-  border-bottom: 1px solid rgba(0, 240, 255, 0.15) !important;
-}
-
-.el-tabs__item {
-  color: #94a3b8 !important;
-  font-family: var(--cyber-font-display) !important;
   font-weight: 600 !important;
-  transition: all 0.2s ease !important;
 }
 
-.el-tabs__item:hover {
-  color: #ffffff !important;
+.el-dialog__body {
+  padding: 20px !important;
+  color: var(--owl-text-primary) !important;
 }
 
-.el-tabs__item.is-active {
-  color: var(--cyber-cyan) !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
+.el-dialog__footer {
+  border-top: 1px solid var(--owl-border) !important;
+  padding: 14px 20px !important;
+  background: var(--owl-bg-aside) !important;
 }
 
-.el-tabs__active-bar {
-  background-color: var(--cyber-cyan) !important;
-  box-shadow: 0 0 10px var(--cyber-cyan) !important;
+/* Poppers & Dropdown Menus */
+.el-popper.is-light,
+.el-dropdown__popper,
+.cyber-dropdown-menu {
+  background: var(--owl-bg-surface) !important;
+  border: 1px solid var(--owl-border) !important;
+  border-radius: var(--cyber-radius) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
+  padding: 6px !important;
 }
 
-/* Dropdown Poppers & Popovers */
-.el-popper,
-.el-dropdown-menu,
-.el-select-dropdown,
-.el-picker-panel {
-  background: rgba(11, 16, 28, 0.96) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(0, 240, 255, 0.25) !important;
-  border-radius: 6px !important;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 240, 255, 0.15) !important;
+.el-dropdown-menu {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
 }
 
 .el-dropdown-menu__item {
-  color: #cbd5e1 !important;
+  color: var(--owl-text-primary) !important;
+  border-radius: var(--cyber-radius-sm) !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  transition: all 0.15s ease !important;
 }
 
 .el-dropdown-menu__item:hover,
 .el-dropdown-menu__item:focus {
-  background: rgba(0, 240, 255, 0.12) !important;
-  color: var(--cyber-cyan) !important;
-}
-
-.el-select-dropdown__item {
-  color: #cbd5e1 !important;
-}
-
-.el-select-dropdown__item.hover,
-.el-select-dropdown__item:hover {
-  background: rgba(0, 240, 255, 0.12) !important;
-  color: var(--cyber-cyan) !important;
-}
-
-.el-select-dropdown__item.is-selected {
-  color: var(--cyber-cyan) !important;
-  font-weight: 700 !important;
-}
-
-/* Pagination Dark HUD */
-.el-pagination {
-  color: #94a3b8 !important;
-}
-
-.el-pagination button,
-.el-pagination .el-pager li {
-  background: rgba(13, 20, 36, 0.6) !important;
-  border: 1px solid rgba(0, 240, 255, 0.15) !important;
-  color: #cbd5e1 !important;
-  border-radius: 4px !important;
-}
-
-.el-pagination .el-pager li.is-active {
-  background: rgba(0, 240, 255, 0.18) !important;
-  border-color: var(--cyber-cyan) !important;
-  color: var(--cyber-cyan) !important;
-  font-weight: 700 !important;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2) !important;
-}
-
-.el-pagination button:hover,
-.el-pagination .el-pager li:hover {
-  color: var(--cyber-cyan) !important;
-  border-color: var(--cyber-cyan) !important;
+  background: var(--owl-bg-card-hover) !important;
+  color: var(--owl-teal) !important;
 }
 
 /* ==========================================================================
-   11. UNIFIED PLUGIN LAYOUT & CONTAINER HARMONIZATION (from-menu & standalone)
+   10. TAGS, BADGES & CODE HIGHLIGHTS
    ========================================================================== */
-.plugin-container,
-.view-container,
-.page-container,
-.isolated-tool-wrapper {
-  background: transparent !important;
-  width: 100%;
-  box-sizing: border-box;
+.el-tag {
+  border-radius: 4px;
+  font-weight: 500;
+  border-width: 1px;
 }
 
-.layout-content.from-menu {
-  padding: 16px 20px !important;
+.el-tag--primary {
+  background: var(--owl-teal-dim);
+  border-color: rgba(127, 219, 202, 0.35);
+  color: var(--owl-teal);
 }
 
-/* Standardized Plugin Header Across All Modules */
-.plugin-header,
-.page-header,
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.15);
-  background: transparent !important;
+.el-tag--success {
+  background: var(--owl-mint-dim);
+  border-color: rgba(173, 219, 103, 0.35);
+  color: var(--owl-mint);
 }
 
-.plugin-header h2,
-.page-header h2,
-.view-header h2,
-.page-title {
-  font-family: var(--cyber-font-display, 'Rajdhani', sans-serif);
-  font-size: 22px;
-  font-weight: 700;
-  color: #f1f5f9 !important;
-  letter-spacing: 0.8px;
-  margin: 0;
+.el-tag--warning {
+  background: var(--owl-amber-dim);
+  border-color: rgba(236, 196, 141, 0.35);
+  color: var(--owl-amber);
 }
 
-.plugin-header p,
-.page-header p,
-.view-header p,
-.page-subtitle {
-  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
-  font-size: 12px;
-  color: #94a3b8 !important;
-  margin: 4px 0 0 0;
-  letter-spacing: 0.3px;
+.el-tag--danger {
+  background: var(--owl-coral-dim);
+  border-color: rgba(239, 83, 80, 0.35);
+  color: var(--owl-coral);
 }
 
-/* Plugin Card / Panel Uniformity */
-.plugin-container .el-card,
-.view-container .el-card,
-.page-container .el-card {
+.el-tag--info {
+  background: var(--owl-blue-dim);
+  border-color: rgba(130, 170, 255, 0.35);
+  color: var(--owl-blue);
+}
+
+/* Technical Monospace Values (EUI, Serial, IP) */
+.font-mono,
+.code-val,
+.mac-address,
+.eui-text {
+  font-family: var(--cyber-font-mono) !important;
+  letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   11. AUGMENTED-UI HARMONIZATION & OVERRIDES
+   Ensures any component retaining data-augmented-ui renders cleanly
+   without jagged or mismatched clip-paths.
+   ========================================================================== */
+[data-augmented-ui] {
   --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.2);
+  --aug-border-bg: var(--owl-border);
   --aug-tl: 8px;
   --aug-br: 8px;
-  background: rgba(13, 20, 36, 0.65) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(0, 240, 255, 0.18) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
-  margin-bottom: 20px;
+  border-radius: var(--cyber-radius);
+  transition: all 0.2s ease;
 }
 
-.plugin-container .el-card__header,
-.view-container .el-card__header,
-.page-container .el-card__header {
-  border-bottom: 1px solid rgba(0, 240, 255, 0.15) !important;
-  padding: 12px 18px !important;
-  font-family: var(--cyber-font-display, sans-serif);
-  font-weight: 700;
-  color: #f1f5f9;
+[data-augmented-ui]:hover {
+  --aug-border-bg: var(--owl-teal);
+}
+
+/* Neutralize aggressive polygon clipping for unified layout alignment */
+.user-profile[data-augmented-ui],
+.cyber-dropdown-wrapper[data-augmented-ui],
+.auth-card-wrapper[data-augmented-ui],
+.profile-modal-container[data-augmented-ui],
+.menu-card[data-augmented-ui] {
+  border-radius: var(--cyber-radius-lg) !important;
+  border: 1px solid var(--owl-border) !important;
 }
