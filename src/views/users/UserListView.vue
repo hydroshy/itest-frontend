@@ -1,140 +1,265 @@
 <template>
-  <div class="user-management-container">
-    <div class="page-header">
+  <div class="user-management-container p-6 space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-[#1d3b5a]/60">
       <div>
-        <h2 class="page-title">Quản lý Người dùng</h2>
-        <p class="page-subtitle">Quản lý tài khoản truy cập, phân bổ vai trò và trạng thái kích hoạt hệ thống</p>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#7fdbca] shadow-[0_0_8px_#7fdbca]"></span>
+          <h2 class="text-xl font-bold tracking-wide text-[#d6deeb] uppercase font-mono">Quản lý Người dùng</h2>
+        </div>
+        <p class="text-xs text-[#5f7e97] mt-1">Quản lý tài khoản truy cập, phân bổ vai trò và trạng thái kích hoạt hệ thống</p>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openCreateDialog">
+      <button class="btn btn-sm bg-[#7fdbca] hover:bg-[#68cbb9] text-[#011627] font-semibold border-none shadow-[0_0_12px_rgba(127,219,202,0.35)]" @click="openCreateDialog">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
         Thêm người dùng
-      </el-button>
+      </button>
     </div>
 
-    <el-card shadow="never" class="filter-card">
-      <el-form :inline="true" :model="filters" class="filter-form">
-        <el-form-item label="Tìm kiếm">
-          <el-input
-            v-model="filters.keyword"
-            placeholder="Tên đăng nhập, email..."
-            clearable
-            :prefix-icon="Search"
-            @keyup.enter="loadUsers"
-          />
-        </el-form-item>
-        <el-form-item label="Trạng thái">
-          <el-select v-model="filters.status" placeholder="Tất cả" clearable style="width: 140px">
-            <el-option label="Hoạt động" :value="true" />
-            <el-option label="Khóa" :value="false" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadUsers">Tìm kiếm</el-button>
-          <el-button @click="resetFilters">Đặt lại</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <el-card shadow="never" class="table-card">
-      <el-table :data="filteredUsers" v-loading="loading" style="width: 100%" empty-text="Không có người dùng nào">
-        <el-table-column prop="username" label="Tên đăng nhập" min-width="140">
-          <template #default="{ row }">
-            <span class="font-medium">{{ row.username }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="fullName" label="Họ và tên" min-width="160" />
-        <el-table-column prop="email" label="Email" min-width="180" />
-        <el-table-column prop="roles" label="Vai trò" min-width="180">
-          <template #default="{ row }">
-            <div class="role-tags">
-              <el-tag
-                v-for="role in (row.roles || [])"
-                :key="role.id || role.code || role"
-                size="small"
-                type="info"
-              >
-                {{ role.name || role.code || role }}
-              </el-tag>
-              <span v-if="!row.roles || row.roles.length === 0" class="text-muted">Chưa gán</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="isActive" label="Trạng thái" width="130" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
-              {{ row.isActive ? 'Hoạt động' : 'Đã khóa' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="Thao tác" width="180" fixed="right" align="center">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" :icon="Edit" @click="openEditDialog(row)">
-              Sửa
-            </el-button>
-            <el-button
-              link
-              :type="row.isActive ? 'warning' : 'success'"
-              size="small"
-              :icon="row.isActive ? Lock : Unlock"
-              @click="toggleUserStatus(row)"
-            >
-              {{ row.isActive ? 'Khóa' : 'Mở' }}
-            </el-button>
-            <el-button link type="danger" size="small" :icon="Delete" @click="deleteUser(row)">
-              Xóa
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
-
-    <!-- Create / Edit Dialog -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="isEdit ? 'Chỉnh sửa Người dùng' : 'Thêm Người dùng mới'"
-      width="560px"
-      destroy-on-close
-    >
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
-        <el-form-item label="Tên đăng nhập" prop="username">
-          <el-input v-model="form.username" :disabled="isEdit" placeholder="vd: admin, operator" />
-        </el-form-item>
-        <el-form-item label="Họ và tên" prop="fullName">
-          <el-input v-model="form.fullName" placeholder="Nhập họ và tên đầy đủ" />
-        </el-form-item>
-        <el-form-item label="Email" prop="email">
-          <el-input v-model="form.email" placeholder="example@itest.local" />
-        </el-form-item>
-        <el-form-item v-if="!isEdit" label="Mật khẩu" prop="password">
-          <el-input v-model="form.password" type="password" show-password placeholder="Tối thiểu 6 ký tự" />
-        </el-form-item>
-        <el-form-item label="Vai trò" prop="roleIds">
-          <el-select v-model="form.roleIds" multiple placeholder="Chọn vai trò gán cho tài khoản" style="width: 100%">
-            <el-option
-              v-for="r in availableRoles"
-              :key="r.id"
-              :label="r.name"
-              :value="r.id"
+    <!-- Filters Section (daisyUI Card) -->
+    <div class="card bg-[#081d32]/90 border border-[#1d3b5a] shadow-lg rounded-lg p-4">
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="flex items-center gap-2 flex-1 min-w-[240px]">
+          <span class="text-xs font-mono text-[#7fdbca] uppercase">Tìm kiếm:</span>
+          <div class="relative flex-1">
+            <input
+              v-model="filters.keyword"
+              type="text"
+              placeholder="Tên đăng nhập, email..."
+              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none font-mono text-xs pl-8"
+              @keyup.enter="loadUsers"
             />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="Trạng thái" prop="isActive">
-          <el-switch v-model="form.isActive" active-text="Hoạt động" inactive-text="Khóa" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">Hủy</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitForm">
-          {{ isEdit ? 'Lưu thay đổi' : 'Tạo mới' }}
-        </el-button>
-      </template>
-    </el-dialog>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 absolute left-2.5 top-2 text-[#5f7e97]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-[#7fdbca] uppercase">Trạng thái:</span>
+          <select v-model="filters.status" class="select select-sm bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] text-xs">
+            <option :value="undefined">Tất cả</option>
+            <option :value="true">Hoạt động</option>
+            <option :value="false">Khóa</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button class="btn btn-sm btn-outline border-[#7fdbca] text-[#7fdbca] hover:bg-[#7fdbca] hover:text-[#011627]" @click="loadUsers">
+            Tìm kiếm
+          </button>
+          <button class="btn btn-sm btn-ghost text-[#5f7e97] hover:text-[#d6deeb]" @click="resetFilters">
+            Đặt lại
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Table (daisyUI Cyber HUD Table) -->
+    <div class="card bg-[#081d32]/95 border border-[#1d3b5a] shadow-xl rounded-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full text-xs">
+          <thead>
+            <tr class="bg-[#0b2942]/80 border-b border-[#1d3b5a] text-[#7fdbca] font-mono uppercase tracking-wider">
+              <th>Tên đăng nhập</th>
+              <th>Họ và tên</th>
+              <th>Email</th>
+              <th>Vai trò</th>
+              <th class="text-center">Trạng thái</th>
+              <th>Ngày tạo</th>
+              <th class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="7" class="text-center py-10">
+                <span class="loading loading-spinner text-[#7fdbca]"></span>
+                <p class="text-xs text-[#5f7e97] mt-2 font-mono">Đang tải danh sách người dùng...</p>
+              </td>
+            </tr>
+            <tr v-else-if="filteredUsers.length === 0">
+              <td colspan="7" class="text-center py-10 text-[#5f7e97] font-mono">
+                Không tìm thấy người dùng nào phù hợp
+              </td>
+            </tr>
+            <tr
+              v-else
+              v-for="row in filteredUsers"
+              :key="row.id"
+              class="border-b border-[#1d3b5a]/40 hover:bg-[#0b2942]/40 transition-colors"
+            >
+              <td>
+                <span class="font-mono font-bold text-[#00f0ff]">{{ row.username }}</span>
+              </td>
+              <td class="text-[#d6deeb]">{{ row.fullName || '—' }}</td>
+              <td class="font-mono text-[#d6deeb]/90">{{ row.email || '—' }}</td>
+              <td>
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="r in row.roles"
+                    :key="r.id"
+                    class="badge badge-sm bg-[#0b2942] border border-[#1d3b5a] text-[#ecc48d] font-mono text-[10px]"
+                  >
+                    {{ r.name }}
+                  </span>
+                  <span v-if="!row.roles || row.roles.length === 0" class="text-[#5f7e97] text-[11px]">Chưa gán</span>
+                </div>
+              </td>
+              <td class="text-center">
+                <span
+                  class="badge badge-sm font-mono font-medium"
+                  :class="row.isActive ? 'badge-success text-[#011627] bg-[#22da6e]' : 'badge-error text-[#d6deeb] bg-[#ef5350]/30 border border-[#ef5350]'"
+                >
+                  {{ row.isActive ? 'Hoạt động' : 'Khóa' }}
+                </span>
+              </td>
+              <td class="font-mono text-[#5f7e97]">{{ formatDate(row.createdAt) }}</td>
+              <td class="text-center">
+                <div class="flex items-center justify-center gap-1">
+                  <button
+                    class="btn btn-xs btn-ghost text-[#7fdbca] hover:bg-[#7fdbca]/20"
+                    title="Chỉnh sửa"
+                    @click="openEditDialog(row)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    class="btn btn-xs btn-ghost"
+                    :class="row.isActive ? 'text-[#ecc48d] hover:bg-[#ecc48d]/20' : 'text-[#22da6e] hover:bg-[#22da6e]/20'"
+                    :title="row.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'"
+                    @click="toggleUserStatus(row)"
+                  >
+                    <svg v-if="row.isActive" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  <button
+                    class="btn btn-xs btn-ghost text-[#ef5350] hover:bg-[#ef5350]/20"
+                    title="Xóa tài khoản"
+                    @click="deleteUser(row)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Create / Edit User Modal (daisyUI Modal HUD) -->
+    <div v-if="dialogVisible" class="modal modal-open">
+      <div class="modal-box bg-[#081d32] border border-[#1d3b5a] shadow-[0_0_30px_rgba(0,0,0,0.8)] max-w-lg text-[#d6deeb]">
+        <div class="flex items-center justify-between pb-3 border-b border-[#1d3b5a]">
+          <h3 class="font-mono font-bold text-base text-[#7fdbca] uppercase tracking-wide">
+            {{ isEdit ? 'Cập nhật Người dùng' : 'Thêm Người dùng mới' }}
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost text-[#5f7e97] hover:text-[#d6deeb]" @click="dialogVisible = false">✕</button>
+        </div>
+
+        <form @submit.prevent="submitForm" class="py-4 space-y-4 text-xs font-mono">
+          <div>
+            <label class="block text-[#5f7e97] uppercase mb-1">Tên đăng nhập <span class="text-[#ef5350]">*</span></label>
+            <input
+              v-model="form.username"
+              type="text"
+              :disabled="isEdit"
+              placeholder="Nhập tên đăng nhập"
+              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none disabled:bg-[#0b2942]/40"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-[#5f7e97] uppercase mb-1">Họ và tên</label>
+            <input
+              v-model="form.fullName"
+              type="text"
+              placeholder="Nhập họ và tên đầy đủ"
+              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[#5f7e97] uppercase mb-1">Email <span class="text-[#ef5350]">*</span></label>
+            <input
+              v-model="form.email"
+              type="email"
+              placeholder="user@example.com"
+              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none"
+              required
+            />
+          </div>
+
+          <div v-if="!isEdit">
+            <label class="block text-[#5f7e97] uppercase mb-1">Mật khẩu <span class="text-[#ef5350]">*</span></label>
+            <input
+              v-model="form.password"
+              type="password"
+              placeholder="Tối thiểu 6 ký tự"
+              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-[#5f7e97] uppercase mb-1">Gán vai trò</label>
+            <div class="grid grid-cols-2 gap-2 p-2.5 bg-[#011627] border border-[#1d3b5a] rounded max-h-36 overflow-y-auto">
+              <label
+                v-for="r in availableRoles"
+                :key="r.id"
+                class="flex items-center gap-2 cursor-pointer hover:text-[#7fdbca]"
+              >
+                <input
+                  type="checkbox"
+                  :value="r.id"
+                  v-model="form.roleIds"
+                  class="checkbox checkbox-xs checkbox-primary border-[#1d3b5a]"
+                />
+                <span class="text-xs">{{ r.name }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <span class="text-[#5f7e97] uppercase">Kích hoạt tài khoản</span>
+            <input
+              type="checkbox"
+              v-model="form.isActive"
+              class="toggle toggle-sm toggle-success bg-[#011627] border-[#1d3b5a]"
+            />
+          </div>
+
+          <div class="modal-action pt-4 border-t border-[#1d3b5a]">
+            <button type="button" class="btn btn-sm btn-ghost text-[#5f7e97]" @click="dialogVisible = false">Hủy</button>
+            <button
+              type="submit"
+              class="btn btn-sm bg-[#7fdbca] hover:bg-[#68cbb9] text-[#011627] font-semibold border-none"
+              :disabled="submitting"
+            >
+              <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
+              {{ isEdit ? 'Lưu thay đổi' : 'Tạo mới' }}
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="dialogVisible = false"></div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
-import { Plus, Search, Edit, Delete, Lock, Unlock } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { httpClient } from '@/api/client';
 
 interface RoleItem {
@@ -166,7 +291,6 @@ const filters = reactive({
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const editId = ref('');
-const formRef = ref<FormInstance>();
 
 const form = reactive({
   username: '',
@@ -177,44 +301,52 @@ const form = reactive({
   isActive: true,
 });
 
-const formRules: FormRules = {
-  username: [{ required: true, message: 'Vui lòng nhập tên đăng nhập', trigger: 'blur' }],
-  fullName: [{ required: true, message: 'Vui lòng nhập họ và tên', trigger: 'blur' }],
-  email: [
-    { required: true, message: 'Vui lòng nhập email', trigger: 'blur' },
-    { type: 'email', message: 'Email không đúng định dạng', trigger: 'blur' },
-  ],
-  password: [{ required: true, min: 6, message: 'Mật khẩu tối thiểu 6 ký tự', trigger: 'blur' }],
-};
-
 const filteredUsers = computed(() => {
-  return users.value.filter((u) => {
-    if (filters.status !== undefined && u.isActive !== filters.status) return false;
-    if (filters.keyword) {
-      const kw = filters.keyword.toLowerCase();
-      const matchUsername = u.username.toLowerCase().includes(kw);
-      const matchEmail = u.email?.toLowerCase().includes(kw) || false;
-      const matchName = u.fullName?.toLowerCase().includes(kw) || false;
-      return matchUsername || matchEmail || matchName;
+  return users.value.filter((user) => {
+    if (filters.status !== undefined && user.isActive !== filters.status) {
+      return false;
+    }
+    if (filters.keyword.trim()) {
+      const kw = filters.keyword.toLowerCase().trim();
+      const matchName = user.username.toLowerCase().includes(kw);
+      const matchFullName = user.fullName?.toLowerCase().includes(kw) || false;
+      const matchEmail = user.email?.toLowerCase().includes(kw) || false;
+      return matchName || matchFullName || matchEmail;
     }
     return true;
   });
 });
 
+function formatDate(isoStr?: string): string {
+  if (!isoStr) return '--';
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return isoStr;
+  }
+}
+
 async function loadRoles() {
   try {
-    const res: any = await httpClient.get('/roles');
-    availableRoles.value = Array.isArray(res) ? res : (res?.data || []);
-  } catch {
-    availableRoles.value = [];
+    const res = await httpClient.get<RoleItem[]>('/roles');
+    availableRoles.value = Array.isArray(res) ? res : (res as any)?.data || [];
+  } catch (err: any) {
+    console.warn('Không tải được danh sách vai trò:', err);
   }
 }
 
 async function loadUsers() {
   loading.value = true;
   try {
-    const res: any = await httpClient.get('/users');
-    users.value = Array.isArray(res) ? res : (res?.data || []);
+    const res = await httpClient.get<UserItem[]>('/users');
+    users.value = Array.isArray(res) ? res : (res as any)?.data || [];
   } catch (err: any) {
     ElMessage.error(err?.message || 'Không thể tải danh sách người dùng.');
   } finally {
@@ -253,38 +385,38 @@ function openEditDialog(row: UserItem) {
 }
 
 async function submitForm() {
-  if (!formRef.value) return;
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return;
-    submitting.value = true;
-    try {
-      if (isEdit.value) {
-        await httpClient.patch(`/users/${editId.value}`, {
-          fullName: form.fullName,
-          email: form.email,
-          roleIds: form.roleIds,
-          isActive: form.isActive,
-        });
-        ElMessage.success('Cập nhật người dùng thành công.');
-      } else {
-        await httpClient.post('/users', {
-          username: form.username,
-          fullName: form.fullName,
-          email: form.email,
-          password: form.password,
-          roleIds: form.roleIds,
-          isActive: form.isActive,
-        });
-        ElMessage.success('Tạo người dùng mới thành công.');
-      }
-      dialogVisible.value = false;
-      await loadUsers();
-    } catch (err: any) {
-      ElMessage.error(err?.message || 'Thao tác không thành công.');
-    } finally {
-      submitting.value = false;
+  if (!form.username || !form.email || (!isEdit.value && !form.password)) {
+    ElMessage.warning('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+    return;
+  }
+  submitting.value = true;
+  try {
+    if (isEdit.value) {
+      await httpClient.patch(`/users/${editId.value}`, {
+        fullName: form.fullName,
+        email: form.email,
+        roleIds: form.roleIds,
+        isActive: form.isActive,
+      });
+      ElMessage.success('Cập nhật người dùng thành công.');
+    } else {
+      await httpClient.post('/users', {
+        username: form.username,
+        fullName: form.fullName,
+        email: form.email,
+        password: form.password,
+        roleIds: form.roleIds,
+        isActive: form.isActive,
+      });
+      ElMessage.success('Tạo người dùng mới thành công.');
     }
-  });
+    dialogVisible.value = false;
+    await loadUsers();
+  } catch (err: any) {
+    ElMessage.error(err?.message || 'Thao tác không thành công.');
+  } finally {
+    submitting.value = false;
+  }
 }
 
 async function toggleUserStatus(row: UserItem) {
@@ -294,124 +426,34 @@ async function toggleUserStatus(row: UserItem) {
     ElMessage.success(`Đã ${targetStatus ? 'kích hoạt' : 'khóa'} tài khoản ${row.username}.`);
     await loadUsers();
   } catch (err: any) {
-    ElMessage.error(err?.message || 'Không thể thay đổi trạng thái.');
+    ElMessage.error(err?.message || 'Không thể đổi trạng thái người dùng.');
   }
 }
 
-async function deleteUser(row: UserItem) {
-  try {
-    await ElMessageBox.confirm(`Bạn có chắc chắn muốn xóa tài khoản "${row.username}"?`, 'Xác nhận xóa', {
-      type: 'warning',
-      confirmButtonText: 'Xóa',
+function deleteUser(row: UserItem) {
+  ElMessageBox.confirm(
+    `Bạn có chắc chắn muốn xóa tài khoản "${row.username}" không?`,
+    'Xác nhận xóa tài khoản',
+    {
+      confirmButtonText: 'Xóa vĩnh viễn',
       cancelButtonText: 'Hủy',
-    });
-    await httpClient.delete(`/users/${row.id}`);
-    ElMessage.success('Xóa người dùng thành công.');
-    await loadUsers();
-  } catch (action) {
-    if (action !== 'cancel') {
-      ElMessage.error('Không thể xóa người dùng.');
+      type: 'warning',
     }
-  }
+  )
+    .then(async () => {
+      try {
+        await httpClient.delete(`/users/${row.id}`);
+        ElMessage.success(`Đã xóa người dùng ${row.username}.`);
+        await loadUsers();
+      } catch (err: any) {
+        ElMessage.error(err?.message || 'Không thể xóa người dùng.');
+      }
+    })
+    .catch(() => {});
 }
 
-onMounted(async () => {
-  await Promise.all([loadRoles(), loadUsers()]);
+onMounted(() => {
+  loadUsers();
+  loadRoles();
 });
 </script>
-
-<style scoped>
-.user-management-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--cyber-text-primary, #e2e8f0);
-  margin: 0 0 4px 0;
-  letter-spacing: 0.5px;
-}
-
-.page-subtitle {
-  font-size: 13px;
-  color: var(--cyber-text-secondary, #94a3b8);
-  margin: 0;
-}
-
-.filter-card,
-.table-card {
-  border-radius: 8px;
-  background: var(--cyber-card-bg, #0b1329) !important;
-  border: 1px solid var(--cyber-border-color, #1e293b) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
-}
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.font-medium {
-  font-weight: 600;
-  color: var(--cyber-cyan-neon, #00f0ff) !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
-  font-family: var(--font-family-mono, monospace);
-}
-
-.role-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.text-muted {
-  font-size: 12px;
-  color: var(--cyber-text-secondary, #64748b);
-}
-
-/* Dark mode table deep enhancements */
-:deep(.el-table) {
-  --el-table-bg-color: transparent !important;
-  --el-table-tr-bg-color: transparent !important;
-  --el-table-header-bg-color: rgba(15, 23, 42, 0.75) !important;
-  --el-table-row-hover-bg-color: rgba(0, 240, 255, 0.06) !important;
-  --el-table-border-color: var(--cyber-border-color, #1e293b) !important;
-  --el-table-text-color: var(--cyber-text-primary, #e2e8f0) !important;
-  --el-table-header-text-color: var(--cyber-cyan-neon, #00f0ff) !important;
-}
-
-:deep(.el-table th.el-table__cell) {
-  background-color: rgba(15, 23, 42, 0.85) !important;
-  color: var(--cyber-cyan-neon, #00f0ff) !important;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--cyber-border-color, #1e293b) !important;
-}
-
-:deep(.el-table td.el-table__cell) {
-  border-bottom: 1px solid rgba(30, 41, 59, 0.6) !important;
-  color: var(--cyber-text-primary, #e2e8f0) !important;
-}
-
-:deep(.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell) {
-  background-color: rgba(0, 240, 255, 0.08) !important;
-}
-
-:deep(.el-card__body) {
-  padding: 16px 20px;
-}
-
-:deep(.el-form-item__label) {
-  color: var(--cyber-text-secondary, #94a3b8) !important;
-}
-</style>

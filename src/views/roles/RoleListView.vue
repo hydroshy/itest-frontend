@@ -1,92 +1,166 @@
 <template>
-  <div class="roles-management-container">
-    <div class="page-header">
+  <div class="roles-management-container p-6 space-y-6">
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-[#1d3b5a]/60">
       <div>
-        <h2 class="page-title">Quản lý Phân quyền & Vai trò</h2>
-        <p class="page-subtitle">Thiết lập nhóm quyền hạn, vai trò và phạm vi thao tác của người dùng trong hệ thống</p>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#7fdbca] shadow-[0_0_8px_#7fdbca]"></span>
+          <h2 class="text-xl font-bold tracking-wide text-[#d6deeb] uppercase font-mono">Quản lý Phân quyền & Vai trò</h2>
+        </div>
+        <p class="text-xs text-[#5f7e97] mt-1">Thiết lập nhóm quyền hạn, vai trò và phạm vi thao tác của người dùng trong hệ thống</p>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openCreateDialog">
+      <button class="btn btn-sm bg-[#7fdbca] hover:bg-[#68cbb9] text-[#011627] font-semibold border-none shadow-[0_0_12px_rgba(127,219,202,0.35)]" @click="openCreateDialog">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
         Thêm vai trò mới
-      </el-button>
+      </button>
     </div>
 
-    <el-card shadow="never" class="table-card">
-      <el-table :data="roles" v-loading="loading" style="width: 100%" empty-text="Không có vai trò nào">
-        <el-table-column prop="code" label="Mã vai trò" width="160">
-          <template #default="{ row }">
-            <el-tag effect="plain" type="primary">{{ row.code }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="name" label="Tên vai trò" min-width="180">
-          <template #default="{ row }">
-            <span class="role-name">{{ row.name }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="Mô tả" min-width="220" />
-        <el-table-column label="Thao tác" width="280" fixed="right" align="center">
-          <template #default="{ row }">
-            <div class="action-btn-group">
-              <el-button
-                type="primary"
-                size="small"
-                class="action-btn wizard-btn"
-                @click="openWizard(row)"
-              >
-                Phân quyền
-              </el-button>
-              <el-button
-                type="info"
-                size="small"
-                class="action-btn edit-btn"
-                :icon="Edit"
-                @click="openEditDialog(row)"
-              >
-                Sửa
-              </el-button>
-              <el-button
-                v-if="row.code !== 'admin'"
-                type="danger"
-                size="small"
-                class="action-btn delete-btn"
-                :icon="Delete"
-                @click="deleteRole(row)"
-              >
-                Xóa
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    <!-- Table Section (daisyUI Card & Table) -->
+    <div class="card bg-[#081d32]/95 border border-[#1d3b5a] shadow-xl rounded-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full text-xs">
+          <thead>
+            <tr class="bg-[#0b2942]/80 border-b border-[#1d3b5a] text-[#7fdbca] font-mono uppercase tracking-wider">
+              <th class="w-44">Mã vai trò</th>
+              <th class="min-w-[180px]">Tên vai trò</th>
+              <th class="min-w-[240px]">Mô tả</th>
+              <th class="text-center w-72">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="4" class="text-center py-10">
+                <span class="loading loading-spinner text-[#7fdbca]"></span>
+                <p class="text-xs text-[#5f7e97] mt-2 font-mono">Đang tải danh sách vai trò...</p>
+              </td>
+            </tr>
+            <tr v-else-if="roles.length === 0">
+              <td colspan="4" class="text-center py-10 text-[#5f7e97] font-mono">
+                Không có vai trò nào trong hệ thống
+              </td>
+            </tr>
+            <tr
+              v-else
+              v-for="row in roles"
+              :key="row.id"
+              class="border-b border-[#1d3b5a]/40 hover:bg-[#0b2942]/40 transition-colors"
+            >
+              <td>
+                <span class="badge badge-sm bg-[#011627] border border-[#7fdbca]/50 text-[#7fdbca] font-mono font-bold tracking-wide">
+                  {{ row.code }}
+                </span>
+              </td>
+              <td>
+                <span class="font-bold text-[#d6deeb]">{{ row.name }}</span>
+              </td>
+              <td class="text-[#5f7e97]">{{ row.description || '—' }}</td>
+              <td class="text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    class="btn btn-xs bg-[#0b2942] hover:bg-[#1d3b5a] text-[#7fdbca] border border-[#7fdbca]/40 hover:border-[#7fdbca] font-mono shadow-[0_0_8px_rgba(127,219,202,0.2)]"
+                    @click="openWizard(row)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Phân quyền
+                  </button>
 
-    <!-- Dialog Thêm/Sửa vai trò -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="isEdit ? 'Chỉnh sửa Vai trò' : 'Thêm Vai trò mới'"
-      width="600px"
-      destroy-on-close
-    >
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px">
-        <el-form-item label="Mã vai trò" prop="code">
-          <el-input v-model="form.code" :disabled="isEdit" placeholder="vd: operator, technician" />
-        </el-form-item>
-        <el-form-item label="Tên vai trò" prop="name">
-          <el-input v-model="form.name" placeholder="vd: Kỹ thuật viên vận hành" />
-        </el-form-item>
-        <el-form-item label="Mô tả" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="Mô tả trách nhiệm của vai trò" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">Hủy</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitForm">
-          {{ isEdit ? 'Lưu thay đổi' : 'Tạo mới' }}
-        </el-button>
-      </template>
-    </el-dialog>
+                  <button
+                    class="btn btn-xs btn-ghost text-[#ecc48d] hover:bg-[#ecc48d]/20"
+                    title="Chỉnh sửa vai trò"
+                    @click="openEditDialog(row)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Sửa
+                  </button>
 
-    <!-- Role Wizard Dialog 3 bước -->
+                  <button
+                    v-if="row.code !== 'admin'"
+                    class="btn btn-xs btn-ghost text-[#ef5350] hover:bg-[#ef5350]/20"
+                    title="Xóa vai trò"
+                    @click="deleteRole(row)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Xóa
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Dialog Thêm/Sửa vai trò (daisyUI Modal HUD) -->
+    <div v-if="dialogVisible" class="modal modal-open">
+      <div class="modal-box bg-[#081d32] border border-[#1d3b5a] shadow-[0_0_30px_rgba(0,0,0,0.8)] max-w-md text-[#d6deeb]">
+        <div class="flex items-center justify-between pb-3 border-b border-[#1d3b5a]">
+          <h3 class="font-mono font-bold text-base text-[#7fdbca] uppercase tracking-wide">
+            {{ isEdit ? 'Chỉnh sửa Vai trò' : 'Thêm Vai trò mới' }}
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost text-[#5f7e97] hover:text-[#d6deeb]" @click="dialogVisible = false">✕</button>
+        </div>
+
+        <form @submit.prevent="submitForm" class="py-4 space-y-4 text-xs font-mono">
+          <div>
+            <label class="block text-[#5f7e97] uppercase mb-1">Mã vai trò <span class="text-[#ef5350]">*</span></label>
+            <input
+              v-model="form.code"
+              type="text"
+              :disabled="isEdit"
+              placeholder="vd: operator, technician"
+              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none disabled:bg-[#0b2942]/40"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-[#5f7e97] uppercase mb-1">Tên vai trò <span class="text-[#ef5350]">*</span></label>
+            <input
+              v-model="form.name"
+              type="text"
+              placeholder="vd: Kỹ thuật viên vận hành"
+              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-[#5f7e97] uppercase mb-1">Mô tả</label>
+            <textarea
+              v-model="form.description"
+              rows="3"
+              placeholder="Mô tả trách nhiệm của vai trò"
+              class="textarea textarea-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none"
+            ></textarea>
+          </div>
+
+          <div class="modal-action pt-4 border-t border-[#1d3b5a]">
+            <button type="button" class="btn btn-sm btn-ghost text-[#5f7e97]" @click="dialogVisible = false">Hủy</button>
+            <button
+              type="submit"
+              class="btn btn-sm bg-[#7fdbca] hover:bg-[#68cbb9] text-[#011627] font-semibold border-none"
+              :disabled="submitting"
+            >
+              <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
+              {{ isEdit ? 'Lưu thay đổi' : 'Tạo mới' }}
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="dialogVisible = false"></div>
+    </div>
+
+    <!-- Role Wizard Dialog -->
     <RoleWizardDialog
+      v-if="selectedRoleForWizard"
       v-model="wizardVisible"
       :role="selectedRoleForWizard"
       @saved="loadRoles"
@@ -96,16 +170,16 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
-import { Plus, Edit, Delete } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { httpClient } from '@/api/client';
-import RoleWizardDialog, { type RoleData } from './RoleWizardDialog.vue';
+import RoleWizardDialog from './RoleWizardDialog.vue';
 
 interface PermissionItem {
   id: string;
   code: string;
   name: string;
-  module?: string;
+  module: string;
+  description?: string;
 }
 
 interface RoleItem {
@@ -119,15 +193,11 @@ interface RoleItem {
 const loading = ref(false);
 const submitting = ref(false);
 const roles = ref<RoleItem[]>([]);
-const availablePermissions = ref<PermissionItem[]>([]);
+const allPermissions = ref<PermissionItem[]>([]);
 
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const editId = ref('');
-const formRef = ref<FormInstance>();
-
-const wizardVisible = ref(false);
-const selectedRoleForWizard = ref<RoleData | null>(null);
 
 const form = reactive({
   code: '',
@@ -135,29 +205,27 @@ const form = reactive({
   description: '',
 });
 
-const formRules: FormRules = {
-  code: [{ required: true, message: 'Vui lòng nhập mã vai trò', trigger: 'blur' }],
-  name: [{ required: true, message: 'Vui lòng nhập tên vai trò', trigger: 'blur' }],
-};
-
-async function loadPermissions() {
-  try {
-    const res: any = await httpClient.get('/roles/permissions');
-    availablePermissions.value = Array.isArray(res) ? res : (res?.data || []);
-  } catch {
-    availablePermissions.value = [];
-  }
-}
+const wizardVisible = ref(false);
+const selectedRoleForWizard = ref<RoleItem | null>(null);
 
 async function loadRoles() {
   loading.value = true;
   try {
-    const res: any = await httpClient.get('/roles');
-    roles.value = Array.isArray(res) ? res : (res?.data || []);
+    const res = await httpClient.get<RoleItem[]>('/roles');
+    roles.value = Array.isArray(res) ? res : (res as any)?.data || [];
   } catch (err: any) {
     ElMessage.error(err?.message || 'Không thể tải danh sách vai trò.');
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadPermissions() {
+  try {
+    const res = await httpClient.get<PermissionItem[]>('/permissions');
+    allPermissions.value = Array.isArray(res) ? res : (res as any)?.data || [];
+  } catch (err: any) {
+    console.warn('Không tải được danh sách quyền:', err);
   }
 }
 
@@ -191,33 +259,33 @@ function openWizard(row: RoleItem) {
 }
 
 async function submitForm() {
-  if (!formRef.value) return;
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return;
-    submitting.value = true;
-    try {
-      if (isEdit.value) {
-        await httpClient.patch(`/roles/${editId.value}`, {
-          name: form.name,
-          description: form.description,
-        });
-        ElMessage.success('Cập nhật vai trò thành công.');
-      } else {
-        await httpClient.post('/roles', {
-          code: form.code,
-          name: form.name,
-          description: form.description,
-        });
-        ElMessage.success('Tạo vai trò thành công.');
-      }
-      dialogVisible.value = false;
-      await loadRoles();
-    } catch (err: any) {
-      ElMessage.error(err?.message || 'Thao tác không thành công.');
-    } finally {
-      submitting.value = false;
+  if (!form.name || (!isEdit.value && !form.code)) {
+    ElMessage.warning('Vui lòng điền các trường bắt buộc.');
+    return;
+  }
+  submitting.value = true;
+  try {
+    if (isEdit.value) {
+      await httpClient.patch(`/roles/${editId.value}`, {
+        name: form.name,
+        description: form.description,
+      });
+      ElMessage.success('Cập nhật vai trò thành công.');
+    } else {
+      await httpClient.post('/roles', {
+        code: form.code,
+        name: form.name,
+        description: form.description,
+      });
+      ElMessage.success('Tạo vai trò thành công.');
     }
-  });
+    dialogVisible.value = false;
+    await loadRoles();
+  } catch (err: any) {
+    ElMessage.error(err?.message || 'Thao tác không thành công.');
+  } finally {
+    submitting.value = false;
+  }
 }
 
 async function deleteRole(row: RoleItem) {
@@ -241,138 +309,3 @@ onMounted(async () => {
   await Promise.all([loadPermissions(), loadRoles()]);
 });
 </script>
-
-<style scoped>
-.roles-management-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--cyber-text-primary, #e2e8f0);
-  margin: 0 0 4px 0;
-  letter-spacing: 0.5px;
-}
-
-.page-subtitle {
-  font-size: 13px;
-  color: var(--cyber-text-secondary, #94a3b8);
-  margin: 0;
-}
-
-.table-card {
-  border-radius: 8px;
-  background: var(--cyber-card-bg, #0b1329) !important;
-  border: 1px solid var(--cyber-border-color, #1e293b) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
-}
-
-.role-name {
-  font-weight: 600;
-  color: var(--cyber-cyan-neon, #00f0ff) !important;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
-  font-family: var(--font-family-mono, monospace);
-}
-
-.perm-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.text-muted {
-  font-size: 12px;
-  color: var(--cyber-text-secondary, #64748b);
-}
-
-/* Dark mode table deep enhancements */
-:deep(.el-table) {
-  --el-table-bg-color: transparent !important;
-  --el-table-tr-bg-color: transparent !important;
-  --el-table-header-bg-color: rgba(15, 23, 42, 0.75) !important;
-  --el-table-row-hover-bg-color: rgba(0, 240, 255, 0.06) !important;
-  --el-table-border-color: var(--cyber-border-color, #1e293b) !important;
-  --el-table-text-color: var(--cyber-text-primary, #e2e8f0) !important;
-  --el-table-header-text-color: var(--cyber-cyan-neon, #00f0ff) !important;
-}
-
-:deep(.el-table th.el-table__cell) {
-  background-color: rgba(15, 23, 42, 0.85) !important;
-  color: var(--cyber-cyan-neon, #00f0ff) !important;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--cyber-border-color, #1e293b) !important;
-}
-
-:deep(.el-table td.el-table__cell) {
-  border-bottom: 1px solid rgba(30, 41, 59, 0.6) !important;
-  color: var(--cyber-text-primary, #e2e8f0) !important;
-}
-
-:deep(.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell) {
-  background-color: rgba(0, 240, 255, 0.08) !important;
-}
-
-:deep(.el-card__body) {
-  padding: 16px 20px;
-}
-
-.action-btn-group {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.action-btn {
-  font-weight: 600;
-  font-size: 12px;
-  border-radius: 4px;
-  padding: 5px 10px;
-  transition: all 0.2s ease;
-}
-
-.wizard-btn {
-  border-color: #38bdf8 !important;
-  color: #38bdf8 !important;
-  background: rgba(56, 189, 248, 0.12) !important;
-}
-
-.wizard-btn:hover {
-  background: #38bdf8 !important;
-  color: #0f172a !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
-}
-
-.edit-btn {
-  border-color: #64748b !important;
-  color: #cbd5e1 !important;
-  background: rgba(100, 116, 139, 0.15) !important;
-}
-
-.edit-btn:hover {
-  background: #475569 !important;
-  color: #ffffff !important;
-}
-
-.delete-btn {
-  border-color: #f43f5e !important;
-  color: #f43f5e !important;
-  background: rgba(244, 63, 94, 0.12) !important;
-}
-
-.delete-btn:hover {
-  background: #f43f5e !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.4);
-}
-</style>
