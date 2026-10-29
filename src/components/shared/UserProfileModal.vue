@@ -12,7 +12,7 @@
       <div class="h-1 w-full bg-gradient-to-r from-primary via-info to-primary/40"></div>
 
       <!-- Modal Header -->
-      <div class="p-5 pb-3 border-b border-base-content/10 bg-base-200/50">
+      <div class="p-5 pb-3 border-b border-base-content/10 bg-base-200">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shadow-sm">
@@ -115,7 +115,7 @@
                 type="text"
                 :value="authStore.user?.username || ''"
                 disabled
-                class="input input-sm w-full pl-9 bg-base-100/80 border border-base-content/10 text-base-content/60 font-mono cursor-not-allowed rounded-lg"
+                class="input input-sm w-full pl-9 bg-base-200 border border-base-content/10 text-base-content/60 font-mono cursor-not-allowed rounded-lg"
               />
             </div>
           </div>
@@ -171,7 +171,7 @@
               <span class="label-text text-xs font-medium text-base-content/80">Vai trò hệ thống</span>
               <span class="label-text-alt text-base-content/50 text-[10px]">Quản trị viên cấp</span>
             </label>
-            <div class="flex flex-wrap gap-1.5 p-2.5 rounded-lg bg-base-100/80 border border-base-content/10">
+            <div class="flex flex-wrap gap-1.5 p-2.5 rounded-lg bg-base-200 border border-base-content/10">
               <span
                 v-for="role in (authStore.user?.roles || ['OPERATOR'])"
                 :key="role"
