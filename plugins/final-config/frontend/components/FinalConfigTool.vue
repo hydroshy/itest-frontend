@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="final-config-tool">
     <!-- 1. MAIN AUTOMATION & CONFIGURATION CARD -->
     <el-card shadow="never" class="fc-card main-control-card">
@@ -257,40 +257,20 @@
               }"
               :style="{ width: fcProgress + '%' }"
             >
-              <!-- Glowing head pulse beacon & shooting micro-dots emitter -->
+              <!-- Progress Indicator Head -->
               <div class="fill-lead-head" v-if="(fcProgress > 0 || isRunningFinalConfig) && fcProgress < 100">
-                <div class="fill-lead-beacon" :class="{ 'is-active-pulse': isRunningFinalConfig }"></div>
-                <!-- Micro-dots shooting out from the moving head -->
-                <div v-if="isRunningFinalConfig" class="lead-spark-emitter">
-                  <span class="spark-dot s-1"></span>
-                  <span class="spark-dot s-2"></span>
-                  <span class="spark-dot s-3"></span>
-                  <span class="spark-dot s-4"></span>
-                  <span class="spark-dot s-5"></span>
-                  <span class="spark-dot s-6"></span>
-                  <span class="spark-dot s-7"></span>
-                  <span class="spark-dot s-8"></span>
-                  <span class="spark-dot s-9"></span>
-                  <span class="spark-dot s-10"></span>
-                  <span class="spark-dot s-11"></span>
-                  <span class="spark-dot s-12"></span>
-                  <span class="spark-dot s-13"></span>
-                  <span class="spark-dot s-14"></span>
-                  <span class="spark-dot s-15"></span>
-                  <span class="spark-dot s-16"></span>
-                </div>
+                <div class="fill-lead-beacon"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Cyber Telemetry Status Line -->
+        <!-- System Status Line -->
         <div class="cyber-telemetry-row">
-          <span class="telemetry-prompt">&gt;_ [SYS_MONITOR]:</span>
+          <span class="telemetry-prompt">Trạng thái:</span>
           <span class="telemetry-msg font-mono">
-            {{ fcStatusMessage || (isRunningFinalConfig ? 'EXECUTING AUTOMATED PIPELINE...' : 'SYSTEM READY // AWAITING COMMAND') }}
+            {{ fcStatusMessage || (isRunningFinalConfig ? 'Đang thực hiện quy trình tự động...' : 'Hệ thống sẵn sàng') }}
           </span>
-          <span class="telemetry-cursor">█</span>
         </div>
       </div>
     </el-card>
@@ -1107,270 +1087,9 @@ const statusTagType = computed(() => {
   top: 0;
   bottom: 0;
   right: 0;
-  width: 4px;
+  width: 3px;
   background: #ffffff;
-  box-shadow: 0 0 8px #ffffff, 0 0 14px #38bdf8;
   border-radius: 1px;
-}
-
-.fill-lead-beacon.is-active-pulse {
-  animation: beacon-shimmer 0.6s ease-in-out infinite alternate;
-}
-
-@keyframes beacon-shimmer {
-  0% {
-    box-shadow: 0 0 6px #ffffff, 0 0 12px #38bdf8;
-  }
-  100% {
-    box-shadow: 0 0 12px #ffffff, 0 0 20px #06b6d4, 0 0 28px #38bdf8;
-  }
-}
-
-/* Micro-dots particle emitter shooting backward (exhaust spray) from moving head */
-.lead-spark-emitter {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.spark-dot {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 50%;
-  background: #f0f9ff;
-  box-shadow: 0 0 4px #ffffff, 0 0 8px #38bdf8, 0 0 12px #06b6d4;
-  pointer-events: none;
-  opacity: 0;
-}
-
-/* Backward shooting trajectory animations with diagonal angles */
-@keyframes spark-spray-1 {
-  0% {
-    transform: translate(0, 0) scale(1.4);
-    opacity: 1;
-  }
-  35% {
-    opacity: 0.95;
-  }
-  100% {
-    transform: translate(-36px, -4px) scale(0.2);
-    opacity: 0;
-  }
-}
-
-@keyframes spark-spray-2 {
-  0% {
-    transform: translate(0, 0) scale(1.2);
-    opacity: 1;
-  }
-  35% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-28px, 7px) scale(0.2);
-    opacity: 0;
-  }
-}
-
-@keyframes spark-spray-3 {
-  0% {
-    transform: translate(0, 0) scale(1.5);
-    opacity: 1;
-  }
-  30% {
-    opacity: 0.95;
-  }
-  100% {
-    transform: translate(-52px, -2px) scale(0.15);
-    opacity: 0;
-  }
-}
-
-@keyframes spark-spray-4 {
-  0% {
-    transform: translate(0, 0) scale(1.3);
-    opacity: 1;
-  }
-  35% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-24px, -8px) scale(0.2);
-    opacity: 0;
-  }
-}
-
-@keyframes spark-spray-5 {
-  0% {
-    transform: translate(0, 0) scale(1.4);
-    opacity: 1;
-  }
-  35% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-32px, 8px) scale(0.2);
-    opacity: 0;
-  }
-}
-
-@keyframes spark-spray-6 {
-  0% {
-    transform: translate(0, 0) scale(1.2);
-    opacity: 1;
-  }
-  35% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-42px, 3px) scale(0.2);
-    opacity: 0;
-  }
-}
-
-@keyframes spark-spray-7 {
-  0% {
-    transform: translate(0, 0) scale(1.6);
-    opacity: 1;
-  }
-  30% {
-    opacity: 0.95;
-  }
-  100% {
-    transform: translate(-58px, -6px) scale(0.1);
-    opacity: 0;
-  }
-}
-
-@keyframes spark-spray-8 {
-  0% {
-    transform: translate(0, 0) scale(1.3);
-    opacity: 1;
-  }
-  35% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-34px, -7px) scale(0.2);
-    opacity: 0;
-  }
-}
-
-/* Individual particle variations & delays */
-.spark-dot.s-1 {
-  width: 2.5px;
-  height: 2.5px;
-  animation: spark-spray-1 0.65s ease-out infinite;
-  animation-delay: 0s;
-}
-
-.spark-dot.s-2 {
-  width: 2px;
-  height: 2px;
-  animation: spark-spray-2 0.55s ease-out infinite;
-  animation-delay: 0.08s;
-}
-
-.spark-dot.s-3 {
-  width: 3px;
-  height: 3px;
-  animation: spark-spray-3 0.75s ease-out infinite;
-  animation-delay: 0.16s;
-}
-
-.spark-dot.s-4 {
-  width: 2px;
-  height: 2px;
-  animation: spark-spray-4 0.6s ease-out infinite;
-  animation-delay: 0.24s;
-}
-
-.spark-dot.s-5 {
-  width: 2.5px;
-  height: 2.5px;
-  animation: spark-spray-5 0.7s ease-out infinite;
-  animation-delay: 0.32s;
-}
-
-.spark-dot.s-6 {
-  width: 2px;
-  height: 2px;
-  animation: spark-spray-6 0.5s ease-out infinite;
-  animation-delay: 0.4s;
-}
-
-.spark-dot.s-7 {
-  width: 3px;
-  height: 3px;
-  animation: spark-spray-7 0.8s ease-out infinite;
-  animation-delay: 0.48s;
-}
-
-.spark-dot.s-8 {
-  width: 2px;
-  height: 2px;
-  animation: spark-spray-8 0.62s ease-out infinite;
-  animation-delay: 0.56s;
-}
-
-.spark-dot.s-9 {
-  width: 2.5px;
-  height: 2.5px;
-  animation: spark-spray-1 0.68s ease-out infinite;
-  animation-delay: 0.12s;
-}
-
-.spark-dot.s-10 {
-  width: 2px;
-  height: 2px;
-  animation: spark-spray-3 0.58s ease-out infinite;
-  animation-delay: 0.28s;
-}
-
-.spark-dot.s-11 {
-  width: 3px;
-  height: 3px;
-  animation: spark-spray-5 0.72s ease-out infinite;
-  animation-delay: 0.44s;
-}
-
-.spark-dot.s-12 {
-  width: 1.5px;
-  height: 1.5px;
-  animation: spark-spray-7 0.76s ease-out infinite;
-  animation-delay: 0.6s;
-}
-
-.spark-dot.s-13 {
-  width: 2px;
-  height: 2px;
-  animation: spark-spray-2 0.52s ease-out infinite;
-  animation-delay: 0.2s;
-}
-
-.spark-dot.s-14 {
-  width: 2.5px;
-  height: 2.5px;
-  animation: spark-spray-4 0.66s ease-out infinite;
-  animation-delay: 0.36s;
-}
-
-.spark-dot.s-15 {
-  width: 2px;
-  height: 2px;
-  animation: spark-spray-6 0.54s ease-out infinite;
-  animation-delay: 0.52s;
-}
-
-.spark-dot.s-16 {
-  width: 2.5px;
-  height: 2.5px;
-  animation: spark-spray-8 0.64s ease-out infinite;
-  animation-delay: 0.04s;
 }
 
 /* Telemetry status row */
@@ -1378,42 +1097,30 @@ const statusTagType = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #040711;
-  border: 1px solid #1e293b;
-  border-radius: 3px;
+  background: var(--owl-bg-aside, #1c212b);
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
+  border-radius: 6px;
   padding: 6px 12px;
   overflow: hidden;
 }
 
 .telemetry-prompt {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--cyber-font-mono, monospace);
   font-size: 12px;
-  font-weight: 700;
-  color: #06b6d4;
+  font-weight: 600;
+  color: var(--owl-teal, #28ebff);
   white-space: nowrap;
 }
 
 .telemetry-msg {
   font-size: 12px;
-  color: #cbd5e1;
-  letter-spacing: 0.5px;
+  color: var(--owl-text-primary, #f1f5f9);
+  letter-spacing: 0.3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
 }
-
-.telemetry-cursor {
-  font-weight: 800;
-  color: #06b6d4;
-  animation: beacon-pulse 1s infinite;
-}
-
-@keyframes beacon-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
-}
-
 /* 2. DEBUG MODE ONLY SECTIONS */
 .debug-card {
   border: 1px dashed var(--el-color-warning-light-3, #f3d19e);

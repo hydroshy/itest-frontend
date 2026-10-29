@@ -29,10 +29,8 @@ const { isTransitioning } = useCtosTransition();
 
 .progress-bar-line {
   height: 100%;
-  background: linear-gradient(90deg, #00e5ff, #38ef7d, #00e5ff);
-  background-size: 200% 100%;
+  background: var(--owl-primary, #9FE88D);
   animation: progress-slide 0.45s ease-out forwards;
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.8), 0 0 5px rgba(56, 239, 125, 0.6);
 }
 
 @keyframes progress-slide {

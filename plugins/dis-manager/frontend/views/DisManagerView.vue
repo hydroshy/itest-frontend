@@ -4,22 +4,9 @@
     <div class="cyber-hud-header mb-4">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div class="d-flex align-items-center gap-3">
-          <div
-            class="telemetry-beacon"
-            :class="{
-              'beacon-online': disStatus.connected && !disStatus.isMock,
-              'beacon-mock': disStatus.isMock,
-              'beacon-offline': !disStatus.connected,
-            }"
-            title="Trạng thái telemetry beacon"
-          >
-            <span class="beacon-core"></span>
-            <span class="beacon-ring"></span>
-          </div>
           <div>
-            <div class="hud-watermark">[ NET_NODE // ODOO_GATEWAY v1.0 ]</div>
             <h2 class="title mb-1">
-              <el-icon class="mr-2 text-cyan"><Connection /></el-icon>
+              <el-icon class="mr-2 text-primary"><Connection /></el-icon>
               DIS (Odoo) Integration Hub
             </h2>
             <p class="subtitle text-muted mb-0">
@@ -1106,33 +1093,22 @@ onMounted(async () => {
   min-height: 100%;
 }
 
-/* CYBERPUNK HUD HEADER */
+/* HEADER */
 .cyber-hud-header {
-  background: rgba(15, 20, 34, 0.75);
-  border: 1px solid rgba(0, 240, 255, 0.25);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.08);
+  background: var(--owl-bg-card, #242933);
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
   border-radius: 8px;
   padding: 18px 24px;
-  backdrop-filter: blur(8px);
   position: relative;
 }
 
-.hud-watermark {
-  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.15em;
-  color: rgba(0, 240, 255, 0.7);
-  text-transform: uppercase;
-  margin-bottom: 2px;
-}
-
 .title {
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   display: flex;
   align-items: center;
-  color: #f1f5f9;
+  color: var(--owl-text-primary, #f1f5f9);
 }
 
 .subtitle {
@@ -1174,46 +1150,19 @@ onMounted(async () => {
 }
 
 .beacon-ring {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  animation: beacon-pulse 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  display: none;
 }
 
 .beacon-online .beacon-core {
-  background: #00f0ff;
-  box-shadow: 0 0 10px #00f0ff;
-}
-.beacon-online .beacon-ring {
-  border: 2px solid rgba(0, 240, 255, 0.6);
+  background: var(--owl-mint, #62efbd);
 }
 
 .beacon-mock .beacon-core {
-  background: #fcee0a;
-  box-shadow: 0 0 10px #fcee0a;
-}
-.beacon-mock .beacon-ring {
-  border: 2px solid rgba(252, 238, 10, 0.6);
+  background: var(--owl-amber, #efd057);
 }
 
 .beacon-offline .beacon-core {
-  background: #ef4444;
-  box-shadow: 0 0 10px #ef4444;
-}
-.beacon-offline .beacon-ring {
-  border: 2px solid rgba(239, 68, 68, 0.6);
-}
-
-@keyframes beacon-pulse {
-  0% {
-    transform: scale(0.6);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
+  background: var(--owl-coral, #ffae9b);
 }
 
 /* STATUS TAGS & BUTTONS */
@@ -1267,9 +1216,7 @@ onMounted(async () => {
 }
 
 .cyber-bracket {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 0.75rem;
-  color: rgba(0, 240, 255, 0.6);
+  display: none;
 }
 
 .status-row {
@@ -1280,18 +1227,18 @@ onMounted(async () => {
 }
 
 .cyber-code-sm {
-  background: #0f1422;
-  border: 1px solid rgba(0, 240, 255, 0.2);
+  background: var(--owl-bg-card, #242933);
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--cyber-font-mono, monospace);
   font-size: 0.82rem;
-  color: #38bdf8;
+  color: var(--owl-teal, #28ebff);
 }
 
 /* LATENCY BADGES */
 .latency-badge {
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--cyber-font-mono, monospace);
   font-weight: 600;
   font-size: 0.85rem;
   padding: 2px 8px;
@@ -1299,30 +1246,27 @@ onMounted(async () => {
 }
 
 .latency-fast {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
+  background: var(--owl-mint-dim, rgba(98, 239, 189, 0.12));
+  color: var(--owl-mint, #62efbd);
+  border: 1px solid rgba(98, 239, 189, 0.3);
 }
 
 .latency-medium {
-  background: rgba(0, 240, 255, 0.15);
-  color: #00f0ff;
-  border: 1px solid rgba(0, 240, 255, 0.4);
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+  background: var(--owl-teal-dim, rgba(40, 235, 255, 0.12));
+  color: var(--owl-teal, #28ebff);
+  border: 1px solid rgba(40, 235, 255, 0.3);
 }
 
 .latency-slow {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--owl-coral-dim, rgba(255, 174, 155, 0.12));
+  color: var(--owl-coral, #ffae9b);
+  border: 1px solid rgba(255, 174, 155, 0.3);
 }
 
 /* TERMINAL WINDOW FOR DOCKGE */
 .terminal-window {
-  background: #0a0e17;
-  border: 1px solid rgba(0, 240, 255, 0.25);
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  background: var(--owl-bg-aside, #1c212b);
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
   border-radius: 6px;
   overflow: hidden;
 }
