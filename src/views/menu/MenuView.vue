@@ -72,13 +72,20 @@
     </div>
 
     <!-- Loading Skeleton -->
-    <el-skeleton v-if="loading && cards.length === 0" :rows="6" animated class="loading-skeleton" />
+    <div v-if="loading && cards.length === 0" class="flex flex-col gap-3 py-6">
+      <div class="h-6 bg-[#0e2742] rounded animate-pulse w-1/3"></div>
+      <div class="h-24 bg-[#0e2742] rounded-lg animate-pulse w-full"></div>
+      <div class="h-24 bg-[#0e2742] rounded-lg animate-pulse w-full"></div>
+    </div>
 
     <!-- Empty State -->
-    <el-empty
+    <div
       v-else-if="filteredCards.length === 0"
-      description="Không tìm thấy tính năng nào phù hợp với quyền hạn hoặc từ khóa tìm kiếm."
-    />
+      class="py-16 text-center text-[#94a3b8] flex flex-col items-center justify-center gap-2"
+    >
+      <div class="text-3xl">📂</div>
+      <div class="text-sm">Không tìm thấy tính năng nào phù hợp với quyền hạn hoặc từ khóa tìm kiếm.</div>
+    </div>
 
     <!-- Cards Grid -->
     <div v-else class="cards-grid">
@@ -108,7 +115,7 @@
 
         <div class="card-footer">
           <span class="action-text">Truy cập</span>
-          <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+          <span class="arrow-icon">→</span>
         </div>
       </div>
     </div>
@@ -118,7 +125,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Refresh, ArrowRight } from '@element-plus/icons-vue';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 import { httpClient } from '@/api/client';
 import { useAuthStore } from '@/stores/auth';

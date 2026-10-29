@@ -1,15 +1,16 @@
 <template>
-  <el-config-provider>
-    <CModuleBoundary module-name="RouterView">
-      <router-view />
-      <CtosGlitchOverlay />
-    </CModuleBoundary>
-  </el-config-provider>
+  <CModuleBoundary module-name="RouterView">
+    <router-view />
+    <CtosGlitchOverlay />
+    <CyberToastContainer />
+    <CyberConfirmModal />
+  </CModuleBoundary>
 </template>
 
 <script setup lang="ts">
-import { ElConfigProvider } from 'element-plus';
 import CtosGlitchOverlay from '@/components/shared/CtosGlitchOverlay.vue';
+import CyberToastContainer from '@/components/shared/CyberToastContainer.vue';
+import CyberConfirmModal from '@/components/shared/CyberConfirmModal.vue';
 </script>
 
 <style>

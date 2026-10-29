@@ -259,7 +259,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { cyberToast } from '@/services/cyberToast';
+import { cyberConfirm } from '@/services/cyberConfirm';
 import { httpClient } from '@/api/client';
 
 interface RoleItem {
@@ -348,7 +349,7 @@ async function loadUsers() {
     const res = await httpClient.get<UserItem[]>('/users');
     users.value = Array.isArray(res) ? res : (res as any)?.data || [];
   } catch (err: any) {
-    ElMessage.error(err?.message || 'Không thể tải danh sách người dùng.');
+    cyberToast.error(err?.message || 'Không thể tải danh sách người dùng.');
   } finally {
     loading.value = false;
   }
@@ -386,7 +387,7 @@ function openEditDialog(row: UserItem) {
 
 async function submitForm() {
   if (!form.username || !form.email || (!isEdit.value && !form.password)) {
-    ElMessage.warning('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+    cyberToast.warning('Vui lòng điền đầy đủ các thông tin bắt buộc.');
     return;
   }
   submitting.value = true;
@@ -398,7 +399,7 @@ async function submitForm() {
         roleIds: form.roleIds,
         isActive: form.isActive,
       });
-      ElMessage.success('Cập nhật người dùng thành công.');
+      cyberToast.success('Cập nhật người dùng thành công.');
     } else {
       await httpClient.post('/users', {
         username: form.username,
@@ -408,12 +409,12 @@ async function submitForm() {
         roleIds: form.roleIds,
         isActive: form.isActive,
       });
-      ElMessage.success('Tạo người dùng mới thành công.');
+      cyberToast.success('Tạo người dùng mới thành công.');
     }
     dialogVisible.value = false;
     await loadUsers();
   } catch (err: any) {
-    ElMessage.error(err?.message || 'Thao tác không thành công.');
+    cyberToast.error(err?.message || 'Thao tác không thành công.');
   } finally {
     submitting.value = false;
   }
@@ -423,15 +424,15 @@ async function toggleUserStatus(row: UserItem) {
   try {
     const targetStatus = !row.isActive;
     await httpClient.patch(`/users/${row.id}`, { isActive: targetStatus });
-    ElMessage.success(`Đã ${targetStatus ? 'kích hoạt' : 'khóa'} tài khoản ${row.username}.`);
+    cyberToast.success(`Đã ${targetStatus ? 'kích hoạt' : 'khóa'} tài khoản ${row.username}.`);
     await loadUsers();
   } catch (err: any) {
-    ElMessage.error(err?.message || 'Không thể đổi trạng thái người dùng.');
+    cyberToast.error(err?.message || 'Không thể đổi trạng thái người dùng.');
   }
 }
 
 function deleteUser(row: UserItem) {
-  ElMessageBox.confirm(
+  cyberConfirm.confirm(
     `Bạn có chắc chắn muốn xóa tài khoản "${row.username}" không?`,
     'Xác nhận xóa tài khoản',
     {
@@ -443,10 +444,10 @@ function deleteUser(row: UserItem) {
     .then(async () => {
       try {
         await httpClient.delete(`/users/${row.id}`);
-        ElMessage.success(`Đã xóa người dùng ${row.username}.`);
+        cyberToast.success(`Đã xóa người dùng ${row.username}.`);
         await loadUsers();
       } catch (err: any) {
-        ElMessage.error(err?.message || 'Không thể xóa người dùng.');
+        cyberToast.error(err?.message || 'Không thể xóa người dùng.');
       }
     })
     .catch(() => {});

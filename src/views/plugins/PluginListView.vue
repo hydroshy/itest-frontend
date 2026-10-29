@@ -118,7 +118,7 @@ import { computed } from 'vue';
 import { usePluginStore } from '@/stores/plugin';
 import type { FrontendPluginInstance } from '@itest/frontend-sdk';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
-import { ElMessage } from 'element-plus';
+import { cyberToast } from '@/services/cyberToast';
 
 const pluginStore = usePluginStore();
 
@@ -132,13 +132,13 @@ async function togglePlugin(plugin: FrontendPluginInstance) {
   try {
     if (plugin.status === 'disabled') {
       await pluginStore.enablePlugin(plugin.definition.manifest.id);
-      ElMessage.success(`Đã kích hoạt plugin "${plugin.definition.manifest.name}"`);
+      cyberToast.success(`Đã kích hoạt plugin "${plugin.definition.manifest.name}"`);
     } else {
       await pluginStore.disablePlugin(plugin.definition.manifest.id);
-      ElMessage.info(`Đã tắt plugin "${plugin.definition.manifest.name}"`);
+      cyberToast.info(`Đã tắt plugin "${plugin.definition.manifest.name}"`);
     }
   } catch (err: any) {
-    ElMessage.error(`Lỗi thay đổi trạng thái: ${err?.message || err}`);
+    cyberToast.error(`Lỗi thay đổi trạng thái: ${err?.message || err}`);
   }
 }
 </script>

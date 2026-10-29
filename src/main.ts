@@ -1,13 +1,12 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import ElementPlus, { ElMessage } from 'element-plus';
+import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import 'element-plus/theme-chalk/dark/css-vars.css';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-import PrimeVue from 'primevue/config';
-import Aura from '@primevue/themes/aura';
 import './assets/tailwind.css';
 import './assets/cyber-theme.css';
+import { cyberToast } from './services/cyberToast';
 
 import App from './App.vue';
 import { router } from './router';
@@ -27,23 +26,11 @@ async function bootstrap(): Promise<void> {
   app.config.errorHandler = (err: unknown, _instance, info) => {
     const errorObj = err instanceof Error ? err : new Error(String(err));
     console.error('[GlobalErrorHandler] Uncaught runtime exception:', errorObj, info);
-    ElMessage({
-      type: 'error',
-      message: `Lỗi ứng dụng: ${errorObj.message || 'Hệ thống gặp sự cố không mong muốn'}`,
-      duration: 5000,
-    });
+    cyberToast.error(`Lỗi ứng dụng: ${errorObj.message || 'Hệ thống gặp sự cố không mong muốn'}`);
   };
 
   app.use(pinia);
   app.use(ElementPlus);
-  app.use(PrimeVue, {
-    theme: {
-      preset: Aura,
-      options: {
-        darkModeSelector: '.dark',
-      },
-    },
-  });
 
   // Dynamic plugin routes must exist before Vue Router starts its first navigation.
   // A plugin failure is isolated in the store and never prevents the Shell mounting.

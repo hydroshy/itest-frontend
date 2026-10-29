@@ -1,18 +1,21 @@
 <template>
-  <div class="dashboard-container">
+  <div class="flex flex-col gap-5">
     <!-- Header with Quick Switch to Menu -->
-    <div class="dashboard-header">
+    <div class="flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-[#0b2942]/85 border border-[#1d3b5a] rounded-lg backdrop-blur-md shadow-lg">
       <div>
-        <h2 class="dashboard-title">Bảng điều khiển Trung tâm</h2>
-        <p class="dashboard-subtitle">Quản lý tổng quan hệ thống, tiện ích plugin và phân quyền menu truy cập</p>
+        <h2 class="text-xl font-bold font-['Orbitron',sans-serif] text-[#f8fafc] tracking-wide">Bảng điều khiển Trung tâm</h2>
+        <p class="text-xs md:text-sm text-[#94a3b8] mt-1">Quản lý tổng quan hệ thống, tiện ích plugin và phân quyền menu truy cập</p>
       </div>
-      <el-button type="primary" :icon="Grid" @click="goToMenu">
+      <button class="btn btn-primary btn-sm md:btn-md gap-2" @click="goToMenu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
         Mở Menu Ứng dụng
-      </el-button>
+      </button>
     </div>
 
     <!-- Summary Metrics with daisyUI Stats & Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
         <div class="stat p-4">
           <div class="stat-figure text-[#38bdf8] p-2.5 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/20">
@@ -30,19 +33,19 @@
             <CyberIcon name="blocks" :size="24" />
           </div>
           <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Plugins đã nạp</div>
-          <div class="stat-value text-xl font-bold font-mono text-[#ffffff]">{{ pluginStore.plugins.length }}</div>
-          <div class="stat-desc text-[11px] text-[#5f7e97] font-mono mt-1">REGISTRY LOADED</div>
+          <div class="stat-value text-xl font-bold font-mono text-[#f8fafc]">{{ pluginStore.plugins.length }}</div>
+          <div class="stat-desc text-[11px] text-[#7fdbca] font-mono mt-1">MODULES INSTALLED</div>
         </div>
       </div>
 
       <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
         <div class="stat p-4">
           <div class="stat-figure text-[#fb923c] p-2.5 rounded-lg bg-[#fb923c]/10 border border-[#fb923c]/20">
-            <CyberIcon name="radio" :size="24" />
+            <CyberIcon name="grid" :size="24" />
           </div>
-          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Mô-đun kích hoạt</div>
-          <div class="stat-value text-xl font-bold font-mono text-[#ecc48d]">{{ pluginStore.activePlugins.length }}</div>
-          <div class="stat-desc text-[11px] text-[#5f7e97] font-mono mt-1">SERVICES RUNNING</div>
+          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Tiện ích (Widgets)</div>
+          <div class="stat-value text-xl font-bold font-mono text-[#f8fafc]">{{ pluginStore.widgets.length }}</div>
+          <div class="stat-desc text-[11px] text-[#ecc48d] font-mono mt-1">ACTIVE WIDGETS</div>
         </div>
       </div>
 
@@ -51,18 +54,43 @@
           <div class="stat-figure text-[#c084fc] p-2.5 rounded-lg bg-[#c084fc]/10 border border-[#c084fc]/20">
             <CyberIcon name="cpu" :size="24" />
           </div>
-          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">SDK Version</div>
-          <div class="stat-value text-xl font-bold font-mono text-[#00f0ff]">v{{ pluginStore.diagnostics.sdkVersion }}</div>
-          <div class="stat-desc text-[11px] text-[#5f7e97] font-mono mt-1">PLUGIN CORE RUNTIME</div>
+          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Dynamic Routes</div>
+          <div class="stat-value text-xl font-bold font-mono text-[#f8fafc]">{{ pluginStore.dynamicRoutes.length }}</div>
+          <div class="stat-desc text-[11px] text-[#c084fc] font-mono mt-1">ROUTES INJECTED</div>
         </div>
       </div>
     </div>
 
-    <!-- Main Content Tabs: Widgets & Menu Assignment Management -->
-    <el-tabs v-model="activeTab" class="dashboard-tabs" type="border-card">
-      <!-- Tab 1: Plugin Widgets -->
-      <el-tab-pane label="TIỆN ÍCH HỆ THỐNG (WIDGETS)" name="widgets">
-        <div class="tab-pane-content">
+    <!-- Main Content: Tabs Container using DaisyUI -->
+    <div class="bg-[#0b2942]/85 border border-[#1d3b5a] rounded-lg shadow-xl backdrop-blur-md overflow-hidden">
+      <!-- Tabs Navigation Header -->
+      <div class="flex border-b border-[#1d3b5a] bg-[#071726]/80 px-4 pt-3 gap-2">
+        <button
+          type="button"
+          class="px-4 py-2.5 text-xs md:text-sm font-semibold tracking-wide rounded-t-lg transition-all duration-200 border-t border-x"
+          :class="activeTab === 'widgets'
+            ? 'bg-[#0b2942] border-[#00f0ff] text-[#00f0ff] shadow-[0_-2px_8px_rgba(0,240,255,0.15)] -mb-px'
+            : 'border-transparent text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]/40'"
+          @click="activeTab = 'widgets'"
+        >
+          TIỆN ÍCH HỆ THỐNG (WIDGETS)
+        </button>
+        <button
+          type="button"
+          class="px-4 py-2.5 text-xs md:text-sm font-semibold tracking-wide rounded-t-lg transition-all duration-200 border-t border-x"
+          :class="activeTab === 'menu-permission'
+            ? 'bg-[#0b2942] border-[#00f0ff] text-[#00f0ff] shadow-[0_-2px_8px_rgba(0,240,255,0.15)] -mb-px'
+            : 'border-transparent text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]/40'"
+          @click="activeTab = 'menu-permission'"
+        >
+          QUẢN LÝ PHÂN QUYỀN MENU
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="p-4 md:p-6">
+        <!-- Tab 1: Plugin Widgets -->
+        <div v-show="activeTab === 'widgets'">
           <div v-if="pluginStore.widgets.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div
               v-for="widget in pluginStore.widgets"
@@ -87,152 +115,171 @@
             </div>
           </div>
 
-          <el-empty
-            v-else
-            description="Chưa có tiện ích nào được cung cấp bởi plugin hiện tại"
-            :image-size="100"
-          />
+          <div v-else class="flex flex-col items-center justify-center p-12 text-center text-[#94a3b8]">
+            <CyberIcon name="blocks" :size="48" class="text-[#5f7e97] mb-3" />
+            <p class="text-sm">Chưa có tiện ích nào được cung cấp bởi plugin hiện tại</p>
+          </div>
         </div>
-      </el-tab-pane>
 
-      <!-- Tab 2: Quản lý Phân quyền Menu theo Role & Tab Plugin -->
-      <el-tab-pane label="QUẢN LÝ PHÂN QUYỀN MENU" name="menu-permission">
-        <div class="tab-pane-content menu-permission-section">
-          <div class="section-top-bar">
+        <!-- Tab 2: Quản lý Phân quyền Menu theo Role & Tab Plugin -->
+        <div v-show="activeTab === 'menu-permission'" class="flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1d3b5a]">
             <div>
-              <h3 class="perm-title">Phân quyền Menu & Từng Tab Tính năng</h3>
-              <p class="perm-desc">
+              <h3 class="text-base font-semibold text-[#f8fafc] font-['Orbitron',sans-serif]">Phân quyền Menu & Từng Tab Tính năng</h3>
+              <p class="text-xs text-[#94a3b8] mt-1 max-w-2xl">
                 Cấu hình các menu card hiển thị trên trang Menu (/menu) theo từng vai trò (Role).
                 Hỗ trợ phân quyền riêng cho từng tab/tính năng (ví dụ: Final Config Tool).
               </p>
             </div>
-            <div class="role-selector-box">
-              <span class="role-label">Chọn Vai trò:</span>
-              <el-select
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="text-xs font-semibold text-[#e2e8f0]">Chọn Vai trò:</span>
+              <select
                 v-model="selectedRole"
-                placeholder="Chọn vai trò"
-                style="width: 220px"
+                class="select select-bordered select-sm bg-[#0b1a2d] border-[#1d3b5a] text-[#f8fafc] focus:border-[#00f0ff] min-w-[200px]"
                 @change="onRoleChange"
               >
-                <el-option
+                <option
                   v-for="role in rolesList"
                   :key="role.code"
-                  :label="`${role.name} (${role.code})`"
                   :value="role.code"
-                />
-              </el-select>
-              <el-button
-                type="primary"
-                :icon="Check"
-                :loading="savingPerms"
-                :disabled="!selectedRole"
+                >
+                  {{ role.name }} ({{ role.code }})
+                </option>
+              </select>
+
+              <button
+                class="btn btn-primary btn-sm gap-1"
+                :disabled="!selectedRole || savingPerms"
                 @click="saveMenuPermissions"
               >
+                <span v-if="savingPerms" class="loading loading-spinner loading-xs"></span>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
                 Lưu Phân quyền
-              </el-button>
-              <el-button :icon="Refresh" @click="loadData">
+              </button>
+
+              <button class="btn btn-ghost btn-sm gap-1 border border-[#1d3b5a] text-[#94a3b8] hover:text-[#f8fafc]" @click="loadData">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
                 Làm mới
-              </el-button>
+              </button>
             </div>
           </div>
 
-          <el-divider style="margin: 16px 0;" />
+          <!-- Alert for SUPER_ADMIN -->
+          <div
+            v-if="selectedRole === 'SUPER_ADMIN'"
+            class="alert alert-info bg-info/10 border border-info/30 text-info text-xs py-2 px-4 rounded-md flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Vai trò <strong>SUPER_ADMIN</strong> mặc định có toàn quyền truy cập tất cả các Menu và Tab tính năng mà không bị giới hạn.</span>
+          </div>
 
-          <div v-loading="loadingPerms" class="perm-tables-container">
-            <!-- daisyUI Alert thay cho el-alert -->
-            <div
-              v-if="selectedRole === 'SUPER_ADMIN'"
-              class="alert bg-[#0b2942]/90 border border-[#82aaff]/40 text-[#d6deeb] shadow-md rounded-md p-3.5 mb-4 flex items-center gap-3"
-            >
-              <CyberIcon name="shield" :size="20" color="#82aaff" />
-              <div class="text-xs">
-                <span class="font-bold text-[#82aaff]">SUPER_ADMIN:</span>
-                Toàn quyền truy cập tất cả menu và tính năng trong hệ thống.
-              </div>
+          <!-- Menu Permission Table in DaisyUI -->
+          <div class="overflow-x-auto rounded-md border border-[#1d3b5a] bg-[#071726]/60">
+            <table class="table table-sm w-full text-xs">
+              <thead class="bg-[#0b2942]/90 text-[#7fdbca] font-mono border-b border-[#1d3b5a]">
+                <tr>
+                  <th class="text-center w-36">Cho phép hiển thị</th>
+                  <th class="min-w-[200px]">Tên Menu / Tính năng</th>
+                  <th class="w-48">Mã ID Menu</th>
+                  <th class="min-w-[240px]">Mô tả chức năng</th>
+                  <th class="min-w-[180px]">Đường dẫn (Route)</th>
+                  <th class="text-center w-28">Phân loại</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#1d3b5a]/40 text-[#d6deeb]">
+                <tr v-if="loadingPerms">
+                  <td colspan="6" class="text-center py-8">
+                    <span class="loading loading-spinner loading-md text-primary"></span>
+                  </td>
+                </tr>
+                <tr v-else-if="menuItemsList.length === 0">
+                  <td colspan="6" class="text-center py-8 text-[#94a3b8]">
+                    Không có mục menu nào
+                  </td>
+                </tr>
+                <tr
+                  v-else
+                  v-for="row in menuItemsList"
+                  :key="row.id"
+                  class="hover:bg-[#0b2942]/40 transition-colors"
+                >
+                  <td class="text-center">
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-primary checkbox-sm border-[#1d3b5a] bg-[#0b1a2d]"
+                      :checked="isItemChecked(row.id)"
+                      :disabled="selectedRole === 'SUPER_ADMIN'"
+                      @change="(e: any) => toggleItemPermission(row.id, e.target.checked)"
+                    />
+                  </td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-[#f8fafc]">{{ row.title }}</span>
+                      <span v-if="row.tab" class="badge badge-warning badge-xs font-mono">
+                        Tab: {{ row.tab }}
+                      </span>
+                      <span v-else-if="row.category === 'system'" class="badge badge-ghost badge-xs font-mono text-[#94a3b8]">
+                        Hệ thống
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <code class="font-mono text-[#00f0ff] bg-[#00f0ff]/10 px-1.5 py-0.5 rounded border border-[#00f0ff]/20">
+                      {{ row.id }}
+                    </code>
+                  </td>
+                  <td class="text-[#94a3b8]">{{ row.description }}</td>
+                  <td>
+                    <code class="font-mono text-[#ecc48d] bg-[#ecc48d]/10 px-1.5 py-0.5 rounded border border-[#ecc48d]/20">
+                      {{ row.route }}
+                    </code>
+                  </td>
+                  <td class="text-center">
+                    <span
+                      class="badge badge-sm font-mono"
+                      :class="row.category === 'plugin' ? 'badge-success badge-outline' : 'badge-primary badge-outline'"
+                    >
+                      {{ row.category === 'plugin' ? 'Plugin' : 'Hệ thống' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Perm Footer Summary -->
+          <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#0b2942]/60 rounded-md border border-[#1d3b5a] text-xs text-[#94a3b8]">
+            <div>
+              Đã chọn: <span class="badge badge-sm badge-primary font-mono font-bold">{{ checkedIds.length }}</span> / {{ menuItemsList.length }} mục cho vai trò: <strong class="text-[#ecc48d]">{{ selectedRole }}</strong>
             </div>
-
-            <!-- Bảng phân quyền chi tiết -->
-            <el-table
-              :data="menuItemsList"
-              style="width: 100%"
-              row-key="id"
-              border
-              empty-text="Không có menu item nào"
-            >
-              <el-table-column label="Cho phép hiển thị" width="160" align="center">
-                <template #default="{ row }">
-                  <el-checkbox
-                    :model-value="isItemChecked(row.id)"
-                    :disabled="selectedRole === 'SUPER_ADMIN'"
-                    @change="(val: boolean) => toggleItemPermission(row.id, val)"
-                  />
-                </template>
-              </el-table-column>
-
-              <el-table-column prop="title" label="Tên Menu / Tính năng" min-width="200">
-                <template #default="{ row }">
-                  <div class="menu-item-info">
-                    <span class="menu-name">{{ row.title }}</span>
-                    <el-tag v-if="row.tab" size="small" type="warning" effect="light">
-                      Tab: {{ row.tab }}
-                    </el-tag>
-                    <el-tag v-else-if="row.category === 'system'" size="small" type="info">
-                      Hệ thống
-                    </el-tag>
-                  </div>
-                </template>
-              </el-table-column>
-
-              <el-table-column prop="id" label="Mã ID Menu" width="220">
-                <template #default="{ row }">
-                  <code>{{ row.id }}</code>
-                </template>
-              </el-table-column>
-
-              <el-table-column prop="description" label="Mô tả chức năng" min-width="260" />
-
-              <el-table-column prop="route" label="Đường dẫn (Route)" min-width="220">
-                <template #default="{ row }">
-                  <code>{{ row.route }}</code>
-                </template>
-              </el-table-column>
-
-              <el-table-column prop="category" label="Phân loại" width="130" align="center">
-                <template #default="{ row }">
-                  <el-tag :type="row.category === 'plugin' ? 'success' : 'primary'">
-                    {{ row.category === 'plugin' ? 'Plugin' : 'Hệ thống' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
-
-            <div class="perm-footer-summary flex items-center justify-between mt-4 p-3 bg-[#0b2942]/60 rounded-md border border-[#1d3b5a] text-xs text-[#94a3b8]">
-              <div>
-                Đã chọn: <span class="badge badge-sm badge-primary font-mono font-bold">{{ checkedIds.length }}</span> / {{ menuItemsList.length }} mục cho vai trò: <strong class="text-[#ecc48d]">{{ selectedRole }}</strong>
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  v-if="selectedRole !== 'SUPER_ADMIN'"
-                  type="button"
-                  class="btn btn-xs btn-outline btn-info font-mono"
-                  @click="selectAllItems"
-                >
-                  Chọn tất cả
-                </button>
-                <button
-                  v-if="selectedRole !== 'SUPER_ADMIN'"
-                  type="button"
-                  class="btn btn-xs btn-outline btn-ghost text-[#ef5350] hover:bg-[#ef5350]/20 font-mono"
-                  @click="clearAllItems"
-                >
-                  Bỏ chọn tất cả
-                </button>
-              </div>
+            <div class="flex items-center gap-2">
+              <button
+                v-if="selectedRole !== 'SUPER_ADMIN'"
+                type="button"
+                class="btn btn-xs btn-outline btn-primary font-mono"
+                @click="selectAllItems"
+              >
+                Chọn tất cả
+              </button>
+              <button
+                v-if="selectedRole !== 'SUPER_ADMIN'"
+                type="button"
+                class="btn btn-xs btn-outline btn-ghost text-[#ef5350] hover:bg-[#ef5350]/20 font-mono"
+                @click="clearAllItems"
+              >
+                Bỏ chọn tất cả
+              </button>
             </div>
           </div>
         </div>
-      </el-tab-pane>
-    </el-tabs>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -241,16 +288,8 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePluginStore } from '@/stores/plugin';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
-import {
-  Platform,
-  SetUp,
-  Connection,
-  Cpu,
-  Grid,
-  Refresh,
-  Check
-} from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+import CModuleBoundary from '@/components/shared/CModuleBoundary.vue';
+import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
 
 const router = useRouter();
@@ -323,78 +362,57 @@ const fallbackMenuItems: MenuItemDef[] = [
     id: 'final-config:tool',
     title: 'Final Config Tool (Isolated View)',
     description: 'Giao diện độc lập chỉ thao tác Web Serial, nạp cấu hình và kiểm thử thiết bị.',
-    route: '/plugins/final-config?tab=tool',
+    route: '/plugin/final-config/tool',
     category: 'plugin',
     pluginId: 'final-config',
     tab: 'tool',
     order: 10
   },
   {
-    id: 'final-config:manager',
-    title: 'Final Config - Quản lý hồ sơ',
-    description: 'Tra cứu danh sách Final Config, lọc hồ sơ SKU và xuất audit kiểm định.',
-    route: '/plugins/final-config?tab=manager',
+    id: 'final-config:batch',
+    title: 'Final Config (Quản lý Lô & Danh mục)',
+    description: 'Quản lý lô sản xuất, cấu hình MemMap thiết bị và danh mục tham số.',
+    route: '/plugin/final-config/batch',
     category: 'plugin',
     pluginId: 'final-config',
-    tab: 'manager',
+    tab: 'batch',
     order: 11
   },
   {
-    id: 'final-config:create',
-    title: 'Final Config - Tạo mới hồ sơ',
-    description: 'Khởi tạo cấu hình cuối mới từ Memmap Payload đã được nghiệm thu.',
-    route: '/plugins/final-config?tab=create',
+    id: 'final-config:traceability',
+    title: 'Final Config (Truy xuất Nguồn gốc)',
+    description: 'Tra cứu lịch sử nạp firmware, mã vạch PCB, IMEI và kết quả kiểm thử thiết bị.',
+    route: '/plugin/final-config/traceability',
     category: 'plugin',
     pluginId: 'final-config',
-    tab: 'create',
+    tab: 'traceability',
     order: 12
   },
   {
-    id: 'device-traceability:so',
-    title: 'Device Traceability - Lệnh sản xuất (SO)',
-    description: 'Quản lý và kích hoạt lệnh sản xuất (Sales Order) cho dây chuyền.',
-    route: '/plugins/device-traceability/so',
+    id: 'final-config:reports',
+    title: 'Final Config (Báo cáo & Xuất dữ liệu)',
+    description: 'Báo cáo thống kê sản lượng pass/fail, tỷ lệ lỗi và xuất báo cáo CSV/PDF.',
+    route: '/plugin/final-config/reports',
     category: 'plugin',
-    pluginId: 'device-traceability',
-    tab: 'so',
-    order: 20
-  },
-  {
-    id: 'device-traceability:devices',
-    title: 'Device Traceability - Quản lý Thiết bị',
-    description: 'Tra cứu lịch sử DevEUI, MAC, trạng thái sản xuất và biên bản xuất xưởng.',
-    route: '/plugins/device-traceability/devices',
-    category: 'plugin',
-    pluginId: 'device-traceability',
-    tab: 'devices',
-    order: 21
-  },
-  {
-    id: 'memmap-payload:manager',
-    title: 'Memmap Manager',
-    description: 'Quản lý bản đồ bộ nhớ Modbus Register, chuẩn hóa payload định dạng Hex.',
-    route: '/plugins/memmap-manager',
-    category: 'plugin',
-    pluginId: 'memmap-manager',
-    order: 30
-  },
-  {
-    id: 'lorawan-chirpstack:integration',
-    title: 'ChirpStack Integration',
-    description: 'Giám sát trạm Gateway LoRaWAN, đồng bộ thiết bị và kiểm tra kết nối Network Server.',
-    route: '/plugins/lorawan-chirpstack',
-    category: 'plugin',
-    pluginId: 'lorawan-chirpstack',
-    order: 40
+    pluginId: 'final-config',
+    tab: 'reports',
+    order: 13
   }
 ];
 
-const menuItemsList = ref<MenuItemDef[]>(fallbackMenuItems);
+const menuItemsList = ref<MenuItemDef[]>([...fallbackMenuItems]);
+
+// Cấu hình quyền theo role lưu trữ (mặc định)
 const roleAssignments = ref<Record<string, string[]>>({
   SUPER_ADMIN: fallbackMenuItems.map(m => m.id),
   ADMIN: fallbackMenuItems.map(m => m.id),
-  END_USER: ['final-config:tool'],
-  OPERATOR: ['final-config:tool', 'device-traceability:so', 'device-traceability:devices']
+  END_USER: [
+    'final-config:tool'
+  ],
+  OPERATOR: [
+    'final-config:tool',
+    'final-config:traceability'
+  ]
 });
 
 const checkedIds = ref<string[]>(['final-config:tool']);
@@ -459,23 +477,21 @@ async function loadData() {
         menuItemsList.value = itemsData;
       }
     } catch {
-      // Dùng fallbackMenuItems
+      // Fallback items đã có
     }
 
-    // 3. Tải ma trận phân quyền theo role
+    // 3. Tải cấu hình phân quyền hiện tại
     try {
-      const assignRes: any = await httpClient.get('/menu/admin/role-assignments');
+      const assignRes: any = await httpClient.get('/menu/admin/assignments');
       const assignData = assignRes?.data || assignRes;
       if (assignData && typeof assignData === 'object') {
         roleAssignments.value = { ...roleAssignments.value, ...assignData };
       }
     } catch {
-      // Dùng default roleAssignments
+      // Dùng cấu hình khởi tạo
     }
 
     onRoleChange();
-  } catch (err: any) {
-    console.warn('Lỗi khi tải dữ liệu phân quyền menu:', err);
   } finally {
     loadingPerms.value = false;
   }
@@ -483,7 +499,7 @@ async function loadData() {
 
 async function saveMenuPermissions() {
   if (!selectedRole.value) {
-    ElMessage.warning('Vui lòng chọn vai trò');
+    cyberToast.warning('Vui lòng chọn vai trò');
     return;
   }
   savingPerms.value = true;
@@ -494,11 +510,11 @@ async function saveMenuPermissions() {
     });
     // Lưu vào cache local
     roleAssignments.value[selectedRole.value] = [...checkedIds.value];
-    ElMessage.success(`Đã lưu phân quyền menu cho vai trò ${selectedRole.value} thành công!`);
+    cyberToast.success(`Đã lưu phân quyền menu cho vai trò ${selectedRole.value} thành công!`);
   } catch (err: any) {
     // Nếu backend chưa deploy kịp, vẫn lưu vào local state để preview và báo thông tin
     roleAssignments.value[selectedRole.value] = [...checkedIds.value];
-    ElMessage.success(`Đã cập nhật phân quyền cục bộ cho vai trò ${selectedRole.value}`);
+    cyberToast.success(`Đã cập nhật phân quyền cục bộ cho vai trò ${selectedRole.value}`);
   } finally {
     savingPerms.value = false;
   }
@@ -508,200 +524,3 @@ onMounted(() => {
   loadData();
 });
 </script>
-
-<style scoped>
-.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: var(--cyber-card-bg, rgba(10, 18, 32, 0.85));
-  border-radius: 8px;
-  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
-  backdrop-filter: blur(12px);
-}
-
-.dashboard-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--cyber-text-primary, #e2e8f0);
-  font-family: var(--cyber-font-header, 'Orbitron', sans-serif);
-  letter-spacing: 0.5px;
-}
-
-.dashboard-subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--cyber-text-secondary, #94a3b8);
-}
-
-.metric-row {
-  margin-bottom: 8px;
-}
-
-.metric-card {
-  border-radius: 8px;
-  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
-  background: var(--cyber-card-bg, rgba(10, 18, 32, 0.85));
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-}
-
-.metric-card:hover {
-  border-color: var(--cyber-cyan-neon, #00f0ff);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
-}
-
-.metric-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.metric-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.metric-label {
-  font-size: 13px;
-  color: var(--cyber-text-secondary, #94a3b8);
-  margin-bottom: 6px;
-}
-
-.metric-value {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--cyber-text-primary, #f8fafc);
-  font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
-}
-
-.status-online {
-  color: #10b981;
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-}
-
-.metric-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.bg-blue { background-color: rgba(59, 130, 246, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
-.bg-green { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
-.bg-orange { background-color: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3); }
-.bg-purple { background-color: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
-
-.dashboard-tabs {
-  background: var(--cyber-card-bg, rgba(10, 18, 32, 0.85));
-  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
-  border-radius: 8px;
-  min-height: 450px;
-  backdrop-filter: blur(12px);
-  padding: 8px 16px;
-}
-
-.tab-pane-content {
-  padding: 12px 4px;
-}
-
-.widget-col {
-  margin-bottom: 20px;
-}
-
-.widget-card {
-  border-radius: 8px;
-  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
-  background: var(--cyber-card-bg, rgba(10, 18, 32, 0.85));
-  backdrop-filter: blur(10px);
-  min-height: 200px;
-}
-
-.widget-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.widget-title {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--cyber-text-primary, #e2e8f0);
-}
-
-.menu-permission-section {
-  display: flex;
-  flex-direction: column;
-}
-
-.section-top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.perm-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--cyber-text-primary, #f8fafc);
-  font-family: var(--cyber-font-header, 'Orbitron', sans-serif);
-}
-
-.perm-desc {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--cyber-text-secondary, #94a3b8);
-  max-width: 650px;
-}
-
-.role-selector-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.role-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--cyber-text-primary, #e2e8f0);
-}
-
-.menu-item-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.menu-name {
-  font-weight: 600;
-  color: var(--cyber-text-primary, #e2e8f0);
-}
-
-.perm-footer-summary {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 16px;
-  padding: 10px 14px;
-  background: rgba(15, 23, 42, 0.7);
-  border-radius: 6px;
-  border: 1px solid var(--cyber-border-color, rgba(0, 240, 255, 0.2));
-  font-size: 13px;
-  color: var(--cyber-text-secondary, #94a3b8);
-}
-</style>

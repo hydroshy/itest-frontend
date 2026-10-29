@@ -8,7 +8,7 @@ export default {
     './plugins/**/*.{vue,js,ts,jsx,tsx}',
   ],
   corePlugins: {
-    // Tắt preflight để không reset CSS trình duyệt, tránh xung đột/vỡ style Element Plus & PrimeVue
+    // Tắt preflight để không reset CSS trình duyệt, tránh xung đột style
     preflight: false,
   },
   theme: {

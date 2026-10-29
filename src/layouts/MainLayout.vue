@@ -195,10 +195,10 @@
               tabindex="0"
               class="btn btn-ghost btn-sm h-10 px-2 rounded-lg border border-[#1d3b5a] bg-[#081d32] hover:bg-[#0b2942] hover:border-[#7fdbca] flex items-center gap-2.5 cursor-pointer shadow-md transition-all"
             >
-              <!-- Avatar -->
-              <div class="avatar placeholder">
-                <div class="bg-gradient-to-br from-[#7fdbca] to-[#00f0ff] text-[#011627] font-black rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-[0_0_8px_rgba(127,219,202,0.4)]">
-                  <span>{{ userInitial }}</span>
+              <!-- Avatar: Solid cyber neon background with crisp contrast -->
+              <div class="avatar placeholder flex-shrink-0">
+                <div class="w-8 h-8 rounded-full bg-[#00f0ff] text-[#051321] font-black border-2 border-[#7fdbca] shadow-[0_0_10px_rgba(0,240,255,0.6)] flex items-center justify-center text-xs select-none">
+                  <span class="leading-none font-bold">{{ userInitial }}</span>
                 </div>
               </div>
               <!-- User Info -->

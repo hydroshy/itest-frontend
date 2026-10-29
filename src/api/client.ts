@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from 'axios';
-import { ElMessage } from 'element-plus';
+import { cyberToast } from '@/services/cyberToast';
 import type { FrontendApiClient } from '@itest/frontend-sdk';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -53,29 +53,29 @@ httpClient.interceptors.response.use(
         const message = typeof backendMessage === 'string'
           ? (backendMessage === 'Invalid credentials' ? 'Tài khoản hoặc mật khẩu không chính xác.' : backendMessage)
           : 'Tài khoản hoặc mật khẩu không chính xác.';
-        ElMessage.error(message);
+        cyberToast.error(message);
       } else {
         // Authenticated request failed with 401: session truly expired
         console.warn('[HTTP 401] Phiên làm việc đã hết hạn hoặc chưa đăng nhập:', url);
-        ElMessage.warning('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        cyberToast.warning('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       }
     } else if (status === 403) {
-      ElMessage.error('Bạn không có quyền thực hiện thao tác này.');
+      cyberToast.error('Bạn không có quyền thực hiện thao tác này.');
     } else if (status === 404) {
       // 404 handled specifically or surfaced cleanly
       const message = typeof backendMessage === 'string' ? backendMessage : 'Tài nguyên không tồn tại (404).';
       if (!isLoginRequest) {
-        ElMessage.error(message);
+        cyberToast.error(message);
       }
     } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
-      ElMessage.error('Không thể kết nối đến máy chủ backend (ERR_CONNECTION_REFUSED hoặc sai địa chỉ).');
+      cyberToast.error('Không thể kết nối đến máy chủ backend (ERR_CONNECTION_REFUSED hoặc sai địa chỉ).');
     } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      ElMessage.error('Yêu cầu tới máy chủ backend bị quá thời gian chờ (Timeout 10s).');
+      cyberToast.error('Yêu cầu tới máy chủ backend bị quá thời gian chờ (Timeout 10s).');
     } else if (!isLoginRequest) {
       const message = typeof backendMessage === 'string'
         ? backendMessage
         : (error.message || 'Lỗi hệ thống');
-      ElMessage.error(message);
+      cyberToast.error(message);
     }
 
     return Promise.reject(error);

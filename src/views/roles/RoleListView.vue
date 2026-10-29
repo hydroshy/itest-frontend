@@ -170,7 +170,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { cyberToast } from '@/services/cyberToast';
+import { cyberConfirm } from '@/services/cyberConfirm';
 import { httpClient } from '@/api/client';
 import RoleWizardDialog from './RoleWizardDialog.vue';
 
@@ -214,7 +215,7 @@ async function loadRoles() {
     const res = await httpClient.get<RoleItem[]>('/roles');
     roles.value = Array.isArray(res) ? res : (res as any)?.data || [];
   } catch (err: any) {
-    ElMessage.error(err?.message || 'Không thể tải danh sách vai trò.');
+    cyberToast.error(err?.message || 'Không thể tải danh sách vai trò.');
   } finally {
     loading.value = false;
   }
@@ -260,7 +261,7 @@ function openWizard(row: RoleItem) {
 
 async function submitForm() {
   if (!form.name || (!isEdit.value && !form.code)) {
-    ElMessage.warning('Vui lòng điền các trường bắt buộc.');
+    cyberToast.warning('Vui lòng điền các trường bắt buộc.');
     return;
   }
   submitting.value = true;
@@ -270,19 +271,19 @@ async function submitForm() {
         name: form.name,
         description: form.description,
       });
-      ElMessage.success('Cập nhật vai trò thành công.');
+      cyberToast.success('Cập nhật vai trò thành công.');
     } else {
       await httpClient.post('/roles', {
         code: form.code,
         name: form.name,
         description: form.description,
       });
-      ElMessage.success('Tạo vai trò thành công.');
+      cyberToast.success('Tạo vai trò thành công.');
     }
     dialogVisible.value = false;
     await loadRoles();
   } catch (err: any) {
-    ElMessage.error(err?.message || 'Thao tác không thành công.');
+    cyberToast.error(err?.message || 'Thao tác không thành công.');
   } finally {
     submitting.value = false;
   }
@@ -290,17 +291,17 @@ async function submitForm() {
 
 async function deleteRole(row: RoleItem) {
   try {
-    await ElMessageBox.confirm(`Bạn có chắc muốn xóa vai trò "${row.name}" (${row.code})?`, 'Xác nhận xóa', {
+    await cyberConfirm.confirm(`Bạn có chắc muốn xóa vai trò "${row.name}" (${row.code})?`, 'Xác nhận xóa', {
       type: 'warning',
       confirmButtonText: 'Xóa',
       cancelButtonText: 'Hủy',
     });
     await httpClient.delete(`/roles/${row.id}`);
-    ElMessage.success('Xóa vai trò thành công.');
+    cyberToast.success('Xóa vai trò thành công.');
     await loadRoles();
   } catch (action) {
     if (action !== 'cancel') {
-      ElMessage.error('Không thể xóa vai trò.');
+      cyberToast.error('Không thể xóa vai trò.');
     }
   }
 }
