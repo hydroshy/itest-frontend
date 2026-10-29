@@ -1,29 +1,29 @@
 <template>
-  <dialog :class="['modal modal-bottom sm:modal-middle backdrop-blur-sm z-[9999]', confirmState.isOpen ? 'modal-open' : '']">
-    <div class="modal-box bg-[#081d32] border border-[#1d3b5a] shadow-[0_0_30px_rgba(0,240,255,0.15)] text-[#d6deeb] font-sans p-6 max-w-md">
+  <dialog :class="['modal modal-bottom sm:modal-middle backdrop-blur-md z-[9999]', confirmState.isOpen ? 'modal-open' : '']">
+    <div class="modal-box bg-slate-900/95 border border-slate-700/60 shadow-2xl rounded-2xl text-slate-200 font-sans p-6 max-w-md">
       <!-- Title -->
-      <h3 class="font-bold text-base text-[#ffffff] flex items-center gap-2 border-b border-[#1d3b5a] pb-3">
-        <span :class="getIconColor(confirmState.type)">{{ getIcon(confirmState.type) }}</span>
-        <span>{{ confirmState.title }}</span>
+      <h3 class="font-semibold text-base text-white flex items-center gap-2.5 border-b border-slate-800 pb-3">
+        <span :class="getIconColor(confirmState.type)" class="text-lg">{{ getIcon(confirmState.type) }}</span>
+        <span class="tracking-tight">{{ confirmState.title }}</span>
       </h3>
 
       <!-- Content -->
-      <div class="py-4 text-sm text-[#cbd5e1] leading-relaxed break-words">
+      <div class="py-4 text-sm text-slate-300 leading-relaxed break-words">
         {{ confirmState.message }}
       </div>
 
       <!-- Actions -->
-      <div class="modal-action mt-2 gap-2 flex justify-end">
+      <div class="modal-action mt-2 gap-2.5 flex justify-end">
         <button
           type="button"
-          class="btn btn-sm btn-ghost border border-[#1d3b5a] text-[#94a3b8] hover:bg-[#0b2942] hover:text-[#ffffff]"
+          class="btn btn-sm btn-ghost border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl px-4"
           @click="handleConfirmAction('cancel')"
         >
           {{ confirmState.cancelText }}
         </button>
         <button
           type="button"
-          class="btn btn-sm font-semibold shadow-md"
+          class="btn btn-sm font-medium rounded-xl px-4 transition-all"
           :class="getConfirmBtnClass(confirmState.type)"
           @click="handleConfirmAction('confirm')"
         >
@@ -56,26 +56,26 @@ function getIcon(type: string): string {
 function getIconColor(type: string): string {
   switch (type) {
     case 'error':
-      return 'text-[#ef5350]';
+      return 'text-rose-400';
     case 'warning':
-      return 'text-[#ecc48d]';
+      return 'text-amber-400';
     case 'success':
-      return 'text-[#00ff88]';
+      return 'text-emerald-400';
     default:
-      return 'text-[#00f0ff]';
+      return 'text-cyan-400';
   }
 }
 
 function getConfirmBtnClass(type: string): string {
   switch (type) {
     case 'error':
-      return 'bg-[#ef5350] hover:bg-[#d32f2f] text-white border-none shadow-[0_0_10px_rgba(239,83,80,0.4)]';
+      return 'bg-rose-600 hover:bg-rose-500 text-white border-none shadow-md shadow-rose-950/40';
     case 'warning':
-      return 'bg-[#ecc48d] hover:bg-[#d8a867] text-[#011627] border-none shadow-[0_0_10px_rgba(236,196,141,0.4)]';
+      return 'bg-amber-600 hover:bg-amber-500 text-white border-none shadow-md shadow-amber-950/40';
     case 'success':
-      return 'bg-[#00ff88] hover:bg-[#00cc6a] text-[#011627] border-none shadow-[0_0_10px_rgba(0,255,136,0.4)]';
+      return 'bg-emerald-600 hover:bg-emerald-500 text-white border-none shadow-md shadow-emerald-950/40';
     default:
-      return 'bg-[#00f0ff] hover:bg-[#00b4d8] text-[#011627] border-none shadow-[0_0_10px_rgba(0,240,255,0.4)]';
+      return 'bg-cyan-600 hover:bg-cyan-500 text-white border-none shadow-md shadow-cyan-950/40';
   }
 }
 </script>

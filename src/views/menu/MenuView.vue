@@ -94,7 +94,6 @@
         :key="card.id"
         class="menu-card"
         :class="{ 'card-highlight': card.id === 'dashboard' }"
-        data-augmented-ui="tl-clip br-clip border"
         @click="navigateTo(card)"
       >
         <div class="card-top">
@@ -402,32 +401,30 @@ onMounted(() => {
 }
 
 .menu-card {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.22);
-  --aug-tl: 12px;
-  --aug-br: 12px;
-  background: rgba(11, 37, 62, 0.75) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  padding: 22px;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 24px;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
 }
 
 .menu-card:hover {
-  --aug-border-bg: var(--cyber-cyan, #00f0ff);
-  background: rgba(15, 49, 82, 0.88) !important;
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.25);
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(30, 41, 59, 0.85);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12);
 }
 
 .menu-card.card-highlight {
-  --aug-border-bg: rgba(0, 240, 255, 0.5);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 14px rgba(0, 240, 255, 0.15);
+  border-color: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 14px rgba(56, 189, 248, 0.15);
 }
 
 .menu-card.card-highlight:hover {

@@ -1,42 +1,41 @@
 /* ==========================================================================
-   Midnight Owl (Night Owl) Design System for iTest 2.0
-   Modern, sleek, and eye-friendly dark palette with refined typography,
-   balanced 8px grid spacing, and polished component alignment.
+   Modern Minimal Dark Tech Design System for iTest 2.0
+   Sleek, refined dark palette (Obsidian & Dark Slate), rounded geometry,
+   subtle borders, delicate glassmorphism, and elegant typography.
    ========================================================================== */
-@import 'augmented-ui/augmented-ui.min.css';
 
 :root {
   /* ==========================================================================
-     1. MIDNIGHT OWL COLOR TOKENS
+     1. MODERN DARK TECH COLOR TOKENS
      ========================================================================== */
-  --owl-bg-canvas: #011627;          /* Deep Night Owl Navy (Main Canvas) */
-  --owl-bg-aside: #051321;           /* Darker Slate Navy (Sidebar) */
-  --owl-bg-surface: #081d32;         /* Panel / Card / Header Surface */
-  --owl-bg-card: #0b253e;            /* Inner Card & Form Control Fill */
-  --owl-bg-card-hover: #0f3152;      /* Hover State for Cards & Rows */
-  --owl-border: #1d3b5a;             /* Subtle Slate Navy Border */
-  --owl-border-light: rgba(29, 59, 90, 0.5);
-  --owl-border-focus: #7fdbca;       /* Focus Border & Highlight */
+  --owl-bg-canvas: #0b0f19;          /* Deep Obsidian Dark (Main Canvas) */
+  --owl-bg-aside: #080c14;           /* Darker Obsidian Sidebar */
+  --owl-bg-surface: #111827;         /* Panel / Card / Header Surface */
+  --owl-bg-card: #161f30;            /* Inner Card & Form Control Fill */
+  --owl-bg-card-hover: #1e293b;      /* Hover State for Cards & Rows */
+  --owl-border: rgba(255, 255, 255, 0.08); /* Subtle 1px Glass Border */
+  --owl-border-light: rgba(255, 255, 255, 0.05);
+  --owl-border-focus: #38bdf8;       /* Refined Sky Blue Focus */
 
   /* Text & Typography Colors */
-  --owl-text-primary: #d6deeb;       /* Soft Off-White (Primary Text) */
-  --owl-text-secondary: #7e97b8;     /* Cool Slate Blue (Subtitles / Labels) */
-  --owl-text-muted: #5f7e97;         /* Muted Slate (Placeholders / Footers) */
-  --owl-text-bright: #ffffff;        /* Pure White (Headers / Active Items) */
+  --owl-text-primary: #f1f5f9;       /* Slate 100 - Clean Crisp White */
+  --owl-text-secondary: #94a3b8;     /* Slate 400 - Elegant Subtitle / Labels */
+  --owl-text-muted: #64748b;         /* Slate 500 - Secondary Muted */
+  --owl-text-bright: #ffffff;        /* Pure White */
 
-  /* Accents & Semantic Statuses */
-  --owl-teal: #7fdbca;               /* Soft Teal / Cyan (Primary Brand Accent) */
-  --owl-teal-dim: rgba(127, 219, 202, 0.12);
-  --owl-amber: #ecc48d;              /* Warm Golden Amber (Warning / Attention) */
-  --owl-amber-dim: rgba(236, 196, 141, 0.12);
-  --owl-mint: #addb67;               /* Fresh Mint Green (Success / Online / Pass) */
-  --owl-mint-dim: rgba(173, 219, 103, 0.12);
-  --owl-coral: #ef5350;              /* Soft Coral Red (Danger / Error / Fail) */
-  --owl-coral-dim: rgba(239, 83, 80, 0.12);
-  --owl-lavender: #c792ea;           /* Soft Lavender Purple (Code / Tags / Meta) */
-  --owl-lavender-dim: rgba(199, 146, 234, 0.12);
-  --owl-blue: #82aaff;               /* Soft Sky Blue (Links / Info) */
-  --owl-blue-dim: rgba(130, 170, 255, 0.12);
+  /* Modern Accents & Semantic Statuses */
+  --owl-teal: #38bdf8;               /* Refined Sky Cyan (Primary Accent) */
+  --owl-teal-dim: rgba(56, 189, 248, 0.12);
+  --owl-amber: #f59e0b;              /* Warm Amber */
+  --owl-amber-dim: rgba(245, 158, 11, 0.12);
+  --owl-mint: #10b981;               /* Emerald Mint (Success) */
+  --owl-mint-dim: rgba(16, 185, 129, 0.12);
+  --owl-coral: #f43f5e;              /* Rose / Coral (Danger) */
+  --owl-coral-dim: rgba(244, 63, 94, 0.12);
+  --owl-lavender: #818cf8;           /* Indigo Lavender */
+  --owl-lavender-dim: rgba(129, 140, 248, 0.12);
+  --owl-blue: #38bdf8;               /* Soft Sky Blue */
+  --owl-blue-dim: rgba(56, 189, 248, 0.12);
 
   /* ==========================================================================
      2. LEGACY & COMPONENT ALIASES (Full Backward Compatibility)
@@ -905,56 +904,44 @@ div.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placehold
 }
 
 /* ==========================================================================
-   11. AUGMENTED-UI CYBER HUD & CARD PRESETS
-   Preserves crisp cyber geometric clip-paths and glowing tech borders
-   harmonized with the Midnight Owl palette.
+   11. MODERN MINIMAL DARK TECH CARD & PANEL PRESETS
+   Replaces angular clip-paths with smooth rounded geometry (rounded-xl, 
+   rounded-2xl), delicate border glow, and glassmorphism.
    ========================================================================== */
-[data-augmented-ui] {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.22);
-  --aug-tl: 10px;
-  --aug-br: 10px;
-  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-[data-augmented-ui]:hover {
-  --aug-border-bg: var(--cyber-cyan, #00f0ff);
-}
-
 .cyber-card,
 .cyber-hud-panel,
-[data-augmented-ui~="tl-clip"][data-augmented-ui~="br-clip"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.22);
-  --aug-tl: 10px;
-  --aug-br: 10px;
-  background: rgba(11, 37, 62, 0.72) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  color: var(--owl-text-primary, #d6deeb);
+[data-augmented-ui] {
+  border-radius: 1rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(17, 24, 39, 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  color: var(--owl-text-primary, #f1f5f9) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3) !important;
 }
 
 .cyber-card:hover,
 .cyber-hud-panel:hover,
-[data-augmented-ui~="tl-clip"][data-augmented-ui~="br-clip"]:hover {
-  --aug-border-bg: var(--cyber-cyan, #00f0ff);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(0, 240, 255, 0.25);
+[data-augmented-ui]:hover {
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.1) !important;
+  transform: translateY(-2px);
 }
 
+.profile-modal-container,
 .profile-modal-container[data-augmented-ui] {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.35);
-  --aug-tl: 14px;
-  --aug-br: 14px;
-  background: rgba(8, 29, 50, 0.95) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: 1.25rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
 }
 
+.user-summary-card,
 .user-summary-card[data-augmented-ui] {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(0, 240, 255, 0.25);
-  --aug-tl: 8px;
-  --aug-br: 8px;
-  background: rgba(11, 37, 62, 0.85) !important;
+  border-radius: 0.875rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(30, 41, 59, 0.6) !important;
 }

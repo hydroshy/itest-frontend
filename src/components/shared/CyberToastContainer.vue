@@ -11,7 +11,7 @@
       <div
         v-for="item in toastState.toasts"
         :key="item.id"
-        class="alert text-xs py-2.5 px-4 rounded-lg shadow-xl flex items-center justify-between gap-3 border pointer-events-auto min-w-[280px] max-w-md backdrop-blur-md font-sans"
+        class="alert text-sm py-3 px-4 rounded-xl shadow-2xl flex items-center justify-between gap-3 border pointer-events-auto min-w-[300px] max-w-md backdrop-blur-xl font-sans transition-all"
         :class="getToastClasses(item.type)"
       >
         <div class="flex items-center gap-2.5">
@@ -40,14 +40,14 @@ import { toastState, removeToast, type ToastType } from '../../services/cyberToa
 function getToastClasses(type: ToastType): string {
   switch (type) {
     case 'success':
-      return 'bg-[#051c22]/95 border-[#00ff88]/50 text-[#00ff88] shadow-[0_0_15px_rgba(0,255,136,0.2)]';
+      return 'bg-slate-900/90 border-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-950/40';
     case 'warning':
-      return 'bg-[#211a05]/95 border-[#ecc48d]/50 text-[#ecc48d] shadow-[0_0_15px_rgba(236,196,141,0.2)]';
+      return 'bg-slate-900/90 border-amber-500/30 text-amber-400 shadow-lg shadow-amber-950/40';
     case 'error':
-      return 'bg-[#22070e]/95 border-[#ef5350]/60 text-[#ef5350] shadow-[0_0_15px_rgba(239,83,80,0.25)]';
+      return 'bg-slate-900/90 border-rose-500/30 text-rose-400 shadow-lg shadow-rose-950/40';
     case 'info':
     default:
-      return 'bg-[#051321]/95 border-[#00f0ff]/50 text-[#00f0ff] shadow-[0_0_15px_rgba(0,240,255,0.2)]';
+      return 'bg-slate-900/90 border-cyan-500/30 text-cyan-400 shadow-lg shadow-cyan-950/40';
   }
 }
 
