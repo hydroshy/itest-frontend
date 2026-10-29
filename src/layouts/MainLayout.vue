@@ -163,7 +163,7 @@
       <!-- Navbar / Header -->
       <header class="navbar h-16 min-h-[4rem] bg-[#111827]/80 backdrop-blur-xl border-b border-white/[0.08] px-6 justify-between z-10">
         <!-- Left: Collapse toggle, Brand & Breadcrumb -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 shrink-0">
           <button
             v-if="showSidebar"
             class="btn btn-ghost btn-sm btn-square rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60"
@@ -180,8 +180,11 @@
           </div>
         </div>
 
+        <!-- Center: Portal for View Top Bar actions (e.g. Launcher Search & Filters) -->
+        <div id="layout-navbar-center" class="flex-1 flex items-center justify-center px-4 min-w-0 max-w-2xl mx-auto"></div>
+
         <!-- Right: Actions & User Dropdown -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 shrink-0">
           <!-- Return to Launcher button -->
           <button
             v-if="route.path !== '/menu'"
@@ -267,7 +270,7 @@
       </header>
 
       <!-- Content Area protected by CModuleBoundary -->
-      <main class="layout-content flex-1 overflow-y-auto p-4 sm:p-6" :class="{ 'from-menu': route.query.from === 'menu' || isFromMenu }">
+      <main class="layout-content flex-1 overflow-y-auto p-4 sm:p-6" :class="{ 'menu-layout-mode p-2 sm:p-4': route.path === '/menu', 'from-menu': route.query.from === 'menu' || isFromMenu }">
         <CModuleBoundary moduleName="AppContent">
           <router-view v-slot="{ Component }">
             <transition name="fade-transform" mode="out-in">

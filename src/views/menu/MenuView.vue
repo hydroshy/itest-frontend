@@ -1,128 +1,303 @@
 <template>
-  <div class="menu-launcher-container">
-    <!-- Pending Role Warning Banner with daisyUI Alert -->
-    <div
-      v-if="!authStore.roles.length"
-      class="alert bg-[#0b2942]/95 border border-[#ecc48d]/60 text-[#d6deeb] shadow-xl rounded-lg p-4 mb-6 flex items-start gap-3 backdrop-blur-md"
-    >
-      <CyberIcon name="alert-triangle" :size="24" color="#ecc48d" class="shrink-0 mt-0.5" />
-      <div class="flex-1">
-        <h3 class="font-bold text-[#ecc48d] text-sm mb-1 tracking-wide">TÀI KHOẢN ĐANG CHỜ PHÂN QUYỀN</h3>
-        <p class="text-xs text-[#94a3b8] leading-relaxed">
-          Tài khoản của bạn đã kích hoạt thành công nhưng chưa được gán vai trò chức năng. Bạn có thể nhấn vào biểu tượng Avatar ở góc phải trên để xem hồ sơ hoặc đổi mật khẩu. Vui lòng liên hệ Quản trị viên để được cấp quyền sử dụng các phân hệ.
-        </p>
-      </div>
-    </div>
-
-    <!-- Header Greeting & Search -->
-    <div class="launcher-header">
-      <div class="header-actions flex items-center gap-3">
-        <div class="relative flex-1 sm:w-80">
+  <div class="launcher-view flex-1 flex flex-col justify-between max-w-7xl mx-auto w-full px-2 sm:px-6 py-2 sm:py-4 select-none">
+    <!-- Top Bar Portal: Search & Category Filters (Teleported to Navbar) -->
+    <Teleport to="#layout-navbar-center" v-if="mounted && hasNavbarPortal">
+      <div class="flex items-center gap-3 w-full justify-center">
+        <!-- Search bar -->
+        <div class="relative flex-1 max-w-xs sm:max-w-sm">
+          <CyberIcon
+            name="search"
+            :size="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
+          />
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Tìm nhanh tính năng, công cụ..."
-            class="input input-sm w-full bg-[#081d32] border-[#1d3b5a] text-[#d6deeb] placeholder-[#5f7e97] focus:border-[#00f0ff] focus:outline-none rounded-md font-sans text-xs h-[38px] pl-9"
+            placeholder="Tìm kiếm phân hệ..."
+            class="input input-sm bg-base-300/80 focus:bg-base-300 pl-9 pr-7 w-full rounded-xl text-xs text-base-content placeholder:text-base-content/40 border border-base-content/15 focus:border-primary focus:outline-none transition-all shadow-inner"
           />
-          <CyberIcon name="search" :size="16" color="#5f7e97" class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <button
             v-if="searchQuery"
-            type="button"
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#5f7e97] hover:text-[#d6deeb] text-xs"
             @click="searchQuery = ''"
+            class="btn btn-ghost btn-xs btn-circle absolute right-1.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+            title="Xóa tìm kiếm"
           >
             ✕
           </button>
         </div>
 
-        <button
-          type="button"
-          class="btn btn-sm btn-square bg-[#081d32] hover:bg-[#0b2942] border-[#1d3b5a] hover:border-[#00f0ff] text-[#7fdbca] h-[38px] w-[38px] rounded-md transition-all shadow-md"
-          :class="{ 'loading': loading }"
-          title="Làm mới danh sách"
-          @click="fetchMenuCards"
-        >
-          <CyberIcon v-if="!loading" name="refresh" :size="16" />
-        </button>
+        <!-- Category tabs -->
+        <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15 shrink-0 shadow-inner">
+          <button
+            class="btn btn-xs join-item rounded-lg transition-all"
+            :class="selectedCategory === 'all' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+            @click="setCategory('all')"
+          >
+            Tất cả
+          </button>
+          <button
+            class="btn btn-xs join-item rounded-lg transition-all"
+            :class="selectedCategory === 'system' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+            @click="setCategory('system')"
+          >
+            Hệ thống
+          </button>
+          <button
+            class="btn btn-xs join-item rounded-lg transition-all"
+            :class="selectedCategory === 'plugin' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+            @click="setCategory('plugin')"
+          >
+            Plugin
+          </button>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
-    <!-- Category Filter Tabs with daisyUI Tabs -->
-    <div class="category-bar my-4 overflow-x-auto pb-1">
-      <div class="join bg-[#081d32] p-1 rounded-lg border border-[#1d3b5a]/60 shadow-inner">
-        <button
-          type="button"
-          class="join-item btn btn-xs sm:btn-sm border-0 font-medium transition-all"
-          :class="selectedCategory === 'all' ? 'bg-[#7fdbca] text-[#011627] font-bold shadow-md' : 'btn-ghost text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
-          @click="selectedCategory = 'all'"
-        >
-          Tất cả ({{ filteredCards.length }})
-        </button>
-        <button
-          v-for="cat in categories"
-          :key="cat"
-          type="button"
-          class="join-item btn btn-xs sm:btn-sm border-0 font-medium transition-all"
-          :class="selectedCategory === cat ? 'bg-[#7fdbca] text-[#011627] font-bold shadow-md' : 'btn-ghost text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]'"
-          @click="selectedCategory = cat"
-        >
-          {{ cat }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Loading Skeleton -->
-    <div v-if="loading && cards.length === 0" class="flex flex-col gap-3 py-6">
-      <div class="h-6 bg-[#0e2742] rounded animate-pulse w-1/3"></div>
-      <div class="h-24 bg-[#0e2742] rounded-lg animate-pulse w-full"></div>
-      <div class="h-24 bg-[#0e2742] rounded-lg animate-pulse w-full"></div>
-    </div>
-
-    <!-- Empty State -->
+    <!-- Standalone Fallback: Render search & filters inside page if navbar portal is absent -->
     <div
-      v-else-if="filteredCards.length === 0"
-      class="py-16 text-center text-[#94a3b8] flex flex-col items-center justify-center gap-2"
+      v-if="mounted && !hasNavbarPortal"
+      class="flex flex-wrap items-center justify-between gap-3 mb-4 bg-base-200/60 p-3 rounded-2xl border border-base-content/10 shadow-sm"
     >
-      <div class="text-3xl">📂</div>
-      <div class="text-sm">Không tìm thấy tính năng nào phù hợp với quyền hạn hoặc từ khóa tìm kiếm.</div>
+      <div class="relative flex-1 min-w-[220px] max-w-sm">
+        <CyberIcon
+          name="search"
+          :size="14"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
+        />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Tìm kiếm phân hệ..."
+          class="input input-sm bg-base-300/80 focus:bg-base-300 pl-9 pr-7 w-full rounded-xl text-xs text-base-content placeholder:text-base-content/40 border border-base-content/15 focus:border-primary focus:outline-none transition-all shadow-inner"
+        />
+        <button
+          v-if="searchQuery"
+          @click="searchQuery = ''"
+          class="btn btn-ghost btn-xs btn-circle absolute right-1.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15">
+        <button
+          class="btn btn-xs join-item rounded-lg transition-all"
+          :class="selectedCategory === 'all' ? 'btn-primary font-semibold text-base-100' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+          @click="setCategory('all')"
+        >
+          Tất cả
+        </button>
+        <button
+          class="btn btn-xs join-item rounded-lg transition-all"
+          :class="selectedCategory === 'system' ? 'btn-primary font-semibold text-base-100' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+          @click="setCategory('system')"
+        >
+          Hệ thống
+        </button>
+        <button
+          class="btn btn-xs join-item rounded-lg transition-all"
+          :class="selectedCategory === 'plugin' ? 'btn-primary font-semibold text-base-100' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+          @click="setCategory('plugin')"
+        >
+          Plugin
+        </button>
+      </div>
     </div>
 
-    <!-- Cards Grid -->
-    <div v-else class="cards-grid">
-      <div
-        v-for="card in filteredCards"
-        :key="card.id"
-        class="menu-card"
-        :class="{ 'card-highlight': card.id === 'dashboard' }"
-        @click="navigateTo(card)"
-      >
-        <div class="card-top">
-          <div class="card-icon-box" :style="{ backgroundColor: getIconBg(card) }">
-            <CyberIcon
-              :name="resolveCyberIconName(card)"
-              :size="26"
-              :color="getIconColor(card)"
-            />
-          </div>
-          <span v-if="card.category" class="card-tag">{{ card.category }}</span>
+    <!-- Main Content Area: 2-Row Grid with Left/Right Navigation Buttons -->
+    <div class="flex-1 flex items-center justify-center my-auto w-full">
+      <div class="flex items-center gap-2 sm:gap-4 w-full">
+        <!-- Left Navigation Button -->
+        <button
+          type="button"
+          class="btn btn-circle btn-sm sm:btn-md bg-base-200/90 hover:bg-base-300 border border-base-content/15 hover:border-primary/50 text-base-content disabled:opacity-20 disabled:pointer-events-none transition-all shadow-md shrink-0 focus:outline-none"
+          :disabled="currentPage <= 1"
+          @click="prevPage"
+          title="Trang trước (Phím ←)"
+        >
+          <CyberIcon name="chevron-left" :size="20" />
+        </button>
+
+        <!-- Cards Viewport Container (Horizontal Transition between pages) -->
+        <div class="flex-1 min-w-0 overflow-hidden py-1">
+          <transition :name="slideDirection === 'next' ? 'slide-left' : 'slide-right'" mode="out-in">
+            <!-- Loading Skeleton Grid -->
+            <div
+              v-if="loading"
+              :key="'loading'"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 w-full"
+            >
+              <div
+                v-for="i in cardsPerPage"
+                :key="i"
+                class="card bg-base-300/40 border border-base-content/10 rounded-2xl p-5 h-[172px] flex flex-col justify-between animate-pulse"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="w-10 h-10 rounded-xl bg-base-200/80"></div>
+                  <div class="w-16 h-5 rounded-md bg-base-200/80"></div>
+                </div>
+                <div class="space-y-2">
+                  <div class="w-3/4 h-4 rounded bg-base-200/80"></div>
+                  <div class="w-full h-3 rounded bg-base-200/60"></div>
+                </div>
+                <div class="w-1/2 h-3 rounded bg-base-200/60 pt-2 border-t border-base-content/5"></div>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div
+              v-else-if="filteredCards.length === 0"
+              :key="'empty'"
+              class="flex flex-col items-center justify-center py-16 text-center w-full"
+            >
+              <div class="w-14 h-14 rounded-2xl bg-base-300 border border-base-content/10 flex items-center justify-center mb-3 text-base-content/40 shadow-inner">
+                <CyberIcon name="search" :size="24" />
+              </div>
+              <p class="text-sm font-semibold text-base-content">Không tìm thấy phân hệ nào</p>
+              <p class="text-xs text-base-content/50 mt-1 max-w-sm">
+                Không có thẻ chức năng nào khớp với bộ lọc "{{ searchQuery || selectedCategory }}".
+              </p>
+              <button
+                v-if="searchQuery || selectedCategory !== 'all'"
+                @click="resetFilters"
+                class="btn btn-primary btn-xs mt-4 rounded-lg font-semibold text-base-100 shadow-sm"
+              >
+                Xóa bộ lọc
+              </button>
+            </div>
+
+            <!-- 2-Row Menu Cards Grid -->
+            <div
+              v-else
+              :key="currentPage"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 w-full"
+            >
+              <div
+                v-for="card in paginatedCards"
+                :key="card.id"
+                class="card bg-base-300 hover:bg-base-200/90 border border-base-content/10 hover:border-primary/50 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden h-[172px]"
+                @click="navigateTo(card)"
+              >
+                <!-- Top Row: Icon + Category Badge -->
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-base-100 border border-base-content/10 flex items-center justify-center group-hover:scale-105 group-hover:border-primary/40 group-hover:bg-primary/10 transition-all duration-200 shadow-inner"
+                  >
+                    <CyberIcon
+                      :name="resolveCyberIconName(card)"
+                      :size="20"
+                      class="text-primary group-hover:text-primary transition-colors"
+                    />
+                  </div>
+                  <span
+                    class="badge badge-sm font-mono tracking-wider font-semibold"
+                    :class="card.category === 'system' ? 'badge-info badge-outline' : 'badge-ghost border-base-content/15 text-base-content/70'"
+                  >
+                    {{ card.category === 'system' ? 'SYSTEM' : 'PLUGIN' }}
+                  </span>
+                </div>
+
+                <!-- Middle Content: Title + Description -->
+                <div class="space-y-1 my-1">
+                  <h3 class="text-sm font-semibold text-base-content group-hover:text-primary transition-colors tracking-wide line-clamp-1">
+                    {{ card.title }}
+                  </h3>
+                  <p class="text-xs text-base-content/60 line-clamp-2 leading-relaxed">
+                    {{ card.description || 'Truy cập phân hệ chức năng hệ thống.' }}
+                  </p>
+                </div>
+
+                <!-- Bottom Action Row: Direct Link Indication -->
+                <div class="pt-2.5 border-t border-base-content/10 flex items-center justify-between text-xs font-medium text-base-content/60 group-hover:text-primary transition-colors">
+                  <span class="tracking-wide text-[11px]">Mở phân hệ</span>
+                  <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-base-content/40 group-hover:text-primary/70 uppercase font-mono tracking-wider">Khởi chạy</span>
+                    <CyberIcon
+                      name="chevron-right"
+                      :size="14"
+                      class="transform group-hover:translate-x-1 transition-transform"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </transition>
         </div>
 
-        <div class="card-body">
-          <h3 class="card-title">{{ card.title }}</h3>
-          <p class="card-desc">{{ card.description || 'Truy cập tính năng này trong hệ thống.' }}</p>
+        <!-- Right Navigation Button -->
+        <button
+          type="button"
+          class="btn btn-circle btn-sm sm:btn-md bg-base-200/90 hover:bg-base-300 border border-base-content/15 hover:border-primary/50 text-base-content disabled:opacity-20 disabled:pointer-events-none transition-all shadow-md shrink-0 focus:outline-none"
+          :disabled="currentPage >= totalPages"
+          @click="nextPage"
+          title="Trang kế tiếp (Phím →)"
+        >
+          <CyberIcon name="chevron-right" :size="20" />
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Pagination Footer: Information & Indicators -->
+    <div
+      v-if="filteredCards.length > 0"
+      class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-base-content/10 w-full text-xs text-base-content/60 shrink-0"
+    >
+      <!-- Count summary -->
+      <div class="flex items-center gap-2">
+        <span>
+          Hiển thị
+          <span class="font-semibold text-base-content">{{ paginationInfo.start }}</span>
+          -
+          <span class="font-semibold text-base-content">{{ paginationInfo.end }}</span>
+          trong tổng số
+          <span class="font-semibold text-base-content">{{ filteredCards.length }}</span>
+          phân hệ
+        </span>
+        <span v-if="totalPages > 1" class="hidden sm:inline text-base-content/30">•</span>
+        <span v-if="totalPages > 1" class="hidden sm:inline text-[11px] text-base-content/40">
+          (Dùng phím ← / → để chuyển trang nhanh)
+        </span>
+      </div>
+
+      <!-- Pagination Controls & Indicators -->
+      <div v-if="totalPages > 1" class="flex items-center gap-2">
+        <button
+          class="btn btn-xs btn-ghost gap-1 font-normal text-base-content/70 hover:text-base-content"
+          :disabled="currentPage <= 1"
+          @click="prevPage"
+        >
+          <CyberIcon name="chevron-left" :size="13" />
+          <span>Trước</span>
+        </button>
+
+        <!-- Page Number Buttons -->
+        <div class="join bg-base-300/80 p-0.5 rounded-lg border border-base-content/15">
+          <button
+            v-for="page in totalPages"
+            :key="page"
+            class="btn btn-xs join-item rounded-md transition-all font-mono"
+            :class="currentPage === page ? 'btn-primary font-bold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+            @click="goToPage(page)"
+          >
+            {{ page }}
+          </button>
         </div>
 
-        <div class="card-footer">
-          <span class="action-text">Truy cập</span>
-          <span class="arrow-icon">→</span>
-        </div>
+        <button
+          class="btn btn-xs btn-ghost gap-1 font-normal text-base-content/70 hover:text-base-content"
+          :disabled="currentPage >= totalPages"
+          @click="nextPage"
+        >
+          <span>Sau</span>
+          <CyberIcon name="chevron-right" :size="13" />
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 import { httpClient } from '@/api/client';
@@ -145,10 +320,15 @@ export interface MenuCardItem {
 const router = useRouter();
 const authStore = useAuthStore();
 
+const mounted = ref(false);
+const hasNavbarPortal = ref(false);
 const loading = ref(false);
 const searchQuery = ref('');
 const selectedCategory = ref('all');
 const cards = ref<MenuCardItem[]>([]);
+const currentPage = ref(1);
+const slideDirection = ref<'next' | 'prev'>('next');
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1280);
 
 // Fallback static items based on standard requirements
 const defaultStaticCards: MenuCardItem[] = [
@@ -156,7 +336,7 @@ const defaultStaticCards: MenuCardItem[] = [
     id: 'dashboard',
     title: 'Bảng điều khiển',
     description: 'Tổng quan hệ thống, trạng thái dịch vụ và phân quyền quản trị menu.',
-    icon: 'Odometer',
+    icon: 'dashboard',
     route: '/dashboard',
     category: 'system',
     order: 1,
@@ -165,7 +345,7 @@ const defaultStaticCards: MenuCardItem[] = [
     id: 'final-config:tool',
     title: 'Final Config Tool',
     description: 'Nạp cấu hình thiết bị tự động qua Web Serial và kiểm thử 4 công đoạn.',
-    icon: 'Cpu',
+    icon: 'cpu',
     route: '/plugins/final-config?tab=tool',
     pluginId: 'final-config',
     tab: 'tool',
@@ -176,7 +356,7 @@ const defaultStaticCards: MenuCardItem[] = [
     id: 'final-config:manager',
     title: 'Final Config Manager',
     description: 'Quản lý, tìm kiếm và tra cứu danh sách profile Final Config.',
-    icon: 'Document',
+    icon: 'cpu',
     route: '/plugins/final-config?tab=manager',
     pluginId: 'final-config',
     tab: 'manager',
@@ -187,7 +367,7 @@ const defaultStaticCards: MenuCardItem[] = [
     id: 'final-config:create',
     title: 'Tạo Final Config',
     description: 'Tạo mới cấu hình thiết bị từ Memmap Payload template.',
-    icon: 'CirclePlus',
+    icon: 'cpu',
     route: '/plugins/final-config?tab=create',
     pluginId: 'final-config',
     tab: 'create',
@@ -196,9 +376,9 @@ const defaultStaticCards: MenuCardItem[] = [
   },
   {
     id: 'device-traceability:so',
-    title: 'Sales Orders & Work Authorizations',
+    title: 'Sales Orders & Work Orders',
     description: 'Quản lý cây đơn hàng SO, chỉ thị xuất kho WA và danh sách thiết bị.',
-    icon: 'List',
+    icon: 'traceability',
     route: '/plugins/device-traceability?tab=so',
     pluginId: 'device-traceability',
     tab: 'so',
@@ -209,7 +389,7 @@ const defaultStaticCards: MenuCardItem[] = [
     id: 'device-traceability:devices',
     title: 'Device Traceability List',
     description: 'Tra cứu dòng đời thiết bị, lịch sử test và trạng thái final config.',
-    icon: 'SetUp',
+    icon: 'traceability',
     route: '/plugins/device-traceability?tab=devices',
     pluginId: 'device-traceability',
     tab: 'devices',
@@ -220,35 +400,55 @@ const defaultStaticCards: MenuCardItem[] = [
     id: 'memmap-payload:manager',
     title: 'Memmap Manager',
     description: 'Quản lý danh sách profile bản đồ bộ nhớ thiết bị Modbus và payload IEC485.',
-    icon: 'Collection',
-    route: '/plugins/memmap-manager?tab=manager',
-    pluginId: 'memmap-manager',
+    icon: 'tools',
+    route: '/plugins/memmap-payload?tab=manager',
+    pluginId: 'memmap-payload',
     tab: 'manager',
     category: 'plugin',
     order: 7,
   },
   {
     id: 'memmap-payload:upload',
-    title: 'Memmap Upload',
-    description: 'Tải lên và tiền kiểm tra tệp CSV Memmap Payload trước khi lưu trữ.',
-    icon: 'Upload',
-    route: '/plugins/memmap-manager?tab=upload',
-    pluginId: 'memmap-manager',
+    title: 'Import & Validation Memmap',
+    description: 'Tải lên bảng thanh ghi Excel/JSON và kiểm thử cú pháp bản đồ bộ nhớ.',
+    icon: 'tools',
+    route: '/plugins/memmap-payload?tab=upload',
+    pluginId: 'memmap-payload',
     tab: 'upload',
     category: 'plugin',
     order: 8,
   },
   {
-    id: 'lorawan-chirpstack:integration',
-    title: 'LoRaWAN ChirpStack',
-    description: 'Đồng bộ thiết bị và cấu hình kết nối ChirpStack Network Server v4.',
-    icon: 'Connection',
-    route: '/plugins/lorawan-chirpstack',
-    pluginId: 'lorawan-chirpstack',
+    id: 'dis-manager:dashboard',
+    title: 'DIS Manager',
+    description: 'Bảng điều khiển đồng bộ và quản lý dữ liệu DIS phân tán.',
+    icon: 'dashboard',
+    route: '/plugins/dis-manager?tab=dashboard',
+    pluginId: 'dis-manager',
+    tab: 'dashboard',
     category: 'plugin',
     order: 9,
   },
+  {
+    id: 'lorawan-chirpstack:integration',
+    title: 'ChirpStack Integration',
+    description: 'Giám sát trạm Gateway LoRaWAN, thiết bị Node và tích hợp ChirpStack v4.',
+    icon: 'chirpstack',
+    route: '/plugins/lorawan-chirpstack?tab=integration',
+    pluginId: 'lorawan-chirpstack',
+    tab: 'integration',
+    category: 'plugin',
+    order: 10,
+  },
 ];
+
+// Responsive calculation of cards per page to maintain strictly 2 rows
+const cardsPerPage = computed(() => {
+  if (windowWidth.value >= 1280) return 8; // 4 columns x 2 rows
+  if (windowWidth.value >= 1024) return 6; // 3 columns x 2 rows
+  if (windowWidth.value >= 640) return 4;  // 2 columns x 2 rows
+  return 4;                               // Mobile 2x2 or 2x1
+});
 
 async function fetchMenuCards() {
   loading.value = true;
@@ -270,7 +470,10 @@ async function fetchMenuCards() {
 
   // Fallback phòng vệ (chỉ dùng khi API gặp sự cố mạng hoặc lỗi kết nối)
   const userRoles = authStore.roles.map((r: string) => r.toUpperCase());
-  const isAdmin = userRoles.includes('ADMIN') || userRoles.includes('SUPER_ADMIN') || userRoles.includes('ADMINISTRATOR');
+  const isAdmin =
+    userRoles.includes('ADMIN') ||
+    userRoles.includes('SUPER_ADMIN') ||
+    userRoles.includes('ADMINISTRATOR');
 
   if (isAdmin) {
     cards.value = [...defaultStaticCards];
@@ -287,18 +490,9 @@ async function fetchMenuCards() {
       return card.id === 'final-config:tool';
     });
   } else {
-    // Không có role hoặc role không được cấp phép: tuyệt đối không hiển thị card trái phép
     cards.value = [];
   }
 }
-
-const categories = computed(() => {
-  const set = new Set<string>();
-  cards.value.forEach((c) => {
-    if (c.category) set.add(c.category);
-  });
-  return Array.from(set);
-});
 
 const filteredCards = computed(() => {
   let list = cards.value;
@@ -317,13 +511,68 @@ const filteredCards = computed(() => {
   return list;
 });
 
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredCards.value.length / cardsPerPage.value));
+});
+
+const paginatedCards = computed(() => {
+  const start = (currentPage.value - 1) * cardsPerPage.value;
+  return filteredCards.value.slice(start, start + cardsPerPage.value);
+});
+
+const paginationInfo = computed(() => {
+  if (filteredCards.value.length === 0) {
+    return { start: 0, end: 0 };
+  }
+  const start = (currentPage.value - 1) * cardsPerPage.value + 1;
+  const end = Math.min(currentPage.value * cardsPerPage.value, filteredCards.value.length);
+  return { start, end };
+});
+
+function setCategory(category: string) {
+  selectedCategory.value = category;
+  currentPage.value = 1;
+}
+
+function resetFilters() {
+  searchQuery.value = '';
+  selectedCategory.value = 'all';
+  currentPage.value = 1;
+}
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    slideDirection.value = 'prev';
+    currentPage.value--;
+  }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    slideDirection.value = 'next';
+    currentPage.value++;
+  }
+}
+
+function goToPage(page: number) {
+  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+    slideDirection.value = page > currentPage.value ? 'next' : 'prev';
+    currentPage.value = page;
+  }
+}
+
+// Reset page to 1 when filters or screen width change
+watch([searchQuery, selectedCategory, cardsPerPage], () => {
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = 1;
+  }
+});
+
 function navigateTo(card: MenuCardItem) {
   const target = card.route || card.path;
   if (target) {
     const { triggerTransition } = useCtosTransition();
     triggerTransition(card.title, 'LAUNCH_INTERFACE');
-    // Nếu điều hướng vào plugin từ /menu, đánh dấu viewMode=standalone hoặc from=menu
-    // để giao diện plugin chạy ở chế độ thao tác trực tiếp (không hiện sidebar)
     if (target.startsWith('/plugins/')) {
       const separator = target.includes('?') ? '&' : '?';
       router.push(`${target}${separator}from=menu`);
@@ -337,181 +586,69 @@ function resolveCyberIconName(card: MenuCardItem): string {
   const raw = `${card.id} ${card.icon || ''} ${card.title || ''}`.toLowerCase();
   if (raw.includes('dashboard') || raw.includes('odometer') || raw.includes('databoard')) return 'dashboard';
   if (raw.includes('cpu') || raw.includes('final-config') || raw.includes('chip')) return 'cpu';
-  if (raw.includes('trace') || raw.includes('tools') || raw.includes('barcode') || raw.includes('scan')) return 'traceability';
+  if (raw.includes('trace') || raw.includes('tools') || raw.includes('barcode') || raw.includes('scan') || raw.includes('so')) return 'traceability';
   if (raw.includes('chirp') || raw.includes('lora') || raw.includes('radio') || raw.includes('antenna')) return 'chirpstack';
   if (raw.includes('user')) return 'users';
   if (raw.includes('role') || raw.includes('lock') || raw.includes('shield')) return 'roles';
   if (raw.includes('plugin') || raw.includes('setup')) return 'plugins';
-  return 'monitor';
+  return 'tools';
 }
 
-function getIconBg(card: MenuCardItem): string {
-  if (card.id === 'dashboard') return 'rgba(0, 240, 255, 0.15)';
-  if (card.id.includes('final-config')) return 'rgba(0, 255, 159, 0.15)';
-  if (card.id.includes('device-traceability')) return 'rgba(245, 158, 11, 0.15)';
-  if (card.id.includes('chirpstack')) return 'rgba(168, 85, 247, 0.15)';
-  return 'rgba(0, 240, 255, 0.12)';
+function handleResize() {
+  windowWidth.value = window.innerWidth;
 }
 
-function getIconColor(card: MenuCardItem): string {
-  if (card.id === 'dashboard') return 'var(--cyber-cyan, #00f0ff)';
-  if (card.id.includes('final-config')) return '#00ff9f';
-  if (card.id.includes('device-traceability')) return '#fbbf24';
-  if (card.id.includes('chirpstack')) return '#c084fc';
-  return 'var(--cyber-cyan, #00f0ff)';
+function handleKeyDown(e: KeyboardEvent) {
+  // Ignore keyboard shortcuts if user is typing in an input
+  const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+  if (activeTag === 'input' || activeTag === 'textarea') {
+    return;
+  }
+  if (e.key === 'ArrowLeft') {
+    prevPage();
+  } else if (e.key === 'ArrowRight') {
+    nextPage();
+  }
 }
 
 onMounted(() => {
+  mounted.value = true;
+  hasNavbarPortal.value = !!document.getElementById('layout-navbar-center');
   fetchMenuCards();
+  window.addEventListener('resize', handleResize);
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+  window.removeEventListener('keydown', handleKeyDown);
 });
 </script>
 
 <style scoped>
-.menu-launcher-container {
-  padding: 24px 32px;
-  max-width: 1400px;
-  margin: 0 auto;
+/* Slide horizontal page transitions */
+.slide-left-enter-active,
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.launcher-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 20px;
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
 }
-
-.search-input {
-  width: 320px;
-}
-
-.category-bar {
-  margin-bottom: 24px;
-}
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 20px;
-}
-
-.menu-card {
-  border-radius: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(17, 24, 39, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 24px;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
-}
-
-.menu-card:hover {
-  border-color: rgba(56, 189, 248, 0.35);
-  background: rgba(30, 41, 59, 0.85);
-  transform: translateY(-3px);
-  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12);
-}
-
-.menu-card.card-highlight {
-  border-color: rgba(56, 189, 248, 0.25);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 14px rgba(56, 189, 248, 0.15);
-}
-
-.menu-card.card-highlight:hover {
-  --aug-border-bg: #00f0ff;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 24px rgba(0, 240, 255, 0.35);
-}
-
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.card-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--cyber-radius, 8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.25s ease;
-  border: 1px solid var(--owl-border, #1d3b5a);
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
-}
-
-.menu-card:hover .card-icon-box {
-  transform: scale(1.06);
-  border-color: var(--owl-teal, #7fdbca);
-  box-shadow: 0 0 12px var(--owl-teal-dim, rgba(127, 219, 202, 0.2));
-}
-
-.card-tag {
-  font-family: var(--cyber-font-mono, monospace);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--owl-teal, #7fdbca);
-  background: var(--owl-teal-dim, rgba(127, 219, 202, 0.12));
-  border: 1px solid rgba(127, 219, 202, 0.25);
-  padding: 2px 8px;
-  border-radius: var(--cyber-radius-xs, 4px);
-  letter-spacing: 0.5px;
-}
-
-.card-body {
-  flex: 1;
-  margin-bottom: 18px;
-}
-
-.card-title {
-  font-family: var(--cyber-font-display, sans-serif);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--owl-text-bright, #ffffff);
-  margin: 0 0 8px 0;
-  letter-spacing: 0.3px;
-}
-
-.card-desc {
-  font-size: 13px;
-  color: var(--owl-text-secondary, #7e97b8);
-  margin: 0;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 14px;
-  border-top: 1px solid var(--owl-border, #1d3b5a);
-  color: var(--owl-teal, #7fdbca);
-  font-family: var(--cyber-font-body, sans-serif);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.arrow-icon {
-  transition: transform 0.2s ease;
-}
-
-.menu-card:hover .arrow-icon {
-  transform: translateX(4px);
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
 }
 </style>
