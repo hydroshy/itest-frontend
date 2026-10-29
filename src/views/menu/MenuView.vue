@@ -106,22 +106,10 @@
       </div>
     </div>
 
-    <!-- Main Content Area: 2-Row Grid with Left/Right Navigation Buttons -->
+    <!-- Main Content Area: 2-Row Grid -->
     <div class="flex-1 flex items-center justify-center my-auto w-full py-4 sm:py-6">
-      <div class="flex items-center gap-3 sm:gap-6 w-full">
-        <!-- Left Navigation Button -->
-        <button
-          type="button"
-          class="btn btn-circle btn-sm sm:btn-md bg-base-200/90 hover:bg-base-300 border border-base-content/15 hover:border-primary/50 text-base-content disabled:opacity-20 disabled:pointer-events-none transition-all shadow-md shrink-0 focus:outline-none"
-          :disabled="currentPage <= 1"
-          @click="prevPage"
-          title="Trang trước (Phím ←)"
-        >
-          <CyberIcon name="chevron-left" :size="20" />
-        </button>
-
-        <!-- Cards Viewport Container (Horizontal Transition between pages) -->
-        <div class="flex-1 min-w-0 overflow-hidden py-1">
+      <!-- Cards Viewport Container (Horizontal Transition between pages) -->
+      <div class="w-full min-w-0 overflow-hidden py-1">
           <transition :name="slideDirection === 'next' ? 'slide-left' : 'slide-right'" mode="out-in">
             <!-- Loading Skeleton Grid -->
             <div
@@ -132,17 +120,17 @@
               <div
                 v-for="i in cardsPerPage"
                 :key="i"
-                class="card bg-base-300/40 border border-base-content/10 rounded-2xl p-5 min-h-[180px] flex flex-col justify-between animate-pulse"
+                class="card bg-base-200 border border-base-content/20 rounded-2xl p-5 min-h-[180px] flex flex-col justify-between animate-pulse"
               >
                 <div class="flex items-center justify-between">
-                  <div class="w-10 h-10 rounded-xl bg-base-200/80"></div>
-                  <div class="w-16 h-5 rounded-md bg-base-200/80"></div>
+                  <div class="w-10 h-10 rounded-xl bg-base-300"></div>
+                  <div class="w-16 h-5 rounded-md bg-base-300"></div>
                 </div>
                 <div class="space-y-2">
-                  <div class="w-3/4 h-4 rounded bg-base-200/80"></div>
-                  <div class="w-full h-3 rounded bg-base-200/60"></div>
+                  <div class="w-3/4 h-4 rounded bg-base-300"></div>
+                  <div class="w-full h-3 rounded bg-base-300/80"></div>
                 </div>
-                <div class="w-1/2 h-3 rounded bg-base-200/60 pt-2 border-t border-base-content/5"></div>
+                <div class="w-1/2 h-3 rounded bg-base-300/80 pt-2 border-t border-base-content/15"></div>
               </div>
             </div>
 
@@ -177,13 +165,13 @@
               <div
                 v-for="card in paginatedCards"
                 :key="card.id"
-                class="card bg-base-200/80 hover:bg-base-200 border border-base-content/10 hover:border-primary/50 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden min-h-[185px]"
+                class="card bg-base-200 hover:bg-base-200/90 border border-base-content/25 hover:border-primary/60 rounded-2xl p-5 sm:p-6 shadow-md hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden min-h-[185px]"
                 @click="navigateTo(card)"
               >
                 <!-- Top Row: Icon + Category Badge -->
                 <div class="flex items-center justify-between">
                   <div
-                    class="w-11 h-11 rounded-xl bg-base-300 border border-base-content/10 flex items-center justify-center group-hover:scale-105 group-hover:border-primary/40 group-hover:bg-primary/10 transition-all duration-200 shadow-inner"
+                    class="w-11 h-11 rounded-xl bg-base-300 border border-base-content/15 flex items-center justify-center group-hover:scale-105 group-hover:border-primary/40 group-hover:bg-primary/10 transition-all duration-200 shadow-inner"
                   >
                     <CyberIcon
                       :name="resolveCyberIconName(card)"
@@ -193,7 +181,7 @@
                   </div>
                   <span
                     class="badge badge-sm font-mono tracking-wider font-semibold"
-                    :class="card.category === 'system' ? 'badge-info badge-outline' : 'badge-ghost border-base-content/15 text-base-content/70'"
+                    :class="card.category === 'system' ? 'badge-info badge-outline' : 'badge-ghost border-base-content/20 text-base-content/70'"
                   >
                     {{ card.category === 'system' ? 'SYSTEM' : 'PLUGIN' }}
                   </span>
@@ -210,7 +198,7 @@
                 </div>
 
                 <!-- Bottom Action Row: Direct Link Indication -->
-                <div class="pt-3 border-t border-base-content/10 flex items-center justify-between text-xs font-medium text-base-content/60 group-hover:text-primary transition-colors">
+                <div class="pt-3 border-t border-base-content/15 flex items-center justify-between text-xs font-medium text-base-content/60 group-hover:text-primary transition-colors">
                   <span class="tracking-wide text-[11px]">Mở phân hệ</span>
                   <div class="flex items-center gap-1">
                     <span class="text-[10px] text-base-content/40 group-hover:text-primary/70 uppercase font-mono tracking-wider">Khởi chạy</span>
@@ -223,19 +211,7 @@
                 </div>
               </div>
             </div>
-          </transition>
-        </div>
-
-        <!-- Right Navigation Button -->
-        <button
-          type="button"
-          class="btn btn-circle btn-sm sm:btn-md bg-base-200/90 hover:bg-base-300 border border-base-content/15 hover:border-primary/50 text-base-content disabled:opacity-20 disabled:pointer-events-none transition-all shadow-md shrink-0 focus:outline-none"
-          :disabled="currentPage >= totalPages"
-          @click="nextPage"
-          title="Trang tiếp (Phím →)"
-        >
-          <CyberIcon name="chevron-right" :size="20" />
-        </button>
+        </transition>
       </div>
     </div>
 
