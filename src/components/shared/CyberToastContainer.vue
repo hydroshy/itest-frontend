@@ -1,19 +1,4 @@
 <template>
-  <!-- Ambient backdrop blur overlay when toasts are displayed -->
-  <transition
-    enter-active-class="transition-opacity duration-300 ease-out"
-    enter-from-class="opacity-0"
-    enter-to-class="opacity-100"
-    leave-active-class="transition-opacity duration-200 ease-in"
-    leave-from-class="opacity-100"
-    leave-to-class="opacity-0"
-  >
-    <div
-      v-if="toastState.toasts.length > 0"
-      class="fixed inset-0 pointer-events-none z-[9990] bg-black/20 backdrop-blur-[2px]"
-    ></div>
-  </transition>
-
   <div class="toast toast-top toast-end z-[9999] p-4 flex flex-col gap-2.5 pointer-events-none">
     <transition-group
       enter-active-class="transition duration-200 ease-out"
@@ -26,20 +11,29 @@
       <div
         v-for="item in toastState.toasts"
         :key="item.id"
-        class="alert text-sm py-3 px-4 rounded-xl shadow-2xl flex items-center justify-between gap-3 border pointer-events-auto min-w-[300px] max-w-md backdrop-blur-2xl ring-1 ring-white/10 font-sans transition-all"
+        class="pointer-events-auto min-w-[320px] max-w-md rounded-xl p-3.5 shadow-2xl border flex items-center justify-between gap-3 font-sans transition-all bg-base-300"
         :class="getToastClasses(item.type)"
       >
-        <div class="flex items-center gap-2.5">
-          <span class="text-base flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold shadow-inner"
+            :class="getIconBadgeClasses(item.type)"
+          >
             {{ getToastIcon(item.type) }}
-          </span>
-          <span class="font-medium text-[#ffffff] leading-tight break-words">
-            {{ item.message }}
-          </span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-[10px] font-bold text-base-content/60 uppercase tracking-wider">
+              {{ getToastTitle(item.type) }}
+            </span>
+            <span class="text-xs font-medium text-base-content leading-snug break-words">
+              {{ item.message }}
+            </span>
+          </div>
         </div>
         <button
           type="button"
-          class="btn btn-ghost btn-xs btn-circle text-[#94a3b8] hover:text-[#ffffff] hover:bg-white/10"
+          class="btn btn-ghost btn-xs btn-circle text-base-content/50 hover:text-base-content hover:bg-base-content/10 flex-shrink-0"
+          aria-label="Đóng thông báo"
           @click="removeToast(item.id)"
         >
           ✕
@@ -55,14 +49,42 @@ import { toastState, removeToast, type ToastType } from '../../services/cyberToa
 function getToastClasses(type: ToastType): string {
   switch (type) {
     case 'success':
-      return 'bg-slate-900/90 border-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-950/40';
+      return 'border-success/40 border-l-4 border-l-success shadow-success/10';
     case 'warning':
-      return 'bg-slate-900/90 border-amber-500/30 text-amber-400 shadow-lg shadow-amber-950/40';
+      return 'border-warning/40 border-l-4 border-l-warning shadow-warning/10';
     case 'error':
-      return 'bg-slate-900/90 border-rose-500/30 text-rose-400 shadow-lg shadow-rose-950/40';
+      return 'border-error/40 border-l-4 border-l-error shadow-error/10';
     case 'info':
     default:
-      return 'bg-slate-900/90 border-cyan-500/30 text-cyan-400 shadow-lg shadow-cyan-950/40';
+      return 'border-info/40 border-l-4 border-l-info shadow-info/10';
+  }
+}
+
+function getIconBadgeClasses(type: ToastType): string {
+  switch (type) {
+    case 'success':
+      return 'bg-success/15 text-success border border-success/30';
+    case 'warning':
+      return 'bg-warning/15 text-warning border border-warning/30';
+    case 'error':
+      return 'bg-error/15 text-error border border-error/30';
+    case 'info':
+    default:
+      return 'bg-info/15 text-info border border-info/30';
+  }
+}
+
+function getToastTitle(type: ToastType): string {
+  switch (type) {
+    case 'success':
+      return 'Thành công';
+    case 'warning':
+      return 'Cảnh báo';
+    case 'error':
+      return 'Lỗi';
+    case 'info':
+    default:
+      return 'Thông tin';
   }
 }
 

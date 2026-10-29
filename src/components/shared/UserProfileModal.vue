@@ -1,14 +1,21 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
+  <div
+    v-if="visible"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn"
+    @click.self="handleClose"
+  >
     <!-- Modal Card Container -->
     <div
-      class="relative w-full max-w-lg bg-base-200 border border-base-content/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content"
+      class="relative w-full max-w-lg bg-base-300 border border-base-content/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content ring-1 ring-base-content/10"
     >
+      <!-- Top Accent Line -->
+      <div class="h-1 w-full bg-gradient-to-r from-primary via-info to-primary/40"></div>
+
       <!-- Modal Header -->
-      <div class="p-5 pb-3 border-b border-base-content/10">
+      <div class="p-5 pb-3 border-b border-base-content/10 bg-base-200/50">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary">
+            <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -24,7 +31,7 @@
           </div>
           <button
             type="button"
-            class="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-base-content hover:bg-base-300"
+            class="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-base-content hover:bg-base-content/10"
             @click="handleClose"
           >
             ✕
@@ -34,48 +41,50 @@
 
       <!-- Identity Summary Card -->
       <div class="p-5 pb-0">
-        <div class="p-3.5 rounded-xl bg-base-300 border border-base-content/10 flex items-center gap-3.5 shadow-inner">
-          <div
-            class="w-12 h-12 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-bold text-base font-mono flex-shrink-0"
-          >
-            {{ userInitial }}
+        <div class="p-4 bg-base-200 border border-base-content/15 rounded-xl flex items-center justify-between shadow-sm">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-primary/20 border border-primary/40 text-primary font-bold text-base flex items-center justify-center shadow-inner">
+              {{ userInitials }}
+            </div>
+            <div>
+              <div class="text-sm font-bold text-base-content leading-tight">
+                {{ userDisplayName }}
+              </div>
+              <div class="text-[11px] text-base-content/60 font-mono mt-0.5">
+                @{{ authStore.user?.username || 'user' }}
+              </div>
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-bold text-base text-base-content truncate">
-                {{ authStore.user?.fullName || authStore.user?.username || 'Người dùng' }}
-              </span>
-              <span class="badge badge-success badge-xs font-mono">HOẠT ĐỘNG</span>
-            </div>
-            <div class="flex items-center gap-2 mt-1 text-xs text-base-content/70 flex-wrap">
-              <span class="font-mono text-base-content/60">@{{ authStore.user?.username }}</span>
-              <span>•</span>
-              <span class="badge badge-ghost badge-xs border-base-content/20 font-mono">
-                {{ authStore.roles.join(', ') || 'Chưa phân vai trò' }}
-              </span>
-            </div>
+          <div class="flex flex-col items-end gap-1.5">
+            <span class="badge badge-sm badge-outline border-base-content/25 text-base-content/80 font-mono text-[10px]">
+              {{ roleLabel }}
+            </span>
+            <span class="badge badge-sm badge-success gap-1 text-[10px]">
+              <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+              Đang hoạt động
+            </span>
           </div>
         </div>
       </div>
 
       <!-- Tab Navigation -->
-      <div class="px-5 pt-3">
-        <div class="tabs tabs-bordered">
+      <div class="px-5 pt-4 pb-2">
+        <div class="tabs tabs-boxed bg-base-200 p-1 rounded-xl border border-base-content/10 flex gap-1">
           <button
             type="button"
-            class="tab tab-bordered transition-all"
-            :class="activeTab === 'profile' ? 'tab-active font-semibold text-primary !border-primary' : 'text-base-content/70 hover:text-base-content'"
+            class="tab flex-1 text-xs font-medium rounded-lg transition-all"
+            :class="activeTab === 'profile' ? 'tab-active !bg-primary !text-primary-content font-semibold shadow-sm' : 'text-base-content/70 hover:text-base-content'"
             @click="activeTab = 'profile'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            Thông tin cá nhân
+            Thông tin cơ bản
           </button>
           <button
             type="button"
-            class="tab tab-bordered transition-all"
-            :class="activeTab === 'password' ? 'tab-active font-semibold text-primary !border-primary' : 'text-base-content/70 hover:text-base-content'"
+            class="tab flex-1 text-xs font-medium rounded-lg transition-all"
+            :class="activeTab === 'password' ? 'tab-active !bg-primary !text-primary-content font-semibold shadow-sm' : 'text-base-content/70 hover:text-base-content'"
             @click="activeTab = 'password'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,7 +115,7 @@
                 type="text"
                 :value="authStore.user?.username || ''"
                 disabled
-                class="input input-sm w-full pl-9 bg-base-300/60 border border-base-content/15 text-base-content/60 font-mono cursor-not-allowed rounded-lg"
+                class="input input-sm w-full pl-9 bg-base-100/80 border border-base-content/10 text-base-content/60 font-mono cursor-not-allowed rounded-lg"
               />
             </div>
           </div>
@@ -126,8 +135,8 @@
                 v-model="profileForm.fullName"
                 type="text"
                 placeholder="Nhập họ và tên đầy đủ"
-                maxlength="100"
-                class="input input-sm w-full pl-9 bg-base-300 border border-base-content/20 text-base-content focus:border-primary focus:outline-none rounded-lg"
+                class="input input-sm w-full pl-9 bg-base-200 border border-base-content/20 text-base-content focus:border-primary focus:outline-none rounded-lg"
+                :class="{ 'border-error': profileErrors.fullName }"
               />
             </div>
             <span v-if="profileErrors.fullName" class="text-error text-[11px] mt-1">{{ profileErrors.fullName }}</span>
@@ -137,6 +146,7 @@
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-medium text-base-content/80">Địa chỉ Email</span>
+              <span class="label-text-alt text-base-content/50 text-[10px]">Tùy chọn</span>
             </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
@@ -147,19 +157,36 @@
               <input
                 v-model="profileForm.email"
                 type="email"
-                placeholder="Nhập email liên hệ (VD: user@company.com)"
-                maxlength="150"
-                class="input input-sm w-full pl-9 bg-base-300 border border-base-content/20 text-base-content font-mono focus:border-primary focus:outline-none rounded-lg"
+                placeholder="email@example.com"
+                class="input input-sm w-full pl-9 bg-base-200 border border-base-content/20 text-base-content focus:border-primary focus:outline-none rounded-lg"
+                :class="{ 'border-error': profileErrors.email }"
               />
             </div>
             <span v-if="profileErrors.email" class="text-error text-[11px] mt-1">{{ profileErrors.email }}</span>
+          </div>
+
+          <!-- Assigned Roles (Readonly) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-medium text-base-content/80">Vai trò hệ thống</span>
+              <span class="label-text-alt text-base-content/50 text-[10px]">Quản trị viên cấp</span>
+            </label>
+            <div class="flex flex-wrap gap-1.5 p-2.5 rounded-lg bg-base-100/80 border border-base-content/10">
+              <span
+                v-for="role in (authStore.user?.roles || ['OPERATOR'])"
+                :key="role"
+                class="badge badge-sm badge-neutral font-mono text-[10px]"
+              >
+                {{ role }}
+              </span>
+            </div>
           </div>
 
           <!-- Form Actions -->
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-base-content/10">
             <button
               type="button"
-              class="btn btn-sm btn-ghost border border-base-content/20 text-base-content/80 hover:text-base-content hover:bg-base-300"
+              class="btn btn-sm btn-ghost border border-base-content/20 text-base-content/80 hover:text-base-content hover:bg-base-200"
               @click="handleClose"
             >
               Đóng
@@ -167,7 +194,7 @@
             <button
               type="submit"
               :disabled="submittingProfile"
-              class="btn btn-sm btn-primary"
+              class="btn btn-sm btn-primary shadow-sm"
             >
               <span v-if="submittingProfile" class="loading loading-spinner loading-xs mr-1"></span>
               Lưu thông tin
@@ -192,7 +219,8 @@
                 v-model="passwordForm.currentPassword"
                 type="password"
                 placeholder="Nhập mật khẩu đang sử dụng"
-                class="input input-sm w-full pl-9 bg-base-300 border border-base-content/20 text-base-content font-mono focus:border-primary focus:outline-none rounded-lg"
+                class="input input-sm w-full pl-9 bg-base-200 border border-base-content/20 text-base-content font-mono focus:border-primary focus:outline-none rounded-lg"
+                :class="{ 'border-error': passwordErrors.currentPassword }"
               />
             </div>
             <span v-if="passwordErrors.currentPassword" class="text-error text-[11px] mt-1">{{ passwordErrors.currentPassword }}</span>
@@ -214,7 +242,8 @@
                 v-model="passwordForm.newPassword"
                 type="password"
                 placeholder="Nhập mật khẩu mới"
-                class="input input-sm w-full pl-9 bg-base-300 border border-base-content/20 text-base-content font-mono focus:border-primary focus:outline-none rounded-lg"
+                class="input input-sm w-full pl-9 bg-base-200 border border-base-content/20 text-base-content font-mono focus:border-primary focus:outline-none rounded-lg"
+                :class="{ 'border-error': passwordErrors.newPassword }"
               />
             </div>
             <span v-if="passwordErrors.newPassword" class="text-error text-[11px] mt-1">{{ passwordErrors.newPassword }}</span>
@@ -235,7 +264,8 @@
                 v-model="passwordForm.confirmPassword"
                 type="password"
                 placeholder="Nhập lại mật khẩu mới"
-                class="input input-sm w-full pl-9 bg-base-300 border border-base-content/20 text-base-content font-mono focus:border-primary focus:outline-none rounded-lg"
+                class="input input-sm w-full pl-9 bg-base-200 border border-base-content/20 text-base-content font-mono focus:border-primary focus:outline-none rounded-lg"
+                :class="{ 'border-error': passwordErrors.confirmPassword }"
               />
             </div>
             <span v-if="passwordErrors.confirmPassword" class="text-error text-[11px] mt-1">{{ passwordErrors.confirmPassword }}</span>
@@ -245,7 +275,7 @@
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-base-content/10">
             <button
               type="button"
-              class="btn btn-sm btn-ghost border border-base-content/20 text-base-content/80 hover:text-base-content hover:bg-base-300"
+              class="btn btn-sm btn-ghost border border-base-content/20 text-base-content/80 hover:text-base-content hover:bg-base-200"
               @click="handleClose"
             >
               Đóng
@@ -253,7 +283,7 @@
             <button
               type="submit"
               :disabled="submittingPassword"
-              class="btn btn-sm btn-primary"
+              class="btn btn-sm btn-primary shadow-sm"
             >
               <span v-if="submittingPassword" class="loading loading-spinner loading-xs mr-1"></span>
               Cập nhật mật khẩu
@@ -267,9 +297,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '../../stores/auth';
 import { httpClient } from '@/api/client';
-import { cyberToast } from '@/services/cyberToast';
+import { cyberToast } from '../../services/cyberToast';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -312,9 +342,26 @@ const passwordErrors = reactive({
   confirmPassword: '',
 });
 
-const userInitial = computed(() => {
-  const name = authStore.user?.fullName || authStore.user?.username || 'U';
-  return name.charAt(0).toUpperCase();
+const userDisplayName = computed(() => {
+  return authStore.user?.fullName || authStore.user?.username || 'Người dùng iTest';
+});
+
+const userInitials = computed(() => {
+  const name = userDisplayName.value.trim();
+  if (!name) return 'IT';
+  const parts = name.split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+});
+
+const roleLabel = computed(() => {
+  const roles = authStore.user?.roles;
+  if (!roles || roles.length === 0) return 'Operator';
+  if (roles.includes('ADMIN')) return 'System Administrator';
+  if (roles.includes('SUPERVISOR')) return 'Supervisor';
+  return roles[0];
 });
 
 watch(
