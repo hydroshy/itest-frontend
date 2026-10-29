@@ -1,49 +1,50 @@
 <template>
-  <div class="launcher-view flex-1 flex flex-col justify-between max-w-7xl mx-auto w-full px-2 sm:px-6 py-2 sm:py-4 select-none">
+  <div class="launcher-view flex-1 flex flex-col justify-between w-full max-w-[1720px] mx-auto px-4 sm:px-8 xl:px-12 py-3 sm:py-5 select-none min-h-[calc(100vh-4rem)]">
     <!-- Top Bar Portal: Search & Category Filters (Teleported to Navbar) -->
     <Teleport to="#layout-navbar-center" v-if="mounted && hasNavbarPortal">
-      <div class="flex items-center gap-3 w-full justify-center">
-        <!-- Search bar -->
-        <div class="relative flex-1 max-w-xs sm:max-w-sm">
+      <div class="flex items-center gap-3 w-full justify-center max-w-2xl">
+        <!-- Search bar with daisyUI input flex alignment -->
+        <label class="input input-sm h-9 bg-base-300/80 focus-within:bg-base-300 focus-within:border-primary border border-base-content/15 rounded-xl flex items-center gap-2.5 flex-1 max-w-sm px-3 shadow-inner transition-all">
           <CyberIcon
             name="search"
-            :size="14"
-            class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
+            :size="15"
+            class="text-base-content/50 shrink-0 pointer-events-none"
           />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Tìm kiếm phân hệ..."
-            class="input input-sm bg-base-300/80 focus:bg-base-300 pl-9 pr-7 w-full rounded-xl text-xs text-base-content placeholder:text-base-content/40 border border-base-content/15 focus:border-primary focus:outline-none transition-all shadow-inner"
+            class="grow bg-transparent text-xs text-base-content placeholder:text-base-content/40 focus:outline-none min-w-0"
           />
           <button
             v-if="searchQuery"
+            type="button"
             @click="searchQuery = ''"
-            class="btn btn-ghost btn-xs btn-circle absolute right-1.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+            class="btn btn-ghost btn-xs btn-circle h-5 w-5 min-h-0 text-base-content/40 hover:text-base-content shrink-0"
             title="Xóa tìm kiếm"
           >
             ✕
           </button>
-        </div>
+        </label>
 
         <!-- Category tabs -->
-        <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15 shrink-0 shadow-inner">
+        <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15 shrink-0 shadow-inner h-9 items-center flex">
           <button
-            class="btn btn-xs join-item rounded-lg transition-all"
+            class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
             :class="selectedCategory === 'all' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
             @click="setCategory('all')"
           >
             Tất cả
           </button>
           <button
-            class="btn btn-xs join-item rounded-lg transition-all"
+            class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
             :class="selectedCategory === 'system' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
             @click="setCategory('system')"
           >
             Hệ thống
           </button>
           <button
-            class="btn btn-xs join-item rounded-lg transition-all"
+            class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
             :class="selectedCategory === 'plugin' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
             @click="setCategory('plugin')"
           >
@@ -58,45 +59,46 @@
       v-if="mounted && !hasNavbarPortal"
       class="flex flex-wrap items-center justify-between gap-3 mb-4 bg-base-200/60 p-3 rounded-2xl border border-base-content/10 shadow-sm"
     >
-      <div class="relative flex-1 min-w-[220px] max-w-sm">
+      <label class="input input-sm h-9 bg-base-300/80 focus-within:bg-base-300 focus-within:border-primary border border-base-content/15 rounded-xl flex items-center gap-2.5 flex-1 min-w-[220px] max-w-sm px-3 shadow-inner transition-all">
         <CyberIcon
           name="search"
-          :size="14"
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
+          :size="15"
+          class="text-base-content/50 shrink-0 pointer-events-none"
         />
         <input
           v-model="searchQuery"
           type="text"
           placeholder="Tìm kiếm phân hệ..."
-          class="input input-sm bg-base-300/80 focus:bg-base-300 pl-9 pr-7 w-full rounded-xl text-xs text-base-content placeholder:text-base-content/40 border border-base-content/15 focus:border-primary focus:outline-none transition-all shadow-inner"
+          class="grow bg-transparent text-xs text-base-content placeholder:text-base-content/40 focus:outline-none min-w-0"
         />
         <button
           v-if="searchQuery"
+          type="button"
           @click="searchQuery = ''"
-          class="btn btn-ghost btn-xs btn-circle absolute right-1.5 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+          class="btn btn-ghost btn-xs btn-circle h-5 w-5 min-h-0 text-base-content/40 hover:text-base-content shrink-0"
         >
           ✕
         </button>
-      </div>
+      </label>
 
-      <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15">
+      <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15 shrink-0 shadow-inner h-9 items-center flex">
         <button
-          class="btn btn-xs join-item rounded-lg transition-all"
-          :class="selectedCategory === 'all' ? 'btn-primary font-semibold text-base-100' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+          class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
+          :class="selectedCategory === 'all' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
           @click="setCategory('all')"
         >
           Tất cả
         </button>
         <button
-          class="btn btn-xs join-item rounded-lg transition-all"
-          :class="selectedCategory === 'system' ? 'btn-primary font-semibold text-base-100' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+          class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
+          :class="selectedCategory === 'system' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
           @click="setCategory('system')"
         >
           Hệ thống
         </button>
         <button
-          class="btn btn-xs join-item rounded-lg transition-all"
-          :class="selectedCategory === 'plugin' ? 'btn-primary font-semibold text-base-100' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+          class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
+          :class="selectedCategory === 'plugin' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
           @click="setCategory('plugin')"
         >
           Plugin
@@ -105,8 +107,8 @@
     </div>
 
     <!-- Main Content Area: 2-Row Grid with Left/Right Navigation Buttons -->
-    <div class="flex-1 flex items-center justify-center my-auto w-full">
-      <div class="flex items-center gap-2 sm:gap-4 w-full">
+    <div class="flex-1 flex items-center justify-center my-auto w-full py-4 sm:py-6">
+      <div class="flex items-center gap-3 sm:gap-6 w-full">
         <!-- Left Navigation Button -->
         <button
           type="button"
@@ -125,12 +127,12 @@
             <div
               v-if="loading"
               :key="'loading'"
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 w-full"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
             >
               <div
                 v-for="i in cardsPerPage"
                 :key="i"
-                class="card bg-base-300/40 border border-base-content/10 rounded-2xl p-5 h-[172px] flex flex-col justify-between animate-pulse"
+                class="card bg-base-300/40 border border-base-content/10 rounded-2xl p-5 min-h-[180px] flex flex-col justify-between animate-pulse"
               >
                 <div class="flex items-center justify-between">
                   <div class="w-10 h-10 rounded-xl bg-base-200/80"></div>
@@ -170,22 +172,22 @@
             <div
               v-else
               :key="currentPage"
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 w-full"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
             >
               <div
                 v-for="card in paginatedCards"
                 :key="card.id"
-                class="card bg-base-300 hover:bg-base-200/90 border border-base-content/10 hover:border-primary/50 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden h-[172px]"
+                class="card bg-base-200/80 hover:bg-base-200 border border-base-content/10 hover:border-primary/50 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden min-h-[185px]"
                 @click="navigateTo(card)"
               >
                 <!-- Top Row: Icon + Category Badge -->
                 <div class="flex items-center justify-between">
                   <div
-                    class="w-10 h-10 rounded-xl bg-base-100 border border-base-content/10 flex items-center justify-center group-hover:scale-105 group-hover:border-primary/40 group-hover:bg-primary/10 transition-all duration-200 shadow-inner"
+                    class="w-11 h-11 rounded-xl bg-base-300 border border-base-content/10 flex items-center justify-center group-hover:scale-105 group-hover:border-primary/40 group-hover:bg-primary/10 transition-all duration-200 shadow-inner"
                   >
                     <CyberIcon
                       :name="resolveCyberIconName(card)"
-                      :size="20"
+                      :size="22"
                       class="text-primary group-hover:text-primary transition-colors"
                     />
                   </div>
@@ -198,7 +200,7 @@
                 </div>
 
                 <!-- Middle Content: Title + Description -->
-                <div class="space-y-1 my-1">
+                <div class="space-y-1.5 my-2">
                   <h3 class="text-sm font-semibold text-base-content group-hover:text-primary transition-colors tracking-wide line-clamp-1">
                     {{ card.title }}
                   </h3>
@@ -208,7 +210,7 @@
                 </div>
 
                 <!-- Bottom Action Row: Direct Link Indication -->
-                <div class="pt-2.5 border-t border-base-content/10 flex items-center justify-between text-xs font-medium text-base-content/60 group-hover:text-primary transition-colors">
+                <div class="pt-3 border-t border-base-content/10 flex items-center justify-between text-xs font-medium text-base-content/60 group-hover:text-primary transition-colors">
                   <span class="tracking-wide text-[11px]">Mở phân hệ</span>
                   <div class="flex items-center gap-1">
                     <span class="text-[10px] text-base-content/40 group-hover:text-primary/70 uppercase font-mono tracking-wider">Khởi chạy</span>
@@ -230,7 +232,7 @@
           class="btn btn-circle btn-sm sm:btn-md bg-base-200/90 hover:bg-base-300 border border-base-content/15 hover:border-primary/50 text-base-content disabled:opacity-20 disabled:pointer-events-none transition-all shadow-md shrink-0 focus:outline-none"
           :disabled="currentPage >= totalPages"
           @click="nextPage"
-          title="Trang kế tiếp (Phím →)"
+          title="Trang tiếp (Phím →)"
         >
           <CyberIcon name="chevron-right" :size="20" />
         </button>

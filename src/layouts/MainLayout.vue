@@ -181,7 +181,7 @@
         </div>
 
         <!-- Center: Portal for View Top Bar actions (e.g. Launcher Search & Filters) -->
-        <div id="layout-navbar-center" class="flex-1 flex items-center justify-center px-4 min-w-0 max-w-2xl mx-auto"></div>
+        <div id="layout-navbar-center" class="flex-1 flex items-center justify-center px-4 min-w-0 max-w-3xl mx-auto h-full"></div>
 
         <!-- Right: Actions & User Dropdown -->
         <div class="flex items-center gap-3 shrink-0">
