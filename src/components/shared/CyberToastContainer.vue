@@ -1,4 +1,19 @@
 <template>
+  <!-- Ambient backdrop blur overlay when toasts are displayed -->
+  <transition
+    enter-active-class="transition-opacity duration-300 ease-out"
+    enter-from-class="opacity-0"
+    enter-to-class="opacity-100"
+    leave-active-class="transition-opacity duration-200 ease-in"
+    leave-from-class="opacity-100"
+    leave-to-class="opacity-0"
+  >
+    <div
+      v-if="toastState.toasts.length > 0"
+      class="fixed inset-0 pointer-events-none z-[9990] bg-black/20 backdrop-blur-[2px]"
+    ></div>
+  </transition>
+
   <div class="toast toast-top toast-end z-[9999] p-4 flex flex-col gap-2.5 pointer-events-none">
     <transition-group
       enter-active-class="transition duration-200 ease-out"
@@ -11,7 +26,7 @@
       <div
         v-for="item in toastState.toasts"
         :key="item.id"
-        class="alert text-sm py-3 px-4 rounded-xl shadow-2xl flex items-center justify-between gap-3 border pointer-events-auto min-w-[300px] max-w-md backdrop-blur-xl font-sans transition-all"
+        class="alert text-sm py-3 px-4 rounded-xl shadow-2xl flex items-center justify-between gap-3 border pointer-events-auto min-w-[300px] max-w-md backdrop-blur-2xl ring-1 ring-white/10 font-sans transition-all"
         :class="getToastClasses(item.type)"
       >
         <div class="flex items-center gap-2.5">
