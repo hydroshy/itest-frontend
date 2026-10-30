@@ -4,6 +4,7 @@ import 'tabulator-tables/dist/css/tabulator.min.css';
 import './assets/tailwind.css';
 import './assets/cyber-theme.css';
 import { cyberToast } from './services/cyberToast';
+import { ensureTabulatorPatched } from './utils/patchTabulator';
 
 import App from './App.vue';
 import { router } from './router';
@@ -11,6 +12,7 @@ import { usePluginStore } from './stores/plugin';
 import CModuleBoundary from './components/shared/CModuleBoundary.vue';
 
 async function bootstrap(): Promise<void> {
+  ensureTabulatorPatched();
   const app = createApp(App);
   const pinia = createPinia();
 

@@ -260,6 +260,9 @@ import { cyberToast as ElMessage } from '@/services/cyberToast';
 import { cyberConfirm as ElMessageBox } from '@/services/cyberConfirm';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
+import { ensureTabulatorPatched } from '@/utils/patchTabulator';
+
+ensureTabulatorPatched();
 
 const API_BASE = '/api/plugins/memmap-manager';
 type RecordRow = Record<string, unknown>;
@@ -332,7 +335,7 @@ function formatDate(v?: unknown) {
 }
 
 const registerColumns = [
-  { title: 'No.', field: 'rowNumber', width: 72, frozen: true, formatter: (c: any) => valueOf(c.getRow().getData(), 'rowNumber', 'no', 'No.') ?? '—' },
+  { title: 'No.', field: 'rowNumber', width: 72, formatter: (c: any) => valueOf(c.getRow().getData(), 'rowNumber', 'no', 'No.') ?? '—' },
   { title: 'Modbus Register (Decimal)', field: 'modbusRegisterDecimal', minWidth: 170, formatter: (c: any) => valueOf(c.getRow().getData(), 'modbusRegisterDecimal', 'modbusRegisterDec', 'modbus_register_dec', 'address') ?? '—' },
   { title: 'Modbus Register (Hex)', field: 'modbusRegisterHex', minWidth: 155, formatter: (c: any) => valueOf(c.getRow().getData(), 'modbusRegisterHex', 'modbus_register_hex', 'hex') ?? '—' },
   { title: 'Function Code (Read)', field: 'functionCodeRead', minWidth: 140, formatter: (c: any) => valueOf(c.getRow().getData(), 'functionCodeRead', 'fcRead', 'fc_read') ?? '—' },
@@ -347,10 +350,19 @@ const registerColumns = [
   { title: 'Comment', field: 'comment', minWidth: 200, formatter: (c: any) => valueOf(c.getRow().getData(), 'comment', 'notes') ?? '—' },
 ];
 
+function safeRedraw(table?: Tabulator, el?: HTMLElement | null) {
+  if (!table || !el || el.offsetWidth === 0) return;
+  try {
+    table.redraw();
+  } catch {
+    // ignore
+  }
+}
+
 function makeRegisterTable(host: HTMLElement, data: RecordRow[]) {
   return new Tabulator(host, {
     data,
-    layout: 'fitColumns',
+    layout: 'fitDataFill',
     responsiveLayout: false,
     height: '440px',
     pagination: true,
@@ -440,7 +452,7 @@ async function fetchProfiles() {
     await nextTick();
     renderProfileTable();
     await nextTick();
-    profileTable?.redraw(true);
+    safeRedraw(profileTable, profileTableEl.value);
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Không thể tải danh sách payload';
     profiles.value = [];
@@ -457,11 +469,12 @@ async function viewDetail(id: string) {
     currentProfile.value = await request<RecordRow>(`/profiles/${id}`);
     detailLoading.value = false;
     await nextTick();
-    renderDetailTable();
-    await nextTick();
-    if (detailTableEl.value && detailTableEl.value.offsetWidth > 0) {
-      detailTable?.redraw(true);
-    }
+    requestAnimationFrame(() => {
+      renderDetailTable();
+      requestAnimationFrame(() => {
+        safeRedraw(detailTable, detailTableEl.value);
+      });
+    });
   } catch (e) {
     ElMessage.error(e instanceof Error ? e.message : 'Không thể tải profile');
     detailDialogVisible.value = false;
@@ -552,6 +565,9 @@ async function runPreview() {
     destroyTable(previewTable);
     if (previewTableEl.value) {
       previewTable = makeRegisterTable(previewTableEl.value, previewResult.value.registers || []);
+      requestAnimationFrame(() => {
+        safeRedraw(previewTable, previewTableEl.value);
+      });
     }
     ElMessage[previewResult.value.valid ? 'success' : 'warning'](previewResult.value.valid ? 'Payload hợp lệ và sẵn sàng Upload' : 'Payload có lỗi');
   } catch (e) {
@@ -586,11 +602,11 @@ async function handleTabChange(tab: string | number) {
       await fetchProfiles();
     } else {
       await nextTick();
-      profileTable?.redraw(true);
+      safeRedraw(profileTable, profileTableEl.value);
     }
   } else if (tab === 'upload') {
     await nextTick();
-    previewTable?.redraw(true);
+    safeRedraw(previewTable, previewTableEl.value);
   }
 }
 
