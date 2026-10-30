@@ -58,8 +58,7 @@
             <span class="loading loading-spinner loading-md text-primary"></span>
           </div>
           <div ref="profileTableEl" class="tabulator-host profile-table-host mt-2" />
-          <p v-if="!loading && !profiles.length" class="empty-text text-center py-6 text-sm text-base-content/50">Chưa có Memmap Payload nào.</p>
-          <p class="table-hint text-xs text-base-content/60 mt-2">Nhấp chuột phải để xem hoặc xóa profile.</p>
+          <p class="table-hint text-xs text-base-content/60 mt-2">Nhấp chuột phải hoặc nhấn Chi tiết / Xóa để thao tác.</p>
         </div>
       </div>
     </div>
@@ -200,14 +199,44 @@
         <div v-if="detailLoading" class="flex items-center justify-center py-12">
           <span class="loading loading-spinner loading-lg text-primary"></span>
         </div>
-        <div v-else>
-          <div v-if="currentProfile" class="flex flex-wrap items-center gap-4 text-xs mb-4 bg-base-100 p-3 rounded-lg border border-base-content/10">
-            <span><strong>SKU:</strong> {{ valueOf(currentProfile, 'sku') || '—' }}</span>
-            <span><strong>LONG_FW:</strong> {{ valueOf(currentProfile, 'longFw', 'long_fw') || '—' }}</span>
-            <span><strong>SHORT_FW:</strong> {{ valueOf(currentProfile, 'shortFw', 'short_fw') || '—' }}</span>
-            <span><strong>DEC check:</strong> {{ valueOf(currentProfile, 'decimalCheck', 'decCheck', 'dec_check') ?? '—' }}</span>
-            <span><strong>HEX check:</strong> {{ valueOf(currentProfile, 'hexCheck', 'hex_check') ?? '—' }}</span>
-            <span><strong>Created by:</strong> {{ valueOf(currentProfile, 'createdBy', 'created_by') || '—' }}</span>
+        <div v-show="!detailLoading">
+          <div v-if="currentProfile" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-4 bg-base-100 p-3.5 rounded-lg border border-base-content/10 font-mono">
+            <div>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">SKU</span>
+              <span class="font-bold text-sm text-primary">{{ valueOf(currentProfile, 'sku') || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">LONG_FW</span>
+              <span class="font-medium text-base-content">{{ valueOf(currentProfile, 'longFw', 'long_fw') || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">SHORT_FW</span>
+              <span class="font-medium text-base-content">{{ valueOf(currentProfile, 'shortFw', 'short_fw') || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Registers</span>
+              <span class="badge badge-sm badge-neutral font-sans">{{ (currentProfile.registers as unknown[] | undefined)?.length ?? valueOf(currentProfile, 'registersCount', 'registers_count') ?? 0 }} registers</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">DEC check</span>
+              <span class="badge badge-sm" :class="valueOf(currentProfile, 'decimalCheck', 'decCheck', 'dec_check') === false ? 'badge-error' : 'badge-success'">
+                {{ valueOf(currentProfile, 'decimalCheck', 'decCheck', 'dec_check') === false ? 'FAIL' : 'PASS' }}
+              </span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">HEX check</span>
+              <span class="badge badge-sm" :class="valueOf(currentProfile, 'hexCheck', 'hex_check') === false ? 'badge-error' : 'badge-success'">
+                {{ valueOf(currentProfile, 'hexCheck', 'hex_check') === false ? 'FAIL' : 'PASS' }}
+              </span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Created By</span>
+              <span class="font-medium text-base-content">{{ valueOf(currentProfile, 'createdBy', 'created_by') || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Date Created</span>
+              <span class="text-base-content/80">{{ formatDate(valueOf(currentProfile, 'dateCreate', 'date_create', 'createdAt')) }}</span>
+            </div>
           </div>
           <div ref="detailTableEl" class="tabulator-host register-table-host" />
         </div>
@@ -224,7 +253,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { RefreshCw, Upload, FileText, AlertTriangle } from 'lucide-vue-next';
 import { cyberToast as ElMessage } from '@/services/cyberToast';
@@ -237,6 +266,7 @@ type RecordRow = Record<string, unknown>;
 interface PreviewResponse { valid: boolean; profile?: RecordRow; registers?: RecordRow[]; errors?: string[]; }
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const currentUsername = computed(() => authStore.user?.username || (localStorage.getItem('itest_user') ? (() => { try { return JSON.parse(localStorage.getItem('itest_user') || '{}')?.username || ''; } catch { return ''; } })() : ''));
 
@@ -252,6 +282,7 @@ watch(() => route?.query?.tab, (t) => {
 
 function changeTab(tab: 'manager' | 'upload') {
   activeTab.value = tab;
+  router?.replace({ query: { ...route.query, tab } }).catch(() => {});
   handleTabChange(tab);
 }
 
@@ -365,9 +396,25 @@ function renderProfileTable() {
       { title: 'Registers', field: 'registersCount', width: 110, hozAlign: 'right', formatter: (c: any) => String((c.getRow().getData().registers as unknown[] | undefined)?.length ?? valueOf(c.getRow().getData(), 'registersCount', 'registers_count') ?? 0) },
       { title: 'Created by', field: 'createdBy', minWidth: 130, formatter: (c: any) => valueOf(c.getRow().getData(), 'createdBy', 'created_by') ?? '—' },
       { title: 'Date create', field: 'dateCreate', minWidth: 180, formatter: (c: any) => formatDate(valueOf(c.getRow().getData(), 'dateCreate', 'date_create', 'createdAt')) },
+      {
+        title: 'Thao tác',
+        width: 140,
+        hozAlign: 'center',
+        headerSort: false,
+        formatter: () => `<div class="flex items-center justify-center gap-1.5"><button type="button" class="btn btn-xs btn-outline btn-primary view-action-btn">Chi tiết</button><button type="button" class="btn btn-xs btn-outline btn-error delete-action-btn">Xóa</button></div>`,
+        cellClick: (_e: Event, cell: any) => {
+          const target = _e.target as HTMLElement;
+          const data = cell.getRow().getData();
+          if (target.closest('.view-action-btn')) {
+            viewDetail(String(data.id));
+          } else if (target.closest('.delete-action-btn')) {
+            deleteProfile(data);
+          }
+        }
+      }
     ],
     rowContextMenu: [
-      { label: 'Xem profile', action: (_e: Event, row: any) => viewDetail(String(row.getData().id)) },
+      { label: 'Xem chi tiết profile', action: (_e: Event, row: any) => viewDetail(String(row.getData().id)) },
       { label: 'Xóa profile', action: (_e: Event, row: any) => deleteProfile(row.getData()) },
     ],
     rowDblClick: (_e: Event, row: any) => viewDetail(String(row.getData().id)),
@@ -390,6 +437,8 @@ async function fetchProfiles() {
     profiles.value = Array.isArray(data) ? (data as RecordRow[]) : [];
     await nextTick();
     renderProfileTable();
+    await nextTick();
+    profileTable?.redraw(true);
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Không thể tải danh sách payload';
     profiles.value = [];
@@ -404,12 +453,14 @@ async function viewDetail(id: string) {
   currentProfile.value = null;
   try {
     currentProfile.value = await request<RecordRow>(`/profiles/${id}`);
+    detailLoading.value = false;
     await nextTick();
     renderDetailTable();
+    await nextTick();
+    detailTable?.redraw(true);
   } catch (e) {
     ElMessage.error(e instanceof Error ? e.message : 'Không thể tải profile');
     detailDialogVisible.value = false;
-  } finally {
     detailLoading.value = false;
   }
 }
@@ -525,8 +576,18 @@ async function submitImport() {
   }
 }
 
-function handleTabChange(tab: string | number) {
-  if (tab === 'manager') fetchProfiles();
+async function handleTabChange(tab: string | number) {
+  if (tab === 'manager') {
+    if (profiles.value.length === 0) {
+      await fetchProfiles();
+    } else {
+      await nextTick();
+      profileTable?.redraw(true);
+    }
+  } else if (tab === 'upload') {
+    await nextTick();
+    previewTable?.redraw(true);
+  }
 }
 
 watch(searchQuery, applyProfileFilter);
@@ -558,7 +619,7 @@ onBeforeUnmount(() => {
   font-family: var(--cyber-font-mono, 'JetBrains Mono', monospace);
   font-size: 11px;
   letter-spacing: 1.5px;
-  color: var(--cyber-cyan, #00f0ff);
+  color: hsl(var(--p));
   text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -566,86 +627,84 @@ onBeforeUnmount(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--cyber-cyan, #00f0ff);
-  box-shadow: 0 0 8px var(--cyber-cyan, #00f0ff);
+  background: hsl(var(--p));
 }
 .page-header h2 {
   margin: 4px 0;
-  font-family: var(--cyber-font-display, 'Rajdhani', sans-serif);
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: 0.8px;
-  color: #f1f5f9;
+  letter-spacing: 0.5px;
+  color: hsl(var(--bc));
 }
 .page-header p {
   margin: 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: hsl(var(--bc) / 0.7);
 }
 .tabulator-host {
   width: 100%;
 }
 .profile-table-host {
-  min-height: 140px;
+  min-height: 180px;
 }
 .register-table-host {
-  min-height: 240px;
+  min-height: 280px;
 }
 :deep(.tabulator) {
   font-size: 12px;
-  border-color: rgba(0, 240, 255, 0.2);
+  border-color: hsl(var(--bc) / 0.15);
   background-color: transparent !important;
 }
 :deep(.tabulator .tabulator-header) {
-  background: rgba(8, 12, 20, 0.85) !important;
-  color: var(--cyber-cyan, #00f0ff) !important;
-  border-bottom: 2px solid rgba(0, 240, 255, 0.3) !important;
+  background: hsl(var(--b2, 220 18% 18%)) !important;
+  color: hsl(var(--bc)) !important;
+  border-bottom: 1px solid hsl(var(--bc) / 0.15) !important;
 }
 :deep(.tabulator .tabulator-row) {
   background: transparent !important;
-  color: #cbd5e1 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: hsl(var(--bc)) !important;
+  border-bottom: 1px solid hsl(var(--bc) / 0.08) !important;
 }
 :deep(.tabulator .tabulator-row.tabulator-row-even) {
-  background: rgba(0, 240, 255, 0.02) !important;
+  background: hsl(var(--bc) / 0.02) !important;
 }
 :deep(.tabulator .tabulator-row:hover) {
-  background-color: rgba(0, 240, 255, 0.08) !important;
+  background-color: hsl(var(--bc) / 0.06) !important;
 }
 :deep(.tabulator .tabulator-row.table-row-invalid) {
-  background-color: rgba(239, 68, 68, 0.2) !important;
-  color: #fca5a5 !important;
+  background-color: hsl(var(--er) / 0.15) !important;
+  color: hsl(var(--er)) !important;
 }
 :deep(.tabulator .tabulator-row.table-row-invalid:hover) {
-  background-color: rgba(239, 68, 68, 0.3) !important;
+  background-color: hsl(var(--er) / 0.25) !important;
 }
 :deep(.tabulator .tabulator-header .tabulator-col.tabulator-frozen) {
-  background: #0d1527 !important;
+  background: hsl(var(--b2, 220 18% 18%)) !important;
 }
 :deep(.tabulator .tabulator-row .tabulator-cell.tabulator-frozen) {
-  background: #0d1527 !important;
+  background: hsl(var(--b1)) !important;
 }
 :deep(.tabulator .tabulator-row.tabulator-row-even .tabulator-cell.tabulator-frozen) {
-  background: #0b1120 !important;
+  background: hsl(var(--b2)) !important;
 }
 :deep(.tabulator .tabulator-row:hover .tabulator-cell.tabulator-frozen) {
-  background: #162238 !important;
+  background: hsl(var(--b3)) !important;
 }
 :deep(.tabulator .tabulator-cell) {
-  border-right-color: rgba(255, 255, 255, 0.06) !important;
+  border-right-color: hsl(var(--bc) / 0.08) !important;
 }
 :deep(.tabulator .tabulator-footer) {
-  background: rgba(8, 12, 20, 0.85) !important;
-  border-top: 1px solid rgba(0, 240, 255, 0.2) !important;
-  color: #94a3b8 !important;
+  background: hsl(var(--b2)) !important;
+  border-top: 1px solid hsl(var(--bc) / 0.15) !important;
+  color: hsl(var(--bc) / 0.7) !important;
 }
 :deep(.tabulator-page) {
-  background: rgba(13, 20, 36, 0.8) !important;
-  border-color: rgba(0, 240, 255, 0.2) !important;
-  color: #cbd5e1 !important;
+  background: hsl(var(--b3)) !important;
+  border-color: hsl(var(--bc) / 0.15) !important;
+  color: hsl(var(--bc)) !important;
 }
 :deep(.tabulator-page.active) {
-  background: var(--cyber-cyan, #00f0ff) !important;
-  color: #0b1120 !important;
+  background: hsl(var(--p)) !important;
+  color: hsl(var(--pc)) !important;
 }
 </style>

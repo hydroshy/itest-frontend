@@ -584,7 +584,7 @@ const statusDisplayText = computed(() => {
 }
 
 .header-icon {
-  color: var(--el-color-primary, #00f0ff);
+  color: hsl(var(--p));
 }
 
 .header-title {
@@ -757,13 +757,13 @@ const statusDisplayText = computed(() => {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: #00f0ff;
+  color: var(--owl-text-muted, #94a3b8);
 }
 
 .readout-display-box {
-  background: #050b14;
-  border: 1px solid rgba(0, 240, 255, 0.15);
-  border-radius: 4px;
+  background: var(--owl-bg-surface, #1e2430);
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
+  border-radius: 6px;
   padding: 10px 14px;
   display: flex;
   align-items: center;
@@ -773,9 +773,8 @@ const statusDisplayText = computed(() => {
 .readout-value {
   font-size: 20px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--owl-text-bright, #ffffff);
   letter-spacing: 2px;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
 }
 
 /* CYBER PROGRESS BLOCK */
@@ -805,7 +804,7 @@ const statusDisplayText = computed(() => {
 }
 
 .progress-meta-stage {
-  color: #00f0ff;
+  color: hsl(var(--p));
   font-weight: 600;
 }
 
@@ -821,17 +820,15 @@ const statusDisplayText = computed(() => {
 }
 
 .verdict-running {
-  color: #00f0ff;
+  color: hsl(var(--in));
 }
 
 .verdict-pass {
-  color: #67c23a;
-  text-shadow: 0 0 8px rgba(103, 194, 58, 0.5);
+  color: #10b981;
 }
 
 .verdict-fail {
-  color: #f56c6c;
-  text-shadow: 0 0 8px rgba(245, 108, 108, 0.5);
+  color: #ef4444;
 }
 
 .progress-meta-percent {
@@ -844,11 +841,10 @@ const statusDisplayText = computed(() => {
 .cyber-microdots-track {
   position: relative;
   height: 14px;
-  background: #050b14;
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: var(--owl-bg-surface, #1e2430);
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.2));
   border-radius: 7px;
   overflow: visible;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8);
 }
 
 .cyber-microdots-fill {
@@ -856,24 +852,21 @@ const statusDisplayText = computed(() => {
   top: 0;
   left: 0;
   bottom: 0;
-  background: linear-gradient(90deg, #0055ff, #00f0ff);
+  background: hsl(var(--p));
   border-radius: 6px;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
 }
 
 .cyber-microdots-fill.is-running {
-  background: linear-gradient(90deg, #0055ff, #00f0ff);
+  background: hsl(var(--in));
 }
 
 .cyber-microdots-fill.is-pass {
-  background: linear-gradient(90deg, #13ce66, #67c23a);
-  box-shadow: 0 0 12px rgba(103, 194, 58, 0.6);
+  background: #10b981;
 }
 
 .cyber-microdots-fill.is-fail {
-  background: linear-gradient(90deg, #e6a23c, #f56c6c);
-  box-shadow: 0 0 12px rgba(245, 108, 108, 0.6);
+  background: #ef4444;
 }
 
 .fill-lead-head {
@@ -892,7 +885,7 @@ const statusDisplayText = computed(() => {
   height: 8px;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 0 8px #00f0ff, 0 0 16px #00f0ff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   animation: beacon-pulse 1s infinite alternate;
 }
 

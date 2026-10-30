@@ -643,6 +643,67 @@ div.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placehold
 }
 
 /* ==========================================================================
+   8b. TABULATOR CONTEXT MENUS & POPUPS (daisyUI Dim Minimalist Theme)
+   ========================================================================== */
+.tabulator-menu,
+.tabulator-popup,
+.tabulator-edit-list {
+  background-color: var(--owl-bg-surface, #2A303C) !important;
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15)) !important;
+  border-radius: var(--cyber-radius-md, 8px) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+  padding: 6px 0 !important;
+  color: var(--owl-text-primary, #f1f5f9) !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  z-index: 99999 !important;
+  min-width: 170px !important;
+}
+
+.tabulator-menu .tabulator-menu-item,
+.tabulator-popup .tabulator-menu-item,
+.tabulator-edit-list .tabulator-edit-list-item {
+  padding: 8px 16px !important;
+  color: var(--owl-text-primary, #f1f5f9) !important;
+  background: transparent !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+  user-select: none !important;
+}
+
+.tabulator-menu .tabulator-menu-item:hover,
+.tabulator-popup .tabulator-menu-item:hover,
+.tabulator-edit-list .tabulator-edit-list-item:hover {
+  background-color: var(--owl-bg-card-hover, #2e3543) !important;
+  color: var(--owl-text-bright, #ffffff) !important;
+}
+
+.tabulator-menu .tabulator-menu-separator {
+  border-top: 1px solid var(--owl-border-light, rgba(178, 204, 214, 0.1)) !important;
+  margin: 4px 0 !important;
+  height: 0 !important;
+}
+
+.tabulator-menu .tabulator-menu-item-disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  color: var(--owl-text-muted, #72849a) !important;
+}
+
+.tabulator-menu .tabulator-menu-item-disabled:hover {
+  background-color: transparent !important;
+}
+
+.tabulator-popup-container {
+  z-index: 99999 !important;
+}
+
+/* ==========================================================================
    9. DIALOGS, MODALS & POPPERS
    ========================================================================== */
 .el-dialog,

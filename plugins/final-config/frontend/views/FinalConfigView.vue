@@ -295,26 +295,59 @@
 
       <!-- Modal Chi Tiết Profile -->
       <dialog class="modal" :class="{ 'modal-open': detailVisible }">
-        <div class="modal-box w-11/12 max-w-5xl border border-base-content/10 bg-base-100">
+        <div class="modal-box w-11/12 max-w-5xl border border-base-content/10 bg-base-100 shadow-xl">
           <div class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10">
-            <h3 class="font-bold text-lg">Chi tiết Final Config</h3>
+            <h3 class="font-bold text-lg text-base-content">Chi tiết Final Config</h3>
             <button class="btn btn-ghost btn-xs btn-circle" @click="detailVisible = false">
               <X class="w-4 h-4" />
             </button>
           </div>
-          <div v-if="detailLoading" class="flex justify-center py-8">
+          <div v-if="detailLoading" class="flex justify-center py-12">
             <span class="loading loading-spinner loading-md text-primary"></span>
           </div>
-          <div v-else>
-            <div v-if="detail" class="details flex flex-wrap gap-4 text-sm font-mono bg-base-200/50 p-3 rounded-lg border border-base-content/10 mb-4">
-              <span class="font-bold text-primary">{{ detail.sku }}</span>
-              <span>SO: {{ detail.soNumber || detail.so_number }}</span>
-              <span>ITEM: {{ detail.itemCode || detail.item_code }}</span>
+          <div v-show="!detailLoading">
+            <div v-if="detail" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-base-200/60 p-3.5 rounded-lg border border-base-content/10 mb-4 font-mono">
+              <div>
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">SKU</span>
+                <span class="font-bold text-sm text-primary">{{ detail.sku || '—' }}</span>
+              </div>
+              <div>
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">SO Number</span>
+                <span class="font-medium text-base-content">{{ detail.soNumber || detail.so_number || '—' }}</span>
+              </div>
+              <div>
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Item Code</span>
+                <span class="font-medium text-base-content">{{ detail.itemCode || detail.item_code || '—' }}</span>
+              </div>
+              <div>
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Connectivity</span>
+                <span class="badge badge-sm badge-outline font-sans">{{ detail.connectivity || '—' }}</span>
+              </div>
+              <div>
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Long FW</span>
+                <span class="font-medium text-base-content">{{ detail.longFw || detail.long_fw || '—' }}</span>
+              </div>
+              <div>
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Short FW</span>
+                <span class="font-medium text-base-content">{{ detail.shortFw || detail.short_fw || '—' }}</span>
+              </div>
+              <div>
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Số lượng Registers</span>
+                <span class="badge badge-sm badge-neutral font-sans">{{ (detail.registers && detail.registers.length) || detail.registersCount || 0 }} registers</span>
+              </div>
+              <div>
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Ngày tạo</span>
+                <span class="text-base-content/80">{{ detail.createdAt ? new Date(detail.createdAt).toLocaleString('vi-VN') : (detail.created_at ? new Date(detail.created_at).toLocaleString('vi-VN') : '—') }}</span>
+              </div>
+              <div v-if="detail.notes || detail.description" class="col-span-2 sm:col-span-4 border-t border-base-content/5 pt-2">
+                <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Ghi chú</span>
+                <span class="text-base-content/80 font-sans">{{ detail.notes || detail.description }}</span>
+              </div>
             </div>
-            <div ref="detailTableEl" class="tabulator-host register-table" />
+            <div ref="detailTableEl" class="tabulator-host register-table min-h-[300px]" />
           </div>
           <div class="modal-action">
-            <button class="btn btn-sm" @click="detailVisible = false">Đóng</button>
+            <button class="btn btn-sm btn-ghost" @click="detailVisible = false">Đóng</button>
           </div>
         </div>
         <form method="dialog" class="modal-backdrop" @click="detailVisible = false">
@@ -724,22 +757,25 @@ async function viewProfile(id: string) {
   detail.value = null;
   try {
     detail.value = await request<Row>(API, `/profiles/${id}`);
-    await nextTick();
-    destroy(detailTable);
-    detailTable = undefined;
-    if (detailTableEl.value && detail.value) {
-      detailTable = new Tabulator(detailTableEl.value, {
-        data: detail.value.registers || [],
-        layout: 'fitDataStretch',
-        height: '430px',
-        columns: registerColumns(false) as any
-      });
-    }
   } catch (e) {
     cyberToast.error(e instanceof Error ? e.message : 'Không thể tải chi tiết');
     detailVisible.value = false;
+    return;
   } finally {
     detailLoading.value = false;
+  }
+
+  await nextTick();
+  destroy(detailTable);
+  detailTable = undefined;
+  if (detailTableEl.value && detail.value) {
+    detailTable = new Tabulator(detailTableEl.value, {
+      data: detail.value.registers || [],
+      layout: 'fitDataStretch',
+      height: '430px',
+      placeholder: 'Không có dữ liệu register',
+      columns: registerColumns(false) as any
+    });
   }
 }
 
@@ -799,12 +835,10 @@ onBeforeUnmount(() => {
 <style scoped>
 .isolated-tool-wrapper {
   padding: 16px 20px;
-  background: rgba(13, 20, 36, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--owl-bg-surface, #1e2430);
   border-radius: 8px;
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.12));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .isolated-header {
@@ -813,16 +847,15 @@ onBeforeUnmount(() => {
   gap: 16px;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+  border-bottom: 1px solid var(--owl-border, rgba(178, 204, 214, 0.1));
 }
 
 .isolated-title {
-  font-family: var(--cyber-font-display, 'Rajdhani', sans-serif);
-  font-size: 18px;
+  font-family: inherit;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: 1px;
-  color: #00f0ff;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  letter-spacing: 0.5px;
+  color: var(--owl-text-primary, #f1f5f9);
 }
 
 .final-config-page {
@@ -832,8 +865,8 @@ onBeforeUnmount(() => {
 }
 
 .tabulator-host {
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
   overflow: hidden;
 }
 
@@ -843,37 +876,37 @@ onBeforeUnmount(() => {
 }
 
 :deep(.tabulator-header) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: currentColor !important;
+  background-color: var(--owl-bg-card-hover, rgba(255, 255, 255, 0.04)) !important;
+  border-bottom: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15)) !important;
+  color: var(--owl-text-primary, #f1f5f9) !important;
   font-weight: 600;
 }
 
 :deep(.tabulator-row) {
   background-color: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-  color: currentColor !important;
+  border-bottom: 1px solid var(--owl-border-light, rgba(255, 255, 255, 0.05)) !important;
+  color: var(--owl-text-primary, #f1f5f9) !important;
 }
 
 :deep(.tabulator-row:hover) {
-  background-color: rgba(0, 240, 255, 0.05) !important;
+  background-color: var(--owl-bg-card-hover, rgba(255, 255, 255, 0.05)) !important;
 }
 
 :deep(.tabulator-row.tabulator-selected) {
-  background-color: rgba(0, 240, 255, 0.1) !important;
+  background-color: rgba(59, 130, 246, 0.15) !important;
 }
 
 :deep(.check-pass) {
-  color: #67c23a;
-  font-weight: bold;
+  color: #10b981;
+  font-weight: 600;
 }
 
 :deep(.check-fail) {
-  color: #f56c6c;
-  font-weight: bold;
+  color: #ef4444;
+  font-weight: 600;
 }
 
 :deep(.invalid-row) {
-  background: rgba(245, 108, 108, 0.12) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
 }
 </style>

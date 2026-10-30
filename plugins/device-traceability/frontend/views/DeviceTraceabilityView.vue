@@ -1115,17 +1115,21 @@ import 'tabulator-tables/dist/css/tabulator.min.css';
 const route = useRoute();
 const router = useRouter();
 
-// Isolated view check: khi url có ?tab=... hoặc ?from=menu hoặc ?isolated=true
+// Isolated view check: chỉ khi url có ?isolated=true
 const isIsolatedView = computed(() => {
-  return !!route.query.tab || route.query.from === 'menu' || route.query.isolated === 'true';
+  return route.query.isolated === 'true';
 });
 
-const normalizedActiveTab = computed(() => {
-  const tab = (route?.query?.tab as string) || activeTab.value;
-  if (tab === 'devices' || tab === 'testing-devices' || tab === 'device-testing') return 'device-testing';
-  if (tab === 'config' || tab === 'config-devices' || tab === 'device-final-config') return 'device-final-config';
+const resolveTabName = (tab?: any): string => {
+  const t = String(tab || '');
+  if (t === 'devices' || t === 'testing-devices' || t === 'device-testing') return 'device-testing';
+  if (t === 'config' || t === 'config-devices' || t === 'device-final-config') return 'device-final-config';
   return 'sale-orders';
-});
+};
+
+// Active Tab
+const activeTab = ref(resolveTabName(route?.query?.tab));
+const normalizedActiveTab = computed(() => activeTab.value);
 const currentDisplayTab = normalizedActiveTab;
 
 const isolatedTitle = computed(() => {
@@ -1138,25 +1142,13 @@ function goBackToMenu() {
   router.push('/menu');
 }
 
-// Active Tab
-const activeTab = ref(
-  (route?.query?.tab === 'devices' || route?.query?.tab === 'testing-devices' || route?.query?.tab === 'device-testing') ? 'device-testing' :
-  (route?.query?.tab === 'config' || route?.query?.tab === 'config-devices' || route?.query?.tab === 'device-final-config') ? 'device-final-config' :
-  'sale-orders'
-);
-
 watch(() => route?.query?.tab, (newTab) => {
   if (newTab) {
-    if (newTab === 'devices' || newTab === 'testing-devices' || newTab === 'device-testing') {
-      activeTab.value = 'device-testing';
-    } else if (newTab === 'config' || newTab === 'config-devices' || newTab === 'device-final-config') {
-      activeTab.value = 'device-final-config';
-    } else if (newTab === 'so' || newTab === 'sale-orders') {
-      activeTab.value = 'sale-orders';
-    } else {
-      activeTab.value = newTab as string;
+    const resolved = resolveTabName(newTab);
+    if (activeTab.value !== resolved) {
+      activeTab.value = resolved;
+      onTabChange(resolved);
     }
-    onTabChange(activeTab.value);
   }
 });
 
@@ -2094,6 +2086,7 @@ const loadSoTreeData = async () => {
 
     if (soTabulator) {
       await soTabulator.setData(treeData);
+      soTabulator.redraw(true);
     }
   } catch (err: any) {
     ElMessage.error(`Lỗi tải cây dữ liệu Sale Order: ${err.message}`);
@@ -2288,6 +2281,7 @@ const loadTestingDevices = async () => {
 
     if (testingTabulator) {
       await testingTabulator.setData(items);
+      testingTabulator.redraw(true);
     }
   } catch (err: any) {
     ElMessage.error(`Lỗi tải danh sách kiểm thử: ${err.message}`);
@@ -2438,6 +2432,7 @@ const loadFinalConfigDevices = async () => {
 
     if (configTabulator) {
       await configTabulator.setData(items);
+      configTabulator.redraw(true);
     }
   } catch (err: any) {
     ElMessage.error(`Lỗi tải danh sách cấu hình cuối: ${err.message}`);
@@ -2518,13 +2513,25 @@ const handleDeleteDevice = async (deviceId: string, identifier: string) => {
 const onTabChange = (tabName: any) => {
   nextTick(() => {
     if (tabName === 'sale-orders') {
-      if (!soTabulator) initSoTreeTable();
+      if (!soTabulator) {
+        initSoTreeTable();
+      } else {
+        soTabulator.redraw(true);
+      }
       loadSoTreeData();
     } else if (tabName === 'device-testing') {
-      if (!testingTabulator) initTestingTable();
+      if (!testingTabulator) {
+        initTestingTable();
+      } else {
+        testingTabulator.redraw(true);
+      }
       loadTestingDevices();
     } else if (tabName === 'device-final-config') {
-      if (!configTabulator) initConfigTable();
+      if (!configTabulator) {
+        initConfigTable();
+      } else {
+        configTabulator.redraw(true);
+      }
       loadFinalConfigDevices();
     }
   });
@@ -2532,6 +2539,7 @@ const onTabChange = (tabName: any) => {
 
 const switchTab = (tabName: string) => {
   activeTab.value = tabName;
+  router.replace({ query: { ...route.query, tab: tabName } });
   onTabChange(tabName);
 };
 
@@ -2907,13 +2915,12 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  background: rgba(13, 20, 36, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: hsl(var(--b2) / 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 16px 20px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  border: 1px solid hsl(var(--b3));
 }
 
 .isolated-header-bar {
@@ -2921,31 +2928,28 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 16px;
   margin-bottom: 16px;
-  background: rgba(13, 20, 36, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: hsl(var(--b2) / 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 12px 20px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  border: 1px solid hsl(var(--b3));
 }
 
 .isolated-title {
-  font-family: var(--cyber-font-display, 'Rajdhani', sans-serif);
+  font-family: inherit;
   font-size: 18px;
   font-weight: 700;
-  letter-spacing: 0.8px;
-  color: var(--cyber-cyan, #00f0ff);
+  color: hsl(var(--bc));
 }
 
 .isolated-content-panel {
-  background: rgba(13, 20, 36, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: hsl(var(--b2) / 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 8px;
   padding: 16px;
-  border: 1px solid rgba(0, 240, 255, 0.15);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  border: 1px solid hsl(var(--b3));
 }
 
 .header-title h2 {
@@ -2973,12 +2977,11 @@ onBeforeUnmount(() => {
 }
 
 .main-tabs {
-  background: rgba(13, 20, 36, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: hsl(var(--b2) / 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 8px;
-  border: 1px solid rgba(0, 240, 255, 0.15);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  border: 1px solid hsl(var(--b3));
 }
 
 .tab-content {
@@ -3009,12 +3012,12 @@ onBeforeUnmount(() => {
 
 .table-guide-hint {
   font-size: 12px;
-  color: #94a3b8;
+  color: hsl(var(--bc) / 0.6);
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(0, 240, 255, 0.08);
-  border: 1px solid rgba(0, 240, 255, 0.15);
+  background: hsl(var(--b2));
+  border: 1px solid hsl(var(--b3));
   padding: 4px 10px;
   border-radius: 4px;
 }
@@ -3022,10 +3025,10 @@ onBeforeUnmount(() => {
 .table-wrapper {
   position: relative;
   min-height: 380px;
-  border: 1px solid rgba(0, 240, 255, 0.15);
+  border: 1px solid hsl(var(--b3));
   border-radius: 6px;
   overflow: hidden;
-  background: rgba(10, 15, 26, 0.4);
+  background: hsl(var(--b1));
 }
 
 .loading-overlay {
@@ -3034,15 +3037,15 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10, 15, 26, 0.85);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: hsl(var(--b1) / 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   font-weight: 500;
-  color: var(--cyber-cyan, #00f0ff);
+  color: hsl(var(--bc));
   z-index: 10;
 }
 
@@ -3180,9 +3183,9 @@ onBeforeUnmount(() => {
 }
 
 .customer-email-badge {
-  background: rgba(0, 240, 255, 0.1);
-  color: #00f0ff;
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: hsl(var(--b2));
+  color: hsl(var(--bc));
+  border: 1px solid hsl(var(--b3));
   padding: 1px 6px;
   border-radius: 4px;
   font-size: 11px;
@@ -3266,7 +3269,7 @@ onBeforeUnmount(() => {
 .pct-text {
   font-size: 11px;
   font-weight: bold;
-  color: #00f0ff;
+  color: hsl(var(--p));
   min-width: 32px;
 }
 
@@ -3354,8 +3357,8 @@ onBeforeUnmount(() => {
 }
 
 .dis-detail-section {
-  background: rgba(0, 240, 255, 0.03);
-  border: 1px solid rgba(0, 240, 255, 0.15);
+  background: hsl(var(--b2) / 0.3);
+  border: 1px solid hsl(var(--b3));
   border-radius: 6px;
   padding: 12px;
 }
@@ -3400,47 +3403,47 @@ onBeforeUnmount(() => {
 }
 
 :deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control) {
-  border-color: rgba(0, 240, 255, 0.5) !important;
-  background: rgba(0, 240, 255, 0.15) !important;
+  border-color: hsl(var(--bc) / 0.3) !important;
+  background: hsl(var(--b2)) !important;
 }
 
 :deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control:hover) {
-  background: rgba(0, 240, 255, 0.3) !important;
+  background: hsl(var(--b3)) !important;
 }
 
 :deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control .tabulator-data-tree-control-collapse:after),
 :deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control .tabulator-data-tree-control-expand),
 :deep(.tabulator-row .tabulator-cell .tabulator-data-tree-control .tabulator-data-tree-control-expand:after) {
-  background: #00f0ff !important;
+  background: hsl(var(--bc) / 0.8) !important;
 }
 
 :deep(.tabulator-header) {
-  background-color: rgba(8, 12, 20, 0.85) !important;
-  border-bottom: 2px solid rgba(0, 240, 255, 0.3) !important;
+  background-color: hsl(var(--b2)) !important;
+  border-bottom: 1px solid hsl(var(--b3)) !important;
   font-weight: 600;
-  color: var(--cyber-cyan, #00f0ff) !important;
+  color: hsl(var(--bc)) !important;
 }
 
 :deep(.tabulator-row) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid hsl(var(--b3) / 0.4);
   background-color: transparent !important;
-  color: #cbd5e1 !important;
+  color: hsl(var(--bc)) !important;
 }
 
 :deep(.tabulator-row:hover) {
-  background-color: rgba(0, 240, 255, 0.08) !important;
+  background-color: hsl(var(--b2) / 0.6) !important;
   cursor: pointer;
 }
 
 :deep(.tabulator-row.tabulator-tree-level-1) {
-  background-color: rgba(0, 240, 255, 0.02) !important;
+  background-color: transparent !important;
 }
 
 :deep(.tabulator-row.tabulator-tree-level-2) {
-  background-color: rgba(0, 240, 255, 0.04) !important;
+  background-color: transparent !important;
 }
 
 :deep(.tabulator-row.tabulator-tree-level-3) {
-  background-color: rgba(0, 240, 255, 0.06) !important;
+  background-color: transparent !important;
 }
 </style>

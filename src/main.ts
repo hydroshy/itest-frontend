@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import 'tabulator-tables/dist/css/tabulator.min.css';
 import './assets/tailwind.css';
 import './assets/cyber-theme.css';
 import { cyberToast } from './services/cyberToast';
