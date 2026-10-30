@@ -155,7 +155,7 @@
           </div>
         </form>
       </div>
-      <div class="modal-backdrop bg-black/60" @click="dialogVisible = false"></div>
+      <div class="modal-backdrop" @click.stop.prevent></div>
     </div>
 
     <!-- Role Wizard Dialog -->

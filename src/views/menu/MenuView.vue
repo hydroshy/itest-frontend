@@ -323,10 +323,9 @@
     <Teleport to="body">
       <dialog
         v-if="detailModalVisible"
-        class="modal modal-open bg-black/60 backdrop-blur-sm z-[9998]"
-        @click.self="detailModalVisible = false"
+        class="modal modal-open z-[9998]"
       >
-        <div class="modal-box max-w-2xl bg-[#0f1724] border border-slate-700/80 rounded-2xl shadow-2xl p-6 text-slate-200 max-h-[85vh] flex flex-col">
+        <div class="modal-box max-w-2xl bg-[#0f1724] border border-slate-700/80 rounded-2xl shadow-2xl p-6 text-slate-200 max-h-[85vh] flex flex-col relative z-10">
           <!-- Header -->
           <div class="flex items-center justify-between pb-4 border-b border-slate-800">
             <div class="flex items-center gap-3">
@@ -433,6 +432,7 @@
             </button>
           </div>
         </div>
+        <div class="modal-backdrop" @click.stop.prevent></div>
       </dialog>
     </Teleport>
   </div>

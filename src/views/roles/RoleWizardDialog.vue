@@ -1,8 +1,8 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/80 backdrop-blur-sm animate-fadeIn">
+  <div v-if="visible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 animate-fadeIn">
     <!-- Wizard Modal Container -->
     <div
-      class="relative w-full max-w-5xl bg-[#081d32]/95 border border-[#1d3b5a] rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_25px_rgba(0,240,255,0.15)] flex flex-col max-h-[92vh] overflow-hidden text-xs font-sans text-[#d6deeb]"
+      class="relative z-10 w-full max-w-5xl bg-[#081d32]/95 border border-[#1d3b5a] rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_25px_rgba(0,240,255,0.15)] flex flex-col max-h-[92vh] overflow-hidden text-xs font-sans text-[#d6deeb]"
     >
       <!-- Cyber Top Ambient Glow line -->
       <div class="h-1 w-full bg-gradient-to-r from-transparent via-[#00f0ff] to-transparent"></div>
@@ -452,6 +452,7 @@
         </div>
       </div>
     </div>
+    <div class="modal-backdrop" @click.stop.prevent></div>
   </div>
 </template>
 

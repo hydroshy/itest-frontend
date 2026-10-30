@@ -2,9 +2,19 @@
   <dialog :class="['modal modal-bottom sm:modal-middle backdrop-blur-md z-[9999]', confirmState.isOpen ? 'modal-open' : '']">
     <div class="modal-box bg-slate-900/95 border border-slate-700/60 shadow-2xl rounded-2xl text-slate-200 font-sans p-6 max-w-md">
       <!-- Title -->
-      <h3 class="font-semibold text-base text-white flex items-center gap-2.5 border-b border-slate-800 pb-3">
-        <span :class="getIconColor(confirmState.type)" class="text-lg">{{ getIcon(confirmState.type) }}</span>
-        <span class="tracking-tight">{{ confirmState.title }}</span>
+      <h3 class="font-semibold text-base text-white flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span :class="getIconColor(confirmState.type)" class="text-lg">{{ getIcon(confirmState.type) }}</span>
+          <span class="tracking-tight">{{ confirmState.title }}</span>
+        </div>
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs btn-circle text-slate-400 hover:text-white hover:bg-slate-800"
+          aria-label="Đóng"
+          @click="handleConfirmAction('cancel')"
+        >
+          ✕
+        </button>
       </h3>
 
       <!-- Content -->
@@ -31,9 +41,7 @@
         </button>
       </div>
     </div>
-    <form method="dialog" class="modal-backdrop" @click="handleConfirmAction('cancel')">
-      <button>close</button>
-    </form>
+    <div class="modal-backdrop" @click.stop.prevent></div>
   </dialog>
 </template>
 

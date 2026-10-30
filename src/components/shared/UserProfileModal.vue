@@ -1,12 +1,11 @@
 <template>
   <div
     v-if="visible"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn"
-    @click.self="handleClose"
+    class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
   >
     <!-- Modal Card Container -->
     <div
-      class="relative w-full max-w-lg bg-base-300 border border-base-content/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content ring-1 ring-base-content/10"
+      class="relative z-10 w-full max-w-lg bg-base-300 border border-base-content/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content ring-1 ring-base-content/10"
     >
       <!-- Top Accent Line -->
       <div class="h-1 w-full bg-gradient-to-r from-primary via-info to-primary/40"></div>
@@ -292,6 +291,7 @@
         </form>
       </div>
     </div>
+    <div class="modal-backdrop" @click.stop.prevent></div>
   </div>
 </template>
 
