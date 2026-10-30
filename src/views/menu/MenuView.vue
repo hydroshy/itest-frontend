@@ -3,29 +3,29 @@
     <!-- Top Bar Portal: Search & Category Filters (Teleported to Navbar) -->
     <Teleport to="#layout-navbar-center" v-if="mounted && hasNavbarPortal">
       <div class="flex items-center gap-3 w-full justify-center max-w-2xl">
-        <!-- Search bar with daisyUI input flex alignment -->
-        <label class="input input-sm h-9 bg-base-300/80 focus-within:bg-base-300 focus-within:border-primary border border-base-content/15 rounded-xl flex items-center gap-2.5 flex-1 max-w-sm px-3 shadow-inner transition-all">
+        <!-- Search bar with refined smooth glass style -->
+        <div class="relative flex items-center flex-1 max-w-sm group">
           <CyberIcon
             name="search"
-            :size="15"
-            class="text-base-content/50 shrink-0 pointer-events-none"
+            :size="14"
+            class="absolute left-3 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none"
           />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Tìm kiếm phân hệ..."
-            class="grow bg-transparent text-xs text-base-content placeholder:text-base-content/40 focus:outline-none min-w-0"
+            class="w-full h-9 pl-9 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-xl border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
           />
           <button
             v-if="searchQuery"
             type="button"
             @click="searchQuery = ''"
-            class="btn btn-ghost btn-xs btn-circle h-5 w-5 min-h-0 text-base-content/40 hover:text-base-content shrink-0"
+            class="absolute right-2.5 text-slate-400 hover:text-slate-200 text-xs transition-colors p-0.5 rounded-full"
             title="Xóa tìm kiếm"
           >
             ✕
           </button>
-        </label>
+        </div>
 
         <!-- Category tabs -->
         <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15 shrink-0 shadow-inner h-9 items-center flex">
@@ -59,27 +59,27 @@
       v-if="mounted && !hasNavbarPortal"
       class="flex flex-wrap items-center justify-between gap-3 mb-4 bg-base-200/60 p-3 rounded-2xl border border-base-content/10 shadow-sm"
     >
-      <label class="input input-sm h-9 bg-base-300/80 focus-within:bg-base-300 focus-within:border-primary border border-base-content/15 rounded-xl flex items-center gap-2.5 flex-1 min-w-[220px] max-w-sm px-3 shadow-inner transition-all">
+      <div class="relative flex items-center flex-1 min-w-[220px] max-w-sm group">
         <CyberIcon
           name="search"
-          :size="15"
-          class="text-base-content/50 shrink-0 pointer-events-none"
+          :size="14"
+          class="absolute left-3 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none"
         />
         <input
           v-model="searchQuery"
           type="text"
           placeholder="Tìm kiếm phân hệ..."
-          class="grow bg-transparent text-xs text-base-content placeholder:text-base-content/40 focus:outline-none min-w-0"
+          class="w-full h-9 pl-9 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-xl border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
         />
         <button
           v-if="searchQuery"
           type="button"
           @click="searchQuery = ''"
-          class="btn btn-ghost btn-xs btn-circle h-5 w-5 min-h-0 text-base-content/40 hover:text-base-content shrink-0"
+          class="absolute right-2.5 text-slate-400 hover:text-slate-200 text-xs transition-colors p-0.5 rounded-full"
         >
           ✕
         </button>
-      </label>
+      </div>
 
       <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15 shrink-0 shadow-inner h-9 items-center flex">
         <button
@@ -167,6 +167,7 @@
                 :key="card.id"
                 class="card bg-[#162032] hover:bg-[#1c2940] border border-slate-700/80 hover:border-primary/80 rounded-2xl p-5 sm:p-6 shadow-lg shadow-black/40 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden min-h-[185px]"
                 @click="navigateTo(card)"
+                @contextmenu.prevent="handleContextMenu($event, card)"
               >
                 <!-- Top Row: Icon + Category Badge -->
                 <div class="flex items-center justify-between">
@@ -179,12 +180,22 @@
                       class="text-primary group-hover:text-primary transition-colors"
                     />
                   </div>
-                  <span
-                    class="badge badge-sm font-mono tracking-wider font-semibold"
-                    :class="card.category === 'system' ? 'badge-info badge-outline' : 'badge-ghost border-slate-700/80 text-base-content/70'"
-                  >
-                    {{ card.category === 'system' ? 'SYSTEM' : 'PLUGIN' }}
-                  </span>
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs btn-circle text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-colors"
+                      title="Tùy chọn & chi tiết"
+                      @click.stop="handleContextMenu($event, card)"
+                    >
+                      <MoreVertical :size="14" />
+                    </button>
+                    <span
+                      class="badge badge-sm font-mono tracking-wider font-semibold"
+                      :class="card.category === 'system' ? 'badge-info badge-outline' : 'badge-ghost border-slate-700/80 text-base-content/70'"
+                    >
+                      {{ card.category === 'system' ? 'SYSTEM' : 'PLUGIN' }}
+                    </span>
+                  </div>
                 </div>
 
                 <!-- Middle Content: Title + Description -->
@@ -271,12 +282,166 @@
         </button>
       </div>
     </div>
+
+    <!-- Context Menu -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        class="fixed z-[9999] min-w-[210px] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl py-1 px-1 text-slate-200 select-none animate-in fade-in zoom-in-95 duration-100"
+        :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
+        @click.stop
+      >
+        <div class="px-3 py-1.5 border-b border-slate-700/50 mb-1">
+          <div class="text-xs font-semibold text-slate-100 truncate">{{ contextMenu.card?.title }}</div>
+          <div class="text-[10px] text-slate-400 truncate font-mono">{{ contextMenu.card?.pluginId || contextMenu.card?.category }}</div>
+        </div>
+        <button
+          @click="openCardDetails(contextMenu.card)"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-primary/20 hover:text-primary rounded-lg transition-colors text-left"
+        >
+          <Info :size="14" class="text-primary" />
+          <span>Hiển thị chi tiết</span>
+        </button>
+        <button
+          @click="if (contextMenu.card) navigateTo(contextMenu.card); closeContextMenu()"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-lg transition-colors text-left"
+        >
+          <ExternalLink :size="14" class="text-slate-400" />
+          <span>Mở phân hệ</span>
+        </button>
+        <button
+          @click="openInNewTab(contextMenu.card); closeContextMenu()"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-lg transition-colors text-left"
+        >
+          <Layers :size="14" class="text-slate-400" />
+          <span>Mở trong tab mới</span>
+        </button>
+      </div>
+    </Teleport>
+
+    <!-- Modal Chi Tiết Phân Hệ (Đặc biệt Final Config) -->
+    <Teleport to="body">
+      <dialog
+        v-if="detailModalVisible"
+        class="modal modal-open bg-black/60 backdrop-blur-sm z-[9998]"
+        @click.self="detailModalVisible = false"
+      >
+        <div class="modal-box max-w-2xl bg-[#0f1724] border border-slate-700/80 rounded-2xl shadow-2xl p-6 text-slate-200 max-h-[85vh] flex flex-col">
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+                <CyberIcon :name="resolveCyberIconName(detailCard!)" :size="22" />
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                  {{ detailCard?.title }}
+                  <span class="badge badge-sm badge-outline font-mono text-[10px] border-slate-600 text-slate-300">
+                    {{ detailCard?.pluginId || detailCard?.category }}
+                  </span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">{{ detailCard?.description }}</p>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm btn-circle text-slate-400 hover:text-slate-100" @click="detailModalVisible = false">✕</button>
+          </div>
+
+          <!-- Body -->
+          <div class="py-4 space-y-4 overflow-y-auto flex-1 pr-1">
+            <!-- Metadata Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+              <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
+                <div class="text-[10px] text-slate-400 uppercase font-mono">Đường dẫn Route</div>
+                <div class="font-mono font-semibold text-slate-200 mt-0.5 truncate">{{ detailCard?.route || detailCard?.path || 'N/A' }}</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
+                <div class="text-[10px] text-slate-400 uppercase font-mono">Phân loại</div>
+                <div class="font-semibold text-slate-200 mt-0.5 capitalize">{{ detailCard?.category || 'Plugin' }}</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
+                <div class="text-[10px] text-slate-400 uppercase font-mono">Trạng thái Adapter</div>
+                <div class="font-semibold text-emerald-400 mt-0.5 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Online
+                </div>
+              </div>
+            </div>
+
+            <!-- Specific Detail section for Final Config -->
+            <div v-if="detailCard?.pluginId === 'final-config' || detailCard?.id.includes('final-config')" class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                  <CyberIcon name="cpu" :size="14" class="text-primary" />
+                  <span>Danh sách Profile Final Config ({{ finalConfigProfiles.length }})</span>
+                </h4>
+                <span v-if="detailModalLoading" class="loading loading-spinner loading-xs text-primary"></span>
+              </div>
+
+              <div v-if="detailModalLoading" class="py-8 text-center text-xs text-slate-400">
+                Đang tải dữ liệu cấu hình Final Config...
+              </div>
+
+              <div v-else-if="finalConfigProfiles.length === 0" class="py-6 text-center text-xs text-slate-400 bg-[#162032]/50 rounded-xl border border-dashed border-slate-700/50">
+                Chưa có profile Final Config nào được lưu trong hệ thống.
+              </div>
+
+              <div v-else class="border border-slate-700/60 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+                <table class="table table-xs w-full bg-[#162032]/60">
+                  <thead class="bg-[#1b263b] text-[11px] text-slate-300 sticky top-0">
+                    <tr>
+                      <th>Mã SO</th>
+                      <th>Item Code</th>
+                      <th>SKU</th>
+                      <th>Kết nối</th>
+                      <th>Thanh ghi</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs font-mono">
+                    <tr v-for="prof in finalConfigProfiles" :key="prof.id" class="hover:bg-slate-800/50 transition-colors">
+                      <td class="font-bold text-primary">{{ prof.soNumber || '-' }}</td>
+                      <td class="text-slate-200">{{ prof.itemCode || '-' }}</td>
+                      <td class="text-slate-300">{{ prof.sku || '-' }}</td>
+                      <td><span class="badge badge-xs badge-info badge-outline">{{ prof.connectivity || 'RS485' }}</span></td>
+                      <td class="text-center font-bold text-amber-400">{{ prof.registersCount || 0 }}</td>
+                      <td>
+                        <span class="badge badge-xs" :class="prof.status === 'ACTIVE' || prof.status === 'active' ? 'badge-success' : 'badge-ghost'">
+                          {{ prof.status || 'Active' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Detail for other plugins -->
+            <div v-else class="p-4 rounded-xl bg-[#162032] border border-slate-700/50 text-xs space-y-2">
+              <div class="text-slate-300 font-semibold">Thông tin mô tả:</div>
+              <p class="text-slate-400 leading-relaxed">{{ detailCard?.description || 'Phân hệ chức năng trong hệ thống ITEST.' }}</p>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+            <button class="btn btn-sm btn-ghost text-xs text-slate-400 hover:text-slate-100" @click="detailModalVisible = false">
+              Đóng
+            </button>
+            <button class="btn btn-sm btn-primary text-xs gap-1.5" @click="if (detailCard) navigateTo(detailCard); detailModalVisible = false">
+              <ExternalLink :size="13" />
+              <span>Đi tới phân hệ này</span>
+            </button>
+          </div>
+        </div>
+      </dialog>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { MoreVertical, Info, ExternalLink, Layers } from 'lucide-vue-next';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 import { httpClient } from '@/api/client';
 import { useAuthStore } from '@/stores/auth';
@@ -576,6 +741,87 @@ function handleResize() {
   windowWidth.value = window.innerWidth;
 }
 
+// Context menu state
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  card: null as MenuCardItem | null,
+});
+
+function handleContextMenu(e: MouseEvent, card: MenuCardItem) {
+  const menuWidth = 220;
+  const menuHeight = 160;
+  let posX = e.clientX;
+  let posY = e.clientY;
+
+  if (posX + menuWidth > window.innerWidth) {
+    posX = Math.max(10, window.innerWidth - menuWidth - 10);
+  }
+  if (posY + menuHeight > window.innerHeight) {
+    posY = Math.max(10, window.innerHeight - menuHeight - 10);
+  }
+
+  contextMenu.value = {
+    visible: true,
+    x: posX,
+    y: posY,
+    card,
+  };
+}
+
+function closeContextMenu() {
+  contextMenu.value.visible = false;
+}
+
+function openInNewTab(card: MenuCardItem | null) {
+  if (!card) return;
+  const target = card.route || card.path;
+  if (target) {
+    const url = router.resolve(target).href;
+    window.open(url, '_blank');
+  }
+}
+
+// Detail modal state
+const detailModalVisible = ref(false);
+const detailModalLoading = ref(false);
+const detailCard = ref<MenuCardItem | null>(null);
+const finalConfigStatus = ref<any>(null);
+const finalConfigProfiles = ref<any[]>([]);
+
+async function openCardDetails(card: MenuCardItem | null) {
+  if (!card) return;
+  detailCard.value = card;
+  detailModalVisible.value = true;
+  closeContextMenu();
+
+  finalConfigProfiles.value = [];
+  finalConfigStatus.value = null;
+
+  if (card.pluginId === 'final-config' || card.id.includes('final-config')) {
+    detailModalLoading.value = true;
+    try {
+      const [statusRes, profilesRes] = await Promise.allSettled([
+        httpClient.get('/api/plugins/final-config/status'),
+        httpClient.get('/api/plugins/final-config/profiles'),
+      ]);
+
+      if (statusRes.status === 'fulfilled' && statusRes.value?.data) {
+        finalConfigStatus.value = statusRes.value.data;
+      }
+      if (profilesRes.status === 'fulfilled' && profilesRes.value?.data) {
+        const raw = profilesRes.value.data;
+        finalConfigProfiles.value = Array.isArray(raw) ? raw : (raw.data || []);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải chi tiết final config:', err);
+    } finally {
+      detailModalLoading.value = false;
+    }
+  }
+}
+
 function handleKeyDown(e: KeyboardEvent) {
   // Ignore keyboard shortcuts if user is typing in an input
   const activeTag = (document.activeElement?.tagName || '').toLowerCase();
@@ -595,11 +841,13 @@ onMounted(() => {
   fetchMenuCards();
   window.addEventListener('resize', handleResize);
   window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('click', closeContextMenu);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('click', closeContextMenu);
 });
 </script>
 

@@ -350,7 +350,7 @@ const registerColumns = [
 function makeRegisterTable(host: HTMLElement, data: RecordRow[]) {
   return new Tabulator(host, {
     data,
-    layout: 'fitDataStretch',
+    layout: 'fitColumns',
     responsiveLayout: false,
     height: '440px',
     pagination: true,
@@ -360,7 +360,9 @@ function makeRegisterTable(host: HTMLElement, data: RecordRow[]) {
     columns: registerColumns as any,
     rowFormatter: (row: any) => {
       const d = row.getData();
-      if (d.decimalValid === false || d.hexValid === false) row.getElement().classList.add('table-row-invalid');
+      if (d && (d.decimalValid === false || d.hexValid === false)) {
+        row.getElement()?.classList?.add('table-row-invalid');
+      }
     },
   });
 }
@@ -457,7 +459,9 @@ async function viewDetail(id: string) {
     await nextTick();
     renderDetailTable();
     await nextTick();
-    detailTable?.redraw(true);
+    if (detailTableEl.value && detailTableEl.value.offsetWidth > 0) {
+      detailTable?.redraw(true);
+    }
   } catch (e) {
     ElMessage.error(e instanceof Error ? e.message : 'Không thể tải profile');
     detailDialogVisible.value = false;
