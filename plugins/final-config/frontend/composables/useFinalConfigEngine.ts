@@ -1,30 +1,6 @@
 
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { ElMessage } from 'element-plus';
-import {
-  Operation,
-  Top,
-  Bottom,
-  WarningFilled,
-  Tickets,
-  CircleCheckFilled,
-  Cpu,
-  Link,
-  SwitchButton,
-  Refresh,
-  CircleCloseFilled,
-  Loading,
-  VideoPlay,
-  RefreshLeft,
-  CloseBold,
-  Clock,
-  Grid,
-  Search,
-  Document,
-  Monitor,
-  CopyDocument,
-  Delete,
-} from '@element-plus/icons-vue';
+import { cyberToast } from '@/cyber/hud';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 
@@ -48,7 +24,11 @@ const fcFormatBytes = (bytes: any): string => {
 };
 
 const showToast = (msg: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-  ElMessage({ message: msg, type });
+  if (cyberToast && typeof cyberToast[type] === 'function') {
+    cyberToast[type](msg);
+  } else if (cyberToast && typeof cyberToast.info === 'function') {
+    cyberToast.info(msg);
+  }
 };
 
 const authHeaders = () => {

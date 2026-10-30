@@ -1,809 +1,854 @@
 <template>
   <div class="traceability-container">
     <!-- Page Header (hiển thị khi không phân lập hoặc isolated view header) -->
-    <div v-if="isIsolatedView" class="isolated-header-bar">
-      <el-button link :icon="ArrowLeft" @click="goBackToMenu">Trở về Menu</el-button>
-      <span class="isolated-title">{{ isolatedTitle }}</span>
-      <div class="header-actions" style="margin-left: auto;">
-        <el-button v-if="normalizedActiveTab === 'sale-orders'" type="warning" :icon="Download" @click="openDisSyncDialog">Đồng bộ từ DIS (Odoo)</el-button>
-        <el-button v-if="normalizedActiveTab === 'sale-orders'" type="primary" :icon="Plus" @click="openCreateSoDialog">Tạo Sale Order Mới</el-button>
-        <el-button v-if="normalizedActiveTab === 'sale-orders'" type="success" :icon="Upload" @click="openImportCsvDialog">Import CSV Thiết Bị</el-button>
-        <el-button :icon="Refresh" @click="refreshActiveTabData">Làm mới dữ liệu</el-button>
+    <div v-if="isIsolatedView" class="isolated-header-bar flex items-center gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
+      <button class="btn btn-ghost btn-sm gap-2" @click="goBackToMenu">
+        <ArrowLeft class="w-4 h-4" /> Trở về Menu
+      </button>
+      <span class="isolated-title font-bold text-base text-base-content">{{ isolatedTitle }}</span>
+      <div class="header-actions ml-auto flex items-center gap-2">
+        <button v-if="normalizedActiveTab === 'sale-orders'" class="btn btn-warning btn-sm gap-1" @click="openDisSyncDialog">
+          <Download class="w-4 h-4" /> Đồng bộ từ DIS (Odoo)
+        </button>
+        <button v-if="normalizedActiveTab === 'sale-orders'" class="btn btn-primary btn-sm gap-1" @click="openCreateSoDialog">
+          <Plus class="w-4 h-4" /> Tạo Sale Order Mới
+        </button>
+        <button v-if="normalizedActiveTab === 'sale-orders'" class="btn btn-success btn-sm gap-1" @click="openImportCsvDialog">
+          <Upload class="w-4 h-4" /> Import CSV Thiết Bị
+        </button>
+        <button class="btn btn-outline btn-sm gap-1" @click="refreshActiveTabData">
+          <RefreshCw class="w-4 h-4" /> Làm mới dữ liệu
+        </button>
       </div>
     </div>
 
-    <div v-else class="page-header">
+    <div v-else class="page-header flex flex-wrap items-center justify-between gap-4 pb-2 mb-4">
       <div class="header-title">
-        <h2><el-icon><Files /></el-icon> Quản Lý Truy Xuất Nguồn Gốc (Traceability)</h2>
-        <span class="subtitle">Quản lý Sale Order, Work Authorization, Thiết Bị Kiểm Thử &amp; Cấu Hình Cuối</span>
+        <h2 class="text-2xl font-bold flex items-center gap-2 tracking-tight">
+          <Files class="w-6 h-6 text-primary" /> Quản Lý Truy Xuất Nguồn Gốc (Traceability)
+        </h2>
+        <span class="subtitle text-xs text-base-content/70">Quản lý Sale Order, Work Authorization, Thiết Bị Kiểm Thử &amp; Cấu Hình Cuối</span>
       </div>
-      <div class="header-actions">
-        <el-button type="warning" :icon="Download" @click="openDisSyncDialog">Đồng bộ từ DIS (Odoo)</el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreateSoDialog">Tạo Sale Order Mới</el-button>
-        <el-button type="success" :icon="Upload" @click="openImportCsvDialog">Import CSV Thiết Bị</el-button>
-        <el-button :icon="Refresh" @click="refreshAllData">Làm mới dữ liệu</el-button>
+      <div class="header-actions flex items-center gap-2">
+        <button class="btn btn-warning btn-sm gap-1" @click="openDisSyncDialog">
+          <Download class="w-4 h-4" /> Đồng bộ từ DIS (Odoo)
+        </button>
+        <button class="btn btn-primary btn-sm gap-1" @click="openCreateSoDialog">
+          <Plus class="w-4 h-4" /> Tạo Sale Order Mới
+        </button>
+        <button class="btn btn-success btn-sm gap-1" @click="openImportCsvDialog">
+          <Upload class="w-4 h-4" /> Import CSV Thiết Bị
+        </button>
+        <button class="btn btn-outline btn-sm gap-1" @click="refreshAllData">
+          <RefreshCw class="w-4 h-4" /> Làm mới dữ liệu
+        </button>
       </div>
     </div>
 
-    <!-- Main Navigation Tabs: Ẩn thanh tab khi ở chế độ Isolated View -->
-    <div v-if="isIsolatedView" class="isolated-content-panel">
+    <!-- Main Navigation Tabs (Hidden in Isolated View) -->
+    <div v-if="!isIsolatedView" role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300">
+      <button
+        role="tab"
+        class="tab font-semibold transition-all flex items-center gap-2"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'sale-orders' }"
+        @click="switchTab('sale-orders')"
+      >
+        <FolderOpen class="w-4 h-4" />
+        SALE ORDERS (Cây SO &rarr; WA &rarr; Device)
+      </button>
+      <button
+        role="tab"
+        class="tab font-semibold transition-all flex items-center gap-2"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'device-testing' }"
+        @click="switchTab('device-testing')"
+      >
+        <List class="w-4 h-4" />
+        DEVICE TESTING LIST (Danh Sách Kiểm Thử)
+      </button>
+      <button
+        role="tab"
+        class="tab font-semibold transition-all flex items-center gap-2"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'device-final-config' }"
+        @click="switchTab('device-final-config')"
+      >
+        <CheckCircle2 class="w-4 h-4" />
+        DEVICE FINAL CONFIG LIST (Cấu Hình Cuối)
+      </button>
+    </div>
+
+    <!-- Unified Tab Content Panels (v-show preserves Tabulator DOM elements) -->
+    <div class="tab-panels">
       <!-- TAB 1: SALE ORDERS -->
-      <div v-if="normalizedActiveTab === 'sale-orders'" class="tab-content">
-        <div class="filter-bar">
-          <div class="filter-left">
-            <el-input
-              v-model="soSearchNumber"
-              placeholder="Tìm mã SO..."
-              clearable
-              style="width: 200px"
-              :prefix-icon="Search"
-              @clear="loadSoTreeData"
-              @keyup.enter="loadSoTreeData"
-            />
-            <el-input
-              v-model="soSearchCustomer"
-              placeholder="Tìm tên khách hàng..."
-              clearable
-              style="width: 220px"
-              :prefix-icon="Search"
-              @clear="loadSoTreeData"
-              @keyup.enter="loadSoTreeData"
-            />
-            <el-button type="primary" :icon="Search" @click="loadSoTreeData">Tìm kiếm</el-button>
-            <el-button @click="resetSoFilters">Đặt lại</el-button>
-          </div>
-          <div class="filter-right">
-            <el-button size="small" @click="expandAllSoTree">Mở rộng tất cả</el-button>
-            <el-button size="small" @click="collapseAllSoTree">Thu gọn tất cả</el-button>
-            <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Nhấp đúp hoặc chuột phải vào dòng SO để xem chi tiết & danh sách WA</span>
-          </div>
-        </div>
-
-        <div class="table-wrapper">
-          <div ref="soTableRef" class="tabulator-custom-theme"></div>
-          <div v-if="soTreeLoading" class="loading-overlay">
-            <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải cây dữ liệu Sale Order...</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 2: DEVICE TESTING LIST -->
-      <div v-else-if="normalizedActiveTab === 'device-testing'" class="tab-content">
-        <div class="filter-bar">
-          <div class="filter-left">
-            <el-input
-              v-model="testingSearchSerial"
-              placeholder="Tìm S/N hoặc DevEUI..."
-              clearable
-              style="width: 220px"
-              :prefix-icon="Search"
-              @clear="loadTestingDevices"
-              @keyup.enter="loadTestingDevices"
-            />
-            <el-input
-              v-model="testingSearchSo"
-              placeholder="Lọc theo Mã SO..."
-              clearable
-              style="width: 180px"
-              :prefix-icon="Search"
-              @clear="loadTestingDevices"
-              @keyup.enter="loadTestingDevices"
-            />
-            <el-select
-              v-model="testingFilterResult"
-              placeholder="Kết quả Test"
-              clearable
-              style="width: 150px"
-              @change="loadTestingDevices"
-            >
-              <el-option label="Tất cả kết quả" value="" />
-              <el-option label="PASS" value="PASS" />
-              <el-option label="FAIL" value="FAIL" />
-              <el-option label="NONE / PENDING" value="NONE" />
-            </el-select>
-            <el-button type="primary" :icon="Search" @click="loadTestingDevices">Lọc danh sách</el-button>
-            <el-button @click="resetTestingFilters">Đặt lại</el-button>
-          </div>
-          <div class="filter-right">
-            <el-button :icon="Refresh" size="small" @click="loadTestingDevices">Làm mới</el-button>
-            <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Nhấp đúp dòng để xem dữ liệu JSON kiểm thử</span>
-          </div>
-        </div>
-
-        <div class="table-wrapper">
-          <div ref="testingTableRef" class="tabulator-custom-theme"></div>
-          <div v-if="testingLoading" class="loading-overlay">
-            <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải danh sách thiết bị kiểm thử...</span>
-          </div>
-        </div>
-
-        <div class="pagination-bar">
-          <el-pagination
-            v-model:current-page="testingPage"
-            v-model:page-size="testingLimit"
-            :page-sizes="[20, 50, 100, 200]"
-            layout="total, sizes, prev, pager, next, jumper"
-            :total="testingTotal"
-            @size-change="loadTestingDevices"
-            @current-change="loadTestingDevices"
-          />
-        </div>
-      </div>
-
-      <!-- TAB 3: DEVICE FINAL CONFIG LIST -->
-      <div v-else-if="normalizedActiveTab === 'device-final-config'" class="tab-content">
-        <div class="filter-bar">
-          <div class="filter-left">
-            <el-input
-              v-model="configSearchSerial"
-              placeholder="Tìm S/N hoặc DevEUI..."
-              clearable
-              style="width: 220px"
-              :prefix-icon="Search"
-              @clear="loadFinalConfigDevices"
-              @keyup.enter="loadFinalConfigDevices"
-            />
-            <el-select
-              v-model="configFilterStatus"
-              placeholder="Trạng thái Config"
-              clearable
-              style="width: 180px"
-              @change="loadFinalConfigDevices"
-            >
-              <el-option label="Tất cả trạng thái" value="" />
-              <el-option label="CONFIGURED_PASS" value="CONFIGURED_PASS" />
-              <el-option label="CONFIG_FAILED" value="CONFIG_FAILED" />
-              <el-option label="UNCONFIGURED / NONE" value="NONE" />
-            </el-select>
-            <el-button type="primary" :icon="Search" @click="loadFinalConfigDevices">Lọc danh sách</el-button>
-            <el-button @click="resetConfigFilters">Đặt lại</el-button>
-          </div>
-          <div class="filter-right">
-            <el-button :icon="Refresh" size="small" @click="loadFinalConfigDevices">Làm mới</el-button>
-            <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải để xem Session / Đổi trạng thái Config / Xóa</span>
-          </div>
-        </div>
-
-        <div class="table-wrapper">
-          <div ref="configTableRef" class="tabulator-custom-theme"></div>
-          <div v-if="configLoading" class="loading-overlay">
-            <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải danh sách thiết bị cấu hình cuối...</span>
-          </div>
-        </div>
-
-        <div class="pagination-bar">
-          <el-pagination
-            v-model:current-page="configPage"
-            v-model:page-size="configLimit"
-            :page-sizes="[20, 50, 100, 200]"
-            layout="total, sizes, prev, pager, next, jumper"
-            :total="configTotal"
-            @size-change="loadFinalConfigDevices"
-            @current-change="loadFinalConfigDevices"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Chế độ đầy đủ có el-tabs thông thường -->
-    <el-tabs v-else v-model="activeTab" type="border-card" class="main-tabs" @tab-change="onTabChange">
-      <!-- TAB 1: SALE ORDERS (CÂY DỮ LIỆU SO -> WA -> DEVICE) -->
-      <el-tab-pane label="SALE ORDERS (Cây SO -> WA -> Device)" name="sale-orders">
-        <div class="tab-content">
-          <div class="filter-bar">
-            <div class="filter-left">
-              <el-input
+      <div v-show="currentDisplayTab === 'sale-orders'" class="tab-content">
+        <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
+          <div class="filter-left flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <input
                 v-model="soSearchNumber"
+                type="text"
                 placeholder="Tìm mã SO..."
-                clearable
-                style="width: 200px"
-                :prefix-icon="Search"
-                @clear="loadSoTreeData"
+                class="input input-bordered input-sm w-48 pr-8"
                 @keyup.enter="loadSoTreeData"
               />
-              <el-input
+              <button
+                v-if="soSearchNumber"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
+                @click="soSearchNumber = ''; loadSoTreeData()"
+              >✕</button>
+            </div>
+            <div class="relative">
+              <input
                 v-model="soSearchCustomer"
+                type="text"
                 placeholder="Tìm tên khách hàng..."
-                clearable
-                style="width: 220px"
-                :prefix-icon="Search"
-                @clear="loadSoTreeData"
+                class="input input-bordered input-sm w-52 pr-8"
                 @keyup.enter="loadSoTreeData"
               />
-              <el-button type="primary" :icon="Search" @click="loadSoTreeData">Tìm kiếm</el-button>
-              <el-button @click="resetSoFilters">Đặt lại</el-button>
+              <button
+                v-if="soSearchCustomer"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
+                @click="soSearchCustomer = ''; loadSoTreeData()"
+              >✕</button>
             </div>
-            <div class="filter-right">
-              <el-button size="small" @click="expandAllSoTree">Mở rộng tất cả</el-button>
-              <el-button size="small" @click="collapseAllSoTree">Thu gọn tất cả</el-button>
-              <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Nhấp đúp hoặc chuột phải vào dòng SO để xem chi tiết & danh sách WA</span>
-            </div>
+            <button class="btn btn-primary btn-sm gap-1" @click="loadSoTreeData">
+              <Search class="w-4 h-4" /> Tìm kiếm
+            </button>
+            <button class="btn btn-ghost btn-sm" @click="resetSoFilters">Đặt lại</button>
           </div>
-
-          <!-- Tabulator Tree Container -->
-          <div class="table-wrapper">
-            <div ref="soTableRef" class="tabulator-custom-theme"></div>
-            <div v-if="soTreeLoading" class="loading-overlay">
-              <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải cây dữ liệu Sale Order...</span>
-            </div>
+          <div class="filter-right flex flex-wrap items-center gap-2">
+            <button class="btn btn-outline btn-sm" @click="expandAllSoTree">Mở rộng tất cả</button>
+            <button class="btn btn-outline btn-sm" @click="collapseAllSoTree">Thu gọn tất cả</button>
+            <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
+              <Info class="w-4 h-4 text-info" /> Nhấp đúp hoặc chuột phải vào dòng SO để xem chi tiết & danh sách WA
+            </span>
           </div>
         </div>
-      </el-tab-pane>
+
+        <div class="table-wrapper relative min-h-[400px]">
+          <div ref="soTableRef" class="tabulator-custom-theme"></div>
+          <div v-if="soTreeLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
+            <Loader2 class="w-5 h-5 animate-spin text-primary" />
+            <span class="text-sm font-medium">Đang tải cây dữ liệu Sale Order...</span>
+          </div>
+        </div>
+      </div>
 
       <!-- TAB 2: DEVICE TESTING LIST -->
-      <el-tab-pane label="DEVICE TESTING LIST (Danh Sách Kiểm Thử)" name="device-testing">
-        <div class="tab-content">
-          <div class="filter-bar">
-            <div class="filter-left">
-              <el-input
+      <div v-show="currentDisplayTab === 'device-testing'" class="tab-content">
+        <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
+          <div class="filter-left flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <input
                 v-model="testingSearchSerial"
+                type="text"
                 placeholder="Tìm S/N hoặc DevEUI..."
-                clearable
-                style="width: 220px"
-                :prefix-icon="Search"
-                @clear="loadTestingDevices"
+                class="input input-bordered input-sm w-48 pr-8"
                 @keyup.enter="loadTestingDevices"
               />
-              <el-input
+              <button
+                v-if="testingSearchSerial"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
+                @click="testingSearchSerial = ''; loadTestingDevices()"
+              >✕</button>
+            </div>
+            <div class="relative">
+              <input
                 v-model="testingSearchSo"
+                type="text"
                 placeholder="Lọc theo Mã SO..."
-                clearable
-                style="width: 180px"
-                :prefix-icon="Search"
-                @clear="loadTestingDevices"
+                class="input input-bordered input-sm w-44 pr-8"
                 @keyup.enter="loadTestingDevices"
               />
-              <el-select
-                v-model="testingFilterResult"
-                placeholder="Kết quả Test"
-                clearable
-                style="width: 150px"
-                @change="loadTestingDevices"
-              >
-                <el-option label="Tất cả kết quả" value="" />
-                <el-option label="PASS" value="PASS" />
-                <el-option label="FAIL" value="FAIL" />
-                <el-option label="NONE / PENDING" value="NONE" />
-              </el-select>
-              <el-button type="primary" :icon="Search" @click="loadTestingDevices">Lọc danh sách</el-button>
-              <el-button @click="resetTestingFilters">Đặt lại</el-button>
+              <button
+                v-if="testingSearchSo"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
+                @click="testingSearchSo = ''; loadTestingDevices()"
+              >✕</button>
             </div>
-            <div class="filter-right">
-              <el-button type="success" :icon="Upload" size="small" @click="openImportCsvDialog">Import CSV</el-button>
-              <el-button :icon="Refresh" size="small" @click="loadTestingDevices">Làm mới</el-button>
-              <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải để đổi trạng thái Test hoặc Xóa thiết bị</span>
-            </div>
+            <select v-model="testingFilterResult" class="select select-bordered select-sm w-36" @change="loadTestingDevices">
+              <option value="">Tất cả kết quả</option>
+              <option value="PASS">PASS</option>
+              <option value="FAIL">FAIL</option>
+              <option value="NONE">NONE / PENDING</option>
+            </select>
+            <button class="btn btn-primary btn-sm gap-1" @click="loadTestingDevices">
+              <Search class="w-4 h-4" /> Lọc danh sách
+            </button>
+            <button class="btn btn-ghost btn-sm" @click="resetTestingFilters">Đặt lại</button>
           </div>
-
-          <!-- Tabulator Testing Container -->
-          <div class="table-wrapper">
-            <div ref="testingTableRef" class="tabulator-custom-theme"></div>
-            <div v-if="testingLoading" class="loading-overlay">
-              <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải danh sách thiết bị kiểm thử...</span>
-            </div>
-          </div>
-
-          <!-- Pagination Bar -->
-          <div class="pagination-bar">
-            <el-pagination
-              v-model:current-page="testingPage"
-              v-model:page-size="testingLimit"
-              :page-sizes="[20, 50, 100, 200]"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="testingTotal"
-              @size-change="loadTestingDevices"
-              @current-change="loadTestingDevices"
-            />
+          <div class="filter-right flex flex-wrap items-center gap-2">
+            <button class="btn btn-success btn-sm gap-1" @click="openImportCsvDialog">
+              <Upload class="w-4 h-4" /> Import CSV
+            </button>
+            <button class="btn btn-outline btn-sm gap-1" @click="loadTestingDevices">
+              <RefreshCw class="w-4 h-4" /> Làm mới
+            </button>
+            <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
+              <Info class="w-4 h-4 text-info" /> Chuột phải để đổi trạng thái Test hoặc Xóa thiết bị
+            </span>
           </div>
         </div>
-      </el-tab-pane>
+
+        <div class="table-wrapper relative min-h-[400px]">
+          <div ref="testingTableRef" class="tabulator-custom-theme"></div>
+          <div v-if="testingLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
+            <Loader2 class="w-5 h-5 animate-spin text-primary" />
+            <span class="text-sm font-medium">Đang tải danh sách thiết bị kiểm thử...</span>
+          </div>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div class="pagination-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mt-3 border border-base-300 text-xs">
+          <div class="text-base-content/70">
+            Tổng số: <span class="font-bold text-primary">{{ testingTotal }}</span> bản ghi
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-base-content/70">Số dòng:</span>
+            <select v-model="testingLimit" class="select select-bordered select-xs" @change="testingPage = 1; loadTestingDevices()">
+              <option :value="20">20 / trang</option>
+              <option :value="50">50 / trang</option>
+              <option :value="100">100 / trang</option>
+              <option :value="200">200 / trang</option>
+            </select>
+            <div class="join">
+              <button class="join-item btn btn-xs" :disabled="testingPage <= 1" @click="testingPage--; loadTestingDevices()">«</button>
+              <button class="join-item btn btn-xs btn-ghost pointer-events-none">
+                Trang {{ testingPage }} / {{ Math.ceil(testingTotal / testingLimit) || 1 }}
+              </button>
+              <button class="join-item btn btn-xs" :disabled="testingPage >= (Math.ceil(testingTotal / testingLimit) || 1)" @click="testingPage++; loadTestingDevices()">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- TAB 3: DEVICE FINAL CONFIG LIST -->
-      <el-tab-pane label="DEVICE FINAL CONFIG LIST (Cấu Hình Cuối)" name="device-final-config">
-        <div class="tab-content">
-          <div class="filter-bar">
-            <div class="filter-left">
-              <el-input
+      <div v-show="currentDisplayTab === 'device-final-config'" class="tab-content">
+        <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
+          <div class="filter-left flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <input
                 v-model="configSearchSerial"
+                type="text"
                 placeholder="Tìm S/N hoặc DevEUI..."
-                clearable
-                style="width: 220px"
-                :prefix-icon="Search"
-                @clear="loadFinalConfigDevices"
+                class="input input-bordered input-sm w-48 pr-8"
                 @keyup.enter="loadFinalConfigDevices"
               />
-              <el-select
-                v-model="configFilterStatus"
-                placeholder="Trạng thái Config"
-                clearable
-                style="width: 180px"
-                @change="loadFinalConfigDevices"
-              >
-                <el-option label="Tất cả trạng thái" value="" />
-                <el-option label="CONFIGURED_PASS" value="CONFIGURED_PASS" />
-                <el-option label="CONFIG_FAILED" value="CONFIG_FAILED" />
-                <el-option label="UNCONFIGURED / NONE" value="NONE" />
-              </el-select>
-              <el-button type="primary" :icon="Search" @click="loadFinalConfigDevices">Lọc danh sách</el-button>
-              <el-button @click="resetConfigFilters">Đặt lại</el-button>
+              <button
+                v-if="configSearchSerial"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
+                @click="configSearchSerial = ''; loadFinalConfigDevices()"
+              >✕</button>
             </div>
-            <div class="filter-right">
-              <el-button :icon="Refresh" size="small" @click="loadFinalConfigDevices">Làm mới</el-button>
-              <span class="table-guide-hint"><el-icon><InfoFilled /></el-icon> Chuột phải để xem Session / Đổi trạng thái Config / Xóa</span>
+            <select v-model="configFilterStatus" class="select select-bordered select-sm w-48" @change="loadFinalConfigDevices">
+              <option value="">Tất cả trạng thái</option>
+              <option value="CONFIGURED_PASS">CONFIGURED_PASS</option>
+              <option value="CONFIG_FAILED">CONFIG_FAILED</option>
+              <option value="NONE">UNCONFIGURED / NONE</option>
+            </select>
+            <button class="btn btn-primary btn-sm gap-1" @click="loadFinalConfigDevices">
+              <Search class="w-4 h-4" /> Lọc danh sách
+            </button>
+            <button class="btn btn-ghost btn-sm" @click="resetConfigFilters">Đặt lại</button>
+          </div>
+          <div class="filter-right flex flex-wrap items-center gap-2">
+            <button class="btn btn-outline btn-sm gap-1" @click="loadFinalConfigDevices">
+              <RefreshCw class="w-4 h-4" /> Làm mới
+            </button>
+            <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
+              <Info class="w-4 h-4 text-info" /> Chuột phải để xem Session / Đổi trạng thái Config / Xóa
+            </span>
+          </div>
+        </div>
+
+        <div class="table-wrapper relative min-h-[400px]">
+          <div ref="configTableRef" class="tabulator-custom-theme"></div>
+          <div v-if="configLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
+            <Loader2 class="w-5 h-5 animate-spin text-primary" />
+            <span class="text-sm font-medium">Đang tải danh sách thiết bị cấu hình cuối...</span>
+          </div>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div class="pagination-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mt-3 border border-base-300 text-xs">
+          <div class="text-base-content/70">
+            Tổng số: <span class="font-bold text-primary">{{ configTotal }}</span> bản ghi
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-base-content/70">Số dòng:</span>
+            <select v-model="configLimit" class="select select-bordered select-xs" @change="configPage = 1; loadFinalConfigDevices()">
+              <option :value="20">20 / trang</option>
+              <option :value="50">50 / trang</option>
+              <option :value="100">100 / trang</option>
+              <option :value="200">200 / trang</option>
+            </select>
+            <div class="join">
+              <button class="join-item btn btn-xs" :disabled="configPage <= 1" @click="configPage--; loadFinalConfigDevices()">«</button>
+              <button class="join-item btn btn-xs btn-ghost pointer-events-none">
+                Trang {{ configPage }} / {{ Math.ceil(configTotal / configLimit) || 1 }}
+              </button>
+              <button class="join-item btn btn-xs" :disabled="configPage >= (Math.ceil(configTotal / configLimit) || 1)" @click="configPage++; loadFinalConfigDevices()">»</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <!-- Tabulator Config Container -->
-          <div class="table-wrapper">
-            <div ref="configTableRef" class="tabulator-custom-theme"></div>
-            <div v-if="configLoading" class="loading-overlay">
-              <el-icon class="is-loading"><Loading /></el-icon> <span>Đang tải danh sách thiết bị cấu hình cuối...</span>
-            </div>
+
+
+    <!-- DIALOG 1: RAW TEST DATA VIEWER -->
+    <dialog class="modal" :class="{ 'modal-open': rawTestDialogVisible }">
+      <div class="modal-box max-w-2xl bg-base-100 border border-base-300">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <Info class="w-5 h-5 text-primary" />
+            Chi Tiết Dữ Liệu Kiểm Thử Gốc
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="rawTestDialogVisible = false">✕</button>
+        </div>
+        <div v-if="selectedRawDevice" class="space-y-3">
+          <div class="text-sm">
+            <span class="font-semibold">Thiết bị:</span> {{ selectedRawDevice.serialNumber || selectedRawDevice.code }}
+            <span class="mx-2 text-base-content/40">|</span>
+            <span class="font-semibold">DevEUI:</span> {{ selectedRawDevice.devEui || 'N/A' }}
           </div>
+          <div class="text-sm">
+            <span class="font-semibold">Trạm kiểm thử:</span> {{ selectedRawDevice.testStation || 'N/A' }}
+            <span class="mx-2 text-base-content/40">|</span>
+            <span class="font-semibold">Người kiểm thử:</span> {{ selectedRawDevice.testPerson || 'N/A' }}
+          </div>
+          <div class="bg-base-300/50 p-3 rounded-lg border border-base-300 font-mono text-xs overflow-auto max-h-96">
+            <pre>{{ JSON.stringify(selectedRawDevice.testRawData || selectedRawDevice, null, 2) }}</pre>
+          </div>
+        </div>
+        <div v-else-if="viewingRawData" class="space-y-3">
+          <div class="bg-base-300/50 p-3 rounded-lg border border-base-300 font-mono text-xs overflow-auto max-h-96">
+            <pre>{{ JSON.stringify(viewingRawData, null, 2) }}</pre>
+          </div>
+        </div>
+        <div v-else class="text-center py-6 text-base-content/60">
+          Không có dữ liệu mở rộng.
+        </div>
+        <div class="modal-action">
+          <button class="btn btn-sm" @click="rawTestDialogVisible = false">Đóng</button>
+        </div>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="rawTestDialogVisible = false"></div>
+    </dialog>
 
-          <!-- Pagination Bar -->
-          <div class="pagination-bar">
-            <el-pagination
-              v-model:current-page="configPage"
-              v-model:page-size="configLimit"
-              :page-sizes="[20, 50, 100, 200]"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="configTotal"
-              @size-change="loadFinalConfigDevices"
-              @current-change="loadFinalConfigDevices"
+    <!-- DIALOG 2: SESSION AUDIT VIEWER -->
+    <dialog class="modal" :class="{ 'modal-open': sessionAuditDialogVisible }">
+      <div class="modal-box max-w-2xl bg-base-100 border border-base-300">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <CheckCircle2 class="w-5 h-5 text-primary" />
+            Chi Tiết Final Config Session &amp; Audit
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="sessionAuditDialogVisible = false">✕</button>
+        </div>
+        <div v-if="selectedSessionDevice" class="space-y-3">
+          <div class="text-sm">
+            <span class="font-semibold">S/N:</span> {{ selectedSessionDevice.serialNumber || selectedSessionDevice.code }}
+            <span class="mx-2 text-base-content/40">|</span>
+            <span class="font-semibold">Trạng thái Config:</span>
+            <span class="badge badge-sm ml-1" :class="selectedSessionDevice.configStatus === 'CONFIGURED_PASS' ? 'badge-success' : 'badge-error'">
+              {{ selectedSessionDevice.configStatus }}
+            </span>
+          </div>
+          <div class="text-sm">
+            <span class="font-semibold">Session ID:</span> {{ selectedSessionDevice.finalConfigSessionId || 'Chưa liên kết Session' }}
+          </div>
+          <div class="bg-base-300/50 p-3 rounded-lg border border-base-300 font-mono text-xs overflow-auto max-h-96">
+            <pre>{{ JSON.stringify(selectedSessionDevice.sessionProfile || selectedSessionDevice.auditData || selectedSessionDevice, null, 2) }}</pre>
+          </div>
+        </div>
+        <div class="modal-action">
+          <button class="btn btn-sm" @click="sessionAuditDialogVisible = false">Đóng</button>
+        </div>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="sessionAuditDialogVisible = false"></div>
+    </dialog>
+
+    <!-- DIALOG 3: TẠO MỚI SALE ORDER -->
+    <dialog class="modal" :class="{ 'modal-open': createSoVisible }">
+      <div class="modal-box max-w-md bg-base-100 border border-base-300">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <FolderOpen class="w-5 h-5 text-primary" />
+            Tạo Mới Đơn Hàng (Sale Order)
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="createSoVisible = false">✕</button>
+        </div>
+        <form @submit.prevent="submitCreateSo" class="space-y-3">
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Mã Sale Order <span class="text-error">*</span></span></label>
+            <input v-model="newSoForm.soNumber" type="text" placeholder="Ví dụ: SO-2026-001 hoặc SO/26/001" class="input input-bordered input-sm w-full" required />
+          </div>
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Tên Khách Hàng</span></label>
+            <input v-model="newSoForm.customerName" type="text" placeholder="Tên khách hàng / Đối tác" class="input input-bordered input-sm w-full" />
+          </div>
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Ghi Chú</span></label>
+            <textarea v-model="newSoForm.notes" rows="3" placeholder="Ghi chú đơn hàng..." class="textarea textarea-bordered textarea-sm w-full"></textarea>
+          </div>
+          <div class="modal-action mt-4">
+            <button type="button" class="btn btn-ghost btn-sm" @click="createSoVisible = false">Hủy</button>
+            <button type="submit" class="btn btn-primary btn-sm" :disabled="submittingSo">
+              <Loader2 v-if="submittingSo" class="w-4 h-4 animate-spin" />
+              Tạo Mới
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="createSoVisible = false"></div>
+    </dialog>
+
+    <!-- DIALOG 4: TẠO MỚI WORK AUTHORIZATION (WA) -->
+    <dialog class="modal" :class="{ 'modal-open': createWaVisible }">
+      <div class="modal-box max-w-lg bg-base-100 border border-base-300">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <Ticket class="w-5 h-5 text-primary" />
+            Tạo Work Authorization (WA) Thuộc SO
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="createWaVisible = false">✕</button>
+        </div>
+        <form @submit.prevent="submitCreateWa" class="space-y-3">
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Sale Order</span></label>
+            <div class="font-bold text-primary text-sm px-1">{{ newWaForm.soNumber }}</div>
+          </div>
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Mã WA (WA/xxxx/xxxxx) <span class="text-error">*</span></span></label>
+            <input
+              v-model="newWaForm.waNumber"
+              type="text"
+              placeholder="Ví dụ: WA/2026/00001"
+              class="input input-bordered input-sm w-full"
+              @blur="formatWaNumberInput"
+              required
             />
+            <span class="text-xs text-base-content/60 mt-1">Cú pháp bắt buộc theo chuẩn: WA/xxxx/xxxxx</span>
           </div>
-        </div>
-      </el-tab-pane>
-    </el-tabs>
-
-    <!-- Dialogs: Raw Test Data Viewer, Session Audit Viewer, SO/WA/CSV Dialogs -->
-    <el-dialog v-model="rawTestDialogVisible" title="Chi Tiết Dữ Liệu Kiểm Thử Gốc" width="650px">
-      <div v-if="selectedRawDevice">
-        <p><strong>Thiết bị:</strong> {{ selectedRawDevice.serialNumber || selectedRawDevice.code }} | <strong>DevEUI:</strong> {{ selectedRawDevice.devEui || 'N/A' }}</p>
-        <p><strong>Trạm kiểm thử:</strong> {{ selectedRawDevice.testStation || 'N/A' }} | <strong>Người kiểm thử:</strong> {{ selectedRawDevice.testPerson || 'N/A' }}</p>
-        <div class="json-code-box">
-          <pre>{{ JSON.stringify(selectedRawDevice.testRawData || selectedRawDevice, null, 2) }}</pre>
-        </div>
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Item Code / Mã SP</span></label>
+            <input v-model="newWaForm.itemCode" type="text" placeholder="Ví dụ: WSLRW-C-RS485-01" class="input input-bordered input-sm w-full" />
+          </div>
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Số Lượng Kế Hoạch</span></label>
+            <input v-model.number="newWaForm.plannedQuantity" type="number" min="1" max="100000" class="input input-bordered input-sm w-full" />
+          </div>
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Ghi Chú</span></label>
+            <textarea v-model="newWaForm.notes" rows="2" placeholder="Ghi chú lệnh..." class="textarea textarea-bordered textarea-sm w-full"></textarea>
+          </div>
+          <div class="modal-action mt-4">
+            <button type="button" class="btn btn-ghost btn-sm" @click="createWaVisible = false">Hủy</button>
+            <button type="submit" class="btn btn-primary btn-sm" :disabled="submittingWa">
+              <Loader2 v-if="submittingWa" class="w-4 h-4 animate-spin" />
+              Tạo WA
+            </button>
+          </div>
+        </form>
       </div>
-      <template #footer>
-        <el-button @click="rawTestDialogVisible = false">Đóng</el-button>
-      </template>
-    </el-dialog>
+      <div class="modal-backdrop bg-black/60" @click="createWaVisible = false"></div>
+    </dialog>
 
-    <el-dialog v-model="sessionAuditDialogVisible" title="Chi Tiết Final Config Session &amp; Audit" width="700px">
-      <div v-if="selectedSessionDevice">
-        <p><strong>S/N:</strong> {{ selectedSessionDevice.serialNumber || selectedSessionDevice.code }} | <strong>Trạng thái Config:</strong> {{ selectedSessionDevice.configStatus }}</p>
-        <p><strong>Session ID:</strong> {{ selectedSessionDevice.finalConfigSessionId || 'Chưa liên kết Session' }}</p>
-        <div class="json-code-box">
-          <pre>{{ JSON.stringify(selectedSessionDevice.sessionProfile || selectedSessionDevice.auditData || selectedSessionDevice, null, 2) }}</pre>
+    <!-- DIALOG 5: CHI TIẾT SALE ORDER & DANH SÁCH WORK AUTHORIZATIONS (WA) -->
+    <dialog class="modal" :class="{ 'modal-open': soDetailVisible }">
+      <div class="modal-box max-w-4xl bg-base-100 border border-base-300">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <FolderOpen class="w-5 h-5 text-primary" />
+            Chi Tiết Sale Order: {{ selectedSo?.soNumber || '' }}
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="soDetailVisible = false">✕</button>
         </div>
-      </div>
-      <template #footer>
-        <el-button @click="sessionAuditDialogVisible = false">Đóng</el-button>
-      </template>
-    </el-dialog>
-
-<!-- DIALOG: TẠO MỚI SALE ORDER -->
-    <el-dialog v-model="createSoVisible" title="Tạo Mới Đơn Hàng (Sale Order)" width="500px">
-      <el-form :model="newSoForm" label-width="140px" label-position="left">
-        <el-form-item label="Mã Sale Order" required>
-          <el-input v-model="newSoForm.soNumber" placeholder="Ví dụ: SO-2026-001 hoặc SO/26/001" />
-        </el-form-item>
-        <el-form-item label="Tên Khách Hàng">
-          <el-input v-model="newSoForm.customerName" placeholder="Tên khách hàng / Đối tác" />
-        </el-form-item>
-        <el-form-item label="Ghi Chú">
-          <el-input v-model="newSoForm.notes" type="textarea" :rows="3" placeholder="Ghi chú đơn hàng..." />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createSoVisible = false">Hủy</el-button>
-        <el-button type="primary" :loading="submittingSo" @click="submitCreateSo">Tạo Mới</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- DIALOG: TẠO MỚI WORK AUTHORIZATION (WA) -->
-    <el-dialog v-model="createWaVisible" title="Tạo Work Authorization (WA) Thuộc SO" width="550px">
-      <el-form :model="newWaForm" label-width="170px" label-position="left">
-        <el-form-item label="Sale Order">
-          <span class="font-bold text-primary">{{ newWaForm.soNumber }}</span>
-        </el-form-item>
-        <el-form-item label="Mã WA (WA/xxxx/xxxxx)" required>
-          <el-input
-            v-model="newWaForm.waNumber"
-            placeholder="Ví dụ: WA/2026/00001"
-            @blur="formatWaNumberInput"
-          />
-          <span class="text-xs text-muted">Cú pháp bắt buộc theo chuẩn: WA/xxxx/xxxxx</span>
-        </el-form-item>
-        <el-form-item label="Item Code / Mã SP">
-          <el-input v-model="newWaForm.itemCode" placeholder="Ví dụ: WSLRW-C-RS485-01" />
-        </el-form-item>
-        <el-form-item label="Số Lượng Kế Hoạch">
-          <el-input-number v-model="newWaForm.plannedQuantity" :min="1" :max="100000" />
-        </el-form-item>
-        <el-form-item label="Ghi Chú">
-          <el-input v-model="newWaForm.notes" type="textarea" :rows="2" placeholder="Ghi chú lệnh..." />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createWaVisible = false">Hủy</el-button>
-        <el-button type="primary" :loading="submittingWa" @click="submitCreateWa">Tạo WA</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- DIALOG: CHI TIẾT SALE ORDER & DANH SÁCH WORK AUTHORIZATIONS (WA) -->
-    <el-dialog
-      v-model="soDetailVisible"
-      :title="`Chi Tiết Sale Order: ${selectedSo?.soNumber || ''}`"
-      width="820px"
-      top="5vh"
-    >
-      <div v-loading="loadingSoDetail" class="so-detail-container">
-        <div v-if="selectedSo" class="so-detail-content">
+        <div v-if="selectedSo" class="space-y-4">
           <!-- Summary Header -->
-          <div class="so-summary-box mb-3 p-3" style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 6px;">
-            <div class="row g-2">
-              <div class="col-md-6">
-                <div><span class="text-muted">Mã Đơn Hàng (SO):</span> <strong class="text-cyan font-mono" style="font-size: 15px;">{{ selectedSo.soNumber }}</strong></div>
-                <div><span class="text-muted">Khách Hàng:</span> <strong>{{ selectedSo.customerName || 'Không có tên' }}</strong></div>
-                <div v-if="selectedSo.partnerEmail || selectedSo.partner_email"><span class="text-muted">Email:</span> <span class="font-mono text-cyan">{{ selectedSo.partnerEmail || selectedSo.partner_email }}</span></div>
+          <div class="p-3 bg-base-200/60 border border-base-300 rounded-lg text-xs space-y-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <div><span class="text-base-content/70">Mã Đơn Hàng (SO):</span> <strong class="text-primary font-mono text-sm ml-1">{{ selectedSo.soNumber }}</strong></div>
+                <div><span class="text-base-content/70">Khách Hàng:</span> <strong class="ml-1">{{ selectedSo.customerName || 'Không có tên' }}</strong></div>
+                <div v-if="selectedSo.partnerEmail || selectedSo.partner_email"><span class="text-base-content/70">Email:</span> <span class="font-mono text-primary ml-1">{{ selectedSo.partnerEmail || selectedSo.partner_email }}</span></div>
               </div>
-              <div class="col-md-6">
-                <div><span class="text-muted">Tổng Lệnh WA:</span> <el-tag type="warning" size="small" effect="dark">{{ selectedSo.workAuthorizations?.length || selectedSo.waCount || 0 }} WA</el-tag></div>
-                <div><span class="text-muted">Tổng Thiết Bị:</span> <strong>{{ selectedSo.stats?.totalDevices ?? selectedSo.totalDevices ?? 0 }} thiết bị</strong></div>
-                <div>
-                  <span class="text-muted">Trạng Thái Test:</span>
-                  <span class="text-success font-bold ml-1">PASS: {{ selectedSo.stats?.testPassCount ?? selectedSo.testPassCount ?? 0 }}</span>,
-                  <span class="text-info font-bold ml-1">Config PASS: {{ selectedSo.stats?.configPassCount ?? selectedSo.configPassCount ?? 0 }}</span>
+              <div>
+                <div><span class="text-base-content/70">Tổng Lệnh WA:</span> <span class="badge badge-warning badge-sm font-semibold ml-1">{{ selectedSo.workAuthorizations?.length || selectedSo.waCount || 0 }} WA</span></div>
+                <div><span class="text-base-content/70">Tổng Thiết Bị:</span> <strong class="ml-1">{{ selectedSo.stats?.totalDevices ?? selectedSo.totalDevices ?? 0 }} thiết bị</strong></div>
+                <div class="mt-1">
+                  <span class="text-base-content/70">Trạng Thái Test:</span>
+                  <span class="badge badge-success badge-xs font-bold ml-1">PASS: {{ selectedSo.stats?.testPassCount ?? selectedSo.testPassCount ?? 0 }}</span>
+                  <span class="badge badge-info badge-xs font-bold ml-1">Config PASS: {{ selectedSo.stats?.configPassCount ?? selectedSo.configPassCount ?? 0 }}</span>
                 </div>
               </div>
             </div>
-            <div v-if="selectedSo.notes" class="mt-2 text-xs text-muted border-top pt-2">
+            <div v-if="selectedSo.notes" class="mt-2 text-xs text-base-content/70 border-t border-base-300 pt-2">
               <strong>Ghi chú / Nguồn:</strong> {{ selectedSo.notes }}
             </div>
           </div>
 
           <!-- WA Table Section -->
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <span style="font-weight: 600; color: #e6a23c; font-size: 14px;">
-              <el-icon class="mr-1"><Tickets /></el-icon>
-              Danh Sách Lệnh Work Authorization (WA) ({{ selectedSo.workAuthorizations?.length || 0 }} lệnh):
-            </span>
-            <el-button
-              type="primary"
-              size="small"
-              :icon="Plus"
-              @click="openCreateWaDialog(selectedSo)"
-            >
-              Thêm WA Mới
-            </el-button>
-          </div>
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-warning text-sm flex items-center gap-1">
+                <Ticket class="w-4 h-4" />
+                Danh Sách Lệnh Work Authorization (WA) ({{ selectedSo.workAuthorizations?.length || 0 }} lệnh):
+              </span>
+              <button class="btn btn-primary btn-xs gap-1" @click="openCreateWaDialog(selectedSo)">
+                <Plus class="w-3.5 h-3.5" /> Thêm WA Mới
+              </button>
+            </div>
 
-          <el-table
-            :data="selectedSo.workAuthorizations || []"
-            border
-            size="small"
-            style="width: 100%"
-            max-height="280px"
-          >
-            <el-table-column prop="waNumber" label="Mã Lệnh WA" width="180">
-              <template #default="{ row }">
-                <code class="cyber-code-sm font-bold text-gold">{{ row.waNumber }}</code>
-              </template>
-            </el-table-column>
-            <el-table-column prop="itemCode" label="Item Code / Sản Phẩm" min-width="160" show-overflow-tooltip>
-              <template #default="{ row }">
-                <span class="font-bold text-primary">{{ row.itemCode || '-' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="plannedQuantity" label="Kế Hoạch" width="100" align="right">
-              <template #default="{ row }">
-                <span>{{ row.plannedQuantity || 0 }} pcs</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="notes" label="Ghi Chú" min-width="130" show-overflow-tooltip>
-              <template #default="{ row }">
-                <span class="text-xs text-muted">{{ row.notes || '-' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="Thao Tác" width="130" align="center">
-              <template #default="{ row }">
-                <el-button
-                  type="success"
-                  size="small"
-                  link
-                  :icon="Upload"
-                  @click="openImportCsvForWa(selectedSo.id, row.id)"
-                >
-                  Import CSV
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+            <div class="overflow-x-auto border border-base-300 rounded-lg max-h-72">
+              <table class="table table-xs table-zebra w-full">
+                <thead>
+                  <tr class="bg-base-200">
+                    <th class="w-44">Mã Lệnh WA</th>
+                    <th>Item Code / Sản Phẩm</th>
+                    <th class="text-right w-28">Kế Hoạch</th>
+                    <th>Ghi Chú</th>
+                    <th class="text-center w-28">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="wa in (selectedSo.workAuthorizations || [])" :key="wa.id">
+                    <td><code class="font-bold text-warning font-mono">{{ wa.waNumber }}</code></td>
+                    <td><span class="font-bold text-primary">{{ wa.itemCode || '-' }}</span></td>
+                    <td class="text-right font-mono">{{ wa.plannedQuantity || 0 }} pcs</td>
+                    <td class="text-xs text-base-content/70">{{ wa.notes || '-' }}</td>
+                    <td class="text-center">
+                      <button class="btn btn-success btn-xs gap-1" @click="openImportCsvForWa(selectedSo.id, wa.id)">
+                        <Upload class="w-3 h-3" /> Import CSV
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="!selectedSo.workAuthorizations || selectedSo.workAuthorizations.length === 0">
+                    <td colspan="5" class="text-center py-4 text-base-content/60">Chưa có lệnh WA nào thuộc SO này.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-action">
+          <button class="btn btn-ghost btn-sm" @click="soDetailVisible = false">Đóng</button>
+          <button class="btn btn-primary btn-sm gap-1" @click="openImportCsvForSo(selectedSo?.id)">
+            <Upload class="w-4 h-4" /> Import CSV Cho SO Này
+          </button>
         </div>
       </div>
-      <template #footer>
-        <el-button @click="soDetailVisible = false">Đóng</el-button>
-        <el-button
-          type="primary"
-          :icon="Upload"
-          @click="openImportCsvForSo(selectedSo?.id)"
-        >
-          Import CSV Cho SO Này
-        </el-button>
-      </template>
-    </el-dialog>
+      <div class="modal-backdrop bg-black/60" @click="soDetailVisible = false"></div>
+    </dialog>
 
-    <!-- DIALOG: IMPORT CSV FILE ĐÃ TEST -->
-    <el-dialog v-model="importCsvVisible" title="Import Danh Sách Thiết Bị Đã Test (CSV)" width="780px">
-      <div class="import-stepper">
-        <el-alert
-          type="info"
-          :closable="false"
-          show-icon
-          title="Quy định Import Dữ Liệu Kiểm Thử"
-          description="Hệ thống hỗ trợ cấu trúc file CSV kiểm thử phần cứng (ví dụ WSLRW-C-RS485-01_tested.csv). Có thể liên kết trực tiếp vào SO hoặc theo WA (nếu nhập WA hệ thống sẽ tự động gán vào SO tương ứng)."
-          class="mb-4"
-        />
+    <!-- DIALOG 6: IMPORT CSV FILE ĐÃ TEST -->
+    <dialog class="modal" :class="{ 'modal-open': importCsvVisible }">
+      <div class="modal-box max-w-3xl bg-base-100 border border-base-300">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <Upload class="w-5 h-5 text-primary" />
+            Import Danh Sách Thiết Bị Đã Test (CSV)
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="importCsvVisible = false">✕</button>
+        </div>
 
-        <el-form label-width="160px" label-position="left" class="mt-4">
-          <el-form-item label="Phương thức gán" required>
-            <el-radio-group v-model="importAssignMode">
-              <el-radio-button label="WA">Gán theo WA (khuyên dùng)</el-radio-button>
-              <el-radio-button label="SO">Gán trực tiếp SO</el-radio-button>
-            </el-radio-group>
-          </el-form-item>
+        <div class="alert alert-info py-2.5 px-4 text-xs rounded-lg mb-4 flex items-start gap-2">
+          <Info class="w-4 h-4 shrink-0 mt-0.5" />
+          <div>
+            <div class="font-semibold">Quy định Import Dữ Liệu Kiểm Thử</div>
+            <div class="opacity-90">Hệ thống hỗ trợ cấu trúc file CSV kiểm thử phần cứng (ví dụ WSLRW-C-RS485-01_tested.csv). Có thể liên kết trực tiếp vào SO hoặc theo WA (nếu nhập WA hệ thống sẽ tự động gán vào SO tương ứng).</div>
+          </div>
+        </div>
 
-          <el-form-item v-if="importAssignMode === 'WA'" label="Mã WA (WA/xxxx/xxxxx)" required>
-            <el-select
+        <form @submit.prevent="submitCsvImport" class="space-y-4">
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Phương thức gán <span class="text-error">*</span></span></label>
+            <div class="join">
+              <button
+                type="button"
+                class="join-item btn btn-sm"
+                :class="importAssignMode === 'WA' ? 'btn-primary' : 'btn-ghost border-base-300'"
+                @click="importAssignMode = 'WA'"
+              >
+                Gán theo WA (khuyên dùng)
+              </button>
+              <button
+                type="button"
+                class="join-item btn btn-sm"
+                :class="importAssignMode === 'SO' ? 'btn-primary' : 'btn-ghost border-base-300'"
+                @click="importAssignMode = 'SO'"
+              >
+                Gán trực tiếp SO
+              </button>
+            </div>
+          </div>
+
+          <!-- WA Mode -->
+          <div v-if="importAssignMode === 'WA'" class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Mã WA (WA/xxxx/xxxxx) <span class="text-error">*</span></span></label>
+            <select
               v-model="selectedImportWaId"
-              placeholder="Chọn hoặc nhập mã WA..."
-              filterable
-              allow-create
-              default-first-option
-              style="width: 100%"
-              @change="handleImportWaChanged"
+              class="select select-bordered select-sm w-full"
+              @change="handleImportWaChanged(selectedImportWaId)"
             >
-              <el-option
+              <option value="">-- Chọn hoặc nhập mã WA --</option>
+              <option
                 v-for="wa in allAvailableWas"
                 :key="wa.id"
-                :label="`${wa.waNumber} [SO: ${wa.soNumber || 'N/A'}] - ${wa.itemCode || ''}`"
                 :value="wa.id"
-              />
-            </el-select>
-            <span v-if="parsedAutoSo" class="text-xs text-primary mt-1">
-              ✓ Tự động nhận diện Sale Order: <b>{{ parsedAutoSo }}</b>
-            </span>
-          </el-form-item>
-
-          <el-form-item v-if="importAssignMode === 'SO'" label="Mã Sale Order (SO)" required>
-            <el-select
-              v-model="selectedImportSoId"
-              placeholder="Chọn hoặc nhập mã SO..."
-              filterable
-              allow-create
-              default-first-option
-              style="width: 100%"
-              @change="onImportSoChanged"
-            >
-              <el-option
-                v-for="so in saleOrdersList"
-                :key="so.id"
-                :label="`${so.soNumber} (${so.customerName || 'N/A'})`"
-                :value="so.id"
-              />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item v-if="importAssignMode === 'SO' && selectedImportSoId" label="Work Authorization (WA)">
-            <el-select
-              v-model="selectedImportWaId"
-              placeholder="Chọn WA thuộc SO này (khuyên dùng để liên kết chính xác)..."
-              filterable
-              clearable
-              style="width: 100%"
-            >
-              <el-option
-                v-for="wa in availableWasForSelectedSo"
-                :key="wa.id"
-                :label="`${wa.waNumber} - ${wa.itemCode || 'Không có Item Code'} (Kế hoạch: ${wa.plannedQuantity || 0} pcs)`"
-                :value="wa.id"
-              />
-            </el-select>
-            <div v-if="availableWasForSelectedSo.length === 0" class="text-xs text-warning mt-1">
-              ⚠️ Đơn hàng này chưa có WA. Thiết bị sẽ được gán trực tiếp vào SO.
+              >
+                {{ wa.waNumber }} [SO: {{ wa.soNumber || 'N/A' }}] - {{ wa.itemCode || '' }}
+              </option>
+            </select>
+            <div v-if="parsedAutoSo" class="text-xs text-primary mt-1 flex items-center gap-1">
+              <Check class="w-3.5 h-3.5" /> Tự động nhận diện Sale Order: <b>{{ parsedAutoSo }}</b>
             </div>
-            <div v-else class="text-xs text-info mt-1">
-              ℹ️ Đã tìm thấy {{ availableWasForSelectedSo.length }} WA của SO này. Chọn WA giúp liên kết thiết bị theo từng mặt hàng/lệnh sản xuất cụ thể.
-            </div>
-          </el-form-item>
+          </div>
 
-          <el-form-item label="Chọn File CSV" required>
+          <!-- SO Mode -->
+          <div v-if="importAssignMode === 'SO'" class="space-y-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold text-xs">Mã Sale Order (SO) <span class="text-error">*</span></span></label>
+              <select
+                v-model="selectedImportSoId"
+                class="select select-bordered select-sm w-full"
+                @change="onImportSoChanged(selectedImportSoId)"
+              >
+                <option value="">-- Chọn mã SO --</option>
+                <option
+                  v-for="so in saleOrdersList"
+                  :key="so.id"
+                  :value="so.id"
+                >
+                  {{ so.soNumber }} ({{ so.customerName || 'N/A' }})
+                </option>
+              </select>
+            </div>
+            <div v-if="selectedImportSoId" class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold text-xs">Work Authorization (WA)</span></label>
+              <select
+                v-model="selectedImportWaId"
+                class="select select-bordered select-sm w-full"
+              >
+                <option value="">-- Chọn WA thuộc SO này (khuyên dùng để liên kết chính xác) --</option>
+                <option
+                  v-for="wa in availableWasForSelectedSo"
+                  :key="wa.id"
+                  :value="wa.id"
+                >
+                  {{ wa.waNumber }} - {{ wa.itemCode || 'Không có Item Code' }} (Kế hoạch: {{ wa.plannedQuantity || 0 }} pcs)
+                </option>
+              </select>
+              <div v-if="availableWasForSelectedSo.length === 0" class="text-xs text-warning mt-1">
+                ⚠️ Đơn hàng này chưa có WA. Thiết bị sẽ được gán trực tiếp vào SO.
+              </div>
+              <div v-else class="text-xs text-info mt-1">
+                ℹ️ Đã tìm thấy {{ availableWasForSelectedSo.length }} WA của SO này. Chọn WA giúp liên kết thiết bị theo từng mặt hàng/lệnh sản xuất cụ thể.
+              </div>
+            </div>
+          </div>
+
+          <!-- File upload button -->
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold text-xs">Chọn File CSV <span class="text-error">*</span></span></label>
             <input
               type="file"
               ref="csvFileInputRef"
               accept=".csv,text/csv"
-              class="hidden-file-input"
+              class="hidden"
               @change="handleCsvFileSelected"
             />
-            <el-button type="primary" plain @click="triggerFileInput">
-              <el-icon><UploadFilled /></el-icon> Tải File CSV Lên
-            </el-button>
-            <span v-if="selectedFileName" class="ml-3 font-mono font-bold">{{ selectedFileName }}</span>
-          </el-form-item>
-        </el-form>
-
-        <!-- Preview Table -->
-        <div v-if="parsedCsvDevices.length > 0" class="csv-preview mt-4">
-          <div class="panel-header">
-            <span class="preview-title">
-              Xem trước: <b>{{ parsedCsvDevices.length }}</b> bản ghi thiết bị được đọc từ file
-            </span>
-            <el-tag type="success">
-              {{ parsedCsvDevices.filter(d => d.testResult === 'PASS').length }} PASS / {{ parsedCsvDevices.filter(d => d.testResult === 'FAIL').length }} FAIL
-            </el-tag>
+            <div class="flex items-center gap-3">
+              <button type="button" class="btn btn-outline btn-primary btn-sm gap-2" @click="triggerFileInput">
+                <Upload class="w-4 h-4" /> Tải File CSV Lên
+              </button>
+              <span v-if="selectedFileName" class="font-mono font-bold text-xs text-primary">{{ selectedFileName }}</span>
+            </div>
           </div>
 
-          <el-table :data="parsedCsvDevices.slice(0, 5)" size="small" border style="width: 100%">
-            <el-table-column prop="serialNumber" label="S/N" width="160" />
-            <el-table-column prop="devEui" label="DevEUI" width="160" />
-            <el-table-column prop="testResult" label="Kết Quả" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag size="small" :type="row.testResult === 'PASS' ? 'success' : 'danger'">
-                  {{ row.testResult }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="itemCode" label="Item Code" min-width="140" />
-            <el-table-column prop="testStation" label="Trạm Test" width="100" />
-            <el-table-column prop="testedAt" label="Thời Gian" width="150" />
-          </el-table>
-          <div v-if="parsedCsvDevices.length > 5" class="text-xs text-muted mt-1 text-center">
-            (Hiển thị 5 / {{ parsedCsvDevices.length }} bản ghi)
+          <!-- Preview Table -->
+          <div v-if="parsedCsvDevices.length > 0" class="mt-4 border border-base-300 rounded-lg p-3 bg-base-200/50 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold">
+                Xem trước: <b>{{ parsedCsvDevices.length }}</b> bản ghi thiết bị được đọc từ file
+              </span>
+              <span class="badge badge-success badge-sm font-bold">
+                {{ parsedCsvDevices.filter(d => d.testResult === 'PASS').length }} PASS / {{ parsedCsvDevices.filter(d => d.testResult === 'FAIL').length }} FAIL
+              </span>
+            </div>
+
+            <div class="overflow-x-auto max-h-48 border border-base-300 rounded">
+              <table class="table table-xs table-zebra w-full">
+                <thead>
+                  <tr class="bg-base-200">
+                    <th class="w-36">S/N</th>
+                    <th class="w-36">DevEUI</th>
+                    <th class="w-24 text-center">Kết Quả</th>
+                    <th>Item Code</th>
+                    <th class="w-28">Trạm Test</th>
+                    <th class="w-36">Thời Gian</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, idx) in parsedCsvDevices.slice(0, 5)" :key="idx">
+                    <td class="font-mono text-xs font-semibold">{{ row.serialNumber }}</td>
+                    <td class="font-mono text-xs text-primary">{{ row.devEui || '-' }}</td>
+                    <td class="text-center">
+                      <span class="badge badge-xs font-semibold" :class="row.testResult === 'PASS' ? 'badge-success' : 'badge-error'">
+                        {{ row.testResult }}
+                      </span>
+                    </td>
+                    <td class="text-xs">{{ row.itemCode || '-' }}</td>
+                    <td class="text-xs">{{ row.testStation || '-' }}</td>
+                    <td class="text-xs font-mono">{{ row.testedAt || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-if="parsedCsvDevices.length > 5" class="text-xs text-base-content/60 text-center">
+              (Hiển thị 5 / {{ parsedCsvDevices.length }} bản ghi)
+            </div>
+          </div>
+
+          <div class="modal-action mt-6">
+            <button type="button" class="btn btn-ghost btn-sm" @click="importCsvVisible = false">Đóng</button>
+            <button
+              type="submit"
+              class="btn btn-success btn-sm gap-1"
+              :disabled="parsedCsvDevices.length === 0 || submittingImport"
+            >
+              <Loader2 v-if="submittingImport" class="w-4 h-4 animate-spin" />
+              <Check v-else class="w-4 h-4" />
+              Xác Nhận Import Vào Hệ Thống
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="importCsvVisible = false"></div>
+    </dialog>
+
+    <!-- DIALOG 7: CHI TIẾT & CHỈNH SỬA THÔNG TIN THIẾT BỊ / TEST -->
+    <dialog class="modal" :class="{ 'modal-open': editDeviceDialogVisible }">
+      <div class="modal-box max-w-2xl bg-base-100 border border-base-300">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <Info class="w-5 h-5 text-primary" />
+            Chi Tiết & Chỉnh Sửa Thông Tin Thiết Bị
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="editDeviceDialogVisible = false">✕</button>
+        </div>
+
+        <div v-if="editingDeviceForm" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">Số Serial (S/N):</span></label>
+              <input :value="editingDeviceForm.serialNumber" disabled class="input input-bordered input-sm bg-base-200 text-base-content/70 cursor-not-allowed" />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">DevEUI:</span></label>
+              <input v-model="editingDeviceForm.devEui" placeholder="Nhập DevEUI (16 hex)" class="input input-bordered input-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">Mã Sản Phẩm (Item):</span></label>
+              <input v-model="editingDeviceForm.itemCode" placeholder="Mã item..." class="input input-bordered input-sm" />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">SKU:</span></label>
+              <input v-model="editingDeviceForm.sku" placeholder="SKU sản phẩm..." class="input input-bordered input-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">Kết Quả Test:</span></label>
+              <select v-model="editingDeviceForm.testResult" class="select select-bordered select-sm">
+                <option value="PASS">PASS</option>
+                <option value="FAIL">FAIL</option>
+                <option value="PENDING">NONE / PENDING</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">Trạng Thái Config:</span></label>
+              <select v-model="editingDeviceForm.configStatus" class="select select-bordered select-sm">
+                <option value="CONFIGURED_PASS">CONFIGURED_PASS (Đã nạp)</option>
+                <option value="CONFIG_FAILED">CONFIG_FAILED (Lỗi cấu hình)</option>
+                <option value="PENDING">PENDING / UNCONFIGURED</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">Trạm Kiểm Thử:</span></label>
+              <input v-model="editingDeviceForm.testStation" placeholder="Ví dụ: STATION_01" class="input input-bordered input-sm" />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">Người Kiểm Thử:</span></label>
+              <input v-model="editingDeviceForm.testPerson" placeholder="Tên hoặc mã nhân viên..." class="input input-bordered input-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">HW Version:</span></label>
+              <input v-model="editingDeviceForm.hwVersion" placeholder="Phiên bản phần cứng..." class="input input-bordered input-sm" />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text font-semibold">FW Version:</span></label>
+              <input v-model="editingDeviceForm.fwVersion" placeholder="Phiên bản firmware..." class="input input-bordered input-sm" />
+            </div>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text font-semibold">Dữ Liệu Raw Test (JSON):</span></label>
+            <textarea
+              v-model="editingDeviceForm.rawJsonText"
+              rows="5"
+              placeholder="{ ... }"
+              class="textarea textarea-bordered font-mono text-xs"
+            ></textarea>
           </div>
         </div>
+
+        <div class="modal-action border-t border-base-300 pt-3 mt-4">
+          <button class="btn btn-sm btn-ghost" @click="editDeviceDialogVisible = false">Hủy Bỏ</button>
+          <button class="btn btn-sm btn-primary" :disabled="savingDeviceDetails" @click="submitEditDeviceDetails">
+            <Loader2 v-if="savingDeviceDetails" class="w-4 h-4 animate-spin" />
+            Lưu Thay Đổi
+          </button>
+        </div>
       </div>
+      <div class="modal-backdrop bg-black/60" @click="editDeviceDialogVisible = false"></div>
+    </dialog>
 
-      <template #footer>
-        <el-button @click="importCsvVisible = false">Đóng</el-button>
-        <el-button
-          type="success"
-          :disabled="parsedCsvDevices.length === 0"
-          :loading="submittingImport"
-          @click="submitCsvImport"
-        >
-          Xác Nhận Import Vào Hệ Thống
-        </el-button>
-      </template>
-    </el-dialog>
+    <!-- DIALOG 8: TÌM KIẾM & ĐỒNG BỘ SALES ORDER TỪ DIS (ODOO) -->
+    <dialog class="modal" :class="{ 'modal-open': disSyncDialogVisible }">
+      <div class="modal-box max-w-5xl bg-base-100 border border-base-300">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <RefreshCw class="w-5 h-5 text-primary" />
+            Tra Cứu & Đồng Bộ Sales Order Từ DIS (Odoo ERP)
+          </h3>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="disSyncDialogVisible = false">✕</button>
+        </div>
 
-    <!-- DIALOG: CHI TIẾT & CHỈNH SỬA THÔNG TIN THIẾT BỊ / TEST -->
-    <el-dialog v-model="editDeviceDialogVisible" title="Chi Tiết & Chỉnh Sửa Thông Tin Thiết Bị" width="680px">
-      <el-form v-if="editingDeviceForm" :model="editingDeviceForm" label-width="150px" size="default">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Số Serial (S/N):">
-              <el-input :model-value="editingDeviceForm.serialNumber" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="DevEUI:">
-              <el-input v-model="editingDeviceForm.devEui" placeholder="Nhập DevEUI (16 hex)" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Mã Sản Phẩm (Item):">
-              <el-input v-model="editingDeviceForm.itemCode" placeholder="Mã item..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="SKU:">
-              <el-input v-model="editingDeviceForm.sku" placeholder="SKU sản phẩm..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Kết Quả Test:">
-              <el-select v-model="editingDeviceForm.testResult" style="width: 100%">
-                <el-option label="PASS" value="PASS" />
-                <el-option label="FAIL" value="FAIL" />
-                <el-option label="NONE / PENDING" value="PENDING" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Trạng Thái Config:">
-              <el-select v-model="editingDeviceForm.configStatus" style="width: 100%">
-                <el-option label="CONFIGURED_PASS (Đã nạp)" value="CONFIGURED_PASS" />
-                <el-option label="CONFIG_FAILED (Lỗi cấu hình)" value="CONFIG_FAILED" />
-                <el-option label="PENDING / UNCONFIGURED" value="PENDING" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Trạm Kiểm Thử:">
-              <el-input v-model="editingDeviceForm.testStation" placeholder="Ví dụ: STATION_01" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Người Kiểm Thử:">
-              <el-input v-model="editingDeviceForm.testPerson" placeholder="Tên hoặc mã nhân viên..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="HW Version:">
-              <el-input v-model="editingDeviceForm.hwVersion" placeholder="Phiên bản phần cứng..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="FW Version:">
-              <el-input v-model="editingDeviceForm.fwVersion" placeholder="Phiên bản firmware..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="Dữ Liệu Raw Test (JSON):">
-          <el-input
-            v-model="editingDeviceForm.rawJsonText"
-            type="textarea"
-            :rows="5"
-            placeholder="{ ... }"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editDeviceDialogVisible = false">Hủy Bỏ</el-button>
-        <el-button type="primary" :loading="savingDeviceDetails" @click="submitEditDeviceDetails">
-          Lưu Thay Đổi
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <!-- DIALOG: RAW TEST DATA VIEWER -->
-    <el-dialog v-model="rawTestDialogVisible" title="Chi Tiết Dữ Liệu Kiểm Thử (Raw Test Data)" width="600px">
-      <pre v-if="viewingRawData" class="raw-data-box">{{ JSON.stringify(viewingRawData, null, 2) }}</pre>
-      <div v-else class="text-muted text-center py-4">Không có dữ liệu mở rộng.</div>
-      <template #footer>
-        <el-button @click="rawTestDialogVisible = false">Đóng</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- DIALOG: TÌM KIẾM & ĐỒNG BỘ SALES ORDER TỪ DIS (ODOO) -->
-    <el-dialog
-      v-model="disSyncDialogVisible"
-      title="Đồng Bộ Sales Order từ Hệ Thống DIS (Odoo)"
-      width="900px"
-      top="5vh"
-      destroy-on-close
-    >
-      <div class="dis-sync-container">
-        <!-- Status & Mode Notice -->
-        <div class="dis-status-header mb-3">
-          <div class="d-flex align-items-center justify-content-between">
-            <div>
-              <span class="mr-2">Trạng thái kết nối DIS API:</span>
-              <el-tag v-if="disStatus.connected && !disStatus.isMock" type="success" effect="dark">
+        <div class="space-y-4">
+          <!-- Status & Mode Notice -->
+          <div class="flex flex-wrap items-center justify-between gap-2 p-3 bg-base-200/60 rounded-lg border border-base-300 text-sm">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-base-content/80">Trạng thái kết nối DIS API:</span>
+              <span v-if="disStatus.connected && !disStatus.isMock" class="badge badge-success badge-sm font-semibold">
                 Live Connection (HTTPS)
-              </el-tag>
-              <el-tag v-else-if="disStatus.isMock" type="warning" effect="dark">
+              </span>
+              <span v-else-if="disStatus.isMock" class="badge badge-warning badge-sm font-semibold">
                 Mock Mode (Mô phỏng offline)
-              </el-tag>
-              <el-tag v-else type="info">Chưa kết nối / Đang kiểm tra...</el-tag>
+              </span>
+              <span v-else class="badge badge-ghost badge-sm">Chưa kết nối / Đang kiểm tra...</span>
             </div>
-            <div class="text-muted text-sm">
+            <div class="text-xs text-base-content/60 font-mono">
               <span v-if="disStatus.isMock">
                 (Thiếu DIS_SO_TOKEN, đang dùng dữ liệu chuẩn OpenAPI v1.1.0)
               </span>
@@ -812,228 +857,258 @@
               </span>
             </div>
           </div>
-        </div>
 
-        <!-- Filter bar -->
-        <div class="dis-search-bar mb-3">
-          <el-row :gutter="10">
-            <el-col :span="4">
-              <el-input-number
-                v-model="disFilterYear"
-                :min="2020"
-                :max="2035"
+          <!-- Filter bar -->
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+            <div class="md:col-span-2">
+              <input
+                v-model.number="disFilterYear"
+                type="number"
+                min="2020"
+                max="2035"
                 placeholder="Năm (tất cả)"
-                clearable
-                style="width: 100%"
+                class="input input-bordered input-sm w-full"
               />
-            </el-col>
-            <el-col :span="4">
-              <el-select v-model="disFilterMonth" placeholder="Tháng" clearable style="width: 100%">
-                <el-option v-for="m in 12" :key="m" :label="`Tháng ${m}`" :value="m" />
-              </el-select>
-            </el-col>
-            <el-col :span="5">
-              <el-select v-model="disFilterState" placeholder="Trạng thái" style="width: 100%">
-                <el-option label="Tất cả trạng thái" value="" />
-                <el-option label="Sale Order (Đã duyệt)" value="sale" />
-                <el-option label="Hoàn tất (Done)" value="done" />
-                <el-option label="Báo giá (Draft)" value="draft" />
-                <el-option label="Đã hủy (Cancel)" value="cancel" />
-              </el-select>
-            </el-col>
-            <el-col :span="8">
-              <el-input
-                v-model="disFilterQuery"
-                placeholder="Tìm mã SO (VD: SO26...), khách hàng..."
-                clearable
-                :prefix-icon="Search"
-                @keyup.enter="searchDisOrders"
-              />
-            </el-col>
-            <el-col :span="3">
-              <el-button type="primary" :icon="Search" :loading="loadingDisList" style="width: 100%" @click="searchDisOrders">
-                Tìm
-              </el-button>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- Orders Table List -->
-        <el-table
-          v-loading="loadingDisList"
-          :data="disOrdersList"
-          height="240px"
-          border
-          highlight-current-row
-          style="width: 100%"
-          @current-change="handleDisOrderSelect"
-        >
-          <el-table-column prop="odoo_id" label="ID Odoo" width="90" align="center" />
-          <el-table-column prop="name" label="Mã Đơn Hàng (SO)" width="160" font-weight="bold">
-            <template #default="{ row }">
-              <span style="color: #00f0ff; font-weight: bold">{{ row.name }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="partner_name" label="Khách Hàng" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="partner_email" label="Email Khách Hàng" min-width="170" show-overflow-tooltip>
-            <template #default="{ row }">
-              {{ row.partner_email || row.email || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="date_order" label="Ngày Đặt Hàng" width="160" align="center" />
-          <el-table-column prop="state" label="Trạng Thái" width="110" align="center">
-            <template #default="{ row }">
-              <el-tag :type="getDisStateTag(row.state)" size="small">
-                {{ row.state }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <!-- Selected SO Details & Line Items -->
-        <div v-if="selectedDisOrder" class="dis-detail-section mt-3">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <div style="font-weight: 600; color: #00f0ff">
-              Chi Tiết Đơn Hàng: {{ selectedDisOrder.name }} - {{ selectedDisOrder.partner_name }}
             </div>
-            <div>
-              <el-button
-                type="success"
-                :icon="Check"
-                :loading="syncingDisOrder"
+            <div class="md:col-span-2">
+              <select v-model="disFilterMonth" class="select select-bordered select-sm w-full">
+                <option :value="undefined">Tất cả tháng</option>
+                <option v-for="m in 12" :key="m" :value="m">Tháng {{ m }}</option>
+              </select>
+            </div>
+            <div class="md:col-span-3">
+              <select v-model="disFilterState" class="select select-bordered select-sm w-full">
+                <option value="">Tất cả trạng thái</option>
+                <option value="sale">Sale Order (Đã duyệt)</option>
+                <option value="done">Hoàn tất (Done)</option>
+                <option value="draft">Báo giá (Draft)</option>
+                <option value="cancel">Đã hủy (Cancel)</option>
+              </select>
+            </div>
+            <div class="md:col-span-4">
+              <div class="join w-full">
+                <input
+                  v-model="disFilterQuery"
+                  placeholder="Tìm mã SO (VD: SO26...), khách hàng..."
+                  class="input input-bordered input-sm join-item w-full"
+                  @keyup.enter="searchDisOrders"
+                />
+                <button class="btn btn-sm btn-primary join-item" :disabled="loadingDisList" @click="searchDisOrders">
+                  <Loader2 v-if="loadingDisList" class="w-4 h-4 animate-spin" />
+                  <Search v-else class="w-4 h-4" />
+                  Tìm
+                </button>
+              </div>
+            </div>
+            <div class="md:col-span-1 flex items-center justify-end">
+              <button class="btn btn-sm btn-ghost btn-square" title="Làm mới" :disabled="loadingDisList" @click="searchDisOrders">
+                <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loadingDisList }" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Orders Table List -->
+          <div class="overflow-x-auto border border-base-300 rounded-lg max-h-60 overflow-y-auto">
+            <table class="table table-xs table-pin-rows table-zebra w-full">
+              <thead>
+                <tr class="bg-base-200">
+                  <th class="text-center w-20">ID Odoo</th>
+                  <th class="w-40">Mã Đơn Hàng (SO)</th>
+                  <th>Khách Hàng</th>
+                  <th>Email Khách Hàng</th>
+                  <th class="text-center w-36">Ngày Đặt Hàng</th>
+                  <th class="text-center w-28">Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="loadingDisList">
+                  <td colspan="6" class="text-center py-6 text-base-content/60">
+                    <div class="flex items-center justify-center gap-2">
+                      <Loader2 class="w-5 h-5 animate-spin text-primary" />
+                      <span>Đang tải danh sách đơn hàng DIS...</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-else-if="disOrdersList.length === 0">
+                  <td colspan="6" class="text-center py-6 text-base-content/60">
+                    Không tìm thấy đơn hàng DIS nào phù hợp.
+                  </td>
+                </tr>
+                <tr
+                  v-for="row in disOrdersList"
+                  :key="row.odoo_id || row.id"
+                  class="cursor-pointer hover:bg-base-200 transition-colors"
+                  :class="{ 'bg-primary/20 font-semibold': selectedDisOrder && (selectedDisOrder.odoo_id === row.odoo_id || selectedDisOrder.id === row.id) }"
+                  @click="handleDisOrderSelect(row)"
+                >
+                  <td class="text-center font-mono">{{ row.odoo_id || row.id }}</td>
+                  <td class="text-primary font-bold font-mono">{{ row.name }}</td>
+                  <td class="truncate max-w-xs">{{ row.partner_name || '-' }}</td>
+                  <td class="truncate max-w-xs">{{ row.partner_email || row.email || '-' }}</td>
+                  <td class="text-center text-xs text-base-content/70">{{ row.date_order || '-' }}</td>
+                  <td class="text-center">
+                    <span class="badge badge-sm" :class="getDisStateBadgeClass(row.state)">
+                      {{ row.state }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Selected SO Details & Line Items -->
+          <div v-if="selectedDisOrder" class="mt-4 pt-4 border-t border-base-300 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="font-bold text-primary flex items-center gap-2">
+                <span>Chi Tiết Đơn Hàng:</span>
+                <span class="text-accent">{{ selectedDisOrder.name }}</span>
+                <span class="text-base-content/60 font-normal">- {{ selectedDisOrder.partner_name }}</span>
+              </div>
+              <button
+                class="btn btn-sm btn-success text-white"
+                :disabled="syncingDisOrder"
                 @click="syncSelectedDisOrderToDatabase"
               >
+                <Loader2 v-if="syncingDisOrder" class="w-4 h-4 animate-spin" />
+                <Check v-else class="w-4 h-4" />
                 Đồng Bộ Vào Traceability Database
-              </el-button>
+              </button>
             </div>
-          </div>
 
-          <!-- Work Authorization (WA) on DIS & Fallback Info -->
-          <div class="dis-wa-info mb-3">
-            <div v-if="selectedDisOrderWas.length > 0">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span style="font-weight: 600; color: #67c23a; font-size: 13px">
-                  <el-icon class="mr-1"><Tickets /></el-icon>
-                  Lệnh Work Authorization (WA) trên DIS ({{ selectedDisOrderWas.length }} lệnh sẵn có):
-                </span>
+            <!-- Work Authorization (WA) on DIS & Fallback Info -->
+            <div>
+              <div v-if="selectedDisOrderWas.length > 0">
+                <div class="font-semibold text-success text-sm flex items-center gap-1 mb-2">
+                  <Ticket class="w-4 h-4" />
+                  <span>Lệnh Work Authorization (WA) trên DIS ({{ selectedDisOrderWas.length }} lệnh sẵn có):</span>
+                </div>
+                <div class="overflow-x-auto border border-base-300 rounded-lg max-h-36 overflow-y-auto">
+                  <table class="table table-xs table-pin-rows w-full">
+                    <thead>
+                      <tr class="bg-base-200">
+                        <th class="w-44">Mã Lệnh WA</th>
+                        <th class="text-center w-40">Trạng Thái Bảo Hành</th>
+                        <th>Mặt hàng / Chi tiết Lots</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(row, idx) in selectedDisOrderWas" :key="idx" class="hover:bg-base-200">
+                        <td class="font-bold text-warning font-mono">{{ row.wa_code }}</td>
+                        <td class="text-center">
+                          <span class="badge badge-sm" :class="row.warranty_status === 'under_warranty' ? 'badge-success' : 'badge-ghost'">
+                            {{ row.warranty_status || 'Chưa xác định' }}
+                          </span>
+                        </td>
+                        <td class="text-xs">
+                          <span v-if="row.lines && row.lines.length > 0">
+                            {{ row.lines.map((l: any) => `${l.item_code || l.product_name || 'Item'} (${l.quantity || 1} pcs)`).join(', ') }}
+                          </span>
+                          <span v-else class="text-base-content/50">-</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <el-table
-                :data="selectedDisOrderWas"
-                max-height="130px"
-                border
-                size="small"
-                class="mb-2"
-                style="width: 100%"
-              >
-                <el-table-column prop="wa_code" label="Mã Lệnh WA" width="180">
-                  <template #default="{ row }">
-                    <strong style="color: #e6a23c">{{ row.wa_code }}</strong>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="warranty_status" label="Trạng Thái Bảo Hành" width="160" align="center">
-                  <template #default="{ row }">
-                    <el-tag size="small" :type="row.warranty_status === 'under_warranty' ? 'success' : 'info'">
-                      {{ row.warranty_status || 'Chưa xác định' }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="Mặt hàng / Chi tiết Lots" min-width="200" show-overflow-tooltip>
-                  <template #default="{ row }">
-                    <span v-if="row.lines && row.lines.length > 0">
-                      {{ row.lines.map((l: any) => `${l.item_code || l.product_name || 'Item'} (${l.quantity || 1} pcs)`).join(', ') }}
-                    </span>
-                    <span v-else class="text-muted">-</span>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <div v-else>
+                <div class="alert alert-info py-2 px-3 text-xs rounded-lg">
+                  <Info class="w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <span class="font-bold block">Thông tin Work Authorization (WA) cho Đơn Hàng này:</span>
+                    <span>Đơn hàng này trên DIS chưa liên kết lệnh sản xuất/bảo hành (wa: []). Khi bấm 'Đồng Bộ Vào Traceability Database', hệ thống sẽ tự động bóc tách từng dòng sản phẩm (lines) bên dưới để sinh WA tương ứng (định dạng WA/&lt;NĂM&gt;/&lt;MÃ_SO&gt;-&lt;STT&gt;) cho từng mặt hàng để sẵn sàng gán thiết bị tested.</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div v-else>
-              <el-alert
-                type="info"
-                :closable="false"
-                show-icon
-                class="mb-2"
-                title="Thông tin Work Authorization (WA) cho Đơn Hàng này:"
-                description="Đơn hàng này trên DIS chưa liên kết lệnh sản xuất/bảo hành (wa: []). Khi bấm 'Đồng Bộ Vào Traceability Database', hệ thống sẽ tự động bóc tách từng dòng sản phẩm (lines) bên dưới để sinh WA tương ứng (định dạng WA/<NĂM>/<MÃ_SO>-<STT>) cho từng mặt hàng để sẵn sàng gán thiết bị tested."
-              />
+
+            <!-- Lines in Order -->
+            <div>
+              <div class="font-semibold text-info text-sm flex items-center gap-1 mb-2">
+                <List class="w-4 h-4" />
+                <span>Danh sách Mặt hàng / Lines trong Đơn ({{ selectedDisOrderLines.length }} dòng):</span>
+              </div>
+              <div class="overflow-x-auto border border-base-300 rounded-lg max-h-48 overflow-y-auto">
+                <table class="table table-xs table-pin-rows table-zebra w-full">
+                  <thead>
+                    <tr class="bg-base-200">
+                      <th class="text-center w-28">Loại Dòng</th>
+                      <th class="w-48">ITEM-CODE (Mã Đặt Hàng)</th>
+                      <th>Tên Sản Phẩm / Diễn Giải</th>
+                      <th class="text-right w-28">SL Yêu Cầu</th>
+                      <th class="text-right w-24">Đã Giao</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="loadingDisDetail">
+                      <td colspan="5" class="text-center py-4 text-base-content/60">
+                        <div class="flex items-center justify-center gap-2">
+                          <Loader2 class="w-4 h-4 animate-spin text-primary" />
+                          <span>Đang tải chi tiết dòng đơn hàng...</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-else-if="selectedDisOrderLines.length === 0">
+                      <td colspan="5" class="text-center py-4 text-base-content/60">
+                        Không có mặt hàng nào.
+                      </td>
+                    </tr>
+                    <tr v-for="(row, idx) in selectedDisOrderLines" :key="idx" class="hover:bg-base-200">
+                      <td class="text-center">
+                        <span
+                          v-if="row.line_type === 'product' || row.line_type === 'item'"
+                          class="badge badge-success badge-sm"
+                        >
+                          {{ row.line_type === 'item' ? 'Item' : 'Product' }}
+                        </span>
+                        <span v-else-if="row.line_type === 'section'" class="badge badge-info badge-sm">Section</span>
+                        <span v-else class="badge badge-warning badge-sm">{{ row.line_type || 'Note' }}</span>
+                      </td>
+                      <td class="font-semibold text-primary font-mono text-xs">
+                        {{ row.default_code || row.ordering_code || row.sku || row.product_code || '-' }}
+                      </td>
+                      <td class="text-xs max-w-sm truncate">{{ row.description || row.product_name || row.name || '-' }}</td>
+                      <td class="text-right font-mono font-semibold">{{ row.quantity != null ? row.quantity : (row.product_uom_qty ?? 0) }}</td>
+                      <td class="text-right font-mono">{{ row.delivered_quantity != null ? row.delivered_quantity : (row.qty_delivered ?? 0) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div style="font-weight: 600; color: #a0cfff; font-size: 13px" class="mb-1">
-            <el-icon class="mr-1"><List /></el-icon>
-            Danh sách Mặt hàng / Lines trong Đơn ({{ selectedDisOrderLines.length }} dòng):
-          </div>
-
-          <el-table
-            v-loading="loadingDisDetail"
-            :data="selectedDisOrderLines"
-            height="180px"
-            border
-            size="small"
-            style="width: 100%"
-          >
-            <el-table-column prop="line_type" label="Loại Dòng" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag v-if="row.line_type === 'product' || row.line_type === 'item'" type="success" size="small">{{ row.line_type === 'item' ? 'Item' : 'Product' }}</el-tag>
-                <el-tag v-else-if="row.line_type === 'section'" type="info" size="small">Section</el-tag>
-                <el-tag v-else type="warning" size="small">{{ row.line_type || 'Note' }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="ITEM-CODE (Mã Đặt Hàng)" width="200" show-overflow-tooltip>
-              <template #default="{ row }">
-                <span style="font-weight: 600; color: #409eff">
-                  {{ row.default_code || row.ordering_code || row.sku || row.product_code || '-' }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="Tên Sản Phẩm / Diễn Giải" min-width="220" show-overflow-tooltip>
-              <template #default="{ row }">
-                {{ row.description || row.product_name || row.name || '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column label="SL Yêu Cầu" width="110" align="right">
-              <template #default="{ row }">
-                {{ row.quantity != null ? row.quantity : (row.product_uom_qty ?? 0) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="Đã Giao" width="90" align="right">
-              <template #default="{ row }">
-                {{ row.delivered_quantity != null ? row.delivered_quantity : (row.qty_delivered ?? 0) }}
-              </template>
-            </el-table-column>
-          </el-table>
+        <div class="modal-action border-t border-base-300 pt-3 mt-4">
+          <button class="btn btn-sm btn-ghost" @click="disSyncDialogVisible = false">Đóng</button>
         </div>
       </div>
-
-      <template #footer>
-        <el-button @click="disSyncDialogVisible = false">Đóng</el-button>
-      </template>
-    </el-dialog>
+      <div class="modal-backdrop bg-black/60" @click="disSyncDialogVisible = false"></div>
+    </dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from '@/services/cyberToast';
+import { ElMessageBox } from '@/services/cyberConfirm';
 import {
   Files,
   List,
   Plus,
-  Refresh,
-  FolderOpened,
+  RefreshCw,
+  FolderOpen,
   Upload,
   Download,
-  Checked,
+  CheckCircle2,
   Check,
   Search,
-  UploadFilled,
-  View,
-  InfoFilled,
-  Loading,
+  UploadCloud,
+  Eye,
+  Info,
+  Loader2,
   ArrowLeft,
-  Tickets,
-} from '@element-plus/icons-vue';
+  Ticket,
+} from 'lucide-vue-next';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 
@@ -1051,6 +1126,7 @@ const normalizedActiveTab = computed(() => {
   if (tab === 'config' || tab === 'config-devices' || tab === 'device-final-config') return 'device-final-config';
   return 'sale-orders';
 });
+const currentDisplayTab = normalizedActiveTab;
 
 const isolatedTitle = computed(() => {
   if (normalizedActiveTab.value === 'device-testing') return 'Tra Cứu Thiết Bị Kiểm Thử (Testing Devices)';
@@ -1401,6 +1477,21 @@ const getDisStateTag = (state: string): string => {
       return 'danger';
     default:
       return '';
+  }
+};
+
+const getDisStateBadgeClass = (state: string): string => {
+  switch (state) {
+    case 'sale':
+      return 'badge-success text-success-content';
+    case 'done':
+      return 'badge-info text-info-content';
+    case 'draft':
+      return 'badge-warning text-warning-content';
+    case 'cancel':
+      return 'badge-error text-error-content';
+    default:
+      return 'badge-ghost';
   }
 };
 
@@ -2437,6 +2528,11 @@ const onTabChange = (tabName: any) => {
       loadFinalConfigDevices();
     }
   });
+};
+
+const switchTab = (tabName: string) => {
+  activeTab.value = tabName;
+  onTabChange(tabName);
 };
 
 const refreshActiveTabData = () => {

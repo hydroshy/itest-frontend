@@ -1,260 +1,378 @@
 <template>
-  <div class="testing-view">
+  <div class="testing-view p-4 space-y-4">
     <!-- Header -->
-    <div class="view-header">
+    <div class="flex flex-wrap items-center justify-between gap-4 pb-2">
       <div class="header-left">
-        <h2 class="title">
-          <el-icon class="mr-2"><Odometer /></el-icon>
+        <h2 class="text-2xl font-bold flex items-center gap-2 tracking-tight">
+          <Gauge class="w-6 h-6 text-primary" />
           Gateway Testing
         </h2>
-        <span class="subtitle">Giám sát gói tin Dual Payload (Raw/Decoded) & phiên kiểm thử Gateway kết nối ChirpStack</span>
+        <span class="text-xs text-base-content/70">
+          Giám sát gói tin Dual Payload (Raw/Decoded) &amp; phiên kiểm thử Gateway kết nối ChirpStack
+        </span>
       </div>
-      <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateSessionDialog">
+      <div class="flex items-center gap-2">
+        <button class="btn btn-primary btn-sm gap-2" @click="openCreateSessionDialog">
+          <Plus class="w-4 h-4" />
           Tạo Phiên Test Mới
-        </el-button>
-        <el-button :icon="Refresh" @click="refreshActiveTab" :loading="loading">
+        </button>
+        <button class="btn btn-outline btn-sm gap-2" :disabled="loading" @click="refreshActiveTab">
+          <span v-if="loading" class="loading loading-spinner loading-xs"></span>
+          <RefreshCw v-else class="w-4 h-4" />
           Làm Mới
-        </el-button>
+        </button>
       </div>
     </div>
 
-    <!-- Main Tabs -->
-    <el-tabs v-model="activeTab" class="custom-tabs" @tab-change="handleTabChange">
-      <!-- TAB 1: Gateway Test Sessions -->
-      <el-tab-pane label="Gateway Test Sessions" name="gateway-sessions">
-        <el-card shadow="never" class="table-card">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="text-md font-bold">Lịch Sử Phiên Test Gateway (ChirpStack)</h3>
-            <el-button type="primary" :icon="Plus" size="small" @click="openCreateSessionDialog">
-              Tạo Phiên Mới
-            </el-button>
-          </div>
-          <el-table :data="sessionList" v-loading="loadingSessions" stripe border style="width: 100%">
-            <el-table-column prop="id" label="Session ID" min-width="140">
-              <template #default="{ row }">
-                <span class="font-mono text-xs">{{ row.id }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="gatewayId" label="Gateway EUI / Serial" min-width="190">
-              <template #default="{ row }">
-                <span class="font-mono text-primary font-bold">{{ row.gatewayId || row.gateway_id || '—' }}</span>
-                <div v-if="row.serialNumber || row.serial_number" class="text-xs text-info font-mono">
-                  SN: {{ row.serialNumber || row.serial_number }}
-                </div>
-                <div v-if="row.gatewayName || row.gateway_name" class="text-xs text-secondary">
-                  {{ row.gatewayName || row.gateway_name }}
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="SO / WA" min-width="160">
-              <template #default="{ row }">
-                <div v-if="row.so || row.wa" class="text-xs">
-                  <div v-if="row.so"><span class="text-secondary">SO:</span> <span class="font-mono font-bold">{{ row.so }}</span></div>
-                  <div v-if="row.wa"><span class="text-secondary">WA:</span> <span class="font-mono">{{ row.wa }}</span></div>
-                </div>
-                <span v-else class="text-xs text-muted">—</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="Mạng / IP / Region" min-width="180">
-              <template #default="{ row }">
-                <div class="text-xs">
-                  <div v-if="row.ip || row.gatewayIp || row.gateway_ip" class="font-mono">
-                    IP: {{ row.ip || row.gatewayIp || row.gateway_ip }}
-                  </div>
-                  <div>
-                    <el-tag size="small" :type="row.internetTestType === 'lte_4g' || row.internet_test_type === 'lte_4g' ? 'warning' : 'primary'">
-                      {{ (row.internetTestType || row.internet_test_type || 'ethernet').toUpperCase() }}
-                    </el-tag>
-                    <el-tag v-if="row.region" size="small" type="info" class="ml-1">
-                      {{ row.region }}
-                    </el-tag>
-                  </div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="Trạng Thái" width="130" align="center">
-              <template #default="{ row }">
-                <el-tag :type="getStatusTagType(row.status)">
-                  {{ (row.status || '').toUpperCase() }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Thống Kê Gói Tin" min-width="160">
-              <template #default="{ row }">
-                <div class="text-xs">
-                  <div><strong>Tổng:</strong> {{ row.totalPackets ?? row.total_packets ?? 0 }}</div>
-                  <div>
-                    <span class="text-success font-bold">Pass: {{ row.passedPackets ?? row.passed_packets ?? 0 }}</span> |
-                    <span class="text-danger font-bold">Fail: {{ row.failedPackets ?? row.failed_packets ?? 0 }}</span>
-                  </div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="startedAt" label="Bắt Đầu" min-width="150">
-              <template #default="{ row }">
-                <span class="text-xs">{{ formatDateTime(row.startedAt || row.started_at) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="endedAt" label="Kết Thúc" min-width="150">
-              <template #default="{ row }">
-                <span class="text-xs">{{ formatDateTime(row.endedAt || row.ended_at) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="Thao Tác" width="130" fixed="right" align="center">
-              <template #default="{ row }">
-                <el-button link type="primary" size="small" :icon="View" @click="viewSessionPackets(row)">
-                  Gói Tin
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-tab-pane>
+    <!-- Navigation Tabs -->
+    <div class="tabs tabs-boxed bg-base-200/50 p-1 inline-flex">
+      <button
+        type="button"
+        class="tab font-semibold tracking-wide text-xs md:text-sm"
+        :class="{ 'tab-active': activeTab === 'gateway-sessions' }"
+        @click="activeTab = 'gateway-sessions'; handleTabChange('gateway-sessions')"
+      >
+        Gateway Test Sessions
+      </button>
+      <button
+        type="button"
+        class="tab font-semibold tracking-wide text-xs md:text-sm"
+        :class="{ 'tab-active': activeTab === 'packets' }"
+        @click="activeTab = 'packets'; handleTabChange('packets')"
+      >
+        Giám Sát Gói Tin (Packets)
+      </button>
+    </div>
 
-      <!-- TAB 2: Giám sát gói tin (Packets) -->
-      <el-tab-pane label="Giám Sát Gói Tin (Packets)" name="packets">
-        <el-card shadow="never" class="filter-card">
-          <el-row :gutter="16">
-            <el-col :xs="24" :sm="8" :md="6">
-              <el-input
-                v-model="packetFilters.networkId"
-                placeholder="DevEUI / Network ID..."
-                clearable
-                :prefix-icon="Search"
-                @clear="loadPackets"
-                @keyup.enter="loadPackets"
-              />
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-select v-model="packetFilters.packetType" placeholder="Loại gói tin" clearable @change="loadPackets">
-                <el-option label="Tất cả loại" value="" />
-                <el-option label="UPLINK" value="uplink" />
-                <el-option label="DOWNLINK" value="downlink" />
-                <el-option label="JOIN REQUEST" value="join_request" />
-                <el-option label="ACK" value="ack" />
-                <el-option label="STATUS" value="status" />
-              </el-select>
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="6">
-              <el-input
-                v-model="packetFilters.search"
-                placeholder="Tìm trong Payload..."
-                clearable
-                @clear="loadPackets"
-                @keyup.enter="loadPackets"
-              />
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-button type="primary" :icon="Search" @click="loadPackets">Lọc</el-button>
-              <el-button :icon="Refresh" @click="resetPacketFilters">Đặt Lại</el-button>
-            </el-col>
-          </el-row>
-        </el-card>
-
-        <el-card shadow="never" class="table-card mt-3">
-          <el-table :data="packetList" v-loading="loadingPackets" stripe border style="width: 100%">
-            <el-table-column prop="id" label="ID" width="70" align="center" />
-            <el-table-column prop="networkId" label="DevEUI / Network ID" min-width="160">
-              <template #default="{ row }">
-                <el-tag type="info" class="font-mono">{{ row.networkId || row.network_id || '—' }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="packetType" label="Loại Gói" width="120" align="center">
-              <template #default="{ row }">
-                <el-tag size="small" :type="getPacketTypeTag(row.packetType || row.packet_type)">
-                  {{ (row.packetType || row.packet_type || '').toUpperCase() }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Dual Payload Preview (Raw vs Decoded)" min-width="320">
-              <template #default="{ row }">
-                <div class="payload-preview">
-                  <div class="raw-preview text-xs">
-                    <span class="label font-bold text-info">RAW:</span>
-                    <span class="code font-mono ml-1">{{ truncateStr(row.rawPayload || row.raw_payload, 40) }}</span>
-                  </div>
-                  <div v-if="row.decodedPayload || row.decoded_payload" class="decoded-preview text-xs mt-1">
-                    <span class="label font-bold text-success">DECODED:</span>
-                    <span class="code font-mono ml-1">{{ truncateStr(JSON.stringify(row.decodedPayload || row.decoded_payload), 50) }}</span>
-                  </div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="Chỉ Số RF (RSSI / SNR)" min-width="150" align="center">
-              <template #default="{ row }">
-                <div class="rf-stats text-xs">
-                  <span v-if="row.rssi !== null && row.rssi !== undefined">RSSI: <b>{{ row.rssi }} dBm</b></span>
-                  <span v-if="row.snr !== null && row.snr !== undefined" class="ml-2">SNR: <b>{{ row.snr }} dB</b></span>
-                  <span v-if="row.rssi === null && row.snr === null" class="text-secondary">—</span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="Kết Quả" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag :type="getStatusTagType(row.status)">
-                  {{ (row.status || '').toUpperCase() }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="receivedAt" label="Thời Gian" min-width="160">
-              <template #default="{ row }">
-                {{ formatDateTime(row.receivedAt || row.received_at || row.createdAt || row.created_at) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="Thao Tác" width="100" fixed="right" align="center">
-              <template #default="{ row }">
-                <el-button link type="primary" size="small" :icon="View" @click="inspectPacket(row)">
-                  Chi Tiết
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div class="pagination-container">
-            <el-pagination
-              v-model:current-page="packetPagination.page"
-              v-model:page-size="packetPagination.limit"
-              :total="packetPagination.total"
-              :page-sizes="[10, 20, 50, 100]"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="loadPackets"
-              @current-change="loadPackets"
-            />
-          </div>
-        </el-card>
-      </el-tab-pane>
-    </el-tabs>
-
-    <!-- Dialog Chi Tiết Gói Tin Dual Payload -->
-    <el-dialog v-model="packetDetailVisible" title="Chi Tiết Gói Tin Dual Payload" width="700px">
-      <div v-if="selectedPacket" class="packet-detail-body">
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="ID">{{ selectedPacket.id }}</el-descriptions-item>
-          <el-descriptions-item label="Loại Gói">{{ selectedPacket.packetType || selectedPacket.packet_type }}</el-descriptions-item>
-          <el-descriptions-item label="Network ID / EUI">{{ selectedPacket.networkId || selectedPacket.network_id }}</el-descriptions-item>
-          <el-descriptions-item label="Trạng Thái">
-            <el-tag :type="getStatusTagType(selectedPacket.status)">{{ (selectedPacket.status || '').toUpperCase() }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="RSSI">{{ selectedPacket.rssi ?? '—' }} dBm</el-descriptions-item>
-          <el-descriptions-item label="SNR">{{ selectedPacket.snr ?? '—' }} dB</el-descriptions-item>
-          <el-descriptions-item label="Thời Gian">{{ formatDateTime(selectedPacket.receivedAt || selectedPacket.received_at) }}</el-descriptions-item>
-        </el-descriptions>
-
-        <div class="mt-4">
-          <div class="section-title"><el-icon><Document /></el-icon> Raw Payload (HEX / Base64)</div>
-          <pre class="raw-code">{{ selectedPacket.rawPayload || selectedPacket.raw_payload || 'Trống' }}</pre>
+    <!-- TAB 1: Gateway Test Sessions -->
+    <div v-if="activeTab === 'gateway-sessions'">
+      <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10">
+          <h3 class="font-bold text-base">Lịch Sử Phiên Test Gateway (ChirpStack)</h3>
+          <button class="btn btn-primary btn-sm gap-1" @click="openCreateSessionDialog">
+            <Plus class="w-4 h-4" />
+            Tạo Phiên Mới
+          </button>
         </div>
 
-        <div class="mt-4">
-          <div class="section-title"><el-icon><DataAnalysis /></el-icon> Decoded Payload (JSONB)</div>
-          <pre class="json-code">{{ JSON.stringify(selectedPacket.decodedPayload || selectedPacket.decoded_payload || {}, null, 2) }}</pre>
+        <div class="overflow-x-auto relative">
+          <div v-if="loadingSessions" class="absolute inset-0 bg-base-100/60 backdrop-blur-xs flex items-center justify-center z-10">
+            <span class="loading loading-spinner loading-md text-primary"></span>
+          </div>
+
+          <table class="table table-zebra table-sm w-full">
+            <thead>
+              <tr class="text-xs uppercase bg-base-200/50">
+                <th>Session ID</th>
+                <th>Gateway EUI / Serial</th>
+                <th>SO / WA</th>
+                <th>Mạng / IP / Region</th>
+                <th class="text-center">Trạng Thái</th>
+                <th>Thống Kê Gói Tin</th>
+                <th>Bắt Đầu</th>
+                <th>Kết Thúc</th>
+                <th class="text-center">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="sessionList.length === 0 && !loadingSessions">
+                <td colspan="9" class="text-center py-8 text-base-content/50 italic">
+                  Chưa có phiên kiểm thử Gateway nào. Nhấn "Tạo Phiên Mới" để bắt đầu.
+                </td>
+              </tr>
+              <tr v-for="row in sessionList" :key="row.id" class="hover">
+                <td>
+                  <span class="font-mono text-xs font-semibold">{{ row.id }}</span>
+                </td>
+                <td>
+                  <div class="font-mono font-bold text-primary text-xs">{{ row.gatewayId || row.gateway_id || '—' }}</div>
+                  <div v-if="row.serialNumber || row.serial_number" class="text-xs text-base-content/70">
+                    SN: <span class="font-mono">{{ row.serialNumber || row.serial_number }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="text-xs font-semibold">{{ row.soNumber || row.so_number || '—' }}</div>
+                  <div class="text-xs text-base-content/60">WA: {{ row.waNumber || row.wa_number || '—' }}</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1">
+                    <span
+                      class="badge badge-xs font-mono"
+                      :class="(row.internetTestType === 'lte_4g' || row.internet_test_type === 'lte_4g') ? 'badge-warning' : 'badge-primary'"
+                    >
+                      {{ row.internetTestType || row.internet_test_type || 'ETH' }}
+                    </span>
+                    <span v-if="row.region" class="badge badge-xs badge-info font-mono">
+                      {{ row.region }}
+                    </span>
+                  </div>
+                  <div v-if="row.gatewayIp || row.gateway_ip" class="text-[11px] font-mono text-base-content/60 mt-0.5">
+                    {{ row.gatewayIp || row.gateway_ip }}
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="badge badge-sm font-mono font-semibold" :class="getStatusBadgeClass(row.status)">
+                    {{ row.status || 'UNKNOWN' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1 text-xs">
+                    <span class="badge badge-xs badge-ghost">Total: {{ row.totalPackets ?? row.total_packets ?? 0 }}</span>
+                    <span class="badge badge-xs badge-success text-success-content">↑ {{ row.uplinkCount ?? row.uplink_count ?? 0 }}</span>
+                    <span class="badge badge-xs badge-info text-info-content">↓ {{ row.downlinkCount ?? row.downlink_count ?? 0 }}</span>
+                  </div>
+                </td>
+                <td class="text-xs text-base-content/70">
+                  {{ formatDateTime(row.startedAt || row.started_at) }}
+                </td>
+                <td class="text-xs text-base-content/70">
+                  {{ formatDateTime(row.endedAt || row.ended_at) }}
+                </td>
+                <td class="text-center">
+                  <button
+                    class="btn btn-ghost btn-xs text-primary gap-1"
+                    title="Xem Gói Tin Của Session"
+                    @click="viewSessionPackets(row)"
+                  >
+                    <Eye class="w-3.5 h-3.5" />
+                    Xem Gói
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-      <template #footer>
-        <el-button @click="packetDetailVisible = false">Đóng</el-button>
-      </template>
-    </el-dialog>
+    </div>
+
+    <!-- TAB 2: Giám sát gói tin (Packets) -->
+    <div v-if="activeTab === 'packets'" class="space-y-4">
+      <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+          <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-xs">DevEUI / Gateway ID</span></label>
+            <div class="relative">
+              <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
+              <input
+                v-model="packetFilters.networkId"
+                type="text"
+                placeholder="DevEUI / Network ID..."
+                class="input input-bordered input-sm pl-9 w-full font-mono"
+                @keyup.enter="loadPackets"
+              />
+            </div>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-xs">Loại Gói Tin</span></label>
+            <select v-model="packetFilters.packetType" class="select select-bordered select-sm w-full" @change="loadPackets">
+              <option value="">Tất cả loại</option>
+              <option value="uplink">UPLINK</option>
+              <option value="downlink">DOWNLINK</option>
+              <option value="join_request">JOIN REQUEST</option>
+              <option value="ack">ACK</option>
+              <option value="status">STATUS</option>
+            </select>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-xs">Tìm Trong Payload</span></label>
+            <input
+              v-model="packetFilters.search"
+              type="text"
+              placeholder="Tìm trong Payload..."
+              class="input input-bordered input-sm w-full"
+              @keyup.enter="loadPackets"
+            />
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button class="btn btn-primary btn-sm flex-1 gap-1" @click="loadPackets">
+              <Search class="w-4 h-4" />
+              Lọc
+            </button>
+            <button class="btn btn-outline btn-sm gap-1" @click="resetPacketFilters">
+              <RefreshCw class="w-4 h-4" />
+              Đặt Lại
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+        <div class="overflow-x-auto relative">
+          <div v-if="loadingPackets" class="absolute inset-0 bg-base-100/60 backdrop-blur-xs flex items-center justify-center z-10">
+            <span class="loading loading-spinner loading-md text-primary"></span>
+          </div>
+
+          <table class="table table-zebra table-sm w-full">
+            <thead>
+              <tr class="text-xs uppercase bg-base-200/50">
+                <th>ID</th>
+                <th>Device / Gateway</th>
+                <th>Loại Gói</th>
+                <th>Port / F-Cnt</th>
+                <th>Payload Tóm Tắt</th>
+                <th>SNR / RSSI / Freq</th>
+                <th>Thời Gian Nhận</th>
+                <th class="text-center">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="packetList.length === 0 && !loadingPackets">
+                <td colspan="8" class="text-center py-8 text-base-content/50 italic">
+                  Không tìm thấy gói tin nào phù hợp với bộ lọc.
+                </td>
+              </tr>
+              <tr v-for="row in packetList" :key="row.id" class="hover">
+                <td><span class="font-mono text-xs">{{ row.id }}</span></td>
+                <td>
+                  <div v-if="row.devEui || row.dev_eui" class="font-mono text-xs font-semibold text-primary">
+                    DevEUI: {{ row.devEui || row.dev_eui }}
+                  </div>
+                  <div v-if="row.gatewayId || row.gateway_id" class="font-mono text-[11px] text-base-content/60">
+                    GW: {{ row.gatewayId || row.gateway_id }}
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-sm font-mono font-semibold" :class="getPacketTypeBadgeClass(row.packetType || row.packet_type)">
+                    {{ (row.packetType || row.packet_type || 'UNKNOWN').toUpperCase() }}
+                  </span>
+                </td>
+                <td>
+                  <div class="font-mono text-xs">Port: {{ row.fPort ?? row.f_port ?? '—' }}</div>
+                  <div class="font-mono text-[11px] text-base-content/60">FCnt: {{ row.fCnt ?? row.f_cnt ?? '—' }}</div>
+                </td>
+                <td>
+                  <div v-if="row.rawPayload || row.raw_payload" class="font-mono text-[11px] truncate max-w-xs text-base-content/80">
+                    RAW: {{ (row.rawPayload || row.raw_payload || '').substring(0, 32) }}...
+                  </div>
+                  <div v-if="row.decodedPayload || row.decoded_payload" class="text-[11px] text-success truncate max-w-xs font-mono">
+                    JSON: {{ Object.keys(row.decodedPayload || row.decoded_payload || {}).length }} fields
+                  </div>
+                </td>
+                <td>
+                  <div class="text-xs font-mono">
+                    <span>RSSI: {{ row.rssi ?? '—' }} dBm</span>
+                    <span class="ml-2">SNR: {{ row.snr ?? '—' }} dB</span>
+                  </div>
+                  <div v-if="row.frequency" class="text-[11px] text-base-content/60 font-mono">
+                    {{ (row.frequency / 1000000).toFixed(2) }} MHz
+                  </div>
+                </td>
+                <td class="text-xs text-base-content/70">
+                  {{ formatDateTime(row.receivedAt || row.received_at) }}
+                </td>
+                <td class="text-center">
+                  <button class="btn btn-ghost btn-xs text-primary gap-1" @click="inspectPacket(row)">
+                    <Eye class="w-3.5 h-3.5" />
+                    Chi Tiết
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="packetPagination.total > 0" class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-base-content/10 mt-3">
+          <div class="text-xs text-base-content/60">
+            Tổng cộng: <strong>{{ packetPagination.total }}</strong> gói tin
+          </div>
+          <div class="join">
+            <button
+              class="join-item btn btn-xs"
+              :disabled="packetPagination.page <= 1"
+              @click="packetPagination.page--; loadPackets()"
+            >
+              « Trước
+            </button>
+            <button class="join-item btn btn-xs btn-active no-animation font-mono">
+              Trang {{ packetPagination.page }} / {{ Math.ceil(packetPagination.total / packetPagination.limit) || 1 }}
+            </button>
+            <button
+              class="join-item btn btn-xs"
+              :disabled="packetPagination.page >= Math.ceil(packetPagination.total / packetPagination.limit)"
+              @click="packetPagination.page++; loadPackets()"
+            >
+              Sau »
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dialog Chi Tiết Gói Tin Dual Payload -->
+    <dialog class="modal" :class="{ 'modal-open': packetDetailVisible }">
+      <div v-if="selectedPacket" class="modal-box w-11/12 max-w-3xl border border-base-content/10 bg-base-100 p-6">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-base-content/10">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <Radio class="w-5 h-5 text-primary" />
+            Chi Tiết Gói Tin Dual Payload (Raw &amp; Decoded)
+          </h3>
+          <button class="btn btn-ghost btn-xs btn-circle" @click="packetDetailVisible = false">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+
+        <div class="space-y-4 text-sm">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-base-200/50 p-3 rounded-lg border border-base-content/10 font-mono text-xs">
+            <div>
+              <span class="text-base-content/60 block">ID:</span>
+              <span class="font-bold">{{ selectedPacket.id }}</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block">DevEUI:</span>
+              <span class="font-bold text-primary">{{ selectedPacket.devEui || selectedPacket.dev_eui || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block">Gateway ID:</span>
+              <span>{{ selectedPacket.gatewayId || selectedPacket.gateway_id || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block">Loại Gói:</span>
+              <span class="badge badge-xs" :class="getPacketTypeBadgeClass(selectedPacket.packetType || selectedPacket.packet_type)">
+                {{ selectedPacket.packetType || selectedPacket.packet_type }}
+              </span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block">FPort / FCnt:</span>
+              <span>{{ selectedPacket.fPort ?? selectedPacket.f_port ?? '—' }} / {{ selectedPacket.fCnt ?? selectedPacket.f_cnt ?? '—' }}</span>
+            </div>
+            <div>
+              <span class="text-base-content/60 block">RSSI / SNR:</span>
+              <span>{{ selectedPacket.rssi ?? '—' }} dBm / {{ selectedPacket.snr ?? '—' }} dB</span>
+            </div>
+            <div class="col-span-2">
+              <span class="text-base-content/60 block">Thời Gian:</span>
+              <span>{{ formatDateTime(selectedPacket.receivedAt || selectedPacket.received_at) }}</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="font-semibold text-xs text-primary mb-1 flex items-center gap-1">
+              <FileText class="w-3.5 h-3.5" /> Raw Payload (HEX / Base64)
+            </div>
+            <pre class="bg-base-300 text-base-content p-3 rounded font-mono text-xs overflow-x-auto border border-base-content/10">{{ selectedPacket.rawPayload || selectedPacket.raw_payload || 'Trống' }}</pre>
+          </div>
+
+          <div>
+            <div class="font-semibold text-xs text-primary mb-1 flex items-center gap-1">
+              <Binary class="w-3.5 h-3.5" /> Decoded Payload (JSONB)
+            </div>
+            <pre class="bg-base-300 text-base-content p-3 rounded font-mono text-xs overflow-x-auto border border-base-content/10 max-h-60">{{ JSON.stringify(selectedPacket.decodedPayload || selectedPacket.decoded_payload || {}, null, 2) }}</pre>
+          </div>
+        </div>
+
+        <div class="modal-action border-t border-base-content/10 pt-3 mt-4">
+          <button class="btn btn-sm" @click="packetDetailVisible = false">Đóng</button>
+        </div>
+      </div>
+
+      <form method="dialog" class="modal-backdrop" @click="packetDetailVisible = false">
+        <button>close</button>
+      </form>
+    </dialog>
 
     <!-- Dialog Đăng Ký Gateway Testing & Tạo Phiên Mới -->
     <GatewayRegistrationModal
@@ -268,16 +386,17 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  Connection,
-  Odometer,
+  Gauge,
   Search,
   Plus,
-  Refresh,
-  View,
-  Document,
-  DataAnalysis,
-} from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+  RefreshCw,
+  Eye,
+  FileText,
+  Binary,
+  Radio,
+  X,
+} from 'lucide-vue-next';
+import { cyberToast } from '@/cyber/hud';
 import { httpClient } from '@/api/client';
 import GatewayRegistrationModal from '../components/GatewayRegistrationModal.vue';
 
@@ -311,7 +430,7 @@ const createSessionDialogVisible = ref(false);
 function handleGatewayRegistrationSuccess(createdSession: any) {
   loadGatewaySessions();
   if (createdSession?.gatewayId) {
-    ElMessage.success(`Phiên test cho Gateway ${createdSession.gatewayId} đã được khởi tạo!`);
+    cyberToast.success(`Phiên test cho Gateway ${createdSession.gatewayId} đã được khởi tạo!`);
   }
 }
 
@@ -332,49 +451,49 @@ function formatDateTime(isoStr?: string) {
   }
 }
 
-function getStatusTagType(status?: string) {
-  switch (status?.toLowerCase()) {
-    case 'active':
-    case 'passed':
-      return 'success';
-    case 'in_test':
-    case 'in_progress':
-      return 'warning';
-    case 'failed':
-      return 'danger';
+function getStatusBadgeClass(status?: string) {
+  switch ((status || '').toUpperCase()) {
+    case 'RUNNING':
+    case 'IN_PROGRESS':
+      return 'badge-primary';
+    case 'PASSED':
+    case 'COMPLETED':
+    case 'SUCCESS':
+      return 'badge-success text-success-content';
+    case 'FAILED':
+    case 'ERROR':
+      return 'badge-error text-error-content';
+    case 'ABORTED':
+    case 'STOPPED':
+      return 'badge-warning text-warning-content';
     default:
-      return 'info';
+      return 'badge-ghost';
   }
 }
 
-function getPacketTypeTag(type?: string) {
-  switch (type?.toLowerCase()) {
+function getPacketTypeBadgeClass(type?: string) {
+  switch ((type || '').toLowerCase()) {
     case 'uplink':
-      return 'success';
+      return 'badge-success text-success-content';
     case 'downlink':
-      return 'warning';
+      return 'badge-primary text-primary-content';
     case 'join_request':
-      return 'primary';
+      return 'badge-warning text-warning-content';
     case 'ack':
-      return 'info';
+      return 'badge-info text-info-content';
+    case 'status':
+      return 'badge-neutral';
     default:
-      return '';
+      return 'badge-ghost';
   }
 }
 
-function truncateStr(str?: string, max = 30) {
-  if (!str) return '—';
-  return str.length > max ? `${str.slice(0, max)}...` : str;
-}
-
-function handleTabChange(tab: any) {
-  router.replace({
-    query: {
-      ...route.query,
-      tab: tab.paneName || tab,
-    },
-  });
-  refreshActiveTab();
+function handleTabChange(tab: string | number) {
+  if (tab === 'packets') {
+    loadPackets();
+  } else if (tab === 'gateway-sessions') {
+    loadGatewaySessions();
+  }
 }
 
 function refreshActiveTab() {
@@ -407,7 +526,7 @@ async function loadPackets() {
     }
   } catch (err: any) {
     console.error('Error loading packets:', err);
-    ElMessage.error(err?.message || 'Không thể tải danh sách gói tin');
+    cyberToast.error(err?.message || 'Không thể tải danh sách gói tin');
   } finally {
     loadingPackets.value = false;
   }
@@ -434,7 +553,7 @@ async function loadGatewaySessions() {
     sessionList.value = res?.data || (Array.isArray(res) ? res : []);
   } catch (err: any) {
     console.error('Error loading gateway sessions:', err);
-    ElMessage.error(err?.message || 'Không thể tải danh sách phiên test Gateway');
+    cyberToast.error(err?.message || 'Không thể tải danh sách phiên test Gateway');
   } finally {
     loadingSessions.value = false;
   }
@@ -465,93 +584,6 @@ onMounted(() => {
 
 <style scoped>
 .testing-view {
-  padding: 16px;
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.header-left .title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  margin: 0 0 4px 0;
-}
-
-.header-left .subtitle {
-  font-size: 0.85rem;
-  color: var(--el-text-color-secondary);
-}
-
-.custom-tabs {
-  background: transparent;
-}
-
-.filter-card {
-  border-radius: 8px;
-}
-
-.table-card {
-  border-radius: 8px;
-}
-
-.pagination-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.raw-code,
-.json-code {
-  background: var(--el-fill-color-darker, #1e1e1e);
-  color: #a9b7c6;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 0.82rem;
-  overflow-x: auto;
-  border: 1px solid var(--el-border-color);
-}
-
-.section-title {
-  font-weight: 600;
-  font-size: 0.85rem;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--el-text-color-primary);
-}
-
-.font-mono {
-  font-family: 'Courier New', Courier, monospace;
-}
-
-.text-primary {
-  color: var(--el-color-primary);
-}
-
-.text-secondary {
-  color: var(--el-text-color-secondary);
-}
-
-.text-info {
-  color: var(--el-color-info);
-}
-
-.text-success {
-  color: var(--el-color-success);
-}
-
-.text-danger {
-  color: var(--el-color-danger);
-}
-
-.text-warning {
-  color: var(--el-color-warning);
+  width: 100%;
 }
 </style>

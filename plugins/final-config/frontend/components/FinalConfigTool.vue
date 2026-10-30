@@ -1,104 +1,95 @@
-﻿<template>
+<template>
   <div class="final-config-tool">
     <!-- 1. MAIN AUTOMATION & CONFIGURATION CARD -->
-    <el-card shadow="never" class="fc-card main-control-card">
-      <template #header>
-        <div class="fc-card-header">
-          <div class="header-left">
-            <el-icon class="header-icon" :size="20"><Operation /></el-icon>
-            <span class="header-title">FINAL CONFIG DEVICE</span>
-          </div>
-          <div v-if="fcDebugMode" class="header-debug-stats">
-            <span class="stat-item"><el-icon><Top /></el-icon> TX: {{ fcSerialStats.txPackets }} ({{ fcFormatBytes(fcSerialStats.txBytes) }})</span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item"><el-icon><Bottom /></el-icon> RX: {{ fcSerialStats.rxPackets }} ({{ fcFormatBytes(fcSerialStats.rxBytes) }})</span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item text-danger"><el-icon><WarningFilled /></el-icon> ERR: {{ fcSerialStats.errCount }}</span>
-          </div>
+    <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4 fc-card main-control-card">
+      <div class="fc-card-header pb-3 mb-3 border-b border-base-content/10">
+        <div class="header-left">
+          <Cpu class="w-5 h-5 text-primary header-icon" />
+          <span class="header-title">FINAL CONFIG DEVICE</span>
         </div>
-      </template>
+        <div v-if="fcDebugMode" class="header-debug-stats">
+          <span class="stat-item"><ArrowUp class="w-3.5 h-3.5 inline mr-1" /> TX: {{ fcSerialStats.txPackets }} ({{ fcFormatBytes(fcSerialStats.txBytes) }})</span>
+          <span class="stat-divider">|</span>
+          <span class="stat-item"><ArrowDown class="w-3.5 h-3.5 inline mr-1" /> RX: {{ fcSerialStats.rxPackets }} ({{ fcFormatBytes(fcSerialStats.rxBytes) }})</span>
+          <span class="stat-divider">|</span>
+          <span class="stat-item text-error"><AlertTriangle class="w-3.5 h-3.5 inline mr-1" /> ERR: {{ fcSerialStats.errCount }}</span>
+        </div>
+      </div>
 
       <!-- 1.1 TOP HORIZONTAL SERIAL PORT BAR -->
       <div class="serial-port-top-bar">
         <div class="port-bar-left">
-          <el-button-group class="port-btn-group">
-            <el-button type="primary" size="large" :icon="Cpu" @click="fcSelectSerialPort" class="btn-uniform">
+          <div class="join port-btn-group">
+            <button class="btn btn-primary join-item btn-uniform flex items-center gap-2" @click="fcSelectSerialPort">
+              <Cpu class="w-4 h-4" />
               Select Port
-            </el-button>
-            <el-button
+            </button>
+            <button
               v-if="fcSerialPort && !fcSerialConnected"
-              type="success"
-              size="large"
-              :icon="Link"
-              :loading="fcSerialConnecting || fcIsAutoReconnecting"
+              class="btn btn-success join-item btn-uniform flex items-center gap-2"
+              :disabled="fcSerialConnecting || fcIsAutoReconnecting"
               @click="fcConnectSerial(fcSerialPort)"
-              class="btn-uniform"
             >
+              <span v-if="fcSerialConnecting || fcIsAutoReconnecting" class="loading loading-spinner loading-sm"></span>
+              <Link v-else class="w-4 h-4" />
               {{ fcIsAutoReconnecting ? 'Reconnecting...' : 'Connect' }}
-            </el-button>
-            <el-button
+            </button>
+            <button
               v-if="fcSerialConnected"
-              type="danger"
-              size="large"
-              :icon="SwitchButton"
+              class="btn btn-error join-item btn-uniform flex items-center gap-2"
               @click="fcDisconnectSerial(true)"
-              class="btn-uniform"
             >
+              <Power class="w-4 h-4" />
               Disconnect
-            </el-button>
-          </el-button-group>
+            </button>
+          </div>
 
           <!-- Baud Rate -->
           <div class="inline-item baud-item">
             <span class="item-label">Baud:</span>
-            <el-select
+            <select
               v-model="fcSerialConfig.baudRate"
-              size="large"
-              style="width: 130px;"
+              class="select select-bordered select-md w-[130px]"
               :disabled="fcSerialConnected || fcSerialConnecting || isRunningFinalConfig"
             >
-              <el-option :value="9600" label="9600 bps" />
-              <el-option :value="19200" label="19200 bps" />
-              <el-option :value="38400" label="38400 bps" />
-              <el-option :value="57600" label="57600 bps" />
-              <el-option :value="115200" label="115200 bps" />
-            </el-select>
+              <option :value="9600">9600 bps</option>
+              <option :value="19200">19200 bps</option>
+              <option :value="38400">38400 bps</option>
+              <option :value="57600">57600 bps</option>
+              <option :value="115200">115200 bps</option>
+              <option :value="921600">921600 bps</option>
+            </select>
           </div>
 
-          <!-- DTR / RTS signals (Debug mode or active) -->
-          <div v-if="fcDebugMode || fcSerialConnected" class="inline-item signals-item">
-            <el-tag
-              size="small"
-              :type="fcSerialSignals.dtr ? 'success' : 'info'"
-              effect="plain"
-              class="cursor-pointer signal-tag"
+          <!-- DTR & RTS -->
+          <div class="inline-item signals-item">
+            <span
+              class="badge cursor-pointer select-none px-3 py-3"
+              :class="fcSerialSignals.dtr ? 'badge-success text-success-content' : 'badge-ghost'"
               @click="fcToggleDTR"
             >
               DTR: {{ fcSerialSignals.dtr ? 'ON' : 'OFF' }}
-            </el-tag>
-            <el-tag
-              size="small"
-              :type="fcSerialSignals.rts ? 'success' : 'info'"
-              effect="plain"
-              class="cursor-pointer signal-tag"
+            </span>
+            <span
+              class="badge cursor-pointer select-none px-3 py-3"
+              :class="fcSerialSignals.rts ? 'badge-success text-success-content' : 'badge-ghost'"
               @click="fcToggleRTS"
             >
               RTS: {{ fcSerialSignals.rts ? 'ON' : 'OFF' }}
-            </el-tag>
+            </span>
           </div>
         </div>
 
         <div class="port-bar-right">
-          <!-- Port connection info -->
-          <el-tag
-            :type="fcSerialConnected ? 'success' : 'info'"
-            size="large"
-            effect="light"
-            class="port-status-tag"
-          >
-            <span class="status-indicator-dot" :class="{ 'connected': fcSerialConnected }"></span>
-            {{ fcSerialConnected ? `Connected (${fcSerialPortInfo || 'Serial Port'})` : (fcSerialPort ? 'Selected (Offline)' : 'No Port Selected') }}
-          </el-tag>
+          <!-- Port Status Badge -->
+          <div class="badge badge-lg gap-2" :class="fcSerialConnected ? 'badge-success badge-outline' : 'badge-ghost'">
+            <span class="w-2 h-2 rounded-full" :class="fcSerialConnected ? 'bg-success animate-pulse' : 'bg-base-content/40'"></span>
+            <span>{{ fcSerialConnected ? 'ONLINE' : 'OFFLINE' }}</span>
+          </div>
+          <!-- Port Info Tooltip / Text -->
+          <span v-if="fcSerialPortInfo" class="port-info-badge font-mono">
+            {{ fcSerialPortInfo }}
+          </span>
         </div>
       </div>
 
@@ -107,117 +98,88 @@
       <!-- 1.2 ACTION CONTROLS & STATUS ROW (UNIFORM SIZING) -->
       <div class="execution-controls-row">
         <div class="controls-left">
-          <el-button
-            type="primary"
-            size="large"
-            :icon="VideoPlay"
-            :loading="isRunningFinalConfig"
+          <button
+            class="btn btn-primary btn-uniform-action btn-start flex items-center gap-2"
             :disabled="!fcSerialConnected || isRunningFinalConfig"
             @click="startFinalConfig"
-            class="btn-uniform-action btn-start"
           >
+            <span v-if="isRunningFinalConfig" class="loading loading-spinner loading-sm"></span>
+            <Play v-else class="w-4 h-4" />
             {{ isRunningFinalConfig ? 'Running Config...' : 'Start Config' }}
-          </el-button>
+          </button>
 
-          <el-button
-            type="warning"
-            plain
-            size="large"
-            :icon="RefreshLeft"
+          <button
+            class="btn btn-warning btn-outline btn-uniform-action btn-reset flex items-center gap-2"
             :disabled="isRunningFinalConfig"
             @click="resetFinalConfig"
-            class="btn-uniform-action btn-reset"
           >
+            <RotateCcw class="w-4 h-4" />
             Reset Config
-          </el-button>
+          </button>
 
-          <el-button
+          <button
             v-if="isRunningFinalConfig"
-            type="danger"
-            size="large"
-            :icon="CloseBold"
+            class="btn btn-error btn-uniform-action btn-abort flex items-center gap-2"
             @click="abortFinalConfig"
-            class="btn-uniform-action btn-abort"
           >
+            <X class="w-4 h-4" />
             Abort
-          </el-button>
+          </button>
 
-          <el-checkbox
-            v-model="fcDebugMode"
-            label="Debug Mode"
-            border
-            size="large"
-            class="debug-checkbox btn-uniform-action"
-          />
+          <label class="label cursor-pointer border border-base-content/20 rounded-lg px-3 py-2 flex items-center gap-2 bg-base-100">
+            <input
+              type="checkbox"
+              v-model="fcDebugMode"
+              class="checkbox checkbox-sm checkbox-primary"
+            />
+            <span class="label-text font-medium">Debug Mode</span>
+          </label>
         </div>
 
         <!-- STATUS Tag (Thay thế FINAL VERDICT, màu xám khi chưa chạy) -->
         <div class="status-banner">
-          <el-tag
-            :type="statusTagType"
-            size="large"
-            effect="dark"
-            class="status-verdict-tag"
-            :class="{ 'status-idle-tag': statusDisplayText === 'NONE' }"
+          <span
+            class="badge badge-lg font-mono font-bold tracking-wider px-4 py-3"
+            :class="{
+              'badge-success': statusDisplayText === 'PASS',
+              'badge-error': statusDisplayText === 'FAIL',
+              'badge-primary': statusDisplayText === 'RUNNING',
+              'badge-ghost': statusDisplayText === 'NONE'
+            }"
           >
-            <el-icon v-if="statusDisplayText === 'PASS'"><CircleCheckFilled /></el-icon>
-            <el-icon v-else-if="statusDisplayText === 'FAIL'"><CircleCloseFilled /></el-icon>
-            <el-icon v-else-if="statusDisplayText === 'RUNNING'" class="is-loading"><Loading /></el-icon>
-            <el-icon v-else><Clock /></el-icon>
             STATUS: {{ statusDisplayText }}
-          </el-tag>
+          </span>
         </div>
       </div>
 
-      <!-- 1.3 CYBER HUD DASHBOARD: TARGET CONFIGURATION (SN / SO) & MICRO-DOTS PROGRESS BAR -->
-      <div class="cyber-hud-container">
-        <!-- Sci-Fi Corner Brackets -->
-        <div class="hud-corner hud-corner-tl"></div>
-        <div class="hud-corner hud-corner-tr"></div>
-        <div class="hud-corner hud-corner-bl"></div>
-        <div class="hud-corner hud-corner-br"></div>
+      <div class="card-section-divider"></div>
 
-        <!-- Top Header: System Telemetry & Lock Status -->
-        <div class="cyber-hud-header">
-          <div class="hud-title-wrap">
-            <span class="hud-tech-badge">STAGE 2 // LOCKED TARGET</span>
-            <span class="hud-title-text">TARGET CONFIGURATION &amp; PIPELINE MONITOR</span>
-          </div>
-          <div class="hud-status-wrap">
-            <div
-              class="cyber-lock-chip"
-              :class="{ 'is-locked': fcProgress >= 25 || stage2Settled }"
-            >
-              <span class="lock-beacon-dot"></span>
-              <span class="lock-chip-text">
-                {{ (fcProgress >= 25 || stage2Settled) ? 'LOCKED VIA SN/SO' : 'STANDBY' }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cyber Data Readout: SERIAL NUMBER & SO NUMBER -->
+      <!-- 1.3 TARGET DEVICE READOUTS & CYBER PROGRESS BAR -->
+      <div class="pipeline-center-hub">
+        <!-- 2 Readouts: S/N and S/O with Clean Cyber Aesthetic -->
         <div class="cyber-readout-grid">
-          <!-- Parameter 1: SERIAL NUMBER -->
-          <div class="cyber-readout-card" :class="{ 'has-value': !!fcSerialNumberInput }">
-            <div class="readout-header">
-              <span class="readout-tag">PARAM 01</span>
-              <span class="readout-label">SERIAL NUMBER:</span>
-              <el-icon class="readout-icon"><Cpu /></el-icon>
+          <!-- Readout 1: Serial Number (SN) -->
+          <div class="cyber-readout-card">
+            <div class="readout-card-header">
+              <span class="readout-label font-mono">TARGET SERIAL NUMBER</span>
+              <span class="badge badge-sm badge-info font-mono">
+                {{ fcHardwareInfo.serialNumber ? 'SCANNED' : 'AWAITING' }}
+              </span>
             </div>
             <div class="readout-display-box">
               <span class="readout-value font-mono">
-                {{ fcSerialNumberInput || '--- WAITING HARDWARE AUDIT ---' }}
+                {{ fcHardwareInfo.serialNumber || fcSerialNumberInput || '--- NOT CONNECTED ---' }}
               </span>
             </div>
           </div>
 
-          <!-- Parameter 2: SO NUMBER -->
-          <div class="cyber-readout-card" :class="{ 'has-value': !!fcSelectedSo }">
-            <div class="readout-header">
-              <span class="readout-tag">PARAM 02</span>
-              <span class="readout-label">SO NUMBER:</span>
-              <el-icon class="readout-icon"><Document /></el-icon>
+          <!-- Readout 2: Sales Order (SO) -->
+          <div class="cyber-readout-card">
+            <div class="readout-card-header">
+              <span class="readout-label font-mono">TARGET SALES ORDER</span>
+              <span class="badge badge-sm badge-success font-mono">
+                {{ fcSelectedSo ? 'LOADED' : 'PENDING' }}
+              </span>
             </div>
             <div class="readout-display-box">
               <span class="readout-value font-mono">
@@ -273,30 +235,31 @@
           </span>
         </div>
       </div>
-    </el-card>
+    </div>
 
     <!-- 2. REAL-TIME AUTOMATION STATUS & 4 STAGES (DEBUG MODE ONLY) -->
-    <el-card v-if="fcDebugMode" shadow="never" class="fc-card debug-card">
-      <template #header>
-        <div class="fc-card-header">
-          <div class="header-left">
-            <el-icon class="header-icon"><Clock /></el-icon>
-            <span class="header-title">4-STAGE PIPELINE AUDIT DETAILS</span>
-          </div>
-          <el-tag size="small" type="warning" effect="dark">DEBUG MODE ACTIVE</el-tag>
+    <div v-if="fcDebugMode" class="card border border-base-content/10 bg-base-100 shadow-sm p-4 fc-card debug-card">
+      <div class="fc-card-header pb-3 mb-3 border-b border-base-content/10">
+        <div class="header-left">
+          <Clock class="w-5 h-5 text-primary header-icon" />
+          <span class="header-title">4-STAGE PIPELINE AUDIT DETAILS</span>
         </div>
-      </template>
+        <span class="badge badge-warning badge-sm font-semibold">DEBUG MODE ACTIVE</span>
+      </div>
 
       <!-- 4 Stages Boxes Grid -->
-      <el-row :gutter="12" class="stages-grid">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stages-grid">
         <!-- Stage 1 -->
-        <el-col :xs="24" :sm="12" :md="6">
+        <div>
           <div class="stage-card" :class="['status-' + stage1Status.toLowerCase()]">
             <div class="stage-header">
               <span class="stage-idx">STAGE 1</span>
-              <el-tag size="small" :type="stage1Status === 'PASS' ? 'success' : stage1Status === 'FAIL' ? 'danger' : stage1Status === 'RUNNING' ? 'primary' : 'info'" effect="dark">
+              <span
+                class="badge badge-sm font-mono font-semibold"
+                :class="stage1Status === 'PASS' ? 'badge-success' : stage1Status === 'FAIL' ? 'badge-error' : stage1Status === 'RUNNING' ? 'badge-primary' : 'badge-ghost'"
+              >
                 {{ stage1Status }}
-              </el-tag>
+              </span>
             </div>
             <div class="stage-title">Hardware Inspection</div>
             <div class="stage-details">
@@ -305,52 +268,61 @@
               <div class="stage-item"><span class="k">SO Check:</span> <span class="v">{{ fcSoCheckStatus }}</span></div>
             </div>
           </div>
-        </el-col>
+        </div>
 
         <!-- Stage 2 -->
-        <el-col :xs="24" :sm="12" :md="6">
+        <div>
           <div class="stage-card" :class="['status-' + stage2Status.toLowerCase()]">
             <div class="stage-header">
               <span class="stage-idx">STAGE 2</span>
-              <el-tag size="small" :type="stage2Status === 'PASS' ? 'success' : stage2Status === 'FAIL' ? 'danger' : stage2Status === 'RUNNING' ? 'primary' : 'info'" effect="dark">
+              <span
+                class="badge badge-sm font-mono font-semibold"
+                :class="stage2Status === 'PASS' ? 'badge-success' : stage2Status === 'FAIL' ? 'badge-error' : stage2Status === 'RUNNING' ? 'badge-primary' : 'badge-ghost'"
+              >
                 {{ stage2Status }}
-              </el-tag>
+              </span>
             </div>
-            <div class="stage-title">Target Locking &amp; AppKey</div>
+            <div class="stage-title">Write AppKey &amp; Config</div>
             <div class="stage-details">
-              <div class="stage-item"><span class="k">Locked SN:</span> <span class="v">{{ fcSerialNumberInput || 'Pending' }}</span></div>
-              <div class="stage-item"><span class="k">Write Regs:</span> <span class="v">{{ fcWrittenRegsCount }} / {{ fcTotalWriteRegsCount }}</span></div>
               <div class="stage-item"><span class="k">AppKey:</span> <span class="v">{{ fcAppKeyWriteStatus }}</span></div>
+              <div class="stage-item"><span class="k">Regs Written:</span> <span class="v">{{ fcWrittenRegsCount }} / {{ fcTotalWriteRegsCount }}</span></div>
+              <div class="stage-item"><span class="k">Settled:</span> <span class="v">{{ stage2Settled ? 'Yes (3s)' : 'Waiting' }}</span></div>
             </div>
           </div>
-        </el-col>
+        </div>
 
         <!-- Stage 3 -->
-        <el-col :xs="24" :sm="12" :md="6">
+        <div>
           <div class="stage-card" :class="['status-' + stage3Status.toLowerCase()]">
             <div class="stage-header">
               <span class="stage-idx">STAGE 3</span>
-              <el-tag size="small" :type="stage3Status === 'PASS' ? 'success' : stage3Status === 'FAIL' ? 'danger' : stage3Status === 'RUNNING' ? 'primary' : 'info'" effect="dark">
+              <span
+                class="badge badge-sm font-mono font-semibold"
+                :class="stage3Status === 'PASS' ? 'badge-success' : stage3Status === 'FAIL' ? 'badge-error' : stage3Status === 'RUNNING' ? 'badge-primary' : 'badge-ghost'"
+              >
                 {{ stage3Status }}
-              </el-tag>
+              </span>
             </div>
-            <div class="stage-title">Read Full Memory Map</div>
+            <div class="stage-title">Batch Read Modbus</div>
             <div class="stage-details">
-              <div class="stage-item"><span class="k">Progress:</span> <span class="v">{{ fcReadBackRegsCount }} / {{ fcTotalMemmapRegsCount }}</span></div>
-              <div class="stage-item"><span class="k">Mismatches:</span> <span class="v" :class="{ 'text-danger': fcMismatchCount > 0 }">{{ fcMismatchCount }}</span></div>
+              <div class="stage-item"><span class="k">Read Back:</span> <span class="v">{{ fcReadBackRegsCount }} / {{ fcTotalMemmapRegsCount }}</span></div>
+              <div class="stage-item"><span class="k">Mismatch:</span> <span class="v text-danger font-bold">{{ fcMismatchCount }}</span></div>
               <div class="stage-item"><span class="k">Audit Mode:</span> <span class="v">Batch Modbus</span></div>
             </div>
           </div>
-        </el-col>
+        </div>
 
         <!-- Stage 4 -->
-        <el-col :xs="24" :sm="12" :md="6">
+        <div>
           <div class="stage-card" :class="['status-' + stage4Status.toLowerCase()]">
             <div class="stage-header">
               <span class="stage-idx">STAGE 4</span>
-              <el-tag size="small" :type="stage4Status === 'PASS' ? 'success' : stage4Status === 'FAIL' ? 'danger' : stage4Status === 'RUNNING' ? 'primary' : 'info'" effect="dark">
+              <span
+                class="badge badge-sm font-mono font-semibold"
+                :class="stage4Status === 'PASS' ? 'badge-success' : stage4Status === 'FAIL' ? 'badge-error' : stage4Status === 'RUNNING' ? 'badge-primary' : 'badge-ghost'"
+              >
                 {{ stage4Status }}
-              </el-tag>
+              </span>
             </div>
             <div class="stage-title">Automated QA Verdict</div>
             <div class="stage-details">
@@ -359,64 +331,88 @@
               <div class="stage-item"><span class="k">Audit Log:</span> <span class="v">183 Registers</span></div>
             </div>
           </div>
-        </el-col>
-      </el-row>
-    </el-card>
+        </div>
+      </div>
+    </div>
 
     <!-- 3. LIVE REGISTER AUDIT GRID (TABULATOR) (DEBUG MODE ONLY) -->
-    <el-card v-if="fcDebugMode" shadow="never" class="fc-card debug-card">
-      <template #header>
-        <div class="audit-toolbar">
-          <div class="toolbar-left">
-            <div class="toolbar-title">
-              <el-icon><Grid /></el-icon>
-              <span>LIVE REGISTER AUDIT GRID (183 REGISTERS)</span>
-            </div>
-            <el-radio-group v-model="auditStatusFilter" size="small">
-              <el-radio-button label="ALL">All ({{ fcAuditRegisters.length }})</el-radio-button>
-              <el-radio-button label="FAIL">Mismatch ({{ fcMismatchCount }})</el-radio-button>
-              <el-radio-button label="PASS">Match ({{ fcAuditRegisters.length - fcMismatchCount }})</el-radio-button>
-            </el-radio-group>
+    <div v-if="fcDebugMode" class="card border border-base-content/10 bg-base-100 shadow-sm p-4 fc-card debug-card">
+      <div class="audit-toolbar pb-3 mb-3 border-b border-base-content/10">
+        <div class="toolbar-left">
+          <div class="toolbar-title flex items-center gap-2">
+            <Sliders class="w-4 h-4 text-primary" />
+            <span>LIVE REGISTER AUDIT GRID (183 REGISTERS)</span>
           </div>
-
-          <div class="toolbar-right">
-            <el-input
-              v-model="auditSearchQuery"
-              placeholder="Search register / param..."
-              size="small"
-              clearable
-              style="width: 220px;"
+          <div class="join">
+            <button
+              class="btn btn-xs join-item"
+              :class="auditStatusFilter === 'ALL' ? 'btn-primary' : 'btn-ghost'"
+              @click="auditStatusFilter = 'ALL'"
             >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-            <el-button size="small" :icon="Document" @click="exportAuditCsv">CSV</el-button>
-            <el-button size="small" :icon="Document" @click="exportAuditXlsx">Excel</el-button>
+              All ({{ fcAuditRegisters.length }})
+            </button>
+            <button
+              class="btn btn-xs join-item"
+              :class="auditStatusFilter === 'FAIL' ? 'btn-error' : 'btn-ghost'"
+              @click="auditStatusFilter = 'FAIL'"
+            >
+              Mismatch ({{ fcMismatchCount }})
+            </button>
+            <button
+              class="btn btn-xs join-item"
+              :class="auditStatusFilter === 'PASS' ? 'btn-success' : 'btn-ghost'"
+              @click="auditStatusFilter = 'PASS'"
+            >
+              Match ({{ fcAuditRegisters.length - fcMismatchCount }})
+            </button>
           </div>
         </div>
-      </template>
+
+        <div class="toolbar-right flex items-center gap-2">
+          <div class="relative">
+            <Search class="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 opacity-50" />
+            <input
+              v-model="auditSearchQuery"
+              type="text"
+              placeholder="Search register / param..."
+              class="input input-sm input-bordered pl-8 w-56"
+            />
+          </div>
+          <button class="btn btn-sm btn-outline flex items-center gap-1" @click="exportAuditCsv">
+            <FileText class="w-3.5 h-3.5" />
+            CSV
+          </button>
+          <button class="btn btn-sm btn-outline flex items-center gap-1" @click="exportAuditXlsx">
+            <FileSpreadsheet class="w-3.5 h-3.5" />
+            Excel
+          </button>
+        </div>
+      </div>
 
       <!-- Tabulator Table Mount Node -->
       <div class="table-container">
         <div id="final-config-device-table" class="tabulator-host"></div>
       </div>
-    </el-card>
+    </div>
 
     <!-- 4. UART LIVE COMMUNICATION LOGS (DEBUG MODE ONLY) -->
-    <el-card v-if="fcDebugMode" shadow="never" class="fc-card debug-card">
-      <template #header>
-        <div class="fc-card-header">
-          <div class="header-left">
-            <el-icon class="header-icon"><Monitor /></el-icon>
-            <span class="header-title">UART LIVE COMMUNICATION LOGS</span>
-          </div>
-          <div class="header-right">
-            <el-button size="small" :icon="CopyDocument" @click="fcCopySerialLogs">Copy Logs</el-button>
-            <el-button size="small" :icon="Delete" @click="fcClearSerialLogs">Clear</el-button>
-          </div>
+    <div v-if="fcDebugMode" class="card border border-base-content/10 bg-base-100 shadow-sm p-4 fc-card debug-card logs-card">
+      <div class="fc-card-header pb-3 mb-3 border-b border-base-content/10">
+        <div class="header-left">
+          <Terminal class="w-5 h-5 text-primary header-icon" />
+          <span class="header-title">UART LIVE COMMUNICATION LOGS</span>
         </div>
-      </template>
+        <div class="header-right flex items-center gap-2">
+          <button class="btn btn-xs btn-outline flex items-center gap-1" @click="fcCopySerialLogs">
+            <Copy class="w-3.5 h-3.5" />
+            Copy Logs
+          </button>
+          <button class="btn btn-xs btn-outline btn-error flex items-center gap-1" @click="fcClearSerialLogs">
+            <Trash2 class="w-3.5 h-3.5" />
+            Clear
+          </button>
+        </div>
+      </div>
 
       <div class="uart-logs-viewer" id="fc-serial-logs-box">
         <div v-if="fcSerialLogs.length === 0" class="empty-logs">
@@ -429,68 +425,68 @@
           :class="['log-' + log.type]"
         >
           <span class="log-time">{{ log.time }}</span>
-          <el-tag size="small" :type="log.type === 'tx' ? 'primary' : log.type === 'rx' ? 'success' : log.type === 'err' ? 'danger' : 'info'" effect="dark">
+          <span
+            class="badge badge-xs font-mono"
+            :class="log.type === 'tx' ? 'badge-primary' : log.type === 'rx' ? 'badge-success' : log.type === 'err' ? 'badge-error' : 'badge-ghost'"
+          >
             {{ log.tag }}
-          </el-tag>
+          </span>
           <span class="log-msg">{{ log.message }}</span>
         </div>
       </div>
-    </el-card>
+    </div>
 
-    <!-- POPUP CẢNH BÁO THIẾT BỊ ĐÃ FINAL CONFIG PASS -->
-    <el-dialog
-      v-model="alreadyPassedModal"
-      title="Device Already Configured"
-      width="460px"
-      destroy-on-close
-    >
-      <el-alert
-        title="Thiết bị đã hoàn tất Final Config trong hệ thống!"
-        type="warning"
-        :closable="false"
-        show-icon
-        style="margin-bottom: 16px;"
-      />
-      <div v-if="alreadyPassedInfo" class="already-passed-content font-mono">
-        <p><strong>Serial Number:</strong> {{ alreadyPassedInfo.serial_number }}</p>
-        <p v-if="alreadyPassedInfo.dev_eui"><strong>DevEUI:</strong> {{ alreadyPassedInfo.dev_eui }}</p>
-        <p v-if="alreadyPassedInfo.so"><strong>Sales Order:</strong> {{ alreadyPassedInfo.so }}</p>
-        <p v-if="alreadyPassedInfo.tested_at"><strong>Passed At:</strong> {{ new Date(alreadyPassedInfo.tested_at).toLocaleString() }}</p>
+    <!-- POPUP CẢNH BÁO THIẾT BỊ ĐÃ PASSED TRONG DATABASE -->
+    <dialog class="modal" :class="{ 'modal-open': alreadyPassedModal }">
+      <div class="modal-box border border-warning/30 bg-base-100">
+        <h3 class="font-bold text-lg text-warning flex items-center gap-2">
+          <AlertTriangle class="w-5 h-5" />
+          Device Already Configured
+        </h3>
+        <div class="alert alert-warning mt-3 text-sm">
+          <AlertTriangle class="w-4 h-4" />
+          <span>Thiết bị đã hoàn tất Final Config trong hệ thống!</span>
+        </div>
+        <div v-if="alreadyPassedInfo" class="already-passed-content font-mono mt-4 space-y-1 text-sm bg-base-200/50 p-3 rounded-lg border border-base-content/10">
+          <p><strong>Serial Number:</strong> {{ alreadyPassedInfo.serial_number }}</p>
+          <p v-if="alreadyPassedInfo.dev_eui"><strong>DevEUI:</strong> {{ alreadyPassedInfo.dev_eui }}</p>
+          <p v-if="alreadyPassedInfo.so"><strong>Sales Order:</strong> {{ alreadyPassedInfo.so }}</p>
+          <p v-if="alreadyPassedInfo.tested_at"><strong>Passed At:</strong> {{ new Date(alreadyPassedInfo.tested_at).toLocaleString() }}</p>
+        </div>
+        <div class="modal-action">
+          <button class="btn btn-warning" @click="alreadyPassedModal = false">
+            Acknowledge &amp; Close
+          </button>
+        </div>
       </div>
-      <template #footer>
-        <el-button type="warning" @click="alreadyPassedModal = false">
-          Acknowledge &amp; Close
-        </el-button>
-      </template>
-    </el-dialog>
+      <form method="dialog" class="modal-backdrop" @click="alreadyPassedModal = false">
+        <button>close</button>
+      </form>
+    </dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import {
-  Operation,
-  Top,
-  Bottom,
-  WarningFilled,
-  Tickets,
-  CircleCheckFilled,
   Cpu,
   Link,
-  SwitchButton,
-  CircleCloseFilled,
-  Loading,
-  VideoPlay,
-  RefreshLeft,
-  CloseBold,
+  Power,
+  Play,
+  RotateCcw,
+  X,
+  AlertTriangle,
   Clock,
-  Grid,
   Search,
-  Document,
-  Monitor,
-  CopyDocument,
-  Delete,
-} from '@element-plus/icons-vue';
+  FileText,
+  FileSpreadsheet,
+  Terminal,
+  Copy,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Sliders,
+} from 'lucide-vue-next';
 import { useFinalConfigEngine } from '../composables/useFinalConfigEngine';
 
 const {
@@ -553,13 +549,6 @@ const statusDisplayText = computed(() => {
   if (finalVerdict.value === 'FAIL') return 'FAIL';
   return 'NONE';
 });
-
-const statusTagType = computed(() => {
-  if (statusDisplayText.value === 'PASS') return 'success';
-  if (statusDisplayText.value === 'FAIL') return 'danger';
-  if (statusDisplayText.value === 'RUNNING') return 'primary';
-  return 'info'; // Màu xám cho NONE / IDLE
-});
 </script>
 
 <style scoped>
@@ -576,7 +565,7 @@ const statusTagType = computed(() => {
 
 .main-control-card {
   background: var(--el-bg-color-overlay, #ffffff);
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid var(--el-border-color-light, rgba(255, 255, 255, 0.1));
 }
 
 .fc-card-header {
@@ -595,20 +584,20 @@ const statusTagType = computed(() => {
 }
 
 .header-icon {
-  color: var(--el-color-primary);
+  color: var(--el-color-primary, #00f0ff);
 }
 
 .header-title {
   font-weight: 700;
   font-size: 15px;
-  color: var(--el-text-color-primary);
+  color: var(--el-text-color-primary, currentColor);
   letter-spacing: 0.5px;
 }
 
 .header-debug-stats {
   font-family: monospace;
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--el-text-color-secondary, #94a3b8);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -621,7 +610,7 @@ const statusTagType = computed(() => {
 }
 
 .stat-divider {
-  color: var(--el-border-color);
+  color: var(--el-border-color, rgba(255, 255, 255, 0.15));
 }
 
 /* 1.1 TOP HORIZONTAL SERIAL PORT BAR */
@@ -650,65 +639,41 @@ const statusTagType = computed(() => {
 .inline-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .item-label {
-  font-size: 13px;
   font-weight: 600;
-  color: var(--el-text-color-regular);
+  font-size: 13px;
+  color: var(--el-text-color-regular, #94a3b8);
 }
 
 .signals-item {
-  display: flex;
+  margin-left: 8px;
   gap: 6px;
-}
-
-.signal-tag {
-  font-family: monospace;
-  font-weight: 600;
-  user-select: none;
 }
 
 .port-bar-right {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
-.port-status-tag {
-  height: 44px;
-  font-family: monospace;
-  font-size: 14px;
-  font-weight: 700;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-
-.status-indicator-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--el-color-info);
-  display: inline-block;
-  transition: all 0.3s ease;
-}
-
-.status-indicator-dot.connected {
-  background-color: var(--el-color-success);
-  box-shadow: 0 0 6px var(--el-color-success);
+.port-info-badge {
+  font-size: 11px;
+  background: var(--el-fill-color-light, rgba(255, 255, 255, 0.05));
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: var(--el-text-color-secondary, #94a3b8);
 }
 
 .card-section-divider {
   height: 1px;
-  background-color: var(--el-border-color-lighter);
-  margin: 10px 0 16px 0;
+  background: var(--el-border-color-lighter, rgba(255, 255, 255, 0.08));
+  margin: 8px 0 16px 0;
 }
 
-/* 1.2 ACTION CONTROLS & UNIFORM SIZING */
+/* 1.2 ACTION CONTROLS & STATUS ROW (UNIFORM SIZING) */
 .execution-controls-row {
   display: flex;
   align-items: center;
@@ -726,20 +691,20 @@ const statusTagType = computed(() => {
 }
 
 .btn-uniform-action {
-  height: 44px;
-  min-width: 140px;
-  font-size: 14px;
+  height: 46px;
+  font-size: 15px;
   font-weight: 700;
+  padding: 0 24px;
   border-radius: 6px;
   letter-spacing: 0.5px;
 }
 
-.debug-checkbox {
-  height: 44px;
-  margin-right: 0;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
+.btn-start {
+  box-shadow: 0 0 12px rgba(64, 158, 255, 0.35);
+}
+
+.btn-abort {
+  box-shadow: 0 0 12px rgba(245, 108, 108, 0.35);
 }
 
 .status-banner {
@@ -747,151 +712,22 @@ const statusTagType = computed(() => {
   align-items: center;
 }
 
-.status-verdict-tag {
-  height: 44px;
-  padding: 0 20px;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.status-idle-tag {
-  background-color: #64748b !important;
-  border-color: #475569 !important;
-  color: #f1f5f9 !important;
-  box-shadow: none !important;
-}
-
-/* 1.3 CYBER HUD DASHBOARD & MICRO-DOTS PROGRESS BAR */
-.cyber-hud-container {
-  position: relative;
-  background: radial-gradient(circle at 50% 0%, #0d1527 0%, #060913 100%);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 6px;
-  padding: 16px 18px 14px 18px;
-  margin-bottom: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-}
-
-/* Sci-Fi Corner Brackets */
-.hud-corner {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-color: #38bdf8;
-  border-style: solid;
-  pointer-events: none;
-  opacity: 0.85;
-}
-.hud-corner-tl {
-  top: 3px;
-  left: 3px;
-  border-width: 2px 0 0 2px;
-}
-.hud-corner-tr {
-  top: 3px;
-  right: 3px;
-  border-width: 2px 2px 0 0;
-}
-.hud-corner-bl {
-  bottom: 3px;
-  left: 3px;
-  border-width: 0 0 2px 2px;
-}
-.hud-corner-br {
-  bottom: 3px;
-  right: 3px;
-  border-width: 0 2px 2px 0;
-}
-
-/* Header */
-.cyber-hud-header {
+/* 1.3 PIPELINE CENTER HUB (READOUTS & PROGRESS BAR) */
+.pipeline-center-hub {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
-  padding-bottom: 10px;
+  flex-direction: column;
+  gap: 18px;
+  background: rgba(10, 15, 26, 0.7);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 8px;
+  padding: 20px 24px;
+  box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.03);
 }
 
-.hud-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.hud-tech-badge {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  padding: 2px 8px;
-  background: rgba(14, 165, 233, 0.15);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  border-radius: 3px;
-}
-
-.hud-title-text {
-  font-size: 13px;
-  font-weight: 800;
-  color: #f1f5f9;
-  letter-spacing: 0.5px;
-}
-
-.hud-status-wrap {
-  display: flex;
-  align-items: center;
-}
-
-.cyber-lock-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  background: rgba(100, 116, 139, 0.15);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  color: #94a3b8;
-  border-radius: 3px;
-  transition: all 0.3s ease;
-}
-
-.cyber-lock-chip.is-locked {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: #10b981;
-  color: #34d399;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
-}
-
-.lock-beacon-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #94a3b8;
-}
-
-.cyber-lock-chip.is-locked .lock-beacon-dot {
-  background: #34d399;
-  box-shadow: 0 0 6px #34d399;
-  animation: beacon-pulse 1.5s infinite;
-}
-
-/* Cyber Data Readout: SERIAL NUMBER & SO NUMBER */
 .cyber-readout-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: 20px;
 }
 
 @media (max-width: 768px) {
@@ -901,106 +737,76 @@ const statusTagType = computed(() => {
 }
 
 .cyber-readout-card {
-  background: #090f1e;
-  border: 1px solid rgba(56, 189, 248, 0.2);
-  border-radius: 4px;
-  padding: 10px 12px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.cyber-readout-card.has-value {
-  border-color: rgba(56, 189, 248, 0.45);
-  box-shadow: 0 0 12px rgba(6, 182, 212, 0.08);
-}
-
-.readout-header {
+.readout-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.readout-tag {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 10px;
-  font-weight: 700;
-  color: #64748b;
-  letter-spacing: 0.5px;
 }
 
 .readout-label {
-  font-size: 12px;
-  font-weight: 800;
-  color: #94a3b8;
-  letter-spacing: 0.5px;
-  flex: 1;
-  margin-left: 8px;
-}
-
-.readout-icon {
-  font-size: 14px;
-  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #00f0ff;
 }
 
 .readout-display-box {
-  background: #040711;
-  border: 1px solid #1e293b;
-  border-radius: 3px;
-  padding: 8px 12px;
+  background: #050b14;
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 4px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
-  min-height: 38px;
+  justify-content: center;
 }
 
 .readout-value {
-  font-size: 13px;
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: 1px;
-  color: #38bdf8;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  color: #ffffff;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
 }
 
-.cyber-readout-card:not(.has-value) .readout-value {
-  color: #475569;
-  text-shadow: none;
-  font-weight: 600;
-}
-
-/* Micro-Dots Moving Particle Progress Bar */
+/* CYBER PROGRESS BLOCK */
 .cyber-progress-block {
-  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .progress-meta-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
-  flex-wrap: wrap;
-  gap: 8px;
+  font-size: 12px;
 }
 
 .progress-meta-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .progress-meta-title {
-  font-size: 12px;
-  font-weight: 800;
-  color: #e2e8f0;
-  letter-spacing: 0.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #94a3b8;
 }
 
 .progress-meta-stage {
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
-  background: rgba(148, 163, 184, 0.1);
-  padding: 2px 6px;
-  border-radius: 2px;
-  border: 1px solid #334155;
+  color: #00f0ff;
+  font-weight: 600;
 }
 
 .progress-meta-right {
@@ -1010,148 +816,138 @@ const statusTagType = computed(() => {
 }
 
 .progress-meta-verdict {
-  font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.5px;
 }
 
-.progress-meta-verdict.verdict-pass {
-  color: #34d399;
-  text-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+.verdict-running {
+  color: #00f0ff;
 }
 
-.progress-meta-verdict.verdict-fail {
-  color: #f87171;
-  text-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+.verdict-pass {
+  color: #67c23a;
+  text-shadow: 0 0 8px rgba(103, 194, 58, 0.5);
 }
 
-.progress-meta-verdict.verdict-running {
-  color: #38bdf8;
-  text-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+.verdict-fail {
+  color: #f56c6c;
+  text-shadow: 0 0 8px rgba(245, 108, 108, 0.5);
 }
 
 .progress-meta-percent {
-  font-size: 16px;
-  font-weight: 900;
-  color: #38bdf8;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
-  min-width: 48px;
-  text-align: right;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
 }
 
-/* The Micro-Dots Track */
+/* CYBER MICRO-DOTS TRACK */
 .cyber-microdots-track {
   position: relative;
-  height: 24px;
-  background-color: #040711;
-  border: 1px solid #1e293b;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
+  height: 14px;
+  background: #050b14;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 7px;
+  overflow: visible;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8);
 }
 
-/* Active progress bar fill */
 .cyber-microdots-fill {
-  position: relative;
-  height: 100%;
-  background: linear-gradient(90deg, #0284c7 0%, #06b6d4 50%, #10b981 100%);
-  border-radius: 2px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #0055ff, #00f0ff);
+  border-radius: 6px;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 14px rgba(6, 182, 212, 0.5);
-  overflow: visible;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.cyber-microdots-fill.is-running {
+  background: linear-gradient(90deg, #0055ff, #00f0ff);
 }
 
 .cyber-microdots-fill.is-pass {
-  background: linear-gradient(90deg, #059669 0%, #10b981 100%);
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.6);
+  background: linear-gradient(90deg, #13ce66, #67c23a);
+  box-shadow: 0 0 12px rgba(103, 194, 58, 0.6);
 }
 
 .cyber-microdots-fill.is-fail {
-  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
-  box-shadow: 0 0 14px rgba(239, 68, 68, 0.6);
+  background: linear-gradient(90deg, #e6a23c, #f56c6c);
+  box-shadow: 0 0 12px rgba(245, 108, 108, 0.6);
 }
 
-/* Moving Head Container */
 .fill-lead-head {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 0;
-  z-index: 4;
+  right: -6px;
+  top: -2px;
+  bottom: -2px;
+  width: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Glowing head pulse beacon */
 .fill-lead-beacon {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   background: #ffffff;
-  border-radius: 1px;
+  box-shadow: 0 0 8px #00f0ff, 0 0 16px #00f0ff;
+  animation: beacon-pulse 1s infinite alternate;
 }
 
-/* Telemetry status row */
+@keyframes beacon-pulse {
+  from { transform: scale(0.8); opacity: 0.8; }
+  to { transform: scale(1.3); opacity: 1; }
+}
+
 .cyber-telemetry-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--owl-bg-aside, #1c212b);
-  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
-  border-radius: 6px;
-  padding: 6px 12px;
-  overflow: hidden;
+  font-size: 13px;
+  padding-top: 4px;
 }
 
 .telemetry-prompt {
-  font-family: var(--cyber-font-mono, monospace);
-  font-size: 12px;
+  color: #94a3b8;
   font-weight: 600;
-  color: var(--owl-teal, #28ebff);
-  white-space: nowrap;
 }
 
 .telemetry-msg {
-  font-size: 12px;
-  color: var(--owl-text-primary, #f1f5f9);
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-}
-/* 2. DEBUG MODE ONLY SECTIONS */
-.debug-card {
-  border: 1px dashed var(--el-color-warning-light-3, #f3d19e);
+  color: #38bdf8;
 }
 
-.stages-grid {
-  margin-top: 4px;
+/* 2. REAL-TIME AUTOMATION STATUS & 4 STAGES */
+.debug-card {
+  background: var(--el-bg-color-overlay, #ffffff);
+  border: 1px solid var(--el-border-color-light, rgba(255, 255, 255, 0.1));
 }
 
 .stage-card {
-  background: var(--el-fill-color-lighter, #f8fafc);
-  border: 1px solid var(--el-border-color-lighter);
+  border: 1px solid var(--el-border-color, rgba(255, 255, 255, 0.15));
   border-radius: 6px;
   padding: 12px;
+  background: var(--el-fill-color-blank, rgba(255, 255, 255, 0.02));
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: all 0.3s ease;
-}
-
-.stage-card.status-running {
-  border-color: var(--el-color-primary);
-  box-shadow: 0 0 8px rgba(64, 158, 255, 0.2);
+  transition: all 0.2s ease;
 }
 
 .stage-card.status-pass {
-  border-color: var(--el-color-success);
+  border-color: rgba(103, 194, 58, 0.6);
+  background: rgba(103, 194, 58, 0.05);
 }
 
 .stage-card.status-fail {
-  border-color: var(--el-color-danger);
+  border-color: rgba(245, 108, 108, 0.6);
+  background: rgba(245, 108, 108, 0.05);
+}
+
+.stage-card.status-running {
+  border-color: rgba(0, 240, 255, 0.6);
+  background: rgba(0, 240, 255, 0.05);
 }
 
 .stage-header {
@@ -1161,43 +957,41 @@ const statusTagType = computed(() => {
 }
 
 .stage-idx {
+  font-family: monospace;
   font-size: 11px;
-  font-weight: 800;
-  color: var(--el-text-color-secondary);
-  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--el-text-color-secondary, #94a3b8);
 }
 
 .stage-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
-  margin-bottom: 6px;
+  color: var(--el-text-color-primary, currentColor);
 }
 
 .stage-details {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  font-size: 12px;
   font-family: monospace;
-  font-size: 11px;
+  color: var(--el-text-color-regular, #94a3b8);
 }
 
 .stage-item {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
 }
 
 .stage-item .k {
-  color: var(--el-text-color-secondary);
+  color: var(--el-text-color-secondary, #94a3b8);
 }
 
 .stage-item .v {
-  color: var(--el-text-color-primary);
   font-weight: 600;
 }
 
-/* 3. AUDIT GRID (TABULATOR) */
+/* 3. AUDIT GRID TOOLBAR & TABULATOR HOST */
 .audit-toolbar {
   display: flex;
   align-items: center;
@@ -1206,82 +1000,86 @@ const statusTagType = computed(() => {
   gap: 12px;
 }
 
-.toolbar-left,
-.toolbar-right {
+.toolbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 16px;
 }
 
 .toolbar-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.toolbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
-  font-size: 13px;
 }
 
 .table-container {
   width: 100%;
-  overflow-x: auto;
-  border-radius: 4px;
-  border: 1px solid var(--el-border-color-lighter);
+  margin-top: 12px;
 }
 
 .tabulator-host {
-  min-height: 380px;
   width: 100%;
 }
 
-/* 4. UART LOGS */
+/* 4. UART LOGS VIEWER */
 .uart-logs-viewer {
-  background: var(--el-fill-color-darker, #111827);
-  color: #e2e8f0;
-  padding: 12px;
-  border-radius: 6px;
-  max-height: 240px;
+  height: 220px;
   overflow-y: auto;
-  font-size: 11px;
+  background: #050b14;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: monospace;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .empty-logs {
   color: #64748b;
+  font-style: italic;
+  padding: 20px 0;
   text-align: center;
-  padding: 24px;
 }
 
 .log-line {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .log-time {
   color: #64748b;
-  white-space: nowrap;
+  font-size: 11px;
 }
 
 .log-msg {
-  font-family: monospace;
+  color: #cbd5e1;
   word-break: break-all;
 }
 
-.cursor-pointer {
-  cursor: pointer;
+.log-tx .log-msg {
+  color: #38bdf8;
 }
 
-.mono-font {
-  font-family: 'Courier New', Courier, monospace;
+.log-rx .log-msg {
+  color: #4ade80;
+}
+
+.log-err .log-msg {
+  color: #f87171;
 }
 
 .text-danger {
-  color: var(--el-color-danger);
-}
-
-.text-warning {
-  color: var(--el-color-warning);
+  color: #f56c6c;
 }
 </style>

@@ -1,395 +1,606 @@
 <template>
-  <div class="decoder-view">
+  <div class="decoder-view p-6 max-w-7xl mx-auto space-y-6">
     <!-- Header -->
-    <div class="view-header">
-      <div class="header-left">
-        <h2 class="title">
-          <el-icon class="mr-2"><Cpu /></el-icon>
-          Bộ Giải Mã LoRaWAN (Payload Decoder)
-        </h2>
-        <span class="subtitle">
-          Quản lý script JS giải mã payload chuẩn LoRaWAN, nhận diện tự động theo SKU & LONG_FW từ MemMap
-        </span>
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-content/10 pb-5">
+      <div>
+        <div class="flex items-center gap-2 text-2xl font-bold tracking-tight text-base-content">
+          <Cpu class="w-7 h-7 text-primary" />
+          <span>Bộ Giải Mã LoRaWAN (Payload Decoder)</span>
+        </div>
+        <p class="text-sm text-base-content/60 mt-0.5">
+          Quản lý script JS giải mã payload chuẩn LoRaWAN, nhận diện tự động theo SKU &amp; LONG_FW từ MemMap.
+        </p>
       </div>
-      <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm gap-2"
+          @click="openCreateDialog"
+        >
+          <Plus class="w-4 h-4" />
           Tạo Decoder Mới
-        </el-button>
-        <el-button :icon="Refresh" @click="refreshData" :loading="loading">
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-outline btn-sm gap-2"
+          :disabled="loading"
+          @click="refreshData"
+        >
+          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
           Làm Mới
-        </el-button>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Tabs -->
+    <div class="tabs tabs-boxed bg-base-300/50 p-1 rounded-xl w-fit">
+      <button
+        type="button"
+        class="tab text-sm font-medium gap-2 transition-all"
+        :class="{ 'tab-active': activeTab === 'list' }"
+        @click="activeTab = 'list'"
+      >
+        <List class="w-4 h-4" />
+        Danh Sách Bộ Giải Mã
+      </button>
+      <button
+        type="button"
+        class="tab text-sm font-medium gap-2 transition-all"
+        :class="{ 'tab-active': activeTab === 'memmap' }"
+        @click="activeTab = 'memmap'"
+      >
+        <Link2 class="w-4 h-4" />
+        Khớp Nối Với MemMap
+      </button>
+      <button
+        type="button"
+        class="tab text-sm font-medium gap-2 transition-all"
+        :class="{ 'tab-active': activeTab === 'sandbox' }"
+        @click="activeTab = 'sandbox'"
+      >
+        <Terminal class="w-4 h-4" />
+        Sandbox Thử Nghiệm Decode
+      </button>
+    </div>
+
+    <!-- TAB 1: Danh Sách Decoder Scripts -->
+    <div v-if="activeTab === 'list'" class="space-y-4">
+      <!-- Filter Bar -->
+      <div class="card bg-base-200/60 border border-base-content/10 p-4 shadow-sm backdrop-blur-md">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-end">
+          <div class="form-control md:col-span-5">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Tìm kiếm</span></label>
+            <div class="relative">
+              <Search class="w-4 h-4 absolute left-3 top-2.5 text-base-content/40" />
+              <input
+                v-model="filters.search"
+                type="text"
+                placeholder="Tìm theo Tên, SKU, LONG_FW..."
+                class="input input-sm input-bordered bg-base-100 pl-9 text-xs w-full"
+                @keyup.enter="loadScripts"
+              />
+            </div>
+          </div>
+
+          <div class="form-control md:col-span-3">
+            <label class="label py-1"><span class="label-text text-xs font-medium">SKU</span></label>
+            <select v-model="filters.sku" class="select select-sm select-bordered bg-base-100 text-xs w-full" @change="loadScripts">
+              <option value="">Tất cả SKU</option>
+              <option v-for="sku in uniqueSkus" :key="sku" :value="sku">{{ sku }}</option>
+            </select>
+          </div>
+
+          <div class="form-control md:col-span-2">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Trạng thái</span></label>
+            <select v-model="filters.isActive" class="select select-sm select-bordered bg-base-100 text-xs w-full" @change="loadScripts">
+              <option value="">Tất cả</option>
+              <option value="true">Đang kích hoạt</option>
+              <option value="false">Tạm ngưng</option>
+            </select>
+          </div>
+
+          <div class="md:col-span-2 flex items-center gap-2">
+            <button
+              type="button"
+              class="btn btn-primary btn-sm flex-1 gap-1.5"
+              :disabled="loading"
+              @click="loadScripts"
+            >
+              <Search class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
+              Lọc
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm gap-1"
+              @click="resetFilters"
+            >
+              <RotateCcw class="w-3.5 h-3.5" />
+              Đặt lại
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Card -->
+      <div class="card bg-base-200/50 border border-base-content/10 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm w-full">
+            <thead class="bg-base-300/60 font-mono text-xs uppercase text-base-content/70">
+              <tr>
+                <th class="w-16 text-center">ID</th>
+                <th>Tên &amp; Mô Tả Bộ Giải Mã</th>
+                <th>SKU &amp; LONG_FW</th>
+                <th>Code Preview / Version</th>
+                <th class="text-center w-28">Trạng Thái</th>
+                <th class="text-right w-44">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading && scriptList.length === 0">
+                <td colspan="6" class="text-center py-8 text-base-content/50">
+                  <span class="loading loading-spinner loading-md text-primary mr-2"></span> Đang tải bộ giải mã...
+                </td>
+              </tr>
+              <tr v-else-if="scriptList.length === 0">
+                <td colspan="6" class="text-center py-8 text-base-content/40 font-mono text-sm">
+                  Chưa có script giải mã nào. Hãy nhấn "Tạo Decoder Mới"!
+                </td>
+              </tr>
+              <tr v-for="row in scriptList" :key="row.id" class="hover:bg-base-300/30 transition-colors">
+                <td class="text-center font-mono text-xs text-base-content/60">{{ row.id }}</td>
+                <td>
+                  <div class="font-bold text-sm text-base-content flex items-center gap-2">
+                    <span>{{ row.name }}</span>
+                    <span v-if="row.version" class="badge badge-outline badge-xs font-mono">v{{ row.version }}</span>
+                  </div>
+                  <div class="text-xs text-base-content/60 mt-0.5 line-clamp-1">{{ row.description || 'Chưa có mô tả' }}</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="badge badge-primary badge-sm font-mono font-semibold">{{ row.sku }}</span>
+                    <span class="badge badge-ghost badge-sm font-mono text-base-content/70">{{ row.longFw || 'Mặc định' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <code class="bg-base-300/80 px-2 py-1 rounded text-xs font-mono text-cyan-400 block max-w-xs truncate">
+                    {{ (row.script || '').substring(0, 45) }}...
+                  </code>
+                </td>
+                <td class="text-center">
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-primary toggle-sm"
+                    :checked="row.isActive"
+                    @change="row.isActive = !row.isActive; toggleScriptStatus(row)"
+                  />
+                </td>
+                <td class="text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-ghost gap-1 text-primary"
+                      title="Chạy thử nghiệm"
+                      @click="testInSandbox(row)"
+                    >
+                      <Play class="w-3.5 h-3.5" />
+                      Test
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-ghost gap-1 text-info"
+                      title="Chỉnh sửa"
+                      @click="openEditDialog(row)"
+                    >
+                      <Edit class="w-3.5 h-3.5" />
+                      Sửa
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-ghost gap-1 text-error"
+                      title="Xóa bộ giải mã"
+                      @click="confirmDelete(row)"
+                    >
+                      <Trash2 class="w-3.5 h-3.5" />
+                      Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- Main Tabs -->
-    <el-tabs v-model="activeTab" class="custom-tabs">
-      <!-- TAB 1: Danh Sách Decoder Scripts -->
-      <el-tab-pane label="Danh Sách Bộ Giải Mã" name="list">
-        <el-card shadow="never" class="filter-card mb-3">
-          <el-row :gutter="16">
-            <el-col :xs="24" :sm="8" :md="6">
-              <el-input
-                v-model="filters.search"
-                placeholder="Tìm theo Tên, SKU, LONG_FW..."
-                clearable
-                :prefix-icon="Search"
-                @clear="loadScripts"
-                @keyup.enter="loadScripts"
-              />
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-select v-model="filters.sku" placeholder="Lọc theo SKU" clearable @change="loadScripts">
-                <el-option label="Tất cả SKU" value="" />
-                <el-option v-for="sku in uniqueSkus" :key="sku" :label="sku" :value="sku" />
-              </el-select>
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-select v-model="filters.isActive" placeholder="Trạng thái" clearable @change="loadScripts">
-                <el-option label="Tất cả" value="" />
-                <el-option label="Đang kích hoạt" value="true" />
-                <el-option label="Tạm ngưng" value="false" />
-              </el-select>
-            </el-col>
-            <el-col :xs="24" :sm="8" :md="4">
-              <el-button type="primary" :icon="Search" @click="loadScripts">Lọc</el-button>
-              <el-button :icon="Refresh" @click="resetFilters">Reset</el-button>
-            </el-col>
-          </el-row>
-        </el-card>
-
-        <el-card shadow="never" class="table-card">
-          <el-table :data="scriptList" v-loading="loading" stripe border style="width: 100%">
-            <el-table-column prop="name" label="Tên Bộ Giải Mã" min-width="180">
-              <template #default="{ row }">
-                <div class="font-bold text-primary">{{ row.name }}</div>
-                <div class="text-xs text-secondary truncate">{{ row.description || 'Chưa có mô tả' }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column label="Nhận Diện SKU & LONG_FW" min-width="240">
-              <template #default="{ row }">
-                <div class="text-xs">
-                  <div><strong>SKU:</strong> <el-tag size="small" type="info">{{ row.sku }}</el-tag></div>
-                  <div class="mt-1"><strong>LONG_FW:</strong> <span class="font-mono text-warning">{{ row.longFw || row.long_fw }}</span></div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="protocol" label="Giao Thức" width="120" align="center">
-              <template #default="{ row }">
-                <el-tag size="small" effect="plain">{{ (row.protocol || 'lorawan').toUpperCase() }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="isActive" label="Kích Hoạt" width="110" align="center">
-              <template #default="{ row }">
-                <el-switch
-                  v-model="row.isActive"
-                  :active-value="true"
-                  :inactive-value="false"
-                  @change="toggleScriptStatus(row)"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column prop="updatedAt" label="Cập Nhật" width="160">
-              <template #default="{ row }">
-                <span class="text-xs">{{ formatDateTime(row.updatedAt || row.updated_at) }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="Thao Tác" width="220" fixed="right" align="center">
-              <template #default="{ row }">
-                <el-button link type="primary" size="small" :icon="VideoPlay" @click="openTestModal(row)">
-                  Test
-                </el-button>
-                <el-button link type="primary" size="small" :icon="Edit" @click="openEditDialog(row)">
-                  Sửa
-                </el-button>
-                <el-button link type="danger" size="small" :icon="Delete" @click="confirmDelete(row)">
-                  Xóa
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-tab-pane>
-
-      <!-- TAB 2: Tra Cứu MemMap & Trạng Thái Decoder -->
-      <el-tab-pane label="Tra Cứu MemMap & Decoder" name="memmaps">
-        <el-card shadow="never" class="table-card">
-          <div class="flex justify-between items-center mb-3">
-            <div class="text-sm text-secondary">
-              Danh sách SKU và LONG_FW đang có trong hệ thống MemMap. Nhấn "Gán Decoder" để cấu hình bộ giải mã cho sản phẩm.
-            </div>
-            <el-input
+    <!-- TAB 2: Khớp Nối Với MemMap -->
+    <div v-else-if="activeTab === 'memmap'" class="space-y-4">
+      <div class="card bg-base-200/60 border border-base-content/10 p-4 shadow-sm backdrop-blur-md">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="relative w-full sm:w-80">
+            <Search class="w-4 h-4 absolute left-3 top-2.5 text-base-content/40" />
+            <input
               v-model="memmapSearch"
-              placeholder="Tìm theo SKU hoặc LONG_FW..."
-              clearable
-              :prefix-icon="Search"
-              style="width: 250px"
+              type="text"
+              placeholder="Tìm theo SKU, Model, LONG_FW..."
+              class="input input-sm input-bordered bg-base-100 pl-9 text-xs w-full"
             />
           </div>
-          <el-table :data="filteredMemmaps" v-loading="loadingMemmaps" stripe border style="width: 100%">
-            <el-table-column prop="sku" label="SKU" min-width="160">
-              <template #default="{ row }">
-                <span class="font-bold font-mono">{{ row.sku }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="longFw" label="LONG_FW" min-width="200">
-              <template #default="{ row }">
-                <span class="font-mono text-warning">{{ row.longFw || row.long_fw }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="name" label="Tên Profile MemMap" min-width="200">
-              <template #default="{ row }">
-                {{ row.name || row.profileName || '—' }}
-              </template>
-            </el-table-column>
-            <el-table-column label="Trạng Thái Decoder" width="160" align="center">
-              <template #default="{ row }">
-                <el-tag v-if="row.hasDecoder" type="success" size="small">Đã có Decoder</el-tag>
-                <el-tag v-else type="warning" size="small">Chưa cấu hình</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Hành Động" width="150" align="center">
-              <template #default="{ row }">
-                <el-button
-                  v-if="!row.hasDecoder"
-                  type="primary"
-                  size="small"
-                  plain
-                  :icon="Plus"
-                  @click="assignDecoderFromMemmap(row)"
-                >
-                  Gán Decoder
-                </el-button>
-                <el-button
-                  v-else
-                  type="success"
-                  size="small"
-                  link
-                  :icon="View"
-                  @click="goToDecoderOfMemmap(row)"
-                >
-                  Xem Decoder
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-tab-pane>
+          <span class="text-xs text-base-content/60 font-mono">
+            Tổng cộng: {{ filteredMemmaps.length }} profile thiết bị
+          </span>
+        </div>
+      </div>
 
-      <!-- TAB 3: Interactive Sandbox (Test Trực Tiếp) -->
-      <el-tab-pane label="Sandbox Thử Nghiệm Decode" name="sandbox">
-        <el-row :gutter="16">
-          <!-- Cột cấu hình / Script -->
-          <el-col :xs="24" :lg="12">
-            <el-card shadow="never" class="h-full">
-              <template #header>
-                <div class="flex justify-between items-center">
-                  <span class="font-bold flex items-center">
-                    <el-icon class="mr-1"><Document /></el-icon>
-                    LoRaWAN JavaScript Script
+      <div class="card bg-base-200/50 border border-base-content/10 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm w-full">
+            <thead class="bg-base-300/60 font-mono text-xs uppercase text-base-content/70">
+              <tr>
+                <th class="w-20 text-center">Profile ID</th>
+                <th>Tên Thiết Bị / Profile</th>
+                <th>Mã SKU</th>
+                <th>Phiên Bản LONG_FW</th>
+                <th class="text-center w-36">Trạng Thái Decoder</th>
+                <th class="text-right w-36">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loadingMemmaps && memmapList.length === 0">
+                <td colspan="6" class="text-center py-8 text-base-content/50">
+                  <span class="loading loading-spinner loading-md text-primary mr-2"></span> Đang tải dữ liệu MemMap...
+                </td>
+              </tr>
+              <tr v-else-if="filteredMemmaps.length === 0">
+                <td colspan="6" class="text-center py-8 text-base-content/40 font-mono text-sm">
+                  Không tìm thấy cấu hình MemMap phù hợp
+                </td>
+              </tr>
+              <tr v-for="row in filteredMemmaps" :key="row.id || row.profileId" class="hover:bg-base-300/30 transition-colors">
+                <td class="text-center font-mono text-xs text-base-content/60">{{ row.id || row.profileId || '—' }}</td>
+                <td>
+                  <div class="font-bold text-xs text-base-content">{{ row.modelName || row.name || 'Thiết bị chưa đặt tên' }}</div>
+                  <div class="text-[11px] text-base-content/50 font-mono">{{ row.description || '' }}</div>
+                </td>
+                <td>
+                  <span class="badge badge-primary badge-sm font-mono font-bold">{{ row.sku }}</span>
+                </td>
+                <td>
+                  <span class="badge badge-ghost badge-sm font-mono">{{ row.longFw || row.firmwareVersion || 'Tất cả' }}</span>
+                </td>
+                <td class="text-center">
+                  <span
+                    class="badge badge-sm font-mono gap-1"
+                    :class="row.hasDecoder ? 'badge-success text-success-content' : 'badge-warning text-warning-content'"
+                  >
+                    <Check v-if="row.hasDecoder" class="w-3 h-3" />
+                    <AlertCircle v-else class="w-3 h-3" />
+                    {{ row.hasDecoder ? 'Đã có Decoder' : 'Chưa có Decoder' }}
                   </span>
-                  <div>
-                    <el-button size="small" @click="loadSampleScript('chirpstack_v4')">
-                      Mẫu ChirpStack v4
-                    </el-button>
-                    <el-button size="small" @click="loadSampleScript('ttn_v3')">
-                      Mẫu TTN v3
-                    </el-button>
-                    <el-upload
-                      action="#"
-                      :auto-upload="false"
-                      :show-file-list="false"
-                      accept=".js,.txt"
-                      :on-change="handleFileUpload"
-                      style="display: inline-block; margin-left: 8px"
-                    >
-                      <el-button size="small" type="info" :icon="Upload">Upload JS</el-button>
-                    </el-upload>
-                  </div>
-                </div>
-              </template>
+                </td>
+                <td class="text-right">
+                  <button
+                    v-if="!row.hasDecoder"
+                    type="button"
+                    class="btn btn-xs btn-outline btn-primary gap-1"
+                    @click="assignDecoderFromMemmap(row)"
+                  >
+                    <Plus class="w-3 h-3" />
+                    Gán Decoder
+                  </button>
+                  <button
+                    v-else
+                    type="button"
+                    class="btn btn-xs btn-ghost text-success gap-1 font-semibold"
+                    @click="goToDecoderOfMemmap(row)"
+                  >
+                    <Eye class="w-3.5 h-3.5" />
+                    Xem Decoder
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-              <el-input
-                v-model="sandboxForm.script"
-                type="textarea"
-                :rows="18"
-                class="code-textarea font-mono"
-                placeholder="// Viết hoặc dán script JS decode LoRaWAN ở đây...&#10;function decodeUplink(input) {&#10;  var bytes = input.bytes;&#10;  var fPort = input.fPort;&#10;  return { data: { temp: bytes[0] } };&#10;}"
-              />
-
-              <div class="mt-3">
-                <el-row :gutter="12">
-                  <el-col :span="14">
-                    <el-form-item label="Payload Input" label-width="110px">
-                      <el-input
-                        v-model="sandboxForm.payload"
-                        placeholder="Ví dụ: 01020304 hoặc Base64..."
-                        clearable
-                      />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="6">
-                    <el-form-item label="FPort" label-width="50px">
-                      <el-input-number v-model="sandboxForm.fPort" :min="1" :max="223" style="width: 100%" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="4">
-                    <el-button
-                      type="success"
-                      :icon="VideoPlay"
-                      :loading="runningTest"
-                      style="width: 100%"
-                      @click="runSandboxTest"
-                    >
-                      Chạy Test
-                    </el-button>
-                  </el-col>
-                </el-row>
-              </div>
-            </el-card>
-          </el-col>
-
-          <!-- Cột kết quả Decode -->
-          <el-col :xs="24" :lg="12">
-            <el-card shadow="never" class="h-full">
-              <template #header>
-                <div class="flex justify-between items-center">
-                  <span class="font-bold flex items-center">
-                    <el-icon class="mr-1"><DataAnalysis /></el-icon>
-                    Kết Quả Giải Mã (JSON Output)
-                  </span>
-                  <div v-if="testResult">
-                    <el-tag v-if="testResult.success" type="success" size="small">
-                      Thành Công ({{ testResult.executionTimeMs || 0 }} ms)
-                    </el-tag>
-                    <el-tag v-else type="danger" size="small">Thất Bại</el-tag>
-                  </div>
-                </div>
-              </template>
-
-              <div v-if="testError" class="test-error-box mb-3">
-                <div class="font-bold text-danger">Lỗi Thực Thi / Syntax Error:</div>
-                <div class="text-xs font-mono mt-1 whitespace-pre-wrap">{{ testError }}</div>
-              </div>
-
-              <div class="result-box font-mono">
-                <pre v-if="testResult">{{ JSON.stringify(testResult.data || testResult, null, 2) }}</pre>
-                <div v-else class="text-secondary text-center py-5">
-                  Nhấn "Chạy Test" để xem kết quả giải mã JSON từ payload.
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </el-tab-pane>
-    </el-tabs>
-
-    <!-- DIALOG: Thêm / Chỉnh Sửa Decoder Script -->
-    <el-dialog
-      v-model="editorDialogVisible"
-      :title="isEditing ? 'Chỉnh Sửa Bộ Giải Mã' : 'Tạo Bộ Giải Mã Mới'"
-      width="780px"
-      destroy-on-close
-    >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="140px" label-position="left">
-        <el-form-item label="Tên Bộ Giải Mã" prop="name">
-          <el-input v-model="form.name" placeholder="Ví dụ: Decoder Smart Water Meter v1.0..." />
-        </el-form-item>
-
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="Chọn SKU" prop="sku">
-              <el-select
-                v-model="form.sku"
-                filterable
-                placeholder="Chọn hoặc nhập SKU..."
-                style="width: 100%"
-                @change="handleFormSkuChange"
+    <!-- TAB 3: Interactive Sandbox (Test Trực Tiếp) -->
+    <div v-else-if="activeTab === 'sandbox'" class="space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <!-- Cột cấu hình / Script -->
+        <div class="lg:col-span-6 card bg-base-200/60 border border-base-content/10 shadow-sm p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
+            <span class="font-bold text-sm flex items-center gap-2 text-base-content">
+              <FileCode class="w-4 h-4 text-primary" />
+              LoRaWAN JavaScript Script
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                class="btn btn-xs btn-outline"
+                @click="loadSampleScript('chirpstack_v4')"
               >
-                <el-option v-for="sku in memmapSkuOptions" :key="sku" :label="sku" :value="sku" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="LONG_FW" prop="longFw">
-              <el-select
-                v-model="form.longFw"
-                filterable
-                allow-create
-                placeholder="Chọn LONG_FW tương ứng..."
-                style="width: 100%"
+                Mẫu ChirpStack v4
+              </button>
+              <button
+                type="button"
+                class="btn btn-xs btn-outline"
+                @click="loadSampleScript('ttn_v3')"
               >
-                <el-option
-                  v-for="fw in availableFwOptions"
-                  :key="fw"
-                  :label="fw"
-                  :value="fw"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="Mô Tả" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="Ghi chú về định dạng gói tin hoặc thiết bị..." />
-        </el-form-item>
-
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-bold text-sm">Nội Dung Script JavaScript:</span>
-          <div>
-            <el-button size="small" link type="primary" @click="fillFormSampleScript('chirpstack_v4')">
-              Template ChirpStack v4
-            </el-button>
-            <el-upload
-              action="#"
-              :auto-upload="false"
-              :show-file-list="false"
-              accept=".js,.txt"
-              :on-change="handleFormFileUpload"
-              style="display: inline-block; margin-left: 8px"
-            >
-              <el-button size="small" :icon="Upload">Upload File .js</el-button>
-            </el-upload>
+                Mẫu TTN v3
+              </button>
+            </div>
           </div>
+
+          <!-- Script Textarea -->
+          <div class="form-control">
+            <textarea
+              v-model="sandboxForm.script"
+              rows="12"
+              class="textarea textarea-bordered bg-base-300 font-mono text-xs text-base-content leading-relaxed w-full focus:outline-none"
+              placeholder="// Nhập hàm decodeUplink(input)..."
+            ></textarea>
+          </div>
+
+          <!-- Payload & Port Form -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="form-control sm:col-span-2">
+              <label class="label py-1"><span class="label-text text-xs font-medium">HEX Payload mẫu:</span></label>
+              <input
+                v-model="sandboxForm.payload"
+                type="text"
+                placeholder="09C4138805..."
+                class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full"
+              />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-medium">fPort:</span></label>
+              <input
+                v-model.number="sandboxForm.fPort"
+                type="number"
+                min="1"
+                max="223"
+                class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-primary btn-sm w-full gap-2 mt-2"
+            :disabled="runningTest"
+            @click="runSandboxDecode"
+          >
+            <Play class="w-4 h-4" :class="{ 'animate-pulse': runningTest }" />
+            Giải Mã Ngay (Execute Sandbox)
+          </button>
         </div>
 
-        <el-form-item prop="script" label-width="0">
-          <el-input
-            v-model="form.script"
-            type="textarea"
-            :rows="12"
-            class="code-textarea font-mono"
-            placeholder="// function decodeUplink(input) { ... }"
-          />
-        </el-form-item>
+        <!-- Cột kết quả -->
+        <div class="lg:col-span-6 card bg-base-200/50 border border-base-content/10 shadow-sm overflow-hidden">
+          <div class="p-3 border-b border-base-content/10 flex items-center justify-between text-xs font-semibold text-base-content">
+            <div class="flex items-center gap-2 font-mono text-cyan-400">
+              <Cpu class="w-4 h-4" />
+              <span>KẾT QUẢ GIẢI MÃ (TELEMETRY JSON)</span>
+            </div>
+            <span v-if="testResult" class="badge badge-success badge-sm font-mono text-success-content">
+              SUCCESS
+            </span>
+            <span v-else-if="testError" class="badge badge-error badge-sm font-mono text-error-content">
+              ERROR
+            </span>
+          </div>
 
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="Payload Mẫu" prop="samplePayload">
-              <el-input v-model="form.samplePayload" placeholder="Hex string (vd: 010203)..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="FPort Mẫu" prop="sampleFport">
-              <el-input-number v-model="form.sampleFport" :min="1" :max="223" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- Error Alert -->
+          <div v-if="testError" class="p-4 bg-error/10 border-b border-error/20 flex items-start gap-3 text-xs text-error">
+            <AlertCircle class="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div class="font-mono">{{ testError }}</div>
+          </div>
 
-        <el-form-item label="Kích Hoạt">
-          <el-switch v-model="form.isActive" />
-        </el-form-item>
-      </el-form>
+          <!-- Result Container -->
+          <div class="p-4 bg-base-300/80 font-mono text-xs overflow-x-auto min-h-[380px] max-h-[500px] overflow-y-auto">
+            <pre class="text-base-content"><code>{{ testResult ? JSON.stringify(testResult, null, 2) : '// Nhấn "Giải Mã Ngay" để xem kết quả phân tích JSON tại đây...' }}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <template #footer>
-        <el-button @click="editorDialogVisible = false">Hủy</el-button>
-        <el-button type="info" :icon="VideoPlay" :loading="testingFormScript" @click="testCurrentFormScript">
-          Test Thử Script
-        </el-button>
-        <el-button type="primary" :loading="submittingForm" @click="submitForm">
-          {{ isEditing ? 'Lưu Thay Đổi' : 'Tạo Mới' }}
-        </el-button>
-      </template>
-    </el-dialog>
+    <!-- DIALOG / MODAL: Thêm / Sửa Decoder Script -->
+    <dialog class="modal" :class="{ 'modal-open': editorDialogVisible }">
+      <div class="modal-box max-w-4xl bg-base-100 border border-base-content/15 shadow-2xl p-6 space-y-5">
+        <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
+          <div class="flex items-center gap-2 text-lg font-bold text-base-content">
+            <Cpu class="w-5 h-5 text-primary" />
+            <span>{{ isEditing ? 'Chỉnh Sửa Bộ Giải Mã' : 'Tạo Bộ Giải Mã LoRaWAN Mới' }}</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-ghost btn-circle" @click="editorDialogVisible = false">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+
+        <form @submit.prevent="submitForm" class="space-y-4">
+          <!-- Tên -->
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Tên bộ giải mã <span class="text-error">*</span></span></label>
+            <input
+              v-model="form.name"
+              type="text"
+              placeholder="VD: WS433-CL - LoRaWAN Soil Moisture Decoder"
+              class="input input-sm input-bordered bg-base-100 text-xs w-full"
+              required
+            />
+          </div>
+
+          <!-- SKU & LONG_FW Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">SKU Thiết Bị <span class="text-error">*</span></span></label>
+              <input
+                v-model="form.sku"
+                type="text"
+                list="sku-datalist"
+                placeholder="Chọn hoặc nhập SKU..."
+                class="input input-sm input-bordered bg-base-100 text-xs font-mono w-full"
+                required
+                @input="handleFormSkuChange"
+              />
+              <datalist id="sku-datalist">
+                <option v-for="sku in memmapSkuOptions" :key="sku" :value="sku" />
+              </datalist>
+            </div>
+
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">LONG_FW <span class="text-error">*</span></span></label>
+              <input
+                v-model="form.longFw"
+                type="text"
+                list="longfw-datalist"
+                placeholder="Chọn hoặc nhập LONG_FW..."
+                class="input input-sm input-bordered bg-base-100 text-xs font-mono w-full"
+                required
+              />
+              <datalist id="longfw-datalist">
+                <option v-for="fw in availableFwOptions" :key="fw" :value="fw" />
+              </datalist>
+            </div>
+          </div>
+
+          <!-- Mô tả -->
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Mô tả</span></label>
+            <textarea
+              v-model="form.description"
+              rows="2"
+              placeholder="Ghi chú về định dạng gói tin hoặc thiết bị..."
+              class="textarea textarea-bordered bg-base-100 text-xs w-full"
+            ></textarea>
+          </div>
+
+          <!-- Script JS Header & Actions -->
+          <div class="flex items-center justify-between border-t border-base-content/10 pt-3">
+            <span class="font-bold text-xs text-base-content">Nội Dung Script JavaScript: <span class="text-error">*</span></span>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-xs btn-ghost text-primary"
+                @click="fillFormSampleScript('chirpstack_v4')"
+              >
+                Template ChirpStack v4
+              </button>
+              <label class="btn btn-xs btn-outline gap-1 cursor-pointer">
+                <Upload class="w-3.5 h-3.5" />
+                <span>Upload .js</span>
+                <input type="file" class="hidden" accept=".js,.txt" @change="handleFileUpload" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Code Editor -->
+          <div class="form-control">
+            <textarea
+              v-model="form.script"
+              rows="10"
+              class="textarea textarea-bordered bg-base-300 font-mono text-xs text-base-content leading-relaxed w-full"
+              placeholder="// Nhập code JavaScript decode..."
+              required
+            ></textarea>
+          </div>
+
+          <!-- Sample Payload & Port -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+            <div class="form-control sm:col-span-7">
+              <label class="label py-1"><span class="label-text text-xs font-medium">Payload HEX Thử Nghiệm:</span></label>
+              <input
+                v-model="form.samplePayload"
+                type="text"
+                placeholder="09C4138805..."
+                class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full"
+              />
+            </div>
+            <div class="form-control sm:col-span-2">
+              <label class="label py-1"><span class="label-text text-xs font-medium">fPort:</span></label>
+              <input
+                v-model.number="form.sampleFport"
+                type="number"
+                min="1"
+                max="223"
+                class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full"
+              />
+            </div>
+            <div class="sm:col-span-3">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline btn-info w-full gap-1.5"
+                :disabled="testingFormScript"
+                @click="testCurrentFormScript"
+              >
+                <Play class="w-3.5 h-3.5" :class="{ 'animate-pulse': testingFormScript }" />
+                Chạy Thử Ngay
+              </button>
+            </div>
+          </div>
+
+          <!-- Toggle Kích hoạt -->
+          <div class="flex items-center gap-3 pt-2">
+            <input
+              v-model="form.isActive"
+              type="checkbox"
+              class="toggle toggle-primary toggle-sm"
+              id="script-active-toggle"
+            />
+            <label for="script-active-toggle" class="text-xs font-semibold cursor-pointer select-none">
+              Kích hoạt sử dụng ngay lập tức cho các thiết bị thuộc SKU &amp; LONG_FW này
+            </label>
+          </div>
+
+          <!-- Modal Action Buttons -->
+          <div class="modal-action border-t border-base-content/10 pt-4">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              @click="editorDialogVisible = false"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary btn-sm gap-2"
+              :disabled="submittingForm"
+            >
+              <span v-if="submittingForm" class="loading loading-spinner loading-xs"></span>
+              {{ isEditing ? 'Cập Nhật Bộ Giải Mã' : 'Lưu Bộ Giải Mã' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <!-- MODAL: Test Script Result Details -->
+    <dialog class="modal" :class="{ 'modal-open': testModalVisible }">
+      <div class="modal-box max-w-2xl bg-base-100 border border-base-content/15 shadow-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
+          <div class="flex items-center gap-2 font-bold text-sm text-success">
+            <Check class="w-4 h-4" />
+            <span>Kết Quả Test Script Thành Công</span>
+          </div>
+          <button type="button" class="btn btn-xs btn-ghost btn-circle" @click="testModalVisible = false">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+
+        <div class="p-4 bg-base-300/80 rounded-lg font-mono text-xs overflow-x-auto max-h-[350px] overflow-y-auto">
+          <pre class="text-base-content"><code>{{ testModalContent }}</code></pre>
+        </div>
+
+        <div class="modal-action pt-2">
+          <button type="button" class="btn btn-primary btn-sm" @click="testModalVisible = false">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -397,56 +608,91 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import {
   Cpu,
-  Search,
   Plus,
-  Refresh,
-  Delete,
+  RefreshCw,
+  Search,
+  RotateCcw,
+  Play,
   Edit,
-  VideoPlay,
-  View,
-  Document,
-  DataAnalysis,
+  Trash2,
+  List,
+  Link2,
+  Terminal,
+  FileCode,
   Upload,
-} from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox, type FormInstance, type UploadFile } from 'element-plus';
-import { httpClient } from '@/api/client';
+  Check,
+  AlertCircle,
+  Eye,
+  X,
+} from 'lucide-vue-next';
+import httpClient from '@/api/httpClient';
+import { cyberToast, cyberConfirm } from '@/cyber/hud';
 
-// Templates
-const CHIRPSTACK_V4_SAMPLE = `// ChirpStack v4 decodeUplink standard
+// Mẫu script chuẩn ChirpStack v4
+const CHIRPSTACK_V4_SAMPLE = `// Decode uplink function for ChirpStack v4
+// Input: bytes (array of numbers), fPort (number)
+// Output: decoded object or null
+function decodeUplink(input) {
+  var bytes = input.bytes;
+  var fPort = input.fPort;
+  var decoded = {};
+
+  if (fPort === 1) {
+    // Example: 2 bytes temperature (int16), 2 bytes humidity (uint16), 1 byte battery
+    if (bytes.length >= 5) {
+      var rawTemp = (bytes[0] << 8) | bytes[1];
+      if (rawTemp > 32767) rawTemp -= 65536;
+      decoded.temperature = rawTemp / 100.0; // °C
+      
+      var rawHum = (bytes[2] << 8) | bytes[3];
+      decoded.humidity = rawHum / 100.0;     // %RH
+      
+      decoded.battery = bytes[4];            // %
+    }
+  }
+
+  return {
+    data: decoded
+  };
+}`;
+
+const TTN_V3_SAMPLE = `// Decode uplink function for The Things Network (TTN) v3
 function decodeUplink(input) {
   var bytes = input.bytes;
   var fPort = input.fPort;
   var data = {};
+  var warnings = [];
 
-  if (bytes.length >= 2) {
-    data.temperature = (bytes[0] << 8 | bytes[1]) / 100.0;
-  }
-  if (bytes.length >= 4) {
-    data.humidity = (bytes[2] << 8 | bytes[3]) / 100.0;
-  }
-  if (bytes.length >= 6) {
-    data.battery = bytes[4] * 10;
+  switch (fPort) {
+    case 1:
+      data.raw = bytes.map(function(b) {
+        return ('0' + b.toString(16)).slice(-2);
+      }).join('').toUpperCase();
+      break;
+    default:
+      warnings.push("Unsupported fPort: " + fPort);
   }
 
   return {
     data: data,
-    warnings: [],
-    errors: []
+    warnings: warnings
   };
-}
-`;
+}`;
 
-const TTN_V3_SAMPLE = `// TTN / ChirpStack v3 Decode standard
-function Decode(fPort, bytes) {
-  var data = {};
-  if (bytes.length >= 2) {
-    data.raw_value = (bytes[0] << 8) | bytes[1];
+// Fallback logic
+async function requestWithFallback(method: 'get' | 'post' | 'put' | 'delete', path: string, data?: any) {
+  try {
+    return await (httpClient as any)[method](`/plugins/decoder${path}`, data);
+  } catch (err: any) {
+    if (err?.response?.status === 404 || err?.status === 404) {
+      return await (httpClient as any)[method](`/decoder${path}`, data);
+    }
+    throw err;
   }
-  return data;
 }
-`;
 
-const activeTab = ref('list');
+// State
+const activeTab = ref<'list' | 'memmap' | 'sandbox'>('list');
 const loading = ref(false);
 const scriptList = ref<any[]>([]);
 
@@ -477,8 +723,11 @@ const editorDialogVisible = ref(false);
 const isEditing = ref(false);
 const submittingForm = ref(false);
 const testingFormScript = ref(false);
-const formRef = ref<FormInstance>();
 const editingId = ref<string | null>(null);
+
+// Test Result Modal State
+const testModalVisible = ref(false);
+const testModalContent = ref('');
 
 const form = reactive({
   name: '',
@@ -490,13 +739,6 @@ const form = reactive({
   sampleFport: 1,
   isActive: true,
 });
-
-const rules = {
-  name: [{ required: true, message: 'Vui lòng nhập tên bộ giải mã', trigger: 'blur' }],
-  sku: [{ required: true, message: 'Vui lòng chọn hoặc nhập SKU', trigger: 'change' }],
-  longFw: [{ required: true, message: 'Vui lòng chọn hoặc nhập LONG_FW', trigger: 'change' }],
-  script: [{ required: true, message: 'Vui lòng nhập nội dung script JavaScript', trigger: 'blur' }],
-};
 
 // Computed
 const uniqueSkus = computed(() => {
@@ -521,74 +763,40 @@ const availableFwOptions = computed(() => {
   memmapList.value
     .filter((m) => m.sku === form.sku)
     .forEach((m) => {
-      const fw = m.longFw || m.long_fw;
+      const fw = m.longFw || m.firmwareVersion;
       if (fw) fws.add(fw);
     });
   return Array.from(fws);
 });
 
 const filteredMemmaps = computed(() => {
-  const scripts = scriptList.value;
-  const list = memmapList.value.map((m) => {
-    const sku = m.sku;
-    const fw = m.longFw || m.long_fw;
-    const hasDecoder = scripts.some(
-      (s) => s.sku === sku && (!s.longFw || !fw || s.longFw === fw)
-    );
-    return {
-      ...m,
-      hasDecoder: m.hasDecoder !== undefined ? m.hasDecoder : hasDecoder,
-    };
-  });
-  if (!memmapSearch.value) return list;
-  const q = memmapSearch.value.toLowerCase();
-  return list.filter(
-    (m) =>
-      (m.sku && m.sku.toLowerCase().includes(q)) ||
-      ((m.longFw || m.long_fw) && (m.longFw || m.long_fw).toLowerCase().includes(q)) ||
-      (m.name && m.name.toLowerCase().includes(q))
-  );
+  return memmapList.value
+    .map((m) => {
+      const matchedDecoder = scriptList.value.find(
+        (s) => s.sku === m.sku && (!s.longFw || s.longFw === m.longFw || s.longFw === m.firmwareVersion)
+      );
+      return {
+        ...m,
+        hasDecoder: !!matchedDecoder,
+        decoderId: matchedDecoder?.id,
+      };
+    })
+    .filter((m) => {
+      if (!memmapSearch.value) return true;
+      const q = memmapSearch.value.toLowerCase();
+      const sku = (m.sku || '').toLowerCase();
+      const name = (m.modelName || m.name || '').toLowerCase();
+      const fw = (m.longFw || m.firmwareVersion || '').toLowerCase();
+      return sku.includes(q) || name.includes(q) || fw.includes(q);
+    });
 });
 
-function formatDateTime(isoStr?: string) {
-  if (!isoStr) return '—';
-  try {
-    return new Date(isoStr).toLocaleString('vi-VN');
-  } catch {
-    return isoStr;
-  }
+// Refresh all
+async function refreshData() {
+  await Promise.all([loadScripts(), loadMemmaps()]);
 }
 
-// Refresh Data
-function refreshData() {
-  loadScripts();
-  loadMemmaps();
-}
-
-// Helper with fallback for both /plugins/decoder and /plugins/decode
-async function requestWithFallback(method: 'get' | 'post' | 'put' | 'delete', path: string, dataOrConfig?: any, config?: any) {
-  const decoderPath = `/plugins/decoder${path}`;
-  const decodePath = `/plugins/decode${path}`;
-  try {
-    if (method === 'get' || method === 'delete') {
-      return await (httpClient as any)[method](decoderPath, dataOrConfig);
-    } else {
-      return await (httpClient as any)[method](decoderPath, dataOrConfig, config);
-    }
-  } catch (err: any) {
-    // If 404, fallback to /plugins/decode
-    if (err?.response?.status === 404 || err?.status === 404) {
-      if (method === 'get' || method === 'delete') {
-        return await (httpClient as any)[method](decodePath, dataOrConfig);
-      } else {
-        return await (httpClient as any)[method](decodePath, dataOrConfig, config);
-      }
-    }
-    throw err;
-  }
-}
-
-// Load Scripts
+// Load scripts
 async function loadScripts() {
   loading.value = true;
   try {
@@ -596,13 +804,13 @@ async function loadScripts() {
       params: {
         search: filters.search || undefined,
         sku: filters.sku || undefined,
-        isActive: filters.isActive !== '' ? filters.isActive : undefined,
+        isActive: filters.isActive !== '' ? filters.isActive === 'true' : undefined,
       },
     });
     scriptList.value = res?.data || (Array.isArray(res) ? res : []);
   } catch (err: any) {
     console.error('Error loading decoder scripts:', err);
-    ElMessage.error(err?.message || 'Không thể tải danh sách decoder scripts');
+    cyberToast.error(err?.message || 'Không thể tải danh sách decoder scripts');
   } finally {
     loading.value = false;
   }
@@ -612,12 +820,10 @@ async function loadScripts() {
 async function loadMemmaps() {
   loadingMemmaps.value = true;
   try {
-    // 1. Ưu tiên tải trực tiếp từ Memmap Manager (hệ thống quản lý memmap chính thức)
     let res: any;
     try {
       res = await httpClient.get('/plugins/memmap-manager/profiles');
     } catch {
-      // 2. Fallback về endpoint của decoder
       res = await requestWithFallback('get', '/memmaps');
     }
     const rawList = res?.data || (Array.isArray(res) ? res : []);
@@ -642,47 +848,84 @@ async function toggleScriptStatus(row: any) {
     await requestWithFallback('put', `/scripts/${row.id}`, {
       isActive: row.isActive,
     });
-    ElMessage.success(`Đã ${row.isActive ? 'kích hoạt' : 'tạm ngưng'} script thành công`);
+    cyberToast.success(`Đã ${row.isActive ? 'kích hoạt' : 'tạm ngưng'} script thành công`);
   } catch (err: any) {
     row.isActive = !row.isActive;
-    ElMessage.error(err?.message || 'Lỗi khi cập nhật trạng thái script');
+    cyberToast.error(err?.message || 'Lỗi khi cập nhật trạng thái script');
   }
 }
 
 // Delete
 async function confirmDelete(row: any) {
+  const confirmed = await cyberConfirm({
+    title: 'Xác Nhận Xóa Bộ Giải Mã',
+    message: `Bạn có chắc muốn xóa bộ giải mã "${row.name}" (SKU: ${row.sku}) không? Thao tác này không thể hoàn tác.`,
+    confirmText: 'Xóa Vĩnh Viễn',
+    cancelText: 'Hủy',
+    type: 'error',
+  });
+  if (!confirmed) return;
+
   try {
-    await ElMessageBox.confirm(`Bạn có chắc muốn xóa bộ giải mã ${row.name} (${row.sku})?`, 'Xác nhận xóa', {
-      confirmButtonText: 'Xóa',
-      cancelButtonText: 'Hủy',
-      type: 'warning',
-    });
     await requestWithFallback('delete', `/scripts/${row.id}`);
-    ElMessage.success('Đã xóa bộ giải mã thành công');
+    cyberToast.success('Xóa bộ giải mã thành công');
     loadScripts();
   } catch (err: any) {
-    if (err !== 'cancel') {
-      ElMessage.error(err?.message || 'Lỗi khi xóa bộ giải mã');
-    }
+    cyberToast.error(err?.message || 'Lỗi khi xóa bộ giải mã');
   }
 }
 
-// Open Test Modal / Switch Tab
-function openTestModal(row: any) {
+// Sandbox test
+function testInSandbox(row: any) {
   sandboxForm.script = row.script;
-  sandboxForm.payload = row.samplePayload || '01020304';
+  sandboxForm.payload = row.samplePayload || '09C4138805';
   sandboxForm.fPort = row.sampleFport || 1;
   activeTab.value = 'sandbox';
-  runSandboxTest();
+  runSandboxDecode();
 }
 
-function assignDecoderFromMemmap(memmap: any) {
+function loadSampleScript(type: 'chirpstack_v4' | 'ttn_v3') {
+  if (type === 'chirpstack_v4') {
+    sandboxForm.script = CHIRPSTACK_V4_SAMPLE;
+  } else {
+    sandboxForm.script = TTN_V3_SAMPLE;
+  }
+  cyberToast.info('Đã tải mẫu script');
+}
+
+async function runSandboxDecode() {
+  if (!sandboxForm.script) {
+    cyberToast.warning('Vui lòng nhập script để giải mã');
+    return;
+  }
+  runningTest.value = true;
+  testResult.value = null;
+  testError.value = '';
+
+  try {
+    const res: any = await requestWithFallback('post', '/test-run', {
+      script: sandboxForm.script,
+      payload: sandboxForm.payload,
+      fPort: sandboxForm.fPort,
+    });
+    testResult.value = res?.data || res;
+    cyberToast.success('Giải mã thành công!');
+  } catch (err: any) {
+    testError.value = err?.response?.data?.message || err?.message || 'Lỗi thực thi script';
+    cyberToast.error('Giải mã thất bại');
+  } finally {
+    runningTest.value = false;
+  }
+}
+
+// Memmap Link Actions
+function assignDecoderFromMemmap(row: any) {
   isEditing.value = false;
   editingId.value = null;
-  form.name = `Decoder cho ${memmap.sku}`;
-  form.sku = memmap.sku;
-  form.longFw = memmap.longFw || memmap.long_fw || '';
-  form.description = `Bộ giải mã tự động cho sản phẩm SKU ${memmap.sku} - FW ${form.longFw}`;
+  form.name = `Decoder cho ${row.modelName || row.name || row.sku}`;
+  form.sku = row.sku || '';
+  form.longFw = row.longFw || row.firmwareVersion || '';
+  form.description = `Tự động tạo từ cấu hình MemMap: ${row.modelName || row.name || ''}`;
   form.script = CHIRPSTACK_V4_SAMPLE;
   form.samplePayload = '09C4138805';
   form.sampleFport = 1;
@@ -690,13 +933,15 @@ function assignDecoderFromMemmap(memmap: any) {
   editorDialogVisible.value = true;
 }
 
-function goToDecoderOfMemmap(memmap: any) {
-  filters.sku = memmap.sku;
-  activeTab.value = 'list';
-  loadScripts();
+function goToDecoderOfMemmap(row: any) {
+  if (row.decoderId) {
+    activeTab.value = 'list';
+    filters.sku = row.sku;
+    loadScripts();
+  }
 }
 
-// Open Dialogs
+// Editor Dialog
 function openCreateDialog() {
   isEditing.value = false;
   editingId.value = null;
@@ -716,97 +961,67 @@ function openEditDialog(row: any) {
   editingId.value = row.id;
   form.name = row.name;
   form.sku = row.sku;
-  form.longFw = row.longFw || row.long_fw;
+  form.longFw = row.longFw || '';
   form.description = row.description || '';
   form.script = row.script;
-  form.samplePayload = row.samplePayload || '';
+  form.samplePayload = row.samplePayload || '09C4138805';
   form.sampleFport = row.sampleFport || 1;
-  form.isActive = row.isActive !== false;
+  form.isActive = row.isActive;
   editorDialogVisible.value = true;
 }
 
-function handleFormSkuChange(sku: string) {
-  const matching = memmapList.value.filter((m) => m.sku === sku);
-  if (matching.length > 0) {
-    form.longFw = matching[0].longFw || matching[0].long_fw || '';
+function handleFormSkuChange() {
+  if (availableFwOptions.value.length > 0 && !form.longFw) {
+    form.longFw = availableFwOptions.value[0];
   }
 }
 
-// File uploads
-function handleFileUpload(uploadFile: UploadFile) {
-  const file = uploadFile.raw;
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    sandboxForm.script = (e.target?.result as string) || '';
-    ElMessage.success('Đã tải script JS lên thành công');
-  };
-  reader.readAsText(file);
-}
-
-function handleFormFileUpload(uploadFile: UploadFile) {
-  const file = uploadFile.raw;
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    form.script = (e.target?.result as string) || '';
-    ElMessage.success('Đã nạp script JS vào form');
-  };
-  reader.readAsText(file);
-}
-
-function loadSampleScript(type: 'chirpstack_v4' | 'ttn_v3') {
-  if (type === 'chirpstack_v4') {
-    sandboxForm.script = CHIRPSTACK_V4_SAMPLE;
-  } else {
-    sandboxForm.script = TTN_V3_SAMPLE;
-  }
-}
-
-function fillFormSampleScript(type: 'chirpstack_v4' | 'ttn_v3') {
+function fillFormSampleScript(type: 'chirpstack_v4') {
   if (type === 'chirpstack_v4') {
     form.script = CHIRPSTACK_V4_SAMPLE;
-  } else {
-    form.script = TTN_V3_SAMPLE;
+    cyberToast.info('Đã tải mẫu ChirpStack v4 vào trình soạn thảo');
   }
 }
 
-// Run Sandbox Test
-async function runSandboxTest() {
-  runningTest.value = true;
-  testError.value = '';
-  testResult.value = null;
-  try {
-    const res: any = await requestWithFallback('post', '/test', {
-      script: sandboxForm.script,
-      payload: sandboxForm.payload,
-      fPort: sandboxForm.fPort,
-    });
-    testResult.value = res?.data || res;
-  } catch (err: any) {
-    testError.value = err?.message || 'Lỗi runtime khi giải mã payload';
-  } finally {
-    runningTest.value = false;
+function handleFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  if (!file.name.endsWith('.js') && !file.name.endsWith('.txt')) {
+    cyberToast.error('Chỉ hỗ trợ file JavaScript (.js) hoặc Text (.txt)');
+    return;
   }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const content = e.target?.result as string;
+    if (content) {
+      form.script = content;
+      cyberToast.success(`Đã đọc nội dung file ${file.name}`);
+    }
+  };
+  reader.readAsText(file);
+  target.value = '';
 }
 
-// Test current form script
 async function testCurrentFormScript() {
+  if (!form.script) {
+    cyberToast.warning('Vui lòng nhập nội dung script trước khi test');
+    return;
+  }
   testingFormScript.value = true;
   try {
-    const res: any = await requestWithFallback('post', '/test', {
+    const res: any = await requestWithFallback('post', '/test-run', {
       script: form.script,
-      payload: form.samplePayload || '01020304',
+      payload: form.samplePayload || '09C4138805',
       fPort: form.sampleFport || 1,
     });
     const data = res?.data || res;
-    ElMessageBox.alert(
-      `<pre style="max-height: 300px; overflow-y: auto;">${JSON.stringify(data, null, 2)}</pre>`,
-      'Kết Quả Test Script Thành Công',
-      { dangerouslyUseHTMLString: true }
-    );
+    testModalContent.value = JSON.stringify(data, null, 2);
+    testModalVisible.value = true;
   } catch (err: any) {
-    ElMessage.error(err?.message || 'Script phát sinh lỗi');
+    cyberToast.error(err?.message || 'Script phát sinh lỗi');
   } finally {
     testingFormScript.value = false;
   }
@@ -814,133 +1029,49 @@ async function testCurrentFormScript() {
 
 // Submit Form
 async function submitForm() {
-  if (!formRef.value) return;
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return;
-    submittingForm.value = true;
-    try {
-      if (isEditing.value && editingId.value) {
-        await requestWithFallback('put', `/scripts/${editingId.value}`, {
-          name: form.name,
-          sku: form.sku,
-          longFw: form.longFw,
-          description: form.description,
-          script: form.script,
-          samplePayload: form.samplePayload,
-          sampleFport: form.sampleFport,
-          isActive: form.isActive,
-        });
-        ElMessage.success('Cập nhật bộ giải mã thành công');
-      } else {
-        await requestWithFallback('post', '/scripts', {
-          name: form.name,
-          sku: form.sku,
-          longFw: form.longFw,
-          description: form.description,
-          script: form.script,
-          samplePayload: form.samplePayload,
-          sampleFport: form.sampleFport,
-          isActive: form.isActive,
-        });
-        ElMessage.success('Tạo bộ giải mã mới thành công');
-      }
-      editorDialogVisible.value = false;
-      refreshData();
-    } catch (err: any) {
-      console.error('Error submitting decoder script:', err);
-      ElMessage.error(err?.message || 'Lỗi khi lưu bộ giải mã');
-    } finally {
-      submittingForm.value = false;
+  if (!form.name || !form.sku || !form.longFw || !form.script) {
+    cyberToast.warning('Vui lòng điền đầy đủ các trường bắt buộc (*)');
+    return;
+  }
+
+  submittingForm.value = true;
+  try {
+    if (isEditing.value && editingId.value) {
+      await requestWithFallback('put', `/scripts/${editingId.value}`, {
+        name: form.name,
+        sku: form.sku,
+        longFw: form.longFw,
+        description: form.description,
+        script: form.script,
+        samplePayload: form.samplePayload,
+        sampleFport: form.sampleFport,
+        isActive: form.isActive,
+      });
+      cyberToast.success('Cập nhật bộ giải mã thành công');
+    } else {
+      await requestWithFallback('post', '/scripts', {
+        name: form.name,
+        sku: form.sku,
+        longFw: form.longFw,
+        description: form.description,
+        script: form.script,
+        samplePayload: form.samplePayload,
+        sampleFport: form.sampleFport,
+        isActive: form.isActive,
+      });
+      cyberToast.success('Tạo bộ giải mã mới thành công');
     }
-  });
+    editorDialogVisible.value = false;
+    refreshData();
+  } catch (err: any) {
+    console.error('Error submitting decoder script:', err);
+    cyberToast.error(err?.message || 'Lỗi khi lưu bộ giải mã');
+  } finally {
+    submittingForm.value = false;
+  }
 }
 
 onMounted(() => {
   refreshData();
 });
 </script>
-
-<style scoped>
-.decoder-view {
-  padding: 16px;
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.header-left .title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  margin: 0 0 4px 0;
-}
-
-.header-left .subtitle {
-  font-size: 0.85rem;
-  color: var(--el-text-color-secondary);
-}
-
-.custom-tabs {
-  background: transparent;
-}
-
-.filter-card {
-  border-radius: 8px;
-}
-
-.table-card {
-  border-radius: 8px;
-}
-
-.code-textarea :deep(textarea) {
-  font-family: 'Fira Code', 'Courier New', Courier, monospace;
-  font-size: 0.85rem;
-  background-color: var(--el-fill-color-darker, #1e1e1e);
-  color: #a9b7c6;
-  line-height: 1.5;
-}
-
-.result-box {
-  background-color: var(--el-fill-color-darker, #1e1e1e);
-  color: #a9b7c6;
-  border-radius: 6px;
-  padding: 12px;
-  font-size: 0.85rem;
-  min-height: 350px;
-  max-height: 500px;
-  overflow-y: auto;
-  border: 1px solid var(--el-border-color);
-}
-
-.test-error-box {
-  background-color: rgba(245, 108, 108, 0.1);
-  border: 1px solid var(--el-color-danger);
-  border-radius: 6px;
-  padding: 10px;
-}
-
-.font-mono {
-  font-family: 'Fira Code', 'Courier New', Courier, monospace;
-}
-
-.text-primary {
-  color: var(--el-color-primary);
-}
-
-.text-secondary {
-  color: var(--el-text-color-secondary);
-}
-
-.text-warning {
-  color: var(--el-color-warning);
-}
-
-.text-danger {
-  color: var(--el-color-danger);
-}
-</style>

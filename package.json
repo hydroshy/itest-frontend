@@ -18,11 +18,9 @@
     ]
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.3.1",
     "@itest/frontend-sdk": "file:./packages/frontend-sdk",
     "augmented-ui": "^2.0.0",
     "axios": "^1.7.9",
-    "element-plus": "^2.9.3",
     "lucide-vue-next": "^1.0.0",
     "pinia": "^2.3.1",
     "tabulator-tables": "6.5.0",

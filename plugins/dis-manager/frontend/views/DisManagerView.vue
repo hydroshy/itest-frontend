@@ -1,632 +1,585 @@
 <template>
-  <div class="dis-manager-view p-4">
-    <!-- CYBERPUNK HUD HEADER -->
-    <div class="cyber-hud-header mb-4">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-3">
-          <div>
-            <h2 class="title mb-1">
-              <el-icon class="mr-2 text-primary"><Connection /></el-icon>
-              DIS (Odoo) Integration Hub
-            </h2>
-            <p class="subtitle text-muted mb-0">
-              Giám sát kết nối DIS API Odoo, kiểm thử truy vấn Sandbox và quản lý đồng bộ Sales Order vào iTest.
-            </p>
+  <div class="dis-manager-view p-6 max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-content/10 pb-5">
+      <div>
+        <div class="flex items-center gap-2 text-2xl font-bold tracking-tight text-base-content">
+          <Share2 class="w-7 h-7 text-primary" />
+          <span>DIS (Odoo) Integration Hub</span>
+        </div>
+        <p class="text-sm text-base-content/60 mt-0.5">
+          Giám sát kết nối DIS API Odoo, kiểm thử truy vấn Sandbox và quản lý đồng bộ Sales Order vào iTest.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <span
+          class="badge badge-lg gap-1.5 font-mono text-xs font-semibold"
+          :class="disStatus.connected ? 'badge-success text-success-content' : 'badge-error text-error-content'"
+        >
+          <span class="w-2 h-2 rounded-full bg-current"></span>
+          {{ disStatus.connected ? 'ONLINE' : 'OFFLINE' }}
+        </span>
+
+        <span
+          class="badge badge-lg badge-outline gap-1 font-mono text-xs font-semibold"
+          :class="disStatus.isMock ? 'badge-warning' : 'badge-primary'"
+        >
+          {{ disStatus.isMock ? 'MOCK MODE' : 'LIVE API' }}
+        </span>
+
+        <button
+          type="button"
+          class="btn btn-primary btn-sm gap-2"
+          :disabled="checkingStatus"
+          @click="fetchStatus"
+        >
+          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': checkingStatus }" />
+          Làm mới kết nối
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Tabs -->
+    <div class="tabs tabs-boxed bg-base-300/50 p-1 rounded-xl w-fit">
+      <button
+        type="button"
+        class="tab text-sm font-medium gap-2 transition-all"
+        :class="{ 'tab-active': activeTab === 'diagnostics' }"
+        @click="activeTab = 'diagnostics'"
+      >
+        <Monitor class="w-4 h-4" />
+        Chẩn đoán & Cấu hình
+      </button>
+      <button
+        type="button"
+        class="tab text-sm font-medium gap-2 transition-all"
+        :class="{ 'tab-active': activeTab === 'orders' }"
+        @click="activeTab = 'orders'"
+      >
+        <List class="w-4 h-4" />
+        Tra cứu & Đồng bộ SO
+      </button>
+      <button
+        type="button"
+        class="tab text-sm font-medium gap-2 transition-all"
+        :class="{ 'tab-active': activeTab === 'sandbox' }"
+        @click="activeTab = 'sandbox'"
+      >
+        <Terminal class="w-4 h-4" />
+        API Sandbox & Truy vấn thử
+      </button>
+    </div>
+
+    <!-- TAB 1: DIAGNOSTICS -->
+    <div v-if="activeTab === 'diagnostics'" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Card 1: Protocol & Host -->
+        <div class="card bg-base-200/60 border border-base-content/10 shadow-sm backdrop-blur-md">
+          <div class="card-body p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
+              <span class="font-bold text-sm flex items-center gap-2 text-cyan-400">
+                <Monitor class="w-4 h-4" />
+                Trạng thái kết nối
+              </span>
+              <span class="text-xs font-mono text-base-content/40">[01]</span>
+            </div>
+            <div class="space-y-2.5 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-base-content/70">Dịch vụ DIS:</span>
+                <span
+                  class="badge badge-sm font-mono"
+                  :class="disStatus.connected ? 'badge-success text-success-content' : 'badge-error text-error-content'"
+                >
+                  {{ disStatus.connected ? 'Đang hoạt động' : 'Mất kết nối' }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-base-content/70">Chế độ vận hành:</span>
+                <span
+                  class="badge badge-sm font-mono"
+                  :class="disStatus.isMock ? 'badge-warning text-warning-content' : 'badge-primary text-primary-content'"
+                >
+                  {{ disStatus.isMock ? 'Dữ liệu Mock' : 'Live Odoo API' }}
+                </span>
+              </div>
+              <div class="flex flex-col gap-1 pt-1">
+                <span class="text-base-content/70">Host đích:</span>
+                <code class="bg-base-300/80 px-2 py-1 rounded text-primary font-mono text-xs break-all">
+                  {{ disStatus.baseUrl }}
+                </code>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
-          <el-tag
-            :type="disStatus.connected ? 'success' : 'danger'"
-            effect="dark"
-            size="large"
-            class="cyber-status-tag"
-          >
-            <span class="status-indicator"></span>
-            {{ disStatus.connected ? 'ONLINE' : 'OFFLINE' }}
-          </el-tag>
-          <el-tag
-            :type="disStatus.isMock ? 'warning' : 'primary'"
-            effect="plain"
-            size="large"
-            class="cyber-mode-tag"
-          >
-            {{ disStatus.isMock ? 'MOCK MODE' : 'LIVE API' }}
-          </el-tag>
-          <el-button
-            type="primary"
-            class="cyber-refresh-btn"
-            :icon="Refresh"
-            :loading="checkingStatus"
-            @click="fetchStatus"
-          >
-            Làm mới kết nối
-          </el-button>
+        <!-- Card 2: Security & Token -->
+        <div class="card bg-base-200/60 border border-base-content/10 shadow-sm backdrop-blur-md">
+          <div class="card-body p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
+              <span class="font-bold text-sm flex items-center gap-2 text-primary">
+                <Settings class="w-4 h-4" />
+                Bảo mật & Xác thực
+              </span>
+              <span class="text-xs font-mono text-base-content/40">[02]</span>
+            </div>
+            <div class="space-y-2.5 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-base-content/70">DIS Token Header:</span>
+                <span
+                  class="badge badge-sm font-mono"
+                  :class="disStatus.tokenConfigured ? 'badge-success text-success-content' : 'badge-ghost'"
+                >
+                  {{ disStatus.tokenConfigured ? 'Đã thiết lập' : 'Chưa cấu hình' }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-base-content/70">Khóa Bearer:</span>
+                <code class="bg-base-300/80 px-2 py-0.5 rounded font-mono text-xs text-base-content/80">
+                  {{ disStatus.tokenMasked || '••••••••••••' }}
+                </code>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-base-content/70">Cơ chế xác thực:</span>
+                <span class="font-mono text-cyan-400">Bearer Token Header</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Operation & Ping -->
+        <div class="card bg-base-200/60 border border-base-content/10 shadow-sm backdrop-blur-md">
+          <div class="card-body p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
+              <span class="font-bold text-sm flex items-center gap-2 text-emerald-400">
+                <Crosshair class="w-4 h-4" />
+                Thao tác & Kiểm tra
+              </span>
+              <span class="text-xs font-mono text-base-content/40">[03]</span>
+            </div>
+            <div class="space-y-2 pt-1">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline btn-primary w-full gap-2 justify-start"
+                :disabled="checkingStatus"
+                @click="fetchStatus"
+              >
+                <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': checkingStatus }" />
+                Kiểm tra Ping Odoo Server
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline w-full gap-2 justify-start"
+                @click="copyEnvGuide"
+              >
+                <Check v-if="copiedEnv" class="w-4 h-4 text-success" />
+                <Copy v-else class="w-4 h-4" />
+                {{ copiedEnv ? 'Đã sao chép cấu hình!' : 'Sao chép biến môi trường mẫu' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dockge Guide Card -->
+      <div class="card bg-base-200/50 border border-base-content/10 shadow-sm">
+        <div class="card-body p-5 space-y-3">
+          <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
+            <div class="flex items-center gap-2 text-sm font-bold text-base-content">
+              <Terminal class="w-4 h-4 text-primary" />
+              <span>Hướng Dẫn Cấu Hình Biến Môi Trường (Dockge / Docker Compose)</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-xs btn-ghost gap-1 text-primary"
+              @click="copyEnvGuide"
+            >
+              <Copy class="w-3.5 h-3.5" />
+              Sao chép
+            </button>
+          </div>
+          <p class="text-xs text-base-content/70 leading-relaxed">
+            Để kết nối với máy chủ Odoo API thật hoặc chuyển sang Mock Mode, hãy cấu hình các biến môi trường sau trong stack <code class="font-mono text-primary">iTest Backend</code> trên Dockge hoặc file <code class="font-mono text-primary">.env</code>:
+          </p>
+          <pre class="bg-base-300/80 p-4 rounded-lg font-mono text-xs text-base-content overflow-x-auto border border-base-content/10"><code># Cấu hình kết nối DIS API Odoo trong Dockge:
+DIS_SO_BASE_URL=https://dis-so.daviteq.com
+DIS_SO_TOKEN=your_dis_api_token_here
+DIS_MOCK_MODE=false</code></pre>
         </div>
       </div>
     </div>
 
-    <!-- MAIN TABS -->
-    <el-tabs v-model="activeTab" class="cyber-tabs">
-      <!-- TAB 1: DASHBOARD & DIAGNOSTICS -->
-      <el-tab-pane label="Chẩn đoán & Cấu hình" name="diagnostics">
-        <el-row :gutter="20" class="mb-4">
-          <!-- Card 1: Protocol & Host -->
-          <el-col :span="8">
-            <div class="cyber-card">
-              <div class="cyber-card-header">
-                <span class="cyber-card-title">
-                  <el-icon class="mr-1 text-cyan"><Monitor /></el-icon>
-                  Trạng thái kết nối
-                </span>
-                <span class="cyber-bracket">[01]</span>
-              </div>
-              <div class="cyber-card-body">
-                <div class="status-row mb-3">
-                  <span class="text-secondary">Dịch vụ DIS:</span>
-                  <el-tag size="small" :type="disStatus.connected ? 'success' : 'danger'">
-                    {{ disStatus.connected ? 'Đang hoạt động' : 'Mất kết nối' }}
-                  </el-tag>
-                </div>
-                <div class="status-row mb-3">
-                  <span class="text-secondary">Chế độ vận hành:</span>
-                  <el-tag size="small" :type="disStatus.isMock ? 'warning' : 'primary'">
-                    {{ disStatus.isMock ? 'Dữ liệu Mock' : 'Live Odoo API' }}
-                  </el-tag>
-                </div>
-                <div class="status-row">
-                  <span class="text-secondary">Host đích:</span>
-                  <code class="cyber-code-sm">{{ disStatus.baseUrl }}</code>
-                </div>
-              </div>
-            </div>
-          </el-col>
-
-          <!-- Card 2: Security & Token -->
-          <el-col :span="8">
-            <div class="cyber-card">
-              <div class="cyber-card-header">
-                <span class="cyber-card-title">
-                  <el-icon class="mr-1 text-cyan"><Setting /></el-icon>
-                  Xác thực & Bảo mật
-                </span>
-                <span class="cyber-bracket">[02]</span>
-              </div>
-              <div class="cyber-card-body">
-                <div class="status-row mb-3">
-                  <span class="text-secondary">Trạng thái Token:</span>
-                  <div class="d-flex align-items-center gap-1">
-                    <el-tag size="small" :type="disStatus.tokenConfigured ? 'success' : 'danger'">
-                      {{ disStatus.tokenConfigured ? 'Đã gán biến' : 'Chưa cấu hình' }}
-                    </el-tag>
-                    <code v-if="disStatus.tokenMasked" class="cyber-code-sm ml-1" title="Token Masked">{{ disStatus.tokenMasked }}</code>
-                  </div>
-                </div>
-                <div class="status-row mb-3">
-                  <span class="text-secondary">Chuẩn hóa Auth:</span>
-                  <span class="text-cyan text-sm">Bearer (Auto Normalization)</span>
-                </div>
-                <div class="status-row">
-                  <span class="text-secondary">Tên biến:</span>
-                  <code class="cyber-code-sm">DIS_SO_TOKEN</code>
-                </div>
-              </div>
-            </div>
-          </el-col>
-
-          <!-- Card 3: Network Latency -->
-          <el-col :span="8">
-            <div class="cyber-card">
-              <div class="cyber-card-header">
-                <span class="cyber-card-title">
-                  <el-icon class="mr-1 text-cyan"><Aim /></el-icon>
-                  Độ trễ & Telemetry
-                </span>
-                <span class="cyber-bracket">[03]</span>
-              </div>
-              <div class="cyber-card-body">
-                <div class="status-row mb-3">
-                  <span class="text-secondary">Độ trễ Ping:</span>
-                  <span
-                    class="latency-badge"
-                    :class="{
-                      'latency-fast': disStatus.latency != null && disStatus.latency < 100,
-                      'latency-medium': disStatus.latency != null && disStatus.latency >= 100 && disStatus.latency < 500,
-                      'latency-slow': disStatus.latency != null && disStatus.latency >= 500,
-                    }"
-                  >
-                    {{ disStatus.latency != null ? disStatus.latency + ' ms' : 'Chưa đo' }}
-                  </span>
-                </div>
-                <div class="status-row mb-3">
-                  <span class="text-secondary">Đo kiểm trực tiếp:</span>
-                  <el-button
-                    size="small"
-                    type="info"
-                    plain
-                    :icon="Aim"
-                    :loading="pingingApi"
-                    @click="pingHealth"
-                  >
-                    Gửi Ping thử
-                  </el-button>
-                </div>
-                <div class="status-row">
-                  <span class="text-secondary">Chu kỳ tự động:</span>
-                  <span class="text-muted text-sm">Theo yêu cầu / Khi mở tab</span>
-                </div>
-              </div>
-            </div>
-          </el-col>
-        </el-row>
-
-        <!-- DOCKGE ENVIRONMENT MATRIX TERMINAL -->
-        <div class="terminal-window">
-          <div class="terminal-header">
-            <div class="terminal-dots">
-              <span class="dot dot-red"></span>
-              <span class="dot dot-yellow"></span>
-              <span class="dot dot-green"></span>
-            </div>
-            <span class="terminal-title">TERMINAL // DOCKGE_ENVIRONMENT_SETUP</span>
-            <el-button
-              class="terminal-copy-btn"
-              size="small"
-              :type="copiedEnv ? 'success' : 'primary'"
-              :icon="copiedEnv ? Check : CopyDocument"
-              @click="copyEnvGuide"
-            >
-              {{ copiedEnv ? 'Đã sao chép vào Clipboard' : 'Sao chép cấu hình' }}
-            </el-button>
+    <!-- TAB 2: ORDERS & SYNC -->
+    <div v-else-if="activeTab === 'orders'" class="space-y-4">
+      <!-- Filter Toolbar -->
+      <div class="card bg-base-200/60 border border-base-content/10 p-4 shadow-sm backdrop-blur-md">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-end">
+          <div class="form-control md:col-span-2">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Năm</span></label>
+            <input
+              v-model.number="filterYear"
+              type="number"
+              placeholder="Năm (tất cả)"
+              class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full"
+              @keyup.enter="searchOrders"
+            />
           </div>
-          <div class="terminal-body">
-            <div class="terminal-comment"># Bổ sung các biến môi trường vào container backend itest-system (Dockge / Compose):</div>
-            <div class="terminal-code">
-              <span class="code-comment"># 1. URL máy chủ DIS Odoo (mặc định https://dis-so.daviteq.com)</span>
-              <br />
-              <span class="code-var">DIS_SO_BASE_URL</span>=<span class="code-val">https://dis-so.daviteq.com</span>
-              <br /><br />
-              <span class="code-comment"># 2. Token xác thực (hệ thống tự động chuẩn hóa tiền tố Bearer, nhập chuỗi trần hay chuỗi có Bearer đều hoạt động)</span>
-              <br />
-              <span class="code-var">DIS_SO_TOKEN</span>=<span class="code-val">your_dis_api_token_here</span>
-              <br /><br />
-              <span class="code-comment"># 3. Chế độ Mock dữ liệu (false để gọi API Odoo thực tế, true để giả lập mẫu)</span>
-              <br />
-              <span class="code-var">DIS_MOCK_MODE</span>=<span class="code-val">false</span>
-            </div>
-          </div>
-        </div>
-      </el-tab-pane>
 
-      <!-- TAB 2: SALES ORDERS EXPLORER -->
-      <el-tab-pane label="Tra cứu & Đồng bộ SO" name="orders">
-        <div class="cyber-panel">
-          <!-- FILTER TOOLBAR -->
-          <div class="filter-toolbar mb-3 p-3">
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-              <el-input-number
-                v-model="filterYear"
-                :min="2020"
-                :max="2035"
-                placeholder="Năm (để trống: tất cả)"
-                clearable
-                style="width: 140px"
-              />
-              <el-select
-                v-model="filterMonth"
-                placeholder="Tháng"
-                clearable
-                style="width: 120px"
-              >
-                <el-option
-                  v-for="m in 12"
-                  :key="m"
-                  :label="'Tháng ' + m"
-                  :value="m"
-                />
-              </el-select>
-              <el-select
-                v-model="filterState"
-                placeholder="Trạng thái"
-                clearable
-                style="width: 150px"
-              >
-                <el-option label="Tất cả trạng thái" value="" />
-                <el-option label="Sale Order" value="sale" />
-                <el-option label="Done" value="done" />
-                <el-option label="Quotation" value="draft" />
-                <el-option label="Cancelled" value="cancel" />
-              </el-select>
-              <el-input
+          <div class="form-control md:col-span-2">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Tháng</span></label>
+            <select v-model.number="filterMonth" class="select select-sm select-bordered bg-base-100 text-xs w-full" @change="searchOrders">
+              <option :value="undefined">Tất cả tháng</option>
+              <option v-for="m in 12" :key="m" :value="m">Tháng {{ m }}</option>
+            </select>
+          </div>
+
+          <div class="form-control md:col-span-2">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Trạng thái</span></label>
+            <select v-model="filterState" class="select select-sm select-bordered bg-base-100 text-xs w-full" @change="searchOrders">
+              <option value="">Tất cả trạng thái</option>
+              <option value="sale">Sale Order</option>
+              <option value="done">Done</option>
+              <option value="draft">Quotation</option>
+              <option value="cancel">Cancelled</option>
+            </select>
+          </div>
+
+          <div class="form-control md:col-span-4">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Từ khóa tìm kiếm</span></label>
+            <div class="relative">
+              <Search class="w-4 h-4 absolute left-3 top-2.5 text-base-content/40" />
+              <input
                 v-model="filterQuery"
+                type="text"
                 placeholder="Tìm mã SO, khách hàng..."
-                clearable
-                style="width: 240px"
+                class="input input-sm input-bordered bg-base-100 pl-9 text-xs w-full"
                 @keyup.enter="searchOrders"
               />
-              <el-button
-                type="primary"
-                :icon="Search"
-                :loading="loadingOrders"
-                class="cyber-search-btn"
-                @click="searchOrders"
-              >
-                Tra cứu
-              </el-button>
             </div>
+          </div>
 
-            <div>
-              <el-button
-                type="success"
-                :icon="Download"
-                :disabled="!selectedOrder"
-                :loading="syncingOrder"
-                class="cyber-sync-btn"
+          <div class="md:col-span-2 flex items-center gap-2">
+            <button
+              type="button"
+              class="btn btn-primary btn-sm flex-1 gap-1.5"
+              :disabled="loadingOrders"
+              @click="searchOrders"
+            >
+              <Search class="w-3.5 h-3.5" :class="{ 'animate-spin': loadingOrders }" />
+              Tìm Kiếm
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Split Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <!-- Left Column: Table SO -->
+        <div class="lg:col-span-7 card bg-base-200/50 border border-base-content/10 shadow-sm overflow-hidden">
+          <div class="p-3 border-b border-base-content/10 flex items-center justify-between text-xs font-semibold text-base-content">
+            <div class="flex items-center gap-2">
+              <List class="w-4 h-4 text-primary" />
+              <span>Danh Sách Sales Order ({{ orderList.length }})</span>
+            </div>
+            <span class="text-base-content/50 font-normal">Nhấp vào dòng để xem chi tiết</span>
+          </div>
+
+          <div class="overflow-x-auto max-h-[580px] overflow-y-auto">
+            <table class="table table-zebra table-sm w-full">
+              <thead class="bg-base-300/60 font-mono text-xs uppercase text-base-content/70 sticky top-0 z-10 backdrop-blur-md">
+                <tr>
+                  <th class="w-16 text-center">ID Odoo</th>
+                  <th>Mã Đơn (SO)</th>
+                  <th>Khách Hàng</th>
+                  <th>Ngày Đặt</th>
+                  <th class="text-center">Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="loadingOrders && orderList.length === 0">
+                  <td colspan="5" class="text-center py-8 text-base-content/50">
+                    <span class="loading loading-spinner loading-md text-primary mr-2"></span> Đang tải đơn hàng...
+                  </td>
+                </tr>
+                <tr v-else-if="orderList.length === 0">
+                  <td colspan="5" class="text-center py-8 text-base-content/40 font-mono text-sm">
+                    Không tìm thấy đơn hàng nào phù hợp
+                  </td>
+                </tr>
+                <tr
+                  v-for="row in orderList"
+                  :key="row.odoo_id || row.id"
+                  class="cursor-pointer transition-colors hover:bg-base-300/40"
+                  :class="{ 'bg-primary/10 border-l-4 border-l-primary': selectedOrder && (selectedOrder.odoo_id === row.odoo_id || selectedOrder.id === row.id) }"
+                  @click="selectOrder(row)"
+                >
+                  <td class="text-center font-mono text-xs text-base-content/60">{{ row.odoo_id || row.id }}</td>
+                  <td>
+                    <div class="font-mono text-xs font-bold text-primary">{{ row.name }}</div>
+                  </td>
+                  <td>
+                    <div class="text-xs font-medium text-base-content truncate max-w-[180px]">{{ row.partner_name || '—' }}</div>
+                    <div class="text-[11px] text-base-content/50 truncate max-w-[180px]">{{ row.partner_email || row.partnerEmail || '' }}</div>
+                  </td>
+                  <td class="font-mono text-xs text-base-content/60">{{ formatDate(row.date_order) }}</td>
+                  <td class="text-center">
+                    <span class="badge badge-xs font-mono py-2" :class="getStateBadgeClass(row.state)">
+                      {{ row.state || 'N/A' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right Column: Detail Panel -->
+        <div class="lg:col-span-5 card bg-base-200/50 border border-base-content/10 shadow-sm">
+          <div v-if="!selectedOrder" class="card-body p-8 text-center text-base-content/40 space-y-2">
+            <FileText class="w-12 h-12 mx-auto opacity-30 text-primary" />
+            <div class="text-sm font-medium">Chưa chọn đơn hàng</div>
+            <div class="text-xs text-base-content/50">Vui lòng chọn một Sales Order ở bảng bên trái để xem chi tiết sản phẩm và Work Authorization.</div>
+          </div>
+
+          <div v-else class="card-body p-5 space-y-4">
+            <!-- Order Header Info -->
+            <div class="flex items-start justify-between gap-3 border-b border-base-content/10 pb-4">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg font-bold font-mono text-primary">{{ selectedOrder.name }}</span>
+                  <span class="badge badge-sm font-mono" :class="getStateBadgeClass(selectedOrder.state)">
+                    {{ selectedOrder.state }}
+                  </span>
+                </div>
+                <div class="text-xs text-base-content/70 mt-1 font-medium">
+                  {{ selectedOrder.partner_name || 'Khách hàng ẩn danh' }}
+                </div>
+                <div v-if="selectedOrder.partner_email || selectedOrder.partnerEmail" class="text-[11px] text-base-content/50 font-mono">
+                  {{ selectedOrder.partner_email || selectedOrder.partnerEmail }}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary btn-sm gap-2"
+                :disabled="syncingOrder"
                 @click="syncCurrentOrder"
               >
-                Đồng bộ SO vào iTest
-              </el-button>
+                <Download class="w-4 h-4" :class="{ 'animate-spin': syncingOrder }" />
+                Đồng bộ vào iTest
+              </button>
+            </div>
+
+            <!-- Detail Sub-Tabs -->
+            <div class="tabs tabs-boxed bg-base-300/60 p-1 rounded-lg w-fit">
+              <button
+                type="button"
+                class="tab tab-xs text-xs font-medium gap-1"
+                :class="{ 'tab-active': orderDetailTab === 'lines' }"
+                @click="orderDetailTab = 'lines'"
+              >
+                Mặt hàng / Lines ({{ orderLineList.length }})
+              </button>
+              <button
+                type="button"
+                class="tab tab-xs text-xs font-medium gap-1"
+                :class="{ 'tab-active': orderDetailTab === 'wa' }"
+                @click="orderDetailTab = 'wa'"
+              >
+                Work Authorization ({{ orderWaList.length }})
+              </button>
+            </div>
+
+            <!-- Lines Tab Table -->
+            <div v-if="orderDetailTab === 'lines'" class="overflow-x-auto max-h-[360px] overflow-y-auto">
+              <table class="table table-zebra table-xs w-full">
+                <thead class="bg-base-300/70 font-mono text-[11px] text-base-content/70 sticky top-0">
+                  <tr>
+                    <th>ITEM-CODE</th>
+                    <th>Tên Mặt Hàng</th>
+                    <th class="text-right">SL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="loadingLines">
+                    <td colspan="3" class="text-center py-6 text-base-content/50">
+                      <span class="loading loading-spinner loading-sm text-primary mr-2"></span> Đang tải mặt hàng...
+                    </td>
+                  </tr>
+                  <tr v-else-if="orderLineList.length === 0">
+                    <td colspan="3" class="text-center py-6 text-base-content/40 font-mono">
+                      Không có mặt hàng nào
+                    </td>
+                  </tr>
+                  <tr v-for="line in orderLineList" :key="line.id">
+                    <td class="font-mono font-bold text-xs text-cyan-400">
+                      {{ line.default_code || line.sku || line.product_code || '—' }}
+                    </td>
+                    <td class="text-xs">
+                      {{ line.product_name || line.name || '—' }}
+                    </td>
+                    <td class="text-right font-mono font-bold text-xs text-primary">
+                      {{ line.quantity != null ? line.quantity : (line.product_uom_qty || 0) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- WA Tab Table -->
+            <div v-else class="overflow-x-auto max-h-[360px] overflow-y-auto">
+              <table class="table table-zebra table-xs w-full">
+                <thead class="bg-base-300/70 font-mono text-[11px] text-base-content/70 sticky top-0">
+                  <tr>
+                    <th>Mã WA</th>
+                    <th>Trạng Thái</th>
+                    <th>Mặt Hàng / Lines</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="orderWaList.length === 0">
+                    <td colspan="3" class="text-center py-6 text-base-content/40 font-mono">
+                      Chưa có Work Authorization nào được cấp cho đơn này
+                    </td>
+                  </tr>
+                  <tr v-for="wa in orderWaList" :key="wa.wa_code || wa.id">
+                    <td class="font-mono font-bold text-xs text-primary">
+                      {{ wa.wa_code || wa.name || wa.code || '—' }}
+                    </td>
+                    <td>
+                      <span class="badge badge-ghost badge-xs font-mono">
+                        {{ wa.warranty_status || wa.state || 'active' }}
+                      </span>
+                    </td>
+                    <td class="text-xs text-base-content/70">
+                      {{ wa.item_summary || (wa.lines ? wa.lines.length + ' mặt hàng' : '—') }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: SANDBOX -->
+    <div v-else-if="activeTab === 'sandbox'" class="space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <!-- Controls Form -->
+        <div class="lg:col-span-5 card bg-base-200/60 border border-base-content/10 shadow-sm p-5 space-y-4">
+          <div class="flex items-center gap-2 text-sm font-bold text-base-content border-b border-base-content/10 pb-3">
+            <Terminal class="w-4 h-4 text-primary" />
+            <span>Tham Số Truy Vấn API Sandbox</span>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Endpoint thao tác kiểm thử:</span></label>
+            <select v-model="sandboxAction" class="select select-sm select-bordered bg-base-100 text-xs w-full" @change="onSandboxActionChange">
+              <option value="health">GET /api/v1/health (Kiểm tra Server DIS)</option>
+              <option value="search">GET /api/v1/so/search (Tìm kiếm Sales Orders)</option>
+              <option value="detail">GET /api/v1/so/{id} (Chi tiết đơn hàng)</option>
+            </select>
+          </div>
+
+          <div v-if="sandboxAction === 'search'" class="space-y-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-medium">Năm lọc:</span></label>
+              <input v-model.number="sandboxParams.year" type="number" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-medium">Tháng lọc:</span></label>
+              <select v-model.number="sandboxParams.month" class="select select-sm select-bordered bg-base-100 text-xs w-full">
+                <option :value="undefined">Tất cả tháng</option>
+                <option v-for="m in 12" :key="m" :value="m">Tháng {{ m }}</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-medium">Từ khóa tìm kiếm:</span></label>
+              <input v-model="sandboxParams.q" type="text" placeholder="SO2026..." class="input input-sm input-bordered bg-base-100 text-xs w-full" />
             </div>
           </div>
 
-          <!-- ORDERS & LINES SPLIT -->
-          <el-row :gutter="16">
-            <!-- Left Pane: Orders Table -->
-            <el-col :span="13">
-              <div class="table-container-card">
-                <div class="table-header-bar">
-                  <span class="table-header-title">
-                    <el-icon class="mr-1 text-cyan"><List /></el-icon>
-                    DANH SÁCH SALES ORDERS ({{ orderList.length }})
-                  </span>
-                </div>
-                <el-table
-                  :data="orderList"
-                  v-loading="loadingOrders"
-                  highlight-current-row
-                  border
-                  stripe
-                  class="cyber-table"
-                  style="width: 100%"
-                  max-height="520"
-                  @current-change="handleOrderSelect"
-                >
-                  <el-table-column prop="odoo_id" label="ID Odoo" width="90" align="center">
-                    <template #default="{ row }">
-                      <code class="cyber-code-sm">{{ row.odoo_id || row.id }}</code>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="name" label="Mã Đơn (SO)" width="160">
-                    <template #default="{ row }">
-                      <span class="so-code-highlight">{{ row.number || row.name }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="partner_name" label="Khách hàng" min-width="160" show-overflow-tooltip>
-                    <template #default="{ row }">
-                      {{ row.customer?.name || row.partner_name || '-' }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="partner_email" label="Email KH" min-width="160" show-overflow-tooltip>
-                    <template #default="{ row }">
-                      <span class="text-cyan">{{ row.partner_email || row.customer?.email || row.email || '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="date_order" label="Ngày đặt" width="130" align="center">
-                    <template #default="{ row }">
-                      {{ formatDate(row.order_date || row.date_order) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="state" label="Trạng thái" width="120" align="center">
-                    <template #default="{ row }">
-                      <el-tag :type="getStateTag(row.state?.code || row.state)" size="small" class="cyber-tag-state">
-                        {{ row.state?.label || (typeof row.state === 'string' ? row.state : 'N/A') }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
-            </el-col>
-
-            <!-- Right Pane: Order Detail & Lines -->
-            <el-col :span="11">
-              <div class="lines-card-wrapper p-3">
-                <div class="lines-header-hud mb-3">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <span class="hud-tag">[ TELEMETRY // ORDER_ITEMS ]</span>
-                    <span v-if="selectedOrder" class="hud-so-number">{{ selectedOrder.name }}</span>
-                  </div>
-                  <h4 class="m-0 mt-1">
-                    <el-icon class="mr-2 text-cyan"><Document /></el-icon>
-                    Chi tiết mặt hàng trong đơn
-                  </h4>
-                </div>
-
-                <div v-if="!selectedOrder" class="empty-selection-placeholder">
-                  <el-icon :size="48" class="text-muted mb-2"><List /></el-icon>
-                  <p class="text-muted m-0">Vui lòng bấm chọn 1 dòng Sale Order bên trái để xem các mặt hàng chi tiết.</p>
-                </div>
-
-                <div v-else>
-                  <!-- Quick Summary Metrics -->
-                  <div class="order-summary-grid mb-3">
-                    <div class="summary-metric-box">
-                      <span class="metric-label">Khách hàng:</span>
-                      <strong class="metric-value">{{ selectedOrder.partner_name || 'Khách vãng lai' }}</strong>
-                    </div>
-                    <div class="summary-metric-box">
-                      <span class="metric-label">Email:</span>
-                      <strong class="metric-value text-cyan">{{ selectedOrder.partner_email || selectedOrder.email || '-' }}</strong>
-                    </div>
-                  </div>
-
-                  <el-tabs v-model="orderDetailTab" class="mt-2 cyber-subtabs">
-                    <el-tab-pane :label="`Mặt hàng / Lines (${orderLineList.length})`" name="lines">
-                      <el-table
-                        :data="orderLineList"
-                        v-loading="loadingLines"
-                        border
-                        size="small"
-                        class="cyber-table"
-                        style="width: 100%"
-                        max-height="380"
-                      >
-                        <el-table-column prop="default_code" label="ITEM-CODE" width="160" show-overflow-tooltip>
-                          <template #default="{ row }">
-                            <code class="cyber-code-sm font-bold text-cyan">{{ row.default_code || row.sku || row.product_code || '-' }}</code>
-                          </template>
-                        </el-table-column>
-                        <el-table-column prop="name" label="Tên Mặt Hàng" min-width="150" show-overflow-tooltip>
-                          <template #default="{ row }">
-                            <span>{{ row.product_name || row.name || '-' }}</span>
-                          </template>
-                        </el-table-column>
-                        <el-table-column prop="product_uom_qty" label="SL" width="70" align="right">
-                          <template #default="{ row }">
-                            <span class="font-bold text-cyan">{{ row.quantity != null ? row.quantity : (row.product_uom_qty || 0) }}</span>
-                          </template>
-                        </el-table-column>
-                      </el-table>
-                    </el-tab-pane>
-
-                    <el-tab-pane :label="`Work Authorization (WA) (${orderWaList.length})`" name="wa">
-                      <!-- DIS v1 OpenAPI 1.3.0 WA list -->
-                      <div v-if="orderWaList.length > 0">
-                        <el-table
-                          :data="orderWaList"
-                          v-loading="loadingLines"
-                          border
-                          size="small"
-                          class="cyber-table"
-                          style="width: 100%"
-                          max-height="380"
-                        >
-                          <el-table-column prop="wa_code" label="Mã WA" width="150" show-overflow-tooltip>
-                            <template #default="{ row }">
-                              <code class="cyber-code-sm font-bold text-cyan">{{ row.wa_code || row.wa_number || row.name || '-' }}</code>
-                            </template>
-                          </el-table-column>
-                          <el-table-column prop="warranty_status" label="Trạng thái" width="105" align="center">
-                            <template #default="{ row }">
-                              <el-tag size="small" :type="row.warranty_status === 'Active' ? 'success' : 'info'">
-                                {{ row.warranty_status || row.status || 'Active' }}
-                              </el-tag>
-                            </template>
-                          </el-table-column>
-                          <el-table-column label="Mặt hàng / Lines" min-width="130" show-overflow-tooltip>
-                            <template #default="{ row }">
-                              <span v-if="row.lines && row.lines.length > 0">
-                                {{ row.lines.map((l: any) => l.item_code || l.default_code || l.product_name || l.name).join(', ') }}
-                              </span>
-                              <span v-else class="text-muted">-</span>
-                            </template>
-                          </el-table-column>
-                          <el-table-column label="Lots / Serials" width="110" show-overflow-tooltip>
-                            <template #default="{ row }">
-                              <span v-if="row.lots && row.lots.length > 0">
-                                {{ row.lots.map((lt: any) => lt.lot_name || lt.name).join(', ') }}
-                              </span>
-                              <span v-else class="text-muted">-</span>
-                            </template>
-                          </el-table-column>
-                          <el-table-column label="Phụ trách KT" min-width="120" show-overflow-tooltip>
-                            <template #default="{ row }">
-                              <span v-if="row.technical_contact">
-                                {{ row.technical_contact.name || row.technical_contact.email || '-' }}
-                              </span>
-                              <span v-else class="text-muted">-</span>
-                            </template>
-                          </el-table-column>
-                        </el-table>
-                      </div>
-
-                      <!-- Trường hợp DIS chưa có WA: hiển thị giải thích & preview WA tự động sinh khi sync -->
-                      <div v-else class="p-2">
-                        <el-alert
-                          type="info"
-                          :closable="false"
-                          show-icon
-                          title="Đơn hàng trên DIS chưa tạo lệnh WA riêng biệt"
-                          class="mb-3"
-                        >
-                          <template #default>
-                            <div class="text-xs" style="line-height: 1.5">
-                              Trên hệ thống DIS (Odoo), đơn hàng này chưa liên kết lệnh Work Authorization riêng (<code>wa: []</code>).
-                              <br />
-                              Khi bấm <strong>"Đồng bộ SO sang Traceability"</strong>, backend iTest sẽ tự động phân rã các dòng mặt hàng thành các WA tương ứng (<code>WA/&lt;SO&gt;/&lt;STT&gt;</code>) để sẵn sàng gán thiết bị tested.
-                            </div>
-                          </template>
-                        </el-alert>
-
-                        <div class="expected-wa-preview">
-                          <div class="text-xs font-bold text-muted mb-2">DANH SÁCH WA DỰ KIẾN TỰ ĐỘNG KHỞI TẠO KHI SYNC:</div>
-                          <el-table
-                            :data="orderLineList"
-                            border
-                            size="small"
-                            class="cyber-table"
-                            style="width: 100%"
-                            max-height="240"
-                          >
-                            <el-table-column label="Mã WA dự kiến" width="180">
-                              <template #default="{ $index }">
-                                <code class="cyber-code-sm text-gold font-bold">WA/{{ selectedOrder?.name || 'SO' }}/{{ String($index + 1).padStart(3, '0') }}</code>
-                              </template>
-                            </el-table-column>
-                            <el-table-column prop="default_code" label="Mã sản phẩm" width="130">
-                              <template #default="{ row }">
-                                <code class="cyber-code-sm text-cyan">{{ row.default_code || '-' }}</code>
-                              </template>
-                            </el-table-column>
-                            <el-table-column prop="product_name" label="Tên sản phẩm" min-width="130" show-overflow-tooltip>
-                              <template #default="{ row }">
-                                {{ row.product_name || row.name || '-' }}
-                              </template>
-                            </el-table-column>
-                            <el-table-column prop="product_uom_qty" label="SL kế hoạch" width="95" align="right">
-                              <template #default="{ row }">
-                                <span class="text-cyan font-bold">{{ row.quantity != null ? row.quantity : (row.product_uom_qty || 0) }}</span>
-                              </template>
-                            </el-table-column>
-                          </el-table>
-                        </div>
-                      </div>
-                    </el-tab-pane>
-                  </el-tabs>
-                </div>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-      </el-tab-pane>
-
-      <!-- TAB 3: API SANDBOX / EXPLORER -->
-      <el-tab-pane label="API Sandbox & Truy vấn thử" name="sandbox">
-        <div class="cyber-panel p-4">
-          <div class="mb-4">
-            <h4 class="m-0 mb-1">
-              <el-icon class="mr-2 text-cyan"><Cpu /></el-icon>
-              DIS API Explorer &amp; Direct Probe
-            </h4>
-            <p class="text-sm text-muted m-0">
-              Gửi yêu cầu kiểm tra trực tiếp tới DIS Endpoint để xem payload JSON raw và đo thời gian phản hồi thực tế.
-            </p>
+          <div v-if="sandboxAction === 'detail'" class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Odoo SO ID hoặc Số ID đơn:</span></label>
+            <input v-model="sandboxParams.soId" type="text" placeholder="1001" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
           </div>
 
-          <el-row :gutter="20">
-            <!-- Left: Query Form -->
-            <el-col :span="10">
-              <div class="sandbox-control-card p-3">
-                <el-form label-position="top">
-                  <el-form-item label="Endpoint thao tác kiểm thử:">
-                    <el-select v-model="sandboxAction" style="width: 100%" @change="onSandboxActionChange">
-                      <el-option label="GET /api/v1/health (Kiểm tra Server DIS)" value="health" />
-                      <el-option label="GET /api/v1/so/search (Tìm kiếm Sales Orders)" value="search" />
-                      <el-option label="GET /api/v1/so/{id} (Chi tiết đơn hàng)" value="detail" />
-                    </el-select>
-                  </el-form-item>
-
-                  <div v-if="sandboxAction === 'search'">
-                    <el-form-item label="Năm lọc:">
-                      <el-input-number v-model="sandboxParams.year" :min="2020" :max="2035" style="width: 100%" />
-                    </el-form-item>
-                    <el-form-item label="Tháng lọc:">
-                      <el-select v-model="sandboxParams.month" clearable style="width: 100%">
-                        <el-option v-for="m in 12" :key="m" :label="'Tháng ' + m" :value="m" />
-                      </el-select>
-                    </el-form-item>
-                    <el-form-item label="Từ khóa tìm kiếm:">
-                      <el-input v-model="sandboxParams.q" placeholder="SO2026..." clearable />
-                    </el-form-item>
-                  </div>
-
-                  <div v-if="sandboxAction === 'detail'">
-                    <el-form-item label="Odoo SO ID hoặc Số ID đơn:">
-                      <el-input v-model="sandboxParams.soId" placeholder="1001" clearable />
-                    </el-form-item>
-                  </div>
-
-                  <div class="mt-4">
-                    <el-button
-                      type="primary"
-                      :icon="Position"
-                      :loading="executingSandbox"
-                      class="cyber-probe-btn"
-                      style="width: 100%"
-                      @click="executeSandboxQuery"
-                    >
-                      Thực thi truy vấn (Execute Probe)
-                    </el-button>
-                  </div>
-                </el-form>
-              </div>
-            </el-col>
-
-            <!-- Right: Result Terminal Box -->
-            <el-col :span="14">
-              <div class="sandbox-terminal-box p-3">
-                <div class="terminal-meta-bar mb-2 d-flex justify-content-between align-items-center">
-                  <span class="text-cyan font-semibold">
-                    <el-icon class="mr-1"><Document /></el-icon>
-                    RAW JSON TELEMETRY RESPONSE
-                  </span>
-                  <div class="d-flex align-items-center gap-2">
-                    <span
-                      v-if="sandboxResponseStatus"
-                      class="status-pill"
-                      :class="sandboxResponseStatus === 200 ? 'status-ok' : 'status-err'"
-                    >
-                      HTTP {{ sandboxResponseStatus }}
-                    </span>
-                    <span
-                      v-if="sandboxLatency !== null"
-                      class="latency-badge"
-                      :class="{
-                        'latency-fast': sandboxLatency < 100,
-                        'latency-medium': sandboxLatency >= 100 && sandboxLatency < 500,
-                        'latency-slow': sandboxLatency >= 500,
-                      }"
-                    >
-                      {{ sandboxLatency }} ms
-                    </span>
-                  </div>
-                </div>
-                <div class="json-viewer">
-                  <pre><code>{{ sandboxRawResponse || '// Kết quả JSON sẽ xuất hiện tại đây sau khi gửi request...' }}</code></pre>
-                </div>
-              </div>
-            </el-col>
-          </el-row>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm w-full gap-2 mt-4"
+            :disabled="executingSandbox"
+            @click="executeSandboxQuery"
+          >
+            <Send class="w-4 h-4" :class="{ 'animate-pulse': executingSandbox }" />
+            Gửi Request Kiểm Thử
+          </button>
         </div>
-      </el-tab-pane>
-    </el-tabs>
+
+        <!-- JSON Output Panel -->
+        <div class="lg:col-span-7 card bg-base-200/50 border border-base-content/10 shadow-sm overflow-hidden">
+          <div class="p-3 border-b border-base-content/10 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 font-mono font-bold text-cyan-400">
+              <Cpu class="w-4 h-4" />
+              <span>RAW JSON TELEMETRY RESPONSE</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span
+                v-if="sandboxResponseStatus"
+                class="badge badge-sm font-mono"
+                :class="sandboxResponseStatus === 200 ? 'badge-success text-success-content' : 'badge-error text-error-content'"
+              >
+                HTTP {{ sandboxResponseStatus }}
+              </span>
+              <span
+                v-if="sandboxLatency !== null"
+                class="badge badge-sm badge-outline font-mono"
+                :class="{
+                  'badge-success text-success': sandboxLatency < 100,
+                  'badge-warning text-warning': sandboxLatency >= 100 && sandboxLatency < 500,
+                  'badge-error text-error': sandboxLatency >= 500,
+                }"
+              >
+                {{ sandboxLatency }} ms
+              </span>
+            </div>
+          </div>
+
+          <div class="p-4 bg-base-300/80 font-mono text-xs overflow-x-auto max-h-[500px] overflow-y-auto">
+            <pre class="text-base-content"><code>{{ sandboxRawResponse || '// Kết quả JSON sẽ xuất hiện tại đây sau khi gửi request...' }}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import {
-  Connection,
+  Share2,
   Monitor,
-  Setting,
-  Aim,
+  Settings,
+  Crosshair,
   Search,
   Download,
   List,
-  Document,
+  FileText,
   Cpu,
-  Position,
-  Refresh,
-  CopyDocument,
+  Send,
+  RefreshCw,
+  Copy,
   Check,
-} from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+  Terminal,
+} from 'lucide-vue-next';
+import { cyberToast } from '@/cyber/hud';
 
-// --- STATE ---
-const activeTab = ref('orders');
+// Active Tab
+const activeTab = ref<'diagnostics' | 'orders' | 'sandbox'>('diagnostics');
 const checkingStatus = ref(false);
-const pingingApi = ref(false);
 const copiedEnv = ref(false);
 
+// DIS Status
 const disStatus = reactive({
   connected: false,
   isMock: true,
@@ -665,7 +618,7 @@ const sandboxRawResponse = ref('');
 const sandboxResponseStatus = ref<number | null>(null);
 const sandboxLatency = ref<number | null>(null);
 
-// --- HELPERS ---
+// Helpers
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token') || localStorage.getItem('access_token');
   return {
@@ -684,24 +637,18 @@ const formatDate = (dateStr: string) => {
   }
 };
 
-const formatCurrency = (val: number | string) => {
-  if (val == null) return '-';
-  const num = Number(val);
-  return isNaN(num) ? String(val) : num.toLocaleString('vi-VN') + ' đ';
-};
-
-const getStateTag = (state: string): string => {
+const getStateBadgeClass = (state: string) => {
   switch (state) {
     case 'sale':
-      return 'success';
+      return 'badge-success text-success-content';
     case 'done':
-      return 'info';
+      return 'badge-info text-info-content';
     case 'draft':
-      return 'warning';
+      return 'badge-warning text-warning-content';
     case 'cancel':
-      return 'danger';
+      return 'badge-error text-error-content';
     default:
-      return '';
+      return 'badge-ghost';
   }
 };
 
@@ -722,16 +669,16 @@ DIS_MOCK_MODE=false`;
       document.body.removeChild(textarea);
     }
     copiedEnv.value = true;
-    ElMessage.success('Đã sao chép cấu hình mẫu Dockge vào clipboard!');
+    cyberToast.success('Đã sao chép cấu hình mẫu Dockge vào clipboard!');
     setTimeout(() => {
       copiedEnv.value = false;
     }, 2500);
-  } catch (err) {
-    ElMessage.error('Không thể tự động sao chép: ' + (err as Error).message);
+  } catch (err: any) {
+    cyberToast.error('Không thể tự động sao chép: ' + err.message);
   }
 };
 
-// --- METHODS ---
+// Methods
 const fetchStatus = async () => {
   checkingStatus.value = true;
   try {
@@ -746,52 +693,29 @@ const fetchStatus = async () => {
     if (res.ok) {
       const data = await res.json();
       const disObj = data.dis || {};
-      disStatus.connected = typeof data.connected === 'boolean' 
-        ? data.connected 
-        : (typeof disObj.enabled === 'boolean' ? (disObj.enabled && disObj.tokenConfigured) : data.status === 'online');
-      disStatus.isMock = typeof data.isMock === 'boolean' 
-        ? data.isMock 
+      disStatus.connected = typeof data.connected === 'boolean'
+        ? data.connected
+        : (typeof disObj.enabled === 'boolean' ? disObj.enabled : true);
+      disStatus.isMock = typeof data.isMock === 'boolean'
+        ? data.isMock
         : (typeof disObj.mockMode === 'boolean' ? disObj.mockMode : false);
-      disStatus.baseUrl = data.baseUrl || data.apiUrl || disObj.apiUrl || 'https://dis-so.daviteq.com';
-      disStatus.tokenConfigured = typeof data.tokenConfigured === 'boolean' 
-        ? data.tokenConfigured 
-        : !!disObj.tokenConfigured;
+      disStatus.baseUrl = data.baseUrl || disObj.baseUrl || 'https://dis-so.daviteq.com';
+      disStatus.tokenConfigured = typeof data.tokenConfigured === 'boolean'
+        ? data.tokenConfigured
+        : (typeof disObj.tokenConfigured === 'boolean' ? disObj.tokenConfigured : true);
       disStatus.tokenMasked = data.tokenMasked || disObj.tokenMasked || '';
-      disStatus.latency = typeof data.latency === 'number' ? data.latency : (typeof disObj.latency === 'number' ? disObj.latency : null);
+      disStatus.latency = data.latency ?? null;
+      cyberToast.success('Đã cập nhật trạng thái kết nối DIS!');
     } else {
       disStatus.connected = false;
-      disStatus.isMock = true;
+      cyberToast.warning('Không thể kết nối đến DIS API Endpoint.');
     }
   } catch (err) {
-    console.warn('Lỗi kết nối kiểm tra status DIS:', err);
+    console.error('Lỗi khi fetchStatus:', err);
     disStatus.connected = false;
+    cyberToast.error('Lỗi kết nối kiểm tra trạng thái.');
   } finally {
     checkingStatus.value = false;
-  }
-};
-
-const pingHealth = async () => {
-  pingingApi.value = true;
-  try {
-    let res = await fetch('/api/plugins/dis-manager/health', { headers: getAuthHeaders() });
-    if (!res.ok) {
-      res = await fetch('/api/plugins/device-traceability/dis/health', { headers: getAuthHeaders() });
-    }
-    if (!res.ok) {
-      res = await fetch('/api/dis/health', { headers: getAuthHeaders() });
-    }
-
-    if (res.ok) {
-      const data = await res.json();
-      ElMessage.success(data.message || 'Đã kiểm tra ping máy chủ DIS thành công.');
-      await fetchStatus();
-    } else {
-      ElMessage.warning(`API phản hồi HTTP ${res.status}`);
-    }
-  } catch (err) {
-    ElMessage.error('Không thể gửi lệnh Ping tới DIS API.');
-  } finally {
-    pingingApi.value = false;
   }
 };
 
@@ -799,6 +723,8 @@ const searchOrders = async () => {
   loadingOrders.value = true;
   selectedOrder.value = null;
   orderLineList.value = [];
+  orderWaList.value = [];
+
   try {
     const params = new URLSearchParams();
     if (filterYear.value) params.append('year', String(filterYear.value));
@@ -806,97 +732,74 @@ const searchOrders = async () => {
     if (filterState.value) params.append('state', filterState.value);
     if (filterQuery.value) params.append('q', filterQuery.value.trim());
 
-    let res = await fetch(`/api/plugins/dis-manager/orders?${params.toString()}`, {
-      headers: getAuthHeaders(),
-    });
+    let res = await fetch(`/api/plugins/dis-manager/orders?${params.toString()}`, { headers: getAuthHeaders() });
     if (!res.ok) {
-      res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/search?${params.toString()}`, {
-        headers: getAuthHeaders(),
-      });
+      res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/search?${params.toString()}`, { headers: getAuthHeaders() });
     }
     if (!res.ok) {
-      res = await fetch(`/api/plugins/device-traceability/dis/so/search?${params.toString()}`, {
-        headers: getAuthHeaders(),
-      });
+      res = await fetch(`/api/plugins/device-traceability/dis/so/search?${params.toString()}`, { headers: getAuthHeaders() });
     }
     if (!res.ok) {
-      res = await fetch(`/api/dis/sales-orders/search?${params.toString()}`, {
-        headers: getAuthHeaders(),
-      });
+      res = await fetch(`/api/dis/sales-orders/search?${params.toString()}`, { headers: getAuthHeaders() });
     }
     if (!res.ok) {
-      res = await fetch(`/api/dis/so/search?${params.toString()}`, {
-        headers: getAuthHeaders(),
-      });
+      res = await fetch(`/api/dis/so/search?${params.toString()}`, { headers: getAuthHeaders() });
     }
 
     if (res.ok) {
       const data = await res.json();
-      const list = Array.isArray(data) 
-        ? data 
-        : (data.items || data.data || (data.result && data.result.items) || []);
-      orderList.value = (Array.isArray(list) ? list : []).map((item: any) => ({
+      const rawList = Array.isArray(data) ? data : (data.orders || data.items || []);
+      orderList.value = rawList.map((item: any) => ({
         ...item,
-        id: item.id || item.odoo_id,
-        odoo_id: item.odoo_id || item.id,
-        name: item.name || item.number || `SO-${item.id}`,
-        number: item.number || item.name || `SO-${item.id}`,
-        partner_name: item.partner_name || item.customer?.name || (typeof item.customer === 'string' ? item.customer : '—'),
-        date_order: item.date_order || item.order_date,
-        state: typeof item.state === 'object' ? (item.state?.code || item.state?.label || 'sale') : (item.state || 'sale'),
-        amount_total: item.amount_total ?? item.total_amount ?? 0,
-        currency: item.currency || item.currency_id || 'VND',
+        partner_email:
+          item.partner_email ||
+          item.partnerEmail ||
+          item.customer_email ||
+          item.customerEmail ||
+          item.email ||
+          item.customer?.email ||
+          item.partner?.email ||
+          item.partner_id?.email ||
+          '',
       }));
     } else {
       orderList.value = [];
-      ElMessage.warning('Không tải được danh sách đơn hàng từ DIS API.');
+      cyberToast.warning('Không tải được danh sách Sales Orders.');
     }
   } catch (err) {
-    console.error('Lỗi searchOrders:', err);
+    console.error('Lỗi khi searchOrders:', err);
     orderList.value = [];
-    ElMessage.error('Lỗi kết nối khi gọi DIS API.');
+    cyberToast.error('Lỗi kết nối khi tải danh sách đơn hàng.');
   } finally {
     loadingOrders.value = false;
   }
 };
 
-const handleOrderSelect = async (row: any) => {
-  if (!row) return;
+const selectOrder = async (row: any) => {
   selectedOrder.value = row;
+  orderDetailTab.value = 'lines';
   orderLineList.value = [];
   orderWaList.value = [];
-  orderDetailTab.value = 'lines';
   loadingLines.value = true;
 
   const odooId = row.odoo_id || row.id;
   try {
-    let res = await fetch(`/api/plugins/dis-manager/orders/${odooId}`, {
-      headers: getAuthHeaders(),
-    });
+    let res = await fetch(`/api/plugins/dis-manager/orders/${odooId}`, { headers: getAuthHeaders() });
     if (!res.ok) {
-      res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/${odooId}`, {
-        headers: getAuthHeaders(),
-      });
+      res = await fetch(`/api/plugins/device-traceability/dis/sales-orders/${odooId}`, { headers: getAuthHeaders() });
     }
     if (!res.ok) {
-      res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}`, {
-        headers: getAuthHeaders(),
-      });
+      res = await fetch(`/api/plugins/device-traceability/dis/so/${odooId}`, { headers: getAuthHeaders() });
     }
     if (!res.ok) {
-      res = await fetch(`/api/dis/sales-orders/${odooId}`, {
-        headers: getAuthHeaders(),
-      });
+      res = await fetch(`/api/dis/sales-orders/${odooId}`, { headers: getAuthHeaders() });
     }
     if (!res.ok) {
-      res = await fetch(`/api/dis/so/${odooId}`, {
-        headers: getAuthHeaders(),
-      });
+      res = await fetch(`/api/dis/so/${odooId}`, { headers: getAuthHeaders() });
     }
 
     if (res.ok) {
-      const data = await res.json();
-      const detail = data.data || data;
+      const detail = await res.json();
       const email =
         detail.partner_email ||
         detail.partnerEmail ||
@@ -921,7 +824,6 @@ const handleOrderSelect = async (row: any) => {
       const linesArray = Array.isArray(rawLines) ? rawLines : [];
       const rawWas = detail.wa || detail.work_authorizations || detail.workAuthorizations || [];
       orderWaList.value = Array.isArray(rawWas) ? rawWas : [];
-      // Lọc bỏ các dòng có default_code === 'N/A' hoặc rỗng và map ITEM-CODE từ default_code
       orderLineList.value = linesArray
         .filter((l: any) => {
           const code = String(l.default_code || l.ordering_code || l.sku || l.product?.default_code || '').trim().toUpperCase();
@@ -936,7 +838,7 @@ const handleOrderSelect = async (row: any) => {
             ordering_code: itemCode,
             sku: itemCode,
             product_name: l.product_name || l.description || l.name || l.product?.name || '',
-            product_uom_qty: l.product_uom_qty ?? l.quantity ?? 0,
+            quantity: l.product_uom_qty ?? l.quantity ?? 1,
             qty_delivered: l.qty_delivered ?? l.delivered_quantity ?? 0,
             qty_invoiced: l.qty_invoiced ?? l.invoiced_quantity ?? 0,
           };
@@ -996,14 +898,14 @@ const syncCurrentOrder = async () => {
 
     if (res.ok) {
       const result = await res.json();
-      ElMessage.success(result.message || `Đã đồng bộ đơn hàng ${selectedOrder.value.name} thành công!`);
+      cyberToast.success(result.message || `Đã đồng bộ đơn hàng ${selectedOrder.value.name} thành công!`);
     } else {
       const err = await res.json().catch(() => ({}));
-      ElMessage.error(err.message || 'Lỗi khi đồng bộ đơn hàng.');
+      cyberToast.error(err.message || 'Lỗi khi đồng bộ đơn hàng.');
     }
   } catch (err) {
     console.error('Lỗi khi syncCurrentOrder:', err);
-    ElMessage.error('Lỗi kết nối khi đồng bộ.');
+    cyberToast.error('Lỗi kết nối khi đồng bộ.');
   } finally {
     syncingOrder.value = false;
   }
@@ -1045,7 +947,6 @@ const executeSandboxQuery = async () => {
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
 
-    // Fallback if dis-manager route not yet active
     if (!res.ok && res.status === 404) {
       if (sandboxAction.value === 'health') {
         res = await fetch('/api/plugins/device-traceability/dis/status', { headers: getAuthHeaders() });
@@ -1087,431 +988,3 @@ onMounted(async () => {
   await searchOrders();
 });
 </script>
-
-<style scoped>
-.dis-manager-view {
-  min-height: 100%;
-}
-
-/* HEADER */
-.cyber-hud-header {
-  background: var(--owl-bg-card, #242933);
-  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
-  border-radius: 8px;
-  padding: 18px 24px;
-  position: relative;
-}
-
-.title {
-  font-size: 1.35rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  display: flex;
-  align-items: center;
-  color: var(--owl-text-primary, #f1f5f9);
-}
-
-.subtitle {
-  font-size: 0.88rem;
-  color: #94a3b8;
-}
-
-.text-cyan {
-  color: #00f0ff !important;
-}
-
-.text-amount {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-weight: 600;
-  color: #38bdf8;
-}
-
-.text-gold {
-  color: #facc15 !important;
-  text-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
-}
-
-/* TELEMETRY BEACON PULSE */
-.telemetry-beacon {
-  position: relative;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.beacon-core {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  position: relative;
-  z-index: 2;
-}
-
-.beacon-ring {
-  display: none;
-}
-
-.beacon-online .beacon-core {
-  background: var(--owl-mint, #62efbd);
-}
-
-.beacon-mock .beacon-core {
-  background: var(--owl-amber, #efd057);
-}
-
-.beacon-offline .beacon-core {
-  background: var(--owl-coral, #ffae9b);
-}
-
-/* STATUS TAGS & BUTTONS */
-.cyber-status-tag {
-  letter-spacing: 0.08em;
-  font-weight: 600;
-}
-
-.status-indicator {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  margin-right: 6px;
-}
-
-.cyber-refresh-btn,
-.cyber-search-btn,
-.cyber-sync-btn,
-.cyber-probe-btn {
-  font-weight: 600;
-  letter-spacing: 0.03em;
-}
-
-/* CYBER CARDS (Tab 1) */
-.cyber-card {
-  background: rgba(20, 27, 45, 0.7);
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  border-radius: 6px;
-  padding: 16px;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
-  height: 100%;
-}
-
-.cyber-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 10px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.cyber-card-title {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #e2e8f0;
-  display: flex;
-  align-items: center;
-}
-
-.cyber-bracket {
-  display: none;
-}
-
-.status-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.88rem;
-}
-
-.cyber-code-sm {
-  background: var(--owl-bg-card, #242933);
-  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: var(--cyber-font-mono, monospace);
-  font-size: 0.82rem;
-  color: var(--owl-teal, #28ebff);
-}
-
-/* LATENCY BADGES */
-.latency-badge {
-  font-family: var(--cyber-font-mono, monospace);
-  font-weight: 600;
-  font-size: 0.85rem;
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.latency-fast {
-  background: var(--owl-mint-dim, rgba(98, 239, 189, 0.12));
-  color: var(--owl-mint, #62efbd);
-  border: 1px solid rgba(98, 239, 189, 0.3);
-}
-
-.latency-medium {
-  background: var(--owl-teal-dim, rgba(40, 235, 255, 0.12));
-  color: var(--owl-teal, #28ebff);
-  border: 1px solid rgba(40, 235, 255, 0.3);
-}
-
-.latency-slow {
-  background: var(--owl-coral-dim, rgba(255, 174, 155, 0.12));
-  color: var(--owl-coral, #ffae9b);
-  border: 1px solid rgba(255, 174, 155, 0.3);
-}
-
-/* TERMINAL WINDOW FOR DOCKGE */
-.terminal-window {
-  background: var(--owl-bg-aside, #1c212b);
-  border: 1px solid var(--owl-border, rgba(178, 204, 214, 0.15));
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.terminal-header {
-  background: #111827;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.15);
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.terminal-dots {
-  display: flex;
-  gap: 6px;
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-.dot-red {
-  background: #ef4444;
-}
-.dot-yellow {
-  background: #eab308;
-}
-.dot-green {
-  background: #22c55e;
-}
-
-.terminal-title {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 0.8rem;
-  letter-spacing: 0.1em;
-  color: #94a3b8;
-}
-
-.terminal-body {
-  padding: 16px 20px;
-  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  font-size: 0.86rem;
-  line-height: 1.6;
-}
-
-.terminal-comment {
-  color: #64748b;
-  margin-bottom: 8px;
-  font-style: italic;
-}
-
-.terminal-code {
-  color: #e2e8f0;
-}
-
-.code-comment {
-  color: #64748b;
-}
-
-.code-var {
-  color: #00f0ff;
-  font-weight: 600;
-}
-
-.code-val {
-  color: #a3e635;
-}
-
-/* TAB 2 & 3 PANELS */
-.cyber-panel {
-  background: rgba(15, 20, 34, 0.5);
-  border: 1px solid rgba(0, 240, 255, 0.15);
-  border-radius: 6px;
-}
-
-.filter-toolbar {
-  background: rgba(20, 27, 45, 0.8);
-  border-bottom: 1px solid rgba(0, 240, 255, 0.15);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.table-container-card {
-  background: rgba(20, 27, 45, 0.6);
-  border: 1px solid rgba(0, 240, 255, 0.15);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.table-header-bar {
-  background: #111827;
-  padding: 10px 16px;
-  border-bottom: 1px solid rgba(0, 240, 255, 0.15);
-}
-
-.table-header-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #e2e8f0;
-  display: flex;
-  align-items: center;
-}
-
-.so-code-highlight {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-weight: 700;
-  color: #00f0ff;
-  transition: all 0.2s ease;
-}
-
-.so-code-highlight:hover {
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8);
-}
-
-/* RIGHT PANE: SO DETAIL LINES */
-.lines-card-wrapper {
-  background: rgba(20, 27, 45, 0.6);
-  border: 1px solid rgba(0, 240, 255, 0.15);
-  border-radius: 6px;
-  min-height: 520px;
-}
-
-.lines-header-hud {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 10px;
-}
-
-.hud-tag {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 0.72rem;
-  color: rgba(0, 240, 255, 0.8);
-  letter-spacing: 0.12em;
-}
-
-.hud-so-number {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #facc15;
-}
-
-.empty-selection-placeholder {
-  min-height: 380px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 24px;
-}
-
-.order-summary-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.summary-metric-box {
-  background: rgba(15, 20, 34, 0.8);
-  border: 1px solid rgba(0, 240, 255, 0.12);
-  border-radius: 4px;
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.metric-label {
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.metric-value {
-  font-size: 0.95rem;
-  color: #f1f5f9;
-}
-
-/* TAB 3: SANDBOX */
-.sandbox-control-card {
-  background: rgba(20, 27, 45, 0.6);
-  border: 1px solid rgba(0, 240, 255, 0.15);
-  border-radius: 6px;
-}
-
-.sandbox-terminal-box {
-  background: #0a0e17;
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  border-radius: 6px;
-  min-height: 480px;
-}
-
-.terminal-meta-bar {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 8px;
-}
-
-.status-pill {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-weight: 700;
-  font-size: 0.78rem;
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.status-ok {
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.5);
-}
-
-.status-err {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.5);
-}
-
-.json-viewer {
-  max-height: 420px;
-  overflow-y: auto;
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 12px;
-  color: #38bdf8;
-  padding: 8px 0;
-}
-
-.json-viewer pre {
-  margin: 0;
-}
-
-.json-viewer code {
-  color: #38bdf8;
-}
-
-/* UTILITIES */
-.font-semibold {
-  font-weight: 600;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-</style>

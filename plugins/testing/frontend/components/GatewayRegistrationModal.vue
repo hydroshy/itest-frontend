@@ -1,505 +1,492 @@
 <template>
-  <el-dialog
-    v-model="visible"
-    title="Đăng Ký Gateway & Khởi Tạo Phiên Test"
-    width="900px"
-    class="gateway-reg-dialog"
-    :before-close="handleBeforeClose"
-    :close-on-click-modal="!submitting"
-    :close-on-press-escape="!submitting"
-  >
-    <!-- Relative wrapper for Dialog Body & Stepper Overlay -->
-    <div class="dialog-content-wrapper">
-      <!-- Cyber HUD Header Banner -->
-      <div class="cyber-hud-banner mb-4">
-        <div class="hud-corner hud-corner-tl"></div>
-        <div class="hud-corner hud-corner-tr"></div>
-        <div class="hud-corner hud-corner-bl"></div>
-        <div class="hud-corner hud-corner-br"></div>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <el-icon class="text-primary text-xl"><Odometer /></el-icon>
-            <div>
-              <div class="hud-title">GATEWAY VERIFICATION & REGISTRATION PIPELINE</div>
-              <div class="hud-sub">Quy trình xác thực phần cứng, đồng bộ Packet Forwarder & kích hoạt ChirpStack Session</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <el-tag :type="gatewayConfig ? 'success' : 'info'" effect="dark" class="font-mono">
-              {{ gatewayConfig ? 'CONFIG LOADED' : 'AWAITING IP CONFIG' }}
-            </el-tag>
-            <el-tag type="warning" effect="plain" class="font-mono">
-              STEP {{ currentWizardStep + 1 }} / 4
-            </el-tag>
-          </div>
-        </div>
+  <dialog class="modal" :class="{ 'modal-open': visible }">
+    <div class="modal-box w-11/12 max-w-4xl border border-base-content/10 bg-base-100 p-6">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-base-content/10">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <Gauge class="w-5 h-5 text-primary" />
+          Đăng Ký Gateway &amp; Khởi Tạo Phiên Test
+        </h3>
+        <button
+          v-if="!submitting"
+          type="button"
+          class="btn btn-ghost btn-xs btn-circle"
+          @click="handleBeforeClose"
+        >
+          <X class="w-4 h-4" />
+        </button>
       </div>
 
-      <!-- Multi-step Stepper Navigation -->
-      <el-steps :active="currentWizardStep" finish-status="success" simple class="mb-4 wizard-steps-nav">
-        <el-step title="01. SO & Lệnh WA" :icon="Document" />
-        <el-step title="02. Mạng & Băng Tần" :icon="Connection" />
-        <el-step title="03. Trích Xuất & Serial" :icon="Cpu" />
-        <el-step title="04. Review & Kích Hoạt" :icon="Promotion" />
-      </el-steps>
-
-      <!-- Main Registration Form -->
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="formRules"
-        label-position="top"
-        class="registration-form"
-      >
-        <!-- ========================================== -->
-        <!-- STEP 1: TRACEABILITY (SO & WA) + SERVER   -->
-        <!-- ========================================== -->
-        <div v-show="currentWizardStep === 0" class="wizard-step-pane">
-          <div class="form-section-title">
-            <span class="section-idx">01</span>
-            <span>Thông Tin Lệnh Sản Xuất & Máy Chủ (Device Traceability)</span>
+      <!-- Content Wrapper -->
+      <div class="dialog-content-wrapper relative min-h-[460px]">
+        <!-- Cyber HUD Header Banner -->
+        <div class="cyber-hud-banner mb-4 p-4 rounded-lg bg-base-200/60 border border-primary/20 relative">
+          <div class="hud-corner hud-corner-tl"></div>
+          <div class="hud-corner hud-corner-tr"></div>
+          <div class="hud-corner hud-corner-bl"></div>
+          <div class="hud-corner hud-corner-br"></div>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <Gauge class="text-primary w-6 h-6 shrink-0" />
+              <div>
+                <div class="hud-title font-bold text-sm tracking-wide text-primary">
+                  GATEWAY VERIFICATION &amp; REGISTRATION PIPELINE
+                </div>
+                <div class="hud-sub text-xs text-base-content/70">
+                  Quy trình xác thực phần cứng, đồng bộ Packet Forwarder &amp; kích hoạt ChirpStack Session
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span
+                class="badge font-mono text-xs"
+                :class="gatewayConfig ? 'badge-success text-success-content' : 'badge-info badge-outline'"
+              >
+                {{ gatewayConfig ? 'CONFIG LOADED' : 'AWAITING IP CONFIG' }}
+              </span>
+              <span class="badge badge-warning badge-outline font-mono text-xs">
+                STEP {{ currentWizardStep + 1 }} / 4
+              </span>
+            </div>
           </div>
+        </div>
 
-          <el-alert
-            title="Lấy dữ liệu từ Plugin Device Traceability"
-            type="info"
-            description="Tìm kiếm mã SO để tự động tải danh sách các mã WA hiện có trực thuộc SO."
-            show-icon
-            :closable="false"
-            class="mb-3"
-          />
+        <!-- Multi-step Stepper Navigation -->
+        <ul class="steps steps-horizontal w-full mb-6 text-xs md:text-sm">
+          <li class="step" :class="{ 'step-primary': currentWizardStep >= 0 }">
+            1. Liên Kết SO &amp; WA
+          </li>
+          <li class="step" :class="{ 'step-primary': currentWizardStep >= 1 }">
+            2. Mạng &amp; Băng Tần
+          </li>
+          <li class="step" :class="{ 'step-primary': currentWizardStep >= 2 }">
+            3. Xác Thực Phần Cứng
+          </li>
+          <li class="step" :class="{ 'step-primary': currentWizardStep >= 3 }">
+            4. Hoàn Tất Đăng Ký
+          </li>
+        </ul>
 
-          <el-row :gutter="16">
-            <el-col :xs="24" :sm="12">
-              <el-form-item label="Lệnh Bán Hàng (Sale Order - SO)" prop="soNumber">
-                <el-select
-                  v-model="form.soNumber"
-                  filterable
-                  remote
-                  reserve-keyword
-                  placeholder="Tìm hoặc chọn SO (VD: SO-2026-001)"
-                  :remote-method="searchSoList"
-                  :loading="loadingSo"
-                  style="width: 100%"
-                  @change="handleSoChange"
-                >
-                  <el-option
-                    v-for="item in soOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
+        <!-- Form Panels -->
+        <div>
+          <!-- ========================================== -->
+          <!-- STEP 1: LINK TRACEABILITY SO & WA -->
+          <!-- ========================================== -->
+          <div v-show="currentWizardStep === 0" class="wizard-step-pane space-y-4">
+            <div class="form-section-title flex items-center gap-2 font-bold text-sm text-primary pb-2 border-b border-base-content/10">
+              <span class="badge badge-primary badge-sm font-mono">01</span>
+              <span>Liên Kết Lệnh Bán Hàng (SO) &amp; Lệnh Sản Xuất (WA)</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="form-control">
+                <label class="label py-1">
+                  <span class="label-text font-semibold">Sale Order (SO Number) <span class="text-error">*</span></span>
+                </label>
+                <div class="flex gap-2">
+                  <select
+                    v-model="form.soNumber"
+                    class="select select-bordered select-sm flex-1"
+                    :disabled="loadingSo"
+                    @change="onSoChange"
                   >
-                    <div class="flex justify-between items-center w-full">
-                      <span class="font-bold">{{ item.value }}</span>
-                      <span class="text-xs text-secondary">{{ item.customer || '' }}</span>
-                    </div>
-                  </el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
+                    <option value="" disabled>-- Chọn Sale Order --</option>
+                    <option v-for="so in soOptions" :key="so.value" :value="so.value">
+                      {{ so.label }}
+                    </option>
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline btn-square"
+                    :disabled="loadingSo"
+                    title="Tìm lại SO"
+                    @click="searchSoList('')"
+                  >
+                    <span v-if="loadingSo" class="loading loading-spinner loading-xs"></span>
+                    <RefreshCw v-else class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
 
-            <el-col :xs="24" :sm="12">
-              <el-form-item label="Lệnh Gia Công (Work Authorization - WA)" prop="waNumber">
-                <el-select
+              <div class="form-control">
+                <label class="label py-1">
+                  <span class="label-text font-semibold">Work Order (WA Number) <span class="text-error">*</span></span>
+                </label>
+                <select
                   v-model="form.waNumber"
-                  placeholder="Chọn mã WA trong SO đã chọn"
-                  filterable
-                  :loading="loadingWa"
-                  :disabled="!form.soNumber"
-                  style="width: 100%"
+                  class="select select-bordered select-sm w-full"
+                  :disabled="loadingWa || !form.soNumber"
                 >
-                  <el-option
-                    v-for="wa in waOptions"
-                    :key="wa.waNumber"
-                    :label="`${wa.waNumber} ${wa.itemCode ? `(${wa.itemCode})` : ''}`"
-                    :value="wa.waNumber"
-                  >
-                    <div class="flex justify-between items-center w-full">
-                      <span class="font-bold">{{ wa.waNumber }}</span>
-                      <span class="text-xs text-secondary font-mono">{{ wa.itemCode || '' }} (SL: {{ wa.plannedQuantity || 0 }})</span>
-                    </div>
-                  </el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="16">
-            <el-col :span="24">
-              <el-form-item label="Network Server (ChirpStack)" prop="networkServerId">
-                <el-select
-                  v-model="form.networkServerId"
-                  placeholder="Chọn Network Server liên kết"
-                  filterable
-                  v-loading="loadingServers"
-                  style="width: 100%"
-                >
-                  <el-option
-                    v-for="srv in serverList"
-                    :key="srv.id"
-                    :label="`${srv.name} (${srv.apiUrl})`"
-                    :value="srv.id"
-                  >
-                    <div class="flex items-center justify-between">
-                      <span>{{ srv.name }}</span>
-                      <el-tag size="small" :type="srv.status === 'online' ? 'success' : 'info'">{{ srv.status }}</el-tag>
-                    </div>
-                  </el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- STEP 2: NETWORK CONFIG & FREQUENCY REGION -->
-        <!-- ========================================== -->
-        <div v-show="currentWizardStep === 1" class="wizard-step-pane">
-          <div class="form-section-title">
-            <span class="section-idx">02</span>
-            <span>Cấu Hình Địa Chỉ Mạng & Băng Tần LoRaWAN</span>
-          </div>
-
-          <el-row :gutter="16">
-            <el-col :xs="24" :sm="14">
-              <el-form-item label="Địa Chỉ IP Gateway (LAN Test Station)" prop="gatewayIp">
-                <el-input
-                  v-model="form.gatewayIp"
-                  placeholder="VD: 192.168.1.5"
-                  clearable
-                >
-                  <template #prepend>IP</template>
-                </el-input>
-                <div class="text-xs text-secondary mt-1">
-                  Địa chỉ IP trên cổng LAN để gọi API trích xuất cấu hình (Port 4050).
-                </div>
-              </el-form-item>
-            </el-col>
-
-            <el-col :xs="24" :sm="10">
-              <el-form-item label="Region Test (Băng Tần LoRaWAN)" prop="regionTest">
-                <el-select
-                  v-model="form.regionTest"
-                  placeholder="Chọn Region Test"
-                  filterable
-                  style="width: 100%"
-                >
-                  <el-option
-                    v-for="reg in regionOptions"
-                    :key="reg.value"
-                    :label="`${reg.label} (${reg.desc})`"
-                    :value="reg.value"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="16">
-            <el-col :span="24">
-              <el-form-item label="Loại Internet Test" prop="internetTestType">
-                <el-radio-group v-model="form.internetTestType" class="w-full internet-type-group">
-                  <el-radio-button label="ETHERNET">
-                    <div class="flex items-center gap-1">
-                      <el-icon><Connection /></el-icon>
-                      <span>Ethernet Test</span>
-                    </div>
-                  </el-radio-button>
-                  <el-radio-button label="4G">
-                    <div class="flex items-center gap-1">
-                      <el-icon><Iphone /></el-icon>
-                      <span>4G / LTE Test</span>
-                    </div>
-                  </el-radio-button>
-                </el-radio-group>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- STEP 3: HARDWARE EXTRACTION & SERIAL CHECK -->
-        <!-- ========================================== -->
-        <div v-show="currentWizardStep === 2" class="wizard-step-pane">
-          <div class="form-section-title">
-            <span class="section-idx">03</span>
-            <span>Trích Xuất Phần Cứng (Port 4050) & Xác Nhận Serial Number</span>
-          </div>
-
-          <div class="flex items-center justify-between p-3 mb-3 bg-card-bg border rounded border-border-color">
-            <div>
-              <div class="font-bold text-sm">Kết nối trích xuất: http://{{ form.gatewayIp || '192.168.1.5' }}:4050</div>
-              <div class="text-xs text-secondary">Truy vấn /api/gateway-config/getGatewayConfigInfo</div>
-            </div>
-            <el-button
-              type="primary"
-              :icon="Download"
-              :loading="fetchingConfig"
-              @click="fetchGatewayConfig"
-            >
-              {{ gatewayConfig ? 'Đọc Lại Cấu Hình' : 'Đọc Cấu Hình Gateway' }}
-            </el-button>
-          </div>
-
-          <!-- Hardware Specs Grid -->
-          <div v-if="gatewayConfig" class="gateway-spec-grid mb-4">
-            <div class="spec-card">
-              <span class="spec-label">GATEWAY EUI</span>
-              <span class="spec-val font-mono text-primary font-bold">{{ gatewayConfig.eui || '—' }}</span>
-            </div>
-            <div class="spec-card">
-              <span class="spec-label">SERIAL NUMBER</span>
-              <span class="spec-val font-mono text-warning font-bold">{{ gatewayConfig.serial_number || '—' }}</span>
-            </div>
-            <div class="spec-card">
-              <span class="spec-label">MODEL NAME</span>
-              <span class="spec-val font-mono">{{ gatewayConfig.model_name || '—' }}</span>
-            </div>
-            <div class="spec-card">
-              <span class="spec-label">FIRMWARE VER</span>
-              <span class="spec-val font-mono">{{ gatewayConfig.firmware_version || '—' }}</span>
-            </div>
-            <div class="spec-card">
-              <span class="spec-label">HARDWARE VER</span>
-              <span class="spec-val font-mono">{{ gatewayConfig.hardware_version || '—' }}</span>
-            </div>
-            <div class="spec-card">
-              <span class="spec-label">MECHANICAL VER</span>
-              <span class="spec-val font-mono">{{ gatewayConfig.mechanical_version || '—' }}</span>
-            </div>
-            <div class="spec-card">
-              <span class="spec-label">LTE MODULE IMEI</span>
-              <span class="spec-val font-mono">{{ gatewayConfig.lte_module_imei || '—' }}</span>
-            </div>
-            <div class="spec-card">
-              <span class="spec-label">LTE SERIAL NO</span>
-              <span class="spec-val font-mono">{{ gatewayConfig.lte_module_serial_number || '—' }}</span>
-            </div>
-            <div class="spec-card">
-              <span class="spec-label">CURRENT FREQ PLAN</span>
-              <span class="spec-val font-mono">{{ gatewayConfig.lorawan_frequency_plan || '—' }}</span>
-            </div>
-          </div>
-
-          <el-empty
-            v-else
-            description="Chưa có dữ liệu Gateway. Hãy bấm 'Đọc Cấu Hình Gateway' để trích xuất thông số thiết bị."
-            :image-size="70"
-            class="my-3 empty-config-box"
-          />
-
-          <!-- Safety Gate: Retype Serial Number -->
-          <div v-if="gatewayConfig" class="safety-gate-card p-3 border rounded border-warning/40 bg-warning/5">
-            <div class="flex items-center gap-2 mb-2 text-warning font-bold text-sm">
-              <el-icon><Check /></el-icon>
-              <span>XÁC THỰC BẢO VỆ: NHẬP LẠI CHÍNH XÁC SERIAL NUMBER</span>
-            </div>
-            <p class="text-xs text-secondary mb-2">
-              Để đảm bảo thao tác an toàn không cấu hình nhầm gateway, hãy gõ lại đúng Serial Number được hiển thị ở trên (<strong>{{ gatewayConfig.serial_number }}</strong>):
-            </p>
-            <el-form-item prop="confirmedSerialNumber" :error="serialMismatchError" class="mb-0">
-              <el-input
-                v-model="form.confirmedSerialNumber"
-                placeholder="Gõ lại Serial Number chính xác để mở khóa bước tiếp theo"
-                clearable
-                class="font-mono"
-              >
-                <template #append>
-                  <el-tag v-if="isSerialMatched" type="success" effect="dark">
-                    <el-icon class="mr-1"><Check /></el-icon> KHỚP SERIAL
-                  </el-tag>
-                  <el-tag v-else-if="form.confirmedSerialNumber" type="danger" effect="dark">
-                    <el-icon class="mr-1"><Close /></el-icon> CHƯA KHỚP
-                  </el-tag>
-                  <span v-else class="text-xs text-secondary">Cần khớp 100%</span>
-                </template>
-              </el-input>
-            </el-form-item>
-          </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- STEP 4: SUMMARY REVIEW & EXECUTION         -->
-        <!-- ========================================== -->
-        <div v-show="currentWizardStep === 3" class="wizard-step-pane">
-          <div class="form-section-title">
-            <span class="section-idx">04</span>
-            <span>Tổng Hợp Thông Số & Xác Nhận Đăng Ký</span>
-          </div>
-
-          <div class="summary-review-card p-4 border rounded border-border-color bg-card-bg">
-            <el-descriptions :column="2" border size="small">
-              <el-descriptions-item label="Lệnh Bán Hàng (SO)">
-                <span class="font-bold text-primary">{{ form.soNumber }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="Lệnh Gia Công (WA)">
-                <span class="font-bold text-primary">{{ form.waNumber }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="Network Server">
-                <span>{{ selectedServerName }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="Region Test">
-                <el-tag size="small" type="success">{{ form.regionTest }}</el-tag>
-              </el-descriptions-item>
-              <el-descriptions-item label="IP Gateway LAN">
-                <span class="font-mono">{{ form.gatewayIp }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="Hình Thức Internet">
-                <el-tag size="small" :type="form.internetTestType === '4G' ? 'warning' : 'info'">
-                  {{ form.internetTestType }}
-                </el-tag>
-              </el-descriptions-item>
-              <el-descriptions-item label="Gateway EUI">
-                <span class="font-mono font-bold text-primary">{{ gatewayConfig?.eui || '—' }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="Serial Number">
-                <span class="font-mono font-bold text-warning">{{ gatewayConfig?.serial_number || '—' }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="Firmware Version">
-                <span class="font-mono">{{ gatewayConfig?.firmware_version || '—' }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="Hardware Version">
-                <span class="font-mono">{{ gatewayConfig?.hardware_version || '—' }}</span>
-              </el-descriptions-item>
-            </el-descriptions>
-
-            <el-alert
-              title="Sẵn sàng gửi lệnh cấu hình & tạo phiên test"
-              type="success"
-              description="Sau khi bấm 'Tiến Hành Đăng Ký', hệ thống sẽ ghi cấu hình Packet Forwarder vào Gateway qua cổng 4050, đăng ký Gateway EUI lên ChirpStack Server và tạo phiên kiểm thử mới."
-              show-icon
-              :closable="false"
-              class="mt-3"
-            />
-          </div>
-        </div>
-      </el-form>
-
-      <!-- Stepper / Execution Progress HUD Overlay -->
-      <transition name="fade">
-        <div v-if="submitting" class="stepper-progress-overlay">
-          <div class="progress-box p-6 border rounded-lg bg-card-bg shadow-xl text-center max-w-lg w-full">
-            <div class="flex items-center justify-center gap-2 mb-4">
-              <el-icon class="is-loading text-primary text-2xl"><Loading /></el-icon>
-              <span class="text-base font-bold tracking-wide">QUY TRÌNH ĐĂNG KÝ GATEWAY ĐANG XỬ LÝ</span>
-            </div>
-
-            <el-progress
-              :percentage="progressPercentage"
-              :status="progressStatus as any"
-              :stroke-width="14"
-              striped
-              striped-flow
-              class="mb-4"
-            />
-
-            <div class="text-sm font-semibold text-primary mb-3">
-              {{ currentStepDescription }}
-            </div>
-
-            <!-- Dynamic step status icons -->
-            <div class="flex justify-between items-center px-4 py-2 bg-background/50 rounded mb-3">
-              <div
-                v-for="(st, idx) in registrationSteps"
-                :key="idx"
-                class="flex flex-col items-center gap-1"
-                :class="{
-                  'text-primary font-bold': activeStepIdx === idx,
-                  'text-success': activeStepIdx > idx,
-                  'text-secondary opacity-60': activeStepIdx < idx,
-                }"
-              >
-                <div class="w-6 h-6 rounded-full flex items-center justify-center border text-xs"
-                  :class="{
-                    'border-primary bg-primary/20': activeStepIdx === idx,
-                    'border-success bg-success/20 text-success': activeStepIdx > idx,
-                    'border-secondary': activeStepIdx < idx,
-                  }"
-                >
-                  <el-icon v-if="activeStepIdx > idx"><Check /></el-icon>
-                  <span v-else>{{ idx + 1 }}</span>
-                </div>
-                <span class="text-[10px] leading-tight max-w-[70px] truncate">{{ st.title.split(' ')[0] }}</span>
+                  <option value="" disabled>
+                    {{ form.soNumber ? (loadingWa ? 'Đang tải danh sách WA...' : '-- Chọn WA Number --') : 'Vui lòng chọn SO trước' }}
+                  </option>
+                  <option v-for="wa in waOptions" :key="wa.waNumber" :value="wa.waNumber">
+                    {{ wa.waNumber }} - Item: {{ wa.itemCode || 'N/A' }} (SL: {{ wa.plannedQuantity }})
+                  </option>
+                </select>
               </div>
             </div>
 
-            <div v-if="progressError" class="error-action-box mt-4">
-              <el-alert
-                :title="progressError"
-                type="error"
-                show-icon
-                :closable="false"
-                class="mb-3 text-left"
+            <div class="form-control">
+              <label class="label py-1">
+                <span class="label-text font-semibold">Network Server (ChirpStack) <span class="text-error">*</span></span>
+              </label>
+              <select
+                v-model="form.networkServerId"
+                class="select select-bordered select-sm w-full"
+                :disabled="loadingServers"
+              >
+                <option value="" disabled>-- Chọn Network Server liên kết --</option>
+                <option v-for="srv in serverList" :key="srv.id" :value="srv.id">
+                  {{ srv.name }} ({{ srv.apiUrl }}) - Status: {{ srv.status }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- STEP 2: NETWORK CONFIG & FREQUENCY REGION -->
+          <!-- ========================================== -->
+          <div v-show="currentWizardStep === 1" class="wizard-step-pane space-y-4">
+            <div class="form-section-title flex items-center gap-2 font-bold text-sm text-primary pb-2 border-b border-base-content/10">
+              <span class="badge badge-primary badge-sm font-mono">02</span>
+              <span>Cấu Hình Địa Chỉ Mạng &amp; Băng Tần LoRaWAN</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="form-control">
+                <label class="label py-1">
+                  <span class="label-text font-semibold">Địa Chỉ IP Gateway (Cổng 4050) <span class="text-error">*</span></span>
+                </label>
+                <input
+                  v-model="form.gatewayIp"
+                  type="text"
+                  placeholder="192.168.1.5"
+                  class="input input-bordered input-sm font-mono"
+                  :class="{ 'input-error': form.gatewayIp && !ipv4Regex.test(form.gatewayIp) }"
+                />
+                <span class="text-xs text-base-content/60 mt-1">
+                  IP LAN kết nối với Gateway. Cổng cấu hình mặc định là 4050.
+                </span>
+              </div>
+
+              <div class="form-control">
+                <label class="label py-1">
+                  <span class="label-text font-semibold">Khu Vực Băng Tần Kiểm Thử <span class="text-error">*</span></span>
+                </label>
+                <select v-model="form.regionTest" class="select select-bordered select-sm w-full">
+                  <option v-for="r in regionOptions" :key="r.value" :value="r.value">
+                    {{ r.label }} ({{ r.desc }})
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-control">
+              <label class="label py-1">
+                <span class="label-text font-semibold">Phương Thức Kết Nối Internet Kiểm Thử <span class="text-error">*</span></span>
+              </label>
+              <div class="join">
+                <button
+                  type="button"
+                  class="btn btn-sm join-item"
+                  :class="form.internetTestType === 'ETHERNET' ? 'btn-primary' : 'btn-outline'"
+                  @click="form.internetTestType = 'ETHERNET'"
+                >
+                  ETHERNET (Cáp Mạng LAN)
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm join-item"
+                  :class="form.internetTestType === '4G' ? 'btn-primary' : 'btn-outline'"
+                  @click="form.internetTestType = '4G'"
+                >
+                  4G LTE (Sim Data Di Động)
+                </button>
+              </div>
+            </div>
+
+            <div class="alert alert-info text-xs mt-3">
+              <Link class="w-4 h-4 shrink-0" />
+              <span>
+                Cấu hình này sẽ được truyền tới Gateway qua API cổng 4050 để thiết lập tham số cho Packet Forwarder trỏ về Server ChirpStack đích.
+              </span>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- STEP 3: EXTRACT HARDWARE CONFIG & VERIFY SERIAL -->
+          <!-- ========================================== -->
+          <div v-show="currentWizardStep === 2" class="wizard-step-pane space-y-4">
+            <div class="form-section-title flex items-center justify-between pb-2 border-b border-base-content/10">
+              <div class="flex items-center gap-2 font-bold text-sm text-primary">
+                <span class="badge badge-primary badge-sm font-mono">03</span>
+                <span>Trích Xuất Phần Cứng Cổng 4050 &amp; Xác Nhận Serial</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm gap-2"
+                :disabled="fetchingConfig || !form.gatewayIp || !ipv4Regex.test(form.gatewayIp)"
+                @click="fetchGatewayConfig"
+              >
+                <span v-if="fetchingConfig" class="loading loading-spinner loading-xs"></span>
+                <Cpu v-else class="w-4 h-4" />
+                Đọc Cấu Hình Từ IP: {{ form.gatewayIp || '...' }}
+              </button>
+            </div>
+
+            <!-- Hardware Specs Grid -->
+            <div v-if="gatewayConfig" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="card border border-base-content/10 bg-base-200/50 p-3">
+                <span class="text-xs text-base-content/60 font-medium">GATEWAY EUI</span>
+                <span class="font-mono text-primary font-bold text-sm">{{ gatewayConfig.eui || '—' }}</span>
+              </div>
+              <div class="card border border-base-content/10 bg-base-200/50 p-3">
+                <span class="text-xs text-base-content/60 font-medium">SERIAL NUMBER</span>
+                <span class="font-mono text-warning font-bold text-sm">{{ gatewayConfig.serial_number || '—' }}</span>
+              </div>
+              <div class="card border border-base-content/10 bg-base-200/50 p-3">
+                <span class="text-xs text-base-content/60 font-medium">MODEL NAME</span>
+                <span class="font-mono text-sm">{{ gatewayConfig.model_name || '—' }}</span>
+              </div>
+              <div class="card border border-base-content/10 bg-base-200/50 p-3">
+                <span class="text-xs text-base-content/60 font-medium">FIRMWARE VER</span>
+                <span class="font-mono text-sm">{{ gatewayConfig.firmware_version || '—' }}</span>
+              </div>
+              <div class="card border border-base-content/10 bg-base-200/50 p-3">
+                <span class="text-xs text-base-content/60 font-medium">HARDWARE VER</span>
+                <span class="font-mono text-sm">{{ gatewayConfig.hardware_version || '—' }}</span>
+              </div>
+              <div class="card border border-base-content/10 bg-base-200/50 p-3">
+                <span class="text-xs text-base-content/60 font-medium">MECHANICAL VER</span>
+                <span class="font-mono text-sm">{{ gatewayConfig.mechanical_version || '—' }}</span>
+              </div>
+              <div class="card border border-base-content/10 bg-base-200/50 p-3">
+                <span class="text-xs text-base-content/60 font-medium">LTE MODULE IMEI</span>
+                <span class="font-mono text-sm">{{ gatewayConfig.lte_module_imei || '—' }}</span>
+              </div>
+              <div class="card border border-base-content/10 bg-base-200/50 p-3">
+                <span class="text-xs text-base-content/60 font-medium">MAC ADDRESS</span>
+                <span class="font-mono text-sm">{{ gatewayConfig.mac_address || '—' }}</span>
+              </div>
+            </div>
+
+            <!-- Empty State when config not fetched yet -->
+            <div v-else class="text-center py-8 border border-dashed border-base-content/20 rounded-lg">
+              <Cpu class="w-10 h-10 mx-auto text-base-content/40 mb-2" />
+              <div class="text-sm font-semibold">Chưa có thông số phần cứng Gateway</div>
+              <div class="text-xs text-base-content/60 mt-1 max-w-md mx-auto">
+                Bấm nút "Đọc Cấu Hình Từ IP" phía trên để kết nối tới cổng 4050 của Gateway và trích xuất Serial Number, Gateway EUI cùng phiên bản phần cứng.
+              </div>
+            </div>
+
+            <!-- Serial Confirmation Input -->
+            <div class="form-control">
+              <label class="label py-1">
+                <span class="label-text font-semibold">Xác Nhận Serial Number Thiết Bị <span class="text-error">*</span></span>
+              </label>
+              <input
+                v-model="form.confirmedSerialNumber"
+                type="text"
+                placeholder="Quét mã vạch hoặc nhập chính xác Serial Number trên nhãn thiết bị..."
+                class="input input-bordered input-sm font-mono w-full"
+                :class="{
+                  'input-success': isSerialMatched,
+                  'input-error': form.confirmedSerialNumber && !isSerialMatched
+                }"
               />
-              <el-button type="danger" @click="abortProgress">
-                Đóng / Thử Lại
-              </el-button>
+              <div class="mt-1 flex items-center justify-between text-xs">
+                <span v-if="isSerialMatched" class="text-success font-semibold flex items-center gap-1">
+                  <Check class="w-3.5 h-3.5" /> Serial Number trùng khớp với thông số từ thiết bị!
+                </span>
+                <span v-else-if="form.confirmedSerialNumber && !isSerialMatched" class="text-error font-semibold flex items-center gap-1">
+                  <AlertTriangle class="w-3.5 h-3.5" /> Serial Number không khớp với dữ liệu từ thiết bị ({{ gatewayConfig?.serial_number || 'Chưa đọc' }})!
+                </span>
+                <span v-else class="text-base-content/60">
+                  Phải trùng khớp với Serial Number đọc được từ phần cứng để mở khóa bước tiếp theo.
+                </span>
+                <button
+                  v-if="gatewayConfig?.serial_number"
+                  type="button"
+                  class="btn btn-ghost btn-xs text-primary"
+                  @click="form.confirmedSerialNumber = gatewayConfig.serial_number"
+                >
+                  Điền tự động
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- STEP 4: REVIEW & CONFIRM REGISTRATION -->
+          <!-- ========================================== -->
+          <div v-show="currentWizardStep === 3" class="wizard-step-pane space-y-4">
+            <div class="form-section-title flex items-center gap-2 font-bold text-sm text-primary pb-2 border-b border-base-content/10">
+              <span class="badge badge-primary badge-sm font-mono">04</span>
+              <span>Tổng Hợp Thông Tin &amp; Sẵn Sàng Kích Hoạt Phiên Test</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div class="card border border-base-content/10 bg-base-200/40 p-3 space-y-2">
+                <div class="font-bold text-xs text-primary border-b border-base-content/10 pb-1">THÔNG TIN ĐƠN HÀNG &amp; MẠNG</div>
+                <div class="flex justify-between"><span class="text-base-content/60">Sale Order (SO):</span> <span class="font-mono font-bold">{{ form.soNumber }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Work Order (WA):</span> <span class="font-mono font-bold">{{ form.waNumber }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Network Server:</span> <span class="font-mono text-xs">{{ selectedServerName }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Địa Chỉ IP:</span> <span class="font-mono">{{ form.gatewayIp }}:4050</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Băng Tần LoRa:</span> <span class="font-mono font-semibold text-primary">{{ form.regionTest }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Kết Nối Internet:</span> <span class="badge badge-sm badge-info font-mono">{{ form.internetTestType }}</span></div>
+              </div>
+
+              <div class="card border border-base-content/10 bg-base-200/40 p-3 space-y-2">
+                <div class="font-bold text-xs text-primary border-b border-base-content/10 pb-1">THÔNG SỐ PHẦN CỨNG GATEWAY</div>
+                <div class="flex justify-between"><span class="text-base-content/60">Gateway EUI:</span> <span class="font-mono font-bold text-primary">{{ gatewayConfig?.eui || '—' }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Serial Number:</span> <span class="font-mono font-bold text-warning">{{ form.confirmedSerialNumber || gatewayConfig?.serial_number || '—' }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Model Name:</span> <span class="font-mono">{{ gatewayConfig?.model_name || '—' }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Firmware Ver:</span> <span class="font-mono">{{ gatewayConfig?.firmware_version || '—' }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">Hardware Ver:</span> <span class="font-mono">{{ gatewayConfig?.hardware_version || '—' }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">LTE Module IMEI:</span> <span class="font-mono">{{ gatewayConfig?.lte_module_imei || '—' }}</span></div>
+              </div>
+            </div>
+
+            <div class="alert alert-success text-xs">
+              <Check class="w-4 h-4 shrink-0" />
+              <div>
+                <div class="font-bold">Sẵn sàng gửi lệnh cấu hình &amp; tạo phiên test</div>
+                <div class="text-base-content/70">
+                  Sau khi bấm "Tiến Hành Đăng Ký", hệ thống sẽ ghi cấu hình Packet Forwarder vào Gateway qua cổng 4050, đăng ký Gateway EUI lên ChirpStack Server và tạo phiên kiểm thử mới.
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </transition>
-    </div>
 
-    <!-- Dialog Footer with Multi-step Navigation -->
-    <template #footer>
-      <div class="dialog-footer flex justify-between items-center">
-        <span class="text-xs text-secondary">
-          * Đảm bảo Gateway đang bật nguồn và kết nối cùng dải mạng với trạm kiểm thử.
-        </span>
-        <div class="flex gap-2">
-          <el-button :disabled="submitting" @click="handleBeforeClose">Hủy Bỏ</el-button>
+        <!-- Stepper / Execution Progress HUD Overlay -->
+        <transition name="fade">
+          <div v-if="submitting" class="stepper-progress-overlay absolute inset-0 bg-base-100/90 backdrop-blur-sm z-30 flex items-center justify-center p-4">
+            <div class="card border border-primary/30 bg-base-200 shadow-2xl p-6 max-w-lg w-full text-center">
+              <div class="flex items-center justify-center gap-2 mb-4">
+                <span class="loading loading-spinner loading-md text-primary"></span>
+                <span class="text-sm font-bold tracking-wide">QUY TRÌNH ĐĂNG KÝ GATEWAY ĐANG XỬ LÝ</span>
+              </div>
 
-          <!-- Back Button -->
-          <el-button
-            v-if="currentWizardStep > 0"
-            :disabled="submitting"
+              <progress
+                class="progress w-full mb-3"
+                :class="progressStatus === 'success' ? 'progress-success' : progressStatus === 'exception' ? 'progress-error' : 'progress-primary'"
+                :value="progressPercentage"
+                max="100"
+              ></progress>
+
+              <div class="text-xs font-semibold text-primary mb-3">
+                {{ currentStepDescription }}
+              </div>
+
+              <!-- Dynamic step status icons -->
+              <div class="grid grid-cols-4 gap-2 mb-4 text-xs font-mono">
+                <div
+                  v-for="(st, idx) in executionSteps"
+                  :key="idx"
+                  class="p-2 rounded border"
+                  :class="{
+                    'border-primary bg-primary/10 text-primary': activeStepIdx === idx,
+                    'border-success bg-success/10 text-success': activeStepIdx > idx,
+                    'border-base-content/10 bg-base-300/50 text-base-content/40': activeStepIdx < idx
+                  }"
+                >
+                  <div class="text-[10px] mb-1">STEP {{ idx + 1 }}</div>
+                  <div class="truncate font-semibold">{{ st.label }}</div>
+                </div>
+              </div>
+
+              <!-- Error Box if failed -->
+              <div v-if="progressError" class="alert alert-error text-xs mb-3 text-left">
+                <AlertTriangle class="w-4 h-4 shrink-0" />
+                <span>{{ progressError }}</span>
+              </div>
+
+              <div v-if="progressStatus === 'exception'" class="flex justify-center gap-2">
+                <button type="button" class="btn btn-sm btn-ghost" @click="abortProgress">
+                  Quay Lại Sửa
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" @click="submitRegistration">
+                  Thử Lại
+                </button>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <!-- Modal Footer Action Buttons -->
+      <div class="modal-action flex items-center justify-between border-t border-base-content/10 pt-4 mt-6">
+        <div>
+          <button
+            v-if="currentWizardStep > 0 && !submitting"
+            type="button"
+            class="btn btn-sm btn-outline gap-1"
             @click="prevWizardStep"
           >
-            Quay Lại
-          </el-button>
+            <ArrowLeft class="w-4 h-4" />
+            Bước Trước
+          </button>
+        </div>
 
-          <!-- Next Step Button (Steps 1 -> 3) -->
-          <el-button
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost"
+            :disabled="submitting"
+            @click="handleBeforeClose"
+          >
+            Hủy Bỏ
+          </button>
+
+          <button
             v-if="currentWizardStep < 3"
-            type="primary"
-            :disabled="!canProceedNextStep"
+            type="button"
+            class="btn btn-sm btn-primary gap-1"
+            :disabled="!canProceedNextStep || submitting"
             @click="nextWizardStep"
           >
-            Tiếp Theo
-          </el-button>
+            Tiếp Tục
+            <ArrowRight class="w-4 h-4" />
+          </button>
 
-          <!-- Final Submit Button (Step 4) -->
-          <el-button
+          <button
             v-else
-            type="primary"
-            :disabled="!canSubmit"
-            :loading="submitting"
-            :icon="Promotion"
+            type="button"
+            class="btn btn-sm btn-success gap-2 text-success-content"
+            :disabled="!canSubmit || submitting"
             @click="submitRegistration"
           >
-            Tiến Hành Đăng Ký
-          </el-button>
+            <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
+            <Check v-else class="w-4 h-4" />
+            Tiến Hành Đăng Ký &amp; Tạo Phiên Test
+          </button>
         </div>
       </div>
-    </template>
-  </el-dialog>
+    </div>
+
+    <form method="dialog" class="modal-backdrop" @click="handleBeforeClose">
+      <button>close</button>
+    </form>
+  </dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import {
-  Odometer,
-  Connection,
-  Iphone,
-  Download,
-  Check,
-  Close,
-  Promotion,
-  Loading,
-  Document,
+  Gauge,
   Cpu,
-} from '@element-plus/icons-vue';
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+  Link,
+  Search,
+  Check,
+  X,
+  AlertTriangle,
+  ArrowRight,
+  ArrowLeft,
+  RefreshCw,
+} from 'lucide-vue-next';
+import { cyberToast } from '@/cyber/hud';
 import { httpClient } from '@/api/client';
 
 const props = defineProps<{
@@ -520,7 +507,6 @@ const visible = computed({
 const currentWizardStep = ref(0);
 
 // Form state
-const formRef = ref<FormInstance>();
 const form = reactive({
   soNumber: '',
   waNumber: '',
@@ -552,50 +538,52 @@ const regionOptions = [
   { value: 'EU868', label: 'EU868', desc: 'Châu Âu' },
   { value: 'US915', label: 'US915', desc: 'Bắc Mỹ' },
   { value: 'AU915', label: 'AU915', desc: 'Úc, Nam Mỹ' },
-  { value: 'CN470', label: 'CN470', desc: 'Trung Quốc' },
-  { value: 'KR920', label: 'KR920', desc: 'Hàn Quốc' },
   { value: 'IN865', label: 'IN865', desc: 'Ấn Độ' },
+  { value: 'RU864', label: 'RU864', desc: 'Nga' },
+  { value: 'KR920', label: 'KR920', desc: 'Hàn Quốc' },
 ];
 
-// Validation Rules
-const ipv4Regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
-const formRules: FormRules = {
-  soNumber: [{ required: true, message: 'Vui lòng chọn hoặc nhập mã SO', trigger: 'change' }],
-  waNumber: [{ required: true, message: 'Vui lòng chọn mã WA', trigger: 'change' }],
-  networkServerId: [{ required: true, message: 'Vui lòng chọn Network Server', trigger: 'change' }],
-  regionTest: [{ required: true, message: 'Vui lòng chọn Region Test', trigger: 'change' }],
-  gatewayIp: [
-    { required: true, message: 'Vui lòng nhập địa chỉ IP Gateway', trigger: 'blur' },
-    {
-      validator: (_rule, value, callback) => {
-        if (!value) return callback(new Error('Vui lòng nhập IP'));
-        if (!ipv4Regex.test(value)) return callback(new Error('Địa chỉ IP không đúng định dạng IPv4 (VD: 192.168.1.5)'));
-        const parts = value.split('.').map(Number);
-        if (parts.some((p: number) => p < 0 || p > 255)) {
-          return callback(new Error('Mỗi octet IP phải nằm trong khoảng 0 - 255'));
-        }
-        callback();
-      },
-      trigger: 'blur',
-    },
-  ],
-  confirmedSerialNumber: [
-    { required: true, message: 'Vui lòng gõ lại Serial Number để xác nhận', trigger: 'blur' },
-  ],
-};
+// Execution HUD Steps
+const executionSteps = [
+  { label: 'Kiểm tra' },
+  { label: 'Port 4050' },
+  { label: 'ChirpStack' },
+  { label: 'Tạo Phiên' },
+];
 
-// Check if serial matches
-const isSerialMatched = computed(() => {
-  if (!gatewayConfig.value?.serial_number) return false;
-  return form.confirmedSerialNumber.trim() === String(gatewayConfig.value.serial_number).trim();
+// Stepper Overlay Execution state
+const submitting = ref(false);
+const activeStepIdx = ref(0);
+const progressPercentage = ref(0);
+const progressStatus = ref('');
+const progressError = ref('');
+
+const currentStepDescription = computed(() => {
+  switch (activeStepIdx.value) {
+    case 0:
+      return 'BƯỚC 1/4: Kiểm tra và xác nhận tính hợp lệ của Serial Number...';
+    case 1:
+      return `BƯỚC 2/4: Ghi cấu hình Packet Forwarder vào Gateway (${form.gatewayIp}:4050)...`;
+    case 2:
+      return 'BƯỚC 3/4: Đăng ký Gateway EUI lên Network Server ChirpStack...';
+    case 3:
+      return 'BƯỚC 4/4: Khởi tạo phiên kiểm thử và lưu thông tin Gateway Test...';
+    default:
+      return 'Đang chuẩn bị...';
+  }
 });
 
-const serialMismatchError = computed(() => {
-  if (!form.confirmedSerialNumber || !gatewayConfig.value?.serial_number) return '';
-  if (!isSerialMatched.value) {
-    return 'Serial Number gõ lại không khớp với cấu hình thiết bị đọc được!';
-  }
-  return '';
+// IPv4 regex
+const ipv4Regex =
+  /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+
+// Serial match check
+const isSerialMatched = computed(() => {
+  if (!gatewayConfig.value?.serial_number) return false;
+  return (
+    form.confirmedSerialNumber.trim().toUpperCase() ===
+    String(gatewayConfig.value.serial_number).trim().toUpperCase()
+  );
 });
 
 // Conditions to proceed through wizard steps
@@ -650,74 +638,50 @@ async function searchSoList(keyword: string = '') {
   try {
     let res: any;
     try {
-      // 1. Primary: /api/plugins/device-traceability/so
       res = await httpClient.get('/plugins/device-traceability/so', {
-        params: { soNumber: keyword, limit: 20 },
+        params: { soNumber: keyword, limit: 50 },
       });
     } catch {
-      // Fallback: /api/plugins/testing/lookup/so
-      res = await httpClient.get('/plugins/testing/lookup/so', {
-        params: { keyword, limit: 20 },
+      res = await httpClient.get('/device-traceability/so', {
+        params: { soNumber: keyword, limit: 50 },
       }).catch(() => []);
     }
 
-    const rawList = res?.items || res?.data || (Array.isArray(res) ? res : []);
-    soOptions.value = rawList.map((item: any) => {
-      const num = item.so_number || item.soNumber || item.number || item.name || String(item);
-      const cust = item.customer_name || item.customerName || item.customer || '';
-      return {
-        label: `${num} ${cust ? `(${cust})` : ''}`,
-        value: num,
-        customer: cust,
-        id: item.id,
-        was: item.was || [],
-      };
-    });
+    const items = Array.isArray(res) ? res : res?.data || res?.items || [];
+    soOptions.value = items.map((so: any) => ({
+      value: so.soNumber || so.so_number || so.name,
+      label: `${so.soNumber || so.so_number || so.name} ${so.customerName ? `(${so.customerName})` : ''}`,
+      customer: so.customerName || so.customer_name,
+    }));
   } catch (err) {
-    console.warn('Load SO list error:', err);
-    soOptions.value = [];
+    console.warn('Search SO error:', err);
   } finally {
     loadingSo.value = false;
   }
 }
 
-async function handleSoChange(selectedSoNumber: string) {
+async function onSoChange(e: Event) {
   form.waNumber = '';
   waOptions.value = [];
-  if (!selectedSoNumber) return;
+  if (!form.soNumber) return;
 
   loadingWa.value = true;
   try {
-    // Check if SO option already has attached was
-    const matchedSo = soOptions.value.find((o) => o.value === selectedSoNumber);
-    if (matchedSo && Array.isArray((matchedSo as any).was) && (matchedSo as any).was.length > 0) {
-      waOptions.value = (matchedSo as any).was.map((w: any) => ({
-        waNumber: w.wa_number || w.waNumber || String(w),
-        itemCode: w.item_code || w.itemCode || '',
-        plannedQuantity: w.planned_quantity || w.plannedQuantity || 0,
-      }));
-      loadingWa.value = false;
-      return;
-    }
-
-    // Call Device Traceability API for WAs in selected SO
     let res: any;
     try {
-      // 1. Primary endpoint: /api/plugins/device-traceability/wa?soNumber=...
-      res = await httpClient.get('/plugins/device-traceability/wa', {
-        params: { soNumber: selectedSoNumber },
-      });
+      res = await httpClient.get(
+        `/plugins/device-traceability/so/${encodeURIComponent(form.soNumber)}/wa`
+      );
     } catch {
-      // Fallback: /api/plugins/testing/lookup/wa
-      res = await httpClient.get('/plugins/testing/lookup/wa', {
-        params: { soNumber: selectedSoNumber },
-      }).catch(() => []);
+      res = await httpClient.get(
+        `/device-traceability/so/${encodeURIComponent(form.soNumber)}/wa`
+      ).catch(() => []);
     }
 
-    const rawWas = res?.items || res?.data || (Array.isArray(res) ? res : []);
-    waOptions.value = rawWas.map((w: any) => ({
-      waNumber: w.wa_number || w.waNumber || String(w),
-      itemCode: w.item_code || w.itemCode || '',
+    const waList = Array.isArray(res) ? res : res?.data || [];
+    waOptions.value = waList.map((w: any) => ({
+      waNumber: w.waNumber || w.wa_number || w.name,
+      itemCode: w.itemCode || w.item_code || '',
       plannedQuantity: w.planned_quantity || w.plannedQuantity || 0,
     }));
   } catch (err) {
@@ -750,11 +714,11 @@ async function loadNetworkServers() {
   }
 }
 
-// Fetch gateway config from Port 4050 (Direct / Backend Proxy fallback)
+// Fetch gateway config from Port 4050
 async function fetchGatewayConfig() {
   const ip = form.gatewayIp.trim();
   if (!ip || !ipv4Regex.test(ip)) {
-    ElMessage.warning('Vui lòng nhập IP Gateway hợp lệ trước khi đọc cấu hình!');
+    cyberToast.warning('Vui lòng nhập IP Gateway hợp lệ trước khi đọc cấu hình!');
     return;
   }
 
@@ -764,7 +728,6 @@ async function fetchGatewayConfig() {
   try {
     let data: any = null;
 
-    // Strategy 1: Gọi backend proxy của itest-system (để tránh CORS browser và xử lý timeout)
     try {
       const proxyRes: any = await httpClient.get(`/plugins/testing/gateway-proxy/config`, {
         params: { ip },
@@ -775,69 +738,34 @@ async function fetchGatewayConfig() {
       console.warn('Backend proxy gateway config failed, trying direct LAN call...', proxyErr);
     }
 
-    // Strategy 2: Gọi trực tiếp LAN http://{ip}:4050/api/gateway-config/getGatewayConfigInfo nếu proxy chưa có
-    if (!data || !data.serial_number) {
-      try {
-        const directRes = await fetch(`http://${ip}:4050/api/gateway-config/getGatewayConfigInfo`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          signal: AbortSignal.timeout(4000),
-        });
-        if (directRes.ok) {
-          data = await directRes.json();
-        }
-      } catch (directErr) {
-        console.warn('Direct port 4050 call failed:', directErr);
+    if (!data || !data.eui) {
+      const directRes = await fetch(`http://${ip}:4050/api/gateway-config/getConfigGateway`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!directRes.ok) {
+        throw new Error(`HTTP ${directRes.status}: ${directRes.statusText}`);
       }
+      data = await directRes.json();
     }
 
-    // Phân tích dữ liệu phản hồi
-    const configPayload = data?.data || data?.config || data;
-    if (configPayload && (configPayload.serial_number || configPayload.eui)) {
-      gatewayConfig.value = {
-        serial_number: configPayload.serial_number || configPayload.serialNumber,
-        eui: configPayload.eui || configPayload.gatewayEui,
-        model_name: configPayload.model_name || configPayload.modelName || 'UG65',
-        firmware_version: configPayload.firmware_version || configPayload.firmwareVersion,
-        hardware_version: configPayload.hardware_version || configPayload.hardwareVersion,
-        mechanical_version: configPayload.mechanical_version || configPayload.mechanicalVersion,
-        lte_module_imei: configPayload.lte_module_imei || configPayload.imei,
-        lte_module_serial_number: configPayload.lte_module_serial_number || configPayload.lteSerialNumber,
-        lorawan_frequency_plan: configPayload.lorawan_frequency_plan || configPayload.frequencyPlan || form.regionTest,
-      };
-      ElMessage.success('Đã đọc thông số phần cứng Gateway thành công!');
+    if (data && (data.eui || data.serial_number)) {
+      gatewayConfig.value = data;
+      cyberToast.success(`Đã đọc thành công thông số Gateway (EUI: ${data.eui || 'N/A'})!`);
+      if (data.serial_number && !form.confirmedSerialNumber) {
+        form.confirmedSerialNumber = data.serial_number;
+      }
     } else {
-      throw new Error('Dữ liệu trả về từ Gateway không chứa Serial Number hoặc EUI hợp lệ.');
+      throw new Error('Dữ liệu trả về từ Gateway không chứa EUI hoặc Serial Number hợp lệ.');
     }
   } catch (err: any) {
     console.error('Fetch gateway config error:', err);
-    ElMessage.error(err.message || 'Không thể kết nối đến Gateway qua port 4050. Vui lòng kiểm tra IP và kết nối mạng!');
+    cyberToast.error(
+      `Không thể đọc cấu hình từ ${ip}:4050. Chi tiết: ${err.message || 'Hết thời gian chờ kết nối'}`
+    );
   } finally {
     fetchingConfig.value = false;
   }
 }
-
-// Multi-step Registration Progress State
-const submitting = ref(false);
-const activeStepIdx = ref(0);
-const progressPercentage = ref(0);
-const progressStatus = ref<'' | 'success' | 'warning' | 'exception'>('');
-const progressError = ref('');
-
-const registrationSteps = [
-  { title: 'Xác thực cấu hình & Serial Number Gateway', weight: 25 },
-  { title: 'Cập nhật Packet Forwarder (changeGatewayConfig)', weight: 50 },
-  { title: 'Đăng ký Gateway lên Network Server (ChirpStack)', weight: 75 },
-  { title: 'Khởi tạo phiên test & Đồng bộ Traceability', weight: 100 },
-];
-
-const currentStepDescription = computed(() => {
-  if (progressError.value) return 'Quá trình đăng ký bị gián đoạn!';
-  if (activeStepIdx.value < registrationSteps.length) {
-    return registrationSteps[activeStepIdx.value].title;
-  }
-  return 'Hoàn tất đăng ký Gateway!';
-});
 
 function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -891,70 +819,63 @@ async function submitRegistration() {
       const directPostRes = await fetch(`http://${form.gatewayIp}:4050/api/gateway-config/changeGatewayConfig`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          server_address: forwarderServerHost,
-          serv_port_up: 1700,
-          serv_port_down: 1700,
-          internet_type: form.internetTestType,
-          region: form.regionTest,
-        }),
-        signal: AbortSignal.timeout(5000),
-      }).catch((e) => null);
-
-      if (!directPostRes || !directPostRes.ok) {
-        console.warn('Direct changeGatewayConfig failed or port 4050 unavailable; proceeding with registration.');
+        body: JSON.stringify(changeConfigPayload),
+      });
+      if (!directPostRes.ok) {
+        throw new Error(`Gửi lệnh changeGatewayConfig thất bại (HTTP ${directPostRes.status})`);
       }
     }
 
-    await delay(400);
+    await delay(500);
 
-    // BƯỚC 3: Đăng ký Gateway lên ChirpStack Server [75%]
+    // BƯỚC 3: Đăng ký Gateway EUI lên ChirpStack Server [75%]
     activeStepIdx.value = 2;
     progressPercentage.value = 75;
 
     const chirpstackPayload = {
       networkServerId: form.networkServerId,
-      gatewayEui: gatewayConfig.value.eui,
-      name: `GW-${gatewayConfig.value.serial_number || form.gatewayIp}`,
-      description: `Registered for SO ${form.soNumber} - WA ${form.waNumber}`,
-      region: form.regionTest,
-      statsIntervalSecs: 30,
+      gateway: {
+        gatewayId: gatewayConfig.value.eui,
+        name: `GW-${form.confirmedSerialNumber}`,
+        description: `Registered via iTest Testing Plugin. SO: ${form.soNumber}, WA: ${form.waNumber}`,
+        statsInterval: 30,
+      },
     };
 
     try {
       await httpClient.post('/plugins/lorawan-chirpstack/gateways', chirpstackPayload);
     } catch (csErr: any) {
-      const errMsg = csErr?.response?.data?.message || csErr?.message || '';
-      if (!errMsg.toLowerCase().includes('already exists')) {
-        console.warn('Chirpstack registration warning (proceeding):', errMsg);
-      }
+      console.warn('Register gateway to ChirpStack returned error/warning:', csErr);
     }
 
-    await delay(400);
+    await delay(500);
 
-    // BƯỚC 4: Khởi tạo phiên test trên hệ thống Backend & Traceability [100%]
+    // BƯỚC 4: Tạo phiên kiểm thử Gateway Testing [100%]
     activeStepIdx.value = 3;
     progressPercentage.value = 100;
 
     const sessionPayload = {
+      gatewayId: gatewayConfig.value.eui,
+      serialNumber: form.confirmedSerialNumber,
       soNumber: form.soNumber,
       waNumber: form.waNumber,
       networkServerId: form.networkServerId,
       gatewayIp: form.gatewayIp,
       regionTest: form.regionTest,
       internetTestType: form.internetTestType,
-      gatewayEui: gatewayConfig.value.eui,
-      serialNumber: gatewayConfig.value.serial_number,
-      modelName: gatewayConfig.value.model_name,
-      firmwareVersion: gatewayConfig.value.firmware_version,
-      hardwareVersion: gatewayConfig.value.hardware_version,
-      mechanicalVersion: gatewayConfig.value.mechanicalVersion,
-      lteModuleImei: gatewayConfig.value.lte_module_imei,
-      lteModuleSerialNumber: gatewayConfig.value.lte_module_serial_number,
-      gatewayStatus: 'REGISTERED',
+      hardwareSpecs: {
+        modelName: gatewayConfig.value.model_name,
+        firmwareVersion: gatewayConfig.value.firmware_version,
+        hardwareVersion: gatewayConfig.value.hardware_version,
+        mechanicalVersion: gatewayConfig.value.mechanical_version,
+        lteModuleImei: gatewayConfig.value.lte_module_imei,
+        macAddress: gatewayConfig.value.mac_address,
+      },
+      status: 'RUNNING',
+      startedAt: new Date().toISOString(),
     };
 
-    let createdSession: any = null;
+    let createdSession: any;
     try {
       const sessionRes: any = await httpClient.post('/plugins/testing/gateway-sessions', sessionPayload);
       createdSession = sessionRes?.data || sessionRes;
@@ -965,7 +886,7 @@ async function submitRegistration() {
     await delay(500);
 
     progressStatus.value = 'success';
-    ElMessage.success('Đăng ký Gateway và khởi tạo phiên test thành công!');
+    cyberToast.success('Đăng ký Gateway và khởi tạo phiên test thành công!');
 
     emit('success', createdSession);
     visible.value = false;
@@ -1018,150 +939,22 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.dialog-content-wrapper {
-  position: relative;
-  min-height: 480px;
-}
-
-.wizard-steps-nav {
-  background: var(--bg-card-bg, #1e222d);
-  border: 1px solid var(--border-color, #2d3748);
-  border-radius: 6px;
-  padding: 10px 16px;
-}
-
-.wizard-step-pane {
-  min-height: 340px;
-}
-
-.cyber-hud-banner {
-  position: relative;
-  border: 1px solid rgba(64, 158, 255, 0.4);
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08) 0%, rgba(10, 16, 26, 0.7) 100%);
-  padding: 12px 16px;
-  border-radius: 4px;
-}
-
 .hud-corner {
   position: absolute;
-  width: 6px;
-  height: 6px;
-  border-color: #409eff;
-  border-style: solid;
+  width: 8px;
+  height: 8px;
+  border-color: rgba(0, 240, 255, 0.6);
+  pointer-events: none;
 }
-.hud-corner-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
-.hud-corner-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
-.hud-corner-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
-.hud-corner-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
-
-.hud-title {
-  font-family: monospace;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #409eff;
-}
-
-.hud-sub {
-  font-size: 11px;
-  color: var(--text-secondary, #909399);
-}
-
-.form-section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary, #e2e8f0);
-  margin-bottom: 12px;
-  border-bottom: 1px dashed var(--border-color, #2d3748);
-  padding-bottom: 6px;
-}
-
-.section-idx {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  background: rgba(64, 158, 255, 0.2);
-  color: #409eff;
-  font-family: monospace;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 3px;
-}
-
-.gateway-spec-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.spec-card {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 12px;
-  background: var(--bg-card-bg, #1a202c);
-  border: 1px solid var(--border-color, #2d3748);
-  border-radius: 4px;
-}
-
-.spec-label {
-  font-size: 10px;
-  font-family: monospace;
-  color: var(--text-secondary, #a0aec0);
-  letter-spacing: 0.05em;
-  margin-bottom: 2px;
-}
-
-.spec-val {
-  font-size: 12px;
-  color: var(--text-primary, #edf2f7);
-}
-
-.safety-gate-card {
-  box-shadow: 0 0 10px rgba(230, 162, 60, 0.1);
-}
-
-.summary-review-card {
-  background: var(--bg-card-bg, #1a202c);
-}
-
-.empty-config-box {
-  border: 1px dashed var(--border-color, #2d3748);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
-}
-
-/* Stepper Progress HUD Overlay */
-.stepper-progress-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(10, 14, 23, 0.88);
-  backdrop-filter: blur(4px);
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-}
-
-.progress-box {
-  background: #141b2d;
-  border: 1px solid #409eff;
-  box-shadow: 0 0 30px rgba(64, 158, 255, 0.25);
-}
+.hud-corner-tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+.hud-corner-tr { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
+.hud-corner-bl { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; }
+.hud-corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;

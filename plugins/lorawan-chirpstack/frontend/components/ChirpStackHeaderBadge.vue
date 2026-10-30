@@ -1,12 +1,18 @@
 <template>
-  <el-tooltip :content="tooltipText" placement="bottom">
-    <div class="header-cs-badge" @click="$router.push('/plugins/lorawan-chirpstack')">
-      <el-tag :type="tagType" size="small" effect="plain" class="badge-tag">
-        <span class="dot" :class="{ 'is-offline': !isOnline }"></span>
-        {{ badgeText }}
-      </el-tag>
-    </div>
-  </el-tooltip>
+  <div class="tooltip tooltip-bottom inline-flex items-center mx-1" :data-tip="tooltipText">
+    <button
+      type="button"
+      class="badge badge-sm gap-1.5 cursor-pointer font-mono text-[11px] font-medium transition-colors hover:brightness-110"
+      :class="isOnline ? 'badge-success badge-outline' : 'badge-ghost text-base-content/60'"
+      @click="$router.push('/plugins/lorawan-chirpstack')"
+    >
+      <span
+        class="w-1.5 h-1.5 rounded-full inline-block"
+        :class="isOnline ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.6)]' : 'bg-slate-400'"
+      ></span>
+      {{ badgeText }}
+    </button>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -17,7 +23,6 @@ const gatewayCount = ref<number | null>(null);
 const deviceCount = ref<number | null>(null);
 const isOnline = ref(false);
 
-const tagType = computed(() => (isOnline.value ? 'success' : 'info'));
 const badgeText = computed(() => {
   if (gatewayCount.value === null && deviceCount.value === null) {
     return 'ChirpStack';
@@ -59,36 +64,3 @@ onMounted(() => {
   fetchStats();
 });
 </script>
-
-<style scoped>
-.header-cs-badge {
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  margin: 0 4px;
-}
-
-.badge-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 11px;
-  font-weight: 500;
-  border-radius: 4px;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #10b981;
-  display: inline-block;
-  box-shadow: 0 0 4px rgba(16, 185, 129, 0.6);
-}
-
-.dot.is-offline {
-  background-color: #94a3b8;
-  box-shadow: none;
-}
-</style>

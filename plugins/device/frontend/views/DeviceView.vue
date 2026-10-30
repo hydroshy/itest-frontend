@@ -1,278 +1,387 @@
 <template>
-  <div class="device-view">
+  <div class="device-view p-6 max-w-7xl mx-auto space-y-6">
     <!-- Header -->
-    <div class="view-header">
-      <div class="header-left">
-        <h2 class="title">
-          <el-icon class="mr-2"><Cpu /></el-icon>
-          Thiết Bị (Devices)
-        </h2>
-        <span class="subtitle">Quản lý thiết bị IoT, liên kết truy vết Traceability (SO/WA/Item Code) độc lập</span>
+    <header class="view-header flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-content/10 pb-5">
+      <div>
+        <div class="flex items-center gap-2 text-2xl font-bold tracking-tight text-base-content">
+          <Cpu class="w-7 h-7 text-primary" />
+          <span>Thiết Bị (Devices)</span>
+        </div>
+        <p class="text-sm text-base-content/60 mt-0.5">
+          Quản lý thiết bị IoT, liên kết truy vết Traceability (SO/WA/Item Code) độc lập
+        </p>
       </div>
-      <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="openRegisterDialog">
+      <div class="header-right flex items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm gap-2"
+          @click="openRegisterDialog"
+        >
+          <Plus class="w-4 h-4" />
           Đăng Ký Thiết Bị
-        </el-button>
-        <el-button :icon="Refresh" @click="loadDevices" :loading="loadingDevices">
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline btn-sm gap-2"
+          :disabled="loadingDevices"
+          @click="loadDevices"
+        >
+          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loadingDevices }" />
           Làm Mới
-        </el-button>
+        </button>
+      </div>
+    </header>
+
+    <!-- Filter Card -->
+    <div class="card bg-base-200/60 border border-base-content/10 p-4 shadow-sm backdrop-blur-md">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-3 items-end">
+        <div class="form-control sm:col-span-2 md:col-span-3 lg:col-span-3">
+          <label class="label py-1"><span class="label-text text-xs font-medium">Tìm kiếm</span></label>
+          <div class="relative">
+            <Search class="w-4 h-4 absolute left-3 top-2.5 text-base-content/40" />
+            <input
+              v-model="filters.search"
+              type="text"
+              placeholder="Tìm Serial, EUI, Tên..."
+              class="input input-sm input-bordered bg-base-100 w-full pl-9"
+              @keyup.enter="loadDevices"
+            />
+          </div>
+        </div>
+
+        <div class="form-control sm:col-span-1 md:col-span-2 lg:col-span-2">
+          <label class="label py-1"><span class="label-text text-xs font-medium">Loại thiết bị</span></label>
+          <select v-model="filters.deviceType" class="select select-sm select-bordered bg-base-100 w-full" @change="loadDevices">
+            <option value="">Tất cả loại</option>
+            <option value="lorawan_node">LoRaWAN Node</option>
+            <option value="lorawan_gateway">LoRaWAN Gateway</option>
+            <option value="modbus_rtu">Modbus RTU</option>
+            <option value="modbus_tcp">Modbus TCP</option>
+          </select>
+        </div>
+
+        <div class="form-control sm:col-span-1 md:col-span-2 lg:col-span-2">
+          <label class="label py-1"><span class="label-text text-xs font-medium">Trạng thái</span></label>
+          <select v-model="filters.status" class="select select-sm select-bordered bg-base-100 w-full" @change="loadDevices">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Active</option>
+            <option value="testing">Testing</option>
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+
+        <div class="form-control sm:col-span-1 md:col-span-2 lg:col-span-2">
+          <label class="label py-1"><span class="label-text text-xs font-medium">Mã SO</span></label>
+          <input
+            v-model="filters.soNumber"
+            type="text"
+            placeholder="Mã SO..."
+            class="input input-sm input-bordered bg-base-100 w-full"
+            @keyup.enter="loadDevices"
+          />
+        </div>
+
+        <div class="form-control sm:col-span-1 md:col-span-2 lg:col-span-2">
+          <label class="label py-1"><span class="label-text text-xs font-medium">Mã WA</span></label>
+          <input
+            v-model="filters.waNumber"
+            type="text"
+            placeholder="Mã WA..."
+            class="input input-sm input-bordered bg-base-100 w-full"
+            @keyup.enter="loadDevices"
+          />
+        </div>
+
+        <div class="flex items-center gap-2 sm:col-span-2 md:col-span-1 lg:col-span-1">
+          <button type="button" class="btn btn-primary btn-sm flex-1 gap-1" @click="loadDevices">
+            <Search class="w-3.5 h-3.5" />
+            Lọc
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Filter Card -->
-    <el-card shadow="never" class="filter-card">
-      <el-row :gutter="16">
-        <el-col :xs="24" :sm="8" :md="6">
-          <el-input
-            v-model="filters.search"
-            placeholder="Tìm Serial, EUI, Tên..."
-            clearable
-            :prefix-icon="Search"
-            @clear="loadDevices"
-            @keyup.enter="loadDevices"
-          />
-        </el-col>
-        <el-col :xs="24" :sm="8" :md="4">
-          <el-select v-model="filters.deviceType" placeholder="Loại thiết bị" clearable @change="loadDevices">
-            <el-option label="Tất cả loại" value="" />
-            <el-option label="LoRaWAN Node" value="lorawan_node" />
-            <el-option label="LoRaWAN Gateway" value="lorawan_gateway" />
-            <el-option label="Modbus RTU" value="modbus_rtu" />
-            <el-option label="Modbus TCP" value="modbus_tcp" />
-          </el-select>
-        </el-col>
-        <el-col :xs="24" :sm="8" :md="4">
-          <el-select v-model="filters.status" placeholder="Trạng thái" clearable @change="loadDevices">
-            <el-option label="Tất cả trạng thái" value="" />
-            <el-option label="Active" value="active" />
-            <el-option label="Testing" value="testing" />
-            <el-option label="Passed" value="passed" />
-            <el-option label="Failed" value="failed" />
-          </el-select>
-        </el-col>
-        <el-col :xs="24" :sm="8" :md="4">
-          <el-input
-            v-model="filters.soNumber"
-            placeholder="Mã SO..."
-            clearable
-            @clear="loadDevices"
-            @keyup.enter="loadDevices"
-          />
-        </el-col>
-        <el-col :xs="24" :sm="8" :md="4">
-          <el-input
-            v-model="filters.waNumber"
-            placeholder="Mã WA..."
-            clearable
-            @clear="loadDevices"
-            @keyup.enter="loadDevices"
-          />
-        </el-col>
-        <el-col :xs="24" :sm="8" :md="2">
-          <el-button type="primary" :icon="Search" class="w-full" @click="loadDevices">Lọc</el-button>
-        </el-col>
-      </el-row>
-    </el-card>
-
     <!-- Table Card -->
-    <el-card shadow="never" class="table-card mt-3">
-      <el-table :data="deviceList" v-loading="loadingDevices" stripe border style="width: 100%">
-        <el-table-column prop="id" label="ID" width="70" align="center" />
-        <el-table-column prop="serialNumber" label="Serial / IMEI" min-width="150">
-          <template #default="{ row }">
-            <div class="font-bold font-mono">{{ row.serialNumber || row.serial_number || '—' }}</div>
-            <div class="text-xs text-muted">{{ row.deviceName || row.device_name || '—' }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="networkId" label="DevEUI / Network ID" min-width="170">
-          <template #default="{ row }">
-            <el-tag v-if="row.networkId || row.network_id" type="info" class="font-mono">
-              {{ row.networkId || row.network_id }}
-            </el-tag>
-            <span v-else class="text-muted">—</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="deviceType" label="Loại Thiết Bị" min-width="140">
-          <template #default="{ row }">
-            <el-tag size="small" effect="plain">{{ row.deviceType || row.device_type || '—' }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="Truy Vết Traceability" min-width="220">
-          <template #default="{ row }">
-            <div class="trace-info text-xs">
-              <div><strong>SO:</strong> <span class="text-info">{{ row.soNumber || row.so_number || '—' }}</span></div>
-              <div><strong>WA:</strong> <span class="text-warning">{{ row.waNumber || row.wa_number || '—' }}</span></div>
-              <div><strong>Item:</strong> {{ row.itemCode || row.item_code || '—' }}</div>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="Trạng Thái" min-width="120" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getStatusTagType(row.status)">{{ (row.status || '').toUpperCase() }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="updatedAt" label="Cập Nhật" min-width="160">
-          <template #default="{ row }">
-            {{ formatDateTime(row.updatedAt || row.createdAt || row.updated_at || row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="Thao Tác" min-width="180" fixed="right" align="center">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" :icon="View" @click="goToGatewayTestingPackets(row)">
-              Xem Gói Tin
-            </el-button>
-            <el-button link type="danger" size="small" :icon="Delete" @click="confirmDeleteDevice(row)">
-              Xóa
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <div class="card bg-base-200/50 border border-base-content/10 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra table-sm w-full">
+          <thead class="bg-base-300/60 font-mono text-xs uppercase text-base-content/70">
+            <tr>
+              <th class="w-12 text-center">ID</th>
+              <th>Serial / IMEI</th>
+              <th>Tên Thiết Bị</th>
+              <th>Loại Thiết Bị</th>
+              <th>Trạng Thái</th>
+              <th>Traceability</th>
+              <th>Firmware</th>
+              <th>Cập Nhật</th>
+              <th class="text-right">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loadingDevices && deviceList.length === 0">
+              <td colspan="9" class="text-center py-8 text-base-content/50">
+                <span class="loading loading-spinner loading-md text-primary mr-2"></span> Đang tải thiết bị...
+              </td>
+            </tr>
+            <tr v-else-if="deviceList.length === 0">
+              <td colspan="9" class="text-center py-8 text-base-content/40 font-mono text-sm">
+                Không tìm thấy thiết bị nào phù hợp
+              </td>
+            </tr>
+            <tr v-for="row in deviceList" :key="row.id">
+              <td class="text-center font-mono text-xs text-base-content/60">{{ row.id }}</td>
+              <td>
+                <div class="font-mono text-xs font-bold text-primary">{{ row.serialNumber || row.serial_number }}</div>
+                <div v-if="row.networkId || row.network_id" class="text-[11px] font-mono text-base-content/50">
+                  EUI: {{ row.networkId || row.network_id }}
+                </div>
+              </td>
+              <td>
+                <div class="font-medium text-base-content">{{ row.deviceName || row.device_name || '—' }}</div>
+              </td>
+              <td>
+                <span class="badge badge-sm font-mono text-xs" :class="getDeviceTypeBadgeClass(row.deviceType || row.device_type)">
+                  {{ getDeviceTypeLabel(row.deviceType || row.device_type) }}
+                </span>
+              </td>
+              <td>
+                <span class="badge badge-sm font-mono text-xs" :class="getStatusBadgeClass(row.status)">
+                  {{ row.status || 'Chưa rõ' }}
+                </span>
+              </td>
+              <td class="text-xs">
+                <div v-if="row.soNumber || row.so_number" class="space-y-0.5">
+                  <div class="font-mono font-semibold text-primary">SO: {{ row.soNumber || row.so_number }}</div>
+                  <div v-if="row.waNumber || row.wa_number" class="text-base-content/70">WA: {{ row.waNumber || row.wa_number }}</div>
+                  <div v-if="row.itemCode || row.item_code" class="text-base-content/50 text-[11px]">SKU: {{ row.itemCode || row.item_code }}</div>
+                </div>
+                <span v-else class="text-base-content/40">—</span>
+              </td>
+              <td class="font-mono text-xs text-base-content/70">
+                {{ row.shortFw || row.firmwareVersion || row.firmware_version || '—' }}
+              </td>
+              <td class="font-mono text-xs text-base-content/60">
+                {{ formatDate(row.updated_at || row.updatedAt || row.created_at || row.createdAt) }}
+              </td>
+              <td class="text-right space-x-1">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs text-primary gap-1"
+                  @click="goToGatewayTestingPackets(row)"
+                >
+                  <Eye class="w-3.5 h-3.5" />
+                  Xem Gói Tin
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs text-error hover:bg-error/10 gap-1"
+                  @click="confirmDeleteDevice(row)"
+                >
+                  <Trash2 class="w-3.5 h-3.5" />
+                  Xóa
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <!-- Pagination -->
-      <div class="pagination-wrapper mt-3">
-        <el-pagination
-          v-model:current-page="devicePagination.page"
-          v-model:page-size="devicePagination.limit"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="devicePagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadDevices"
-          @current-change="loadDevices"
-        />
+      <div class="p-3 border-t border-base-content/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-base-content/70">
+        <div>
+          Tổng số: <strong class="font-mono font-bold text-base-content">{{ devicePagination.total }}</strong> thiết bị
+        </div>
+        <div class="flex items-center gap-2">
+          <span>Kích thước trang:</span>
+          <select v-model="devicePagination.limit" class="select select-xs select-bordered bg-base-100" @change="handlePageChange(1)">
+            <option :value="10">10 / trang</option>
+            <option :value="20">20 / trang</option>
+            <option :value="50">50 / trang</option>
+            <option :value="100">100 / trang</option>
+          </select>
+          <div class="join ml-2">
+            <button
+              type="button"
+              class="join-item btn btn-xs"
+              :disabled="devicePagination.page <= 1"
+              @click="handlePageChange(devicePagination.page - 1)"
+            >
+              «
+            </button>
+            <button type="button" class="join-item btn btn-xs btn-active font-mono">
+              Trang {{ devicePagination.page }} / {{ maxPage }}
+            </button>
+            <button
+              type="button"
+              class="join-item btn btn-xs"
+              :disabled="devicePagination.page >= maxPage"
+              @click="handlePageChange(devicePagination.page + 1)"
+            >
+              »
+            </button>
+          </div>
+        </div>
       </div>
-    </el-card>
+    </div>
 
     <!-- Dialog Đăng Ký Thiết Bị -->
-    <el-dialog
-      v-model="registerDialogVisible"
-      title="Đăng Ký Thiết Bị Liên Kết Traceability"
-      width="640px"
-      :before-close="handleCloseRegisterDialog"
-    >
-      <el-form
-        ref="registerFormRef"
-        :model="registerForm"
-        :rules="registerRules"
-        label-width="130px"
-        label-position="right"
-      >
-        <el-divider content-position="left">Thông tin truy vết (Traceability)</el-divider>
+    <dialog class="modal" :class="{ 'modal-open': registerDialogVisible }">
+      <div class="modal-box bg-base-200 border border-base-content/15 shadow-2xl max-w-2xl">
+        <h3 class="font-bold text-lg text-base-content mb-4 flex items-center gap-2">
+          <Cpu class="w-5 h-5 text-primary" />
+          Đăng Ký Thiết Bị Liên Kết Traceability
+        </h3>
 
-        <el-form-item label="Sale Order (SO)" prop="soNumber">
-          <el-select
-            v-model="registerForm.soNumber"
-            filterable
-            remote
-            reserve-keyword
-            placeholder="Tìm mã SO (DIS/ERP)..."
-            :remote-method="searchSOs"
-            :loading="loadingSOs"
-            class="w-full"
-            @change="handleSOChange"
+        <div class="space-y-4">
+          <!-- Section 1: Traceability -->
+          <div>
+            <div class="text-xs font-mono font-semibold uppercase text-primary tracking-wider border-b border-base-content/10 pb-1 mb-3">
+              Thông tin truy vết (Traceability)
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="form-control md:col-span-2">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Sale Order (SO)</span></label>
+                <div class="flex gap-2">
+                  <select
+                    v-model="registerForm.soNumber"
+                    class="select select-sm select-bordered bg-base-100 flex-1 font-mono text-xs"
+                    @change="handleSOChange(registerForm.soNumber)"
+                  >
+                    <option value="">-- Chọn hoặc tìm mã SO --</option>
+                    <option
+                      v-for="so in soOptions"
+                      :key="so.soNumber || so.so_number"
+                      :value="so.soNumber || so.so_number"
+                    >
+                      {{ so.soNumber || so.so_number }} - {{ so.customerName || so.customer_name || '' }}
+                    </option>
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    :disabled="loadingSOs"
+                    @click="searchSOs('')"
+                  >
+                    <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loadingSOs }" />
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Work Auth (WA)</span></label>
+                <select
+                  v-model="registerForm.waNumber"
+                  class="select select-sm select-bordered bg-base-100 w-full font-mono text-xs"
+                  :disabled="!registerForm.soNumber || loadingWAs"
+                  @change="handleWAChange(registerForm.waNumber)"
+                >
+                  <option value="">-- Chọn lệnh sản xuất WA --</option>
+                  <option
+                    v-for="wa in waOptions"
+                    :key="wa.waNumber || wa.wa_number"
+                    :value="wa.waNumber || wa.wa_number"
+                  >
+                    {{ wa.waNumber || wa.wa_number }} (Kế hoạch: {{ wa.plannedQuantity || wa.planned_qty || 0 }})
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Item Code / SKU</span></label>
+                <select
+                  v-model="registerForm.itemCode"
+                  class="select select-sm select-bordered bg-base-100 w-full font-mono text-xs"
+                  :disabled="loadingItems"
+                >
+                  <option value="">-- Chọn mã sản phẩm / SKU --</option>
+                  <option v-for="item in itemOptions" :key="item" :value="item">
+                    {{ item }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Thông tin thiết bị -->
+          <div>
+            <div class="text-xs font-mono font-semibold uppercase text-primary tracking-wider border-b border-base-content/10 pb-1 mb-3">
+              Thông tin định danh thiết bị
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Số Serial *</span></label>
+                <input
+                  v-model="registerForm.serialNumber"
+                  type="text"
+                  placeholder="VD: SN20261027001..."
+                  class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full"
+                />
+              </div>
+
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">DevEUI / Network ID</span></label>
+                <input
+                  v-model="registerForm.networkId"
+                  type="text"
+                  placeholder="VD: 70B3D57ED005xxxx"
+                  class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full"
+                />
+              </div>
+
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Tên Thiết Bị *</span></label>
+                <input
+                  v-model="registerForm.deviceName"
+                  type="text"
+                  placeholder="VD: Cảm biến nhiệt độ phòng sạch..."
+                  class="input input-sm input-bordered bg-base-100 text-xs w-full"
+                />
+              </div>
+
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Loại Thiết Bị *</span></label>
+                <select v-model="registerForm.deviceType" class="select select-sm select-bordered bg-base-100 w-full text-xs">
+                  <option value="lorawan_node">LoRaWAN End Device (Node)</option>
+                  <option value="lorawan_gateway">LoRaWAN Gateway</option>
+                  <option value="modbus_rtu">Modbus RTU Sensor</option>
+                  <option value="modbus_tcp">Modbus TCP Controller</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-action mt-6">
+          <button type="button" class="btn btn-sm btn-ghost" @click="handleCloseRegisterDialog">Hủy</button>
+          <button
+            type="button"
+            class="btn btn-sm btn-primary"
+            :disabled="submittingRegister"
+            @click="submitRegisterDevice"
           >
-            <el-option
-              v-for="so in soOptions"
-              :key="so.soNumber || so.so_number"
-              :label="`${so.soNumber || so.so_number} - ${so.customerName || so.customer_name || ''}`"
-              :value="so.soNumber || so.so_number"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="Work Auth (WA)" prop="waNumber">
-          <el-select
-            v-model="registerForm.waNumber"
-            placeholder="Chọn lệnh sản xuất WA..."
-            :loading="loadingWAs"
-            :disabled="!registerForm.soNumber"
-            class="w-full"
-            @change="handleWAChange"
-          >
-            <el-option
-              v-for="wa in waOptions"
-              :key="wa.waNumber || wa.wa_number"
-              :label="`${wa.waNumber || wa.wa_number} (Kế hoạch: ${wa.plannedQuantity || wa.planned_qty || 0})`"
-              :value="wa.waNumber || wa.wa_number"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="Item Code" prop="itemCode">
-          <el-select
-            v-model="registerForm.itemCode"
-            filterable
-            allow-create
-            default-first-option
-            placeholder="Mã sản phẩm / SKU..."
-            :loading="loadingItems"
-            class="w-full"
-          >
-            <el-option
-              v-for="item in itemOptions"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-divider content-position="left">Thông tin định danh thiết bị</el-divider>
-
-        <el-form-item label="Số Serial" prop="serialNumber">
-          <el-input
-            v-model="registerForm.serialNumber"
-            placeholder="VD: SN20261027001..."
-          />
-        </el-form-item>
-
-        <el-form-item label="DevEUI / Network ID" prop="networkId">
-          <el-input
-            v-model="registerForm.networkId"
-            placeholder="VD: 70B3D57ED005xxxx (LoRaWAN EUI / Mac address)"
-          />
-        </el-form-item>
-
-        <el-form-item label="Tên Thiết Bị" prop="deviceName">
-          <el-input
-            v-model="registerForm.deviceName"
-            placeholder="VD: Cảm biến nhiệt độ phòng sạch..."
-          />
-        </el-form-item>
-
-        <el-form-item label="Loại Thiết Bị" prop="deviceType">
-          <el-select v-model="registerForm.deviceType" class="w-full">
-            <el-option label="LoRaWAN End Device (Node)" value="lorawan_node" />
-            <el-option label="LoRaWAN Gateway" value="lorawan_gateway" />
-            <el-option label="Modbus RTU Sensor" value="modbus_rtu" />
-            <el-option label="Modbus TCP Controller" value="modbus_tcp" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="handleCloseRegisterDialog">Hủy</el-button>
-          <el-button type="primary" :loading="submittingRegister" @click="submitRegisterDevice">
+            <span v-if="submittingRegister" class="loading loading-spinner loading-xs mr-1"></span>
             Xác Nhận Đăng Ký
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
+          </button>
+        </div>
+      </div>
+    </dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   Cpu,
   Search,
   Plus,
-  Refresh,
-  Delete,
-  View,
-} from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus';
+  RefreshCw,
+  Trash2,
+  Eye,
+} from 'lucide-vue-next';
+import { cyberToast, cyberConfirm } from '@/cyber/hud';
 import { httpClient } from '@/api/client';
 
 const router = useRouter();
@@ -293,10 +402,18 @@ const devicePagination = reactive({
   total: 0,
 });
 
+const maxPage = computed(() => {
+  return Math.max(1, Math.ceil(devicePagination.total / devicePagination.limit));
+});
+
+function handlePageChange(newPage: number) {
+  devicePagination.page = newPage;
+  loadDevices();
+}
+
 // Register Dialog State
 const registerDialogVisible = ref(false);
 const submittingRegister = ref(false);
-const registerFormRef = ref<FormInstance>();
 const loadingSOs = ref(false);
 const loadingWAs = ref(false);
 const loadingItems = ref(false);
@@ -317,67 +434,48 @@ const registerForm = reactive({
   deviceType: 'lorawan_node',
 });
 
-const registerRules = {
-  soNumber: [{ required: true, message: 'Vui lòng chọn Sale Order (SO)', trigger: 'change' }],
-  waNumber: [{ required: true, message: 'Vui lòng chọn Work Authorization (WA)', trigger: 'change' }],
-  itemCode: [{ required: true, message: 'Vui lòng nhập hoặc chọn Item Code', trigger: 'blur' }],
-  serialNumber: [{ required: true, message: 'Vui lòng nhập Serial Number', trigger: 'blur' }],
-  deviceName: [{ required: true, message: 'Vui lòng nhập tên thiết bị', trigger: 'blur' }],
-};
-
-function formatDateTime(dateStr?: string): string {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleString('vi-VN');
-  } catch {
-    return dateStr;
-  }
+function resetRegisterForm() {
+  Object.assign(registerForm, {
+    soId: '',
+    soNumber: '',
+    waId: '',
+    waNumber: '',
+    itemCode: '',
+    serialNumber: '',
+    networkId: '',
+    deviceName: '',
+    deviceType: 'lorawan_node',
+  });
+  soOptions.value = [];
+  waOptions.value = [];
+  itemOptions.value = [];
 }
 
-function getStatusTagType(status?: string): '' | 'success' | 'warning' | 'info' | 'danger' {
-  switch ((status || '').toLowerCase()) {
-    case 'active':
-    case 'passed':
-      return 'success';
-    case 'testing':
-      return 'warning';
-    case 'failed':
-      return 'danger';
-    default:
-      return 'info';
-  }
-}
-
-// Fetch helper: thử endpoint /plugins/device/devices trước, fallback /plugins/testing/devices
-async function fetchDevicesApi(params: any) {
-  try {
-    return await httpClient.get('/plugins/device/devices', { params });
-  } catch {
-    return await httpClient.get('/plugins/testing/devices', { params });
-  }
-}
-
+// Load Devices List
 async function loadDevices() {
   loadingDevices.value = true;
   try {
-    const params = {
+    const params: Record<string, any> = {
       page: devicePagination.page,
       limit: devicePagination.limit,
-      search: filters.search || undefined,
-      deviceType: filters.deviceType || undefined,
-      status: filters.status || undefined,
-      soNumber: filters.soNumber || undefined,
-      waNumber: filters.waNumber || undefined,
     };
-    const res: any = await fetchDevicesApi(params);
-    if (res?.data && Array.isArray(res.data)) {
-      deviceList.value = res.data;
-      devicePagination.total = res.meta?.total || res.total || res.data.length;
-    } else if (Array.isArray(res)) {
+    if (filters.search) params.search = filters.search.trim();
+    if (filters.deviceType) params.deviceType = filters.deviceType;
+    if (filters.status) params.status = filters.status;
+    if (filters.soNumber) params.soNumber = filters.soNumber.trim();
+    if (filters.waNumber) params.waNumber = filters.waNumber.trim();
+
+    let res: any;
+    try {
+      res = await httpClient.get('/plugins/device/devices', { params });
+    } catch {
+      res = await httpClient.get('/plugins/testing/devices', { params });
+    }
+
+    if (Array.isArray(res)) {
       deviceList.value = res;
       devicePagination.total = res.length;
-    } else if (res?.items && Array.isArray(res.items)) {
+    } else if (res && Array.isArray(res.items)) {
       deviceList.value = res.items;
       devicePagination.total = res.total || res.items.length;
     } else {
@@ -386,7 +484,7 @@ async function loadDevices() {
     }
   } catch (err: any) {
     console.error('Error loading devices:', err);
-    ElMessage.error(err?.message || 'Không thể tải danh sách thiết bị');
+    cyberToast.error(err?.message || 'Không thể tải danh sách thiết bị');
   } finally {
     loadingDevices.value = false;
   }
@@ -405,27 +503,21 @@ function goToGatewayTestingPackets(device: any) {
 
 // Delete device
 async function confirmDeleteDevice(device: any) {
+  const serial = device.serialNumber || device.serial_number;
+  const name = device.deviceName || device.device_name || '';
+  const confirmed = await cyberConfirm(`Bạn có chắc chắn muốn xóa thiết bị ${serial} (${name})?`);
+  if (!confirmed) return;
+
   try {
-    await ElMessageBox.confirm(
-      `Bạn có chắc chắn muốn xóa thiết bị ${device.serialNumber || device.serial_number} (${device.deviceName || device.device_name})?`,
-      'Xác nhận xóa',
-      {
-        confirmButtonText: 'Xóa',
-        cancelButtonText: 'Hủy',
-        type: 'warning',
-      }
-    );
     try {
       await httpClient.delete(`/plugins/device/devices/${device.id}`);
     } catch {
       await httpClient.delete(`/plugins/testing/devices/${device.id}`);
     }
-    ElMessage.success('Đã xóa thiết bị thành công');
+    cyberToast.success('Đã xóa thiết bị thành công');
     loadDevices();
   } catch (err: any) {
-    if (err !== 'cancel') {
-      ElMessage.error(err?.message || 'Lỗi khi xóa thiết bị');
-    }
+    cyberToast.error(err?.message || 'Lỗi khi xóa thiết bị');
   }
 }
 
@@ -435,38 +527,60 @@ async function searchSOs(query: string = '') {
   try {
     let res: any;
     try {
-      res = await httpClient.get('/plugins/device/lookup/so', { params: { search: query, limit: 50 } });
+      res = await httpClient.get('/plugins/dis-manager/so', { params: { search: query } });
     } catch {
-      res = await httpClient.get('/plugins/testing/lookup/so', { params: { search: query, limit: 50 } });
+      res = await httpClient.get('/plugins/device-traceability/so', { params: { search: query } });
     }
-    soOptions.value = res?.data || (Array.isArray(res) ? res : []);
+    if (Array.isArray(res)) {
+      soOptions.value = res;
+    } else if (res && Array.isArray(res.items)) {
+      soOptions.value = res.items;
+    } else {
+      soOptions.value = [];
+    }
   } catch (err: any) {
-    console.error('Error fetching SOs:', err);
+    console.error('Error searching SOs:', err);
   } finally {
     loadingSOs.value = false;
   }
 }
 
-async function handleSOChange(soNumber: string) {
+async function handleSOChange(val: string) {
   registerForm.waNumber = '';
+  registerForm.waId = '';
   registerForm.itemCode = '';
   waOptions.value = [];
   itemOptions.value = [];
 
-  const found = soOptions.value.find((s) => (s.soNumber || s.so_number) === soNumber);
-  if (found) {
-    registerForm.soId = found.id || '';
+  const selected = soOptions.value.find((s) => (s.soNumber || s.so_number) === val);
+  if (selected) {
+    registerForm.soId = selected.id || selected._id || '';
+    if (selected.customerName || selected.customer_name) {
+      registerForm.deviceName = `${selected.customerName || selected.customer_name} Device`;
+    }
   }
 
+  if (val) {
+    await fetchWAsForSO(val, registerForm.soId);
+  }
+}
+
+async function fetchWAsForSO(soNumber: string, soId?: string) {
   loadingWAs.value = true;
   try {
     let res: any;
     try {
-      res = await httpClient.get(`/plugins/device/lookup/so/${encodeURIComponent(soNumber)}/was`);
+      res = await httpClient.get('/plugins/dis-manager/wa', { params: { soNumber, soId } });
     } catch {
-      res = await httpClient.get(`/plugins/testing/lookup/so/${encodeURIComponent(soNumber)}/was`);
+      res = await httpClient.get('/plugins/device-traceability/wa', { params: { soNumber, soId } });
     }
-    waOptions.value = res?.data || (Array.isArray(res) ? res : []);
+    if (Array.isArray(res)) {
+      waOptions.value = res;
+    } else if (res && Array.isArray(res.items)) {
+      waOptions.value = res.items;
+    } else {
+      waOptions.value = [];
+    }
   } catch (err: any) {
     console.error('Error fetching WAs for SO:', err);
   } finally {
@@ -474,30 +588,38 @@ async function handleSOChange(soNumber: string) {
   }
 }
 
-async function handleWAChange(waNumber: string) {
+async function handleWAChange(val: string) {
   registerForm.itemCode = '';
   itemOptions.value = [];
 
-  const found = waOptions.value.find((w) => (w.waNumber || w.wa_number) === waNumber);
-  if (found) {
-    registerForm.waId = found.id || '';
-    if (found.itemCode || found.item_code) {
-      registerForm.itemCode = found.itemCode || found.item_code;
-      itemOptions.value = [registerForm.itemCode];
+  const selected = waOptions.value.find((w) => (w.waNumber || w.wa_number) === val);
+  if (selected) {
+    registerForm.waId = selected.id || selected._id || '';
+    if (selected.itemCode || selected.item_code) {
+      registerForm.itemCode = selected.itemCode || selected.item_code;
     }
   }
 
+  if (val) {
+    await fetchItemsForWA(val, registerForm.waId);
+  }
+}
+
+async function fetchItemsForWA(waNumber: string, waId?: string) {
   loadingItems.value = true;
   try {
     let res: any;
     try {
-      res = await httpClient.get(`/plugins/device/lookup/wa/${encodeURIComponent(waNumber)}/items`);
+      res = await httpClient.get('/plugins/dis-manager/items', { params: { waNumber, waId } });
     } catch {
-      res = await httpClient.get(`/plugins/testing/lookup/wa/${encodeURIComponent(waNumber)}/items`);
+      res = await httpClient.get('/plugins/device-traceability/items', { params: { waNumber, waId } });
     }
-    const items = res?.data || (Array.isArray(res) ? res : []);
-    if (Array.isArray(items)) {
-      itemOptions.value = Array.from(new Set([...itemOptions.value, ...items.map((i: any) => i.itemCode || i.item_code || i)]));
+    if (Array.isArray(res)) {
+      itemOptions.value = res.map((item: any) => typeof item === 'string' ? item : (item.itemCode || item.item_code || item.sku));
+    } else if (res && Array.isArray(res.items)) {
+      itemOptions.value = res.items.map((item: any) => typeof item === 'string' ? item : (item.itemCode || item.item_code || item.sku));
+    } else {
+      itemOptions.value = [];
     }
   } catch (err: any) {
     console.error('Error fetching items for WA:', err);
@@ -513,120 +635,96 @@ function openRegisterDialog() {
 
 function handleCloseRegisterDialog() {
   registerDialogVisible.value = false;
-  if (registerFormRef.value) {
-    registerFormRef.value.resetFields();
-  }
+  resetRegisterForm();
 }
 
 async function submitRegisterDevice() {
-  if (!registerFormRef.value) return;
-  await registerFormRef.value.validate(async (valid) => {
-    if (!valid) return;
-    submittingRegister.value = true;
+  if (!registerForm.serialNumber.trim()) {
+    cyberToast.warning('Vui lòng nhập số Serial');
+    return;
+  }
+  if (!registerForm.deviceName.trim()) {
+    cyberToast.warning('Vui lòng nhập tên thiết bị');
+    return;
+  }
+
+  submittingRegister.value = true;
+  try {
+    const payload = {
+      soId: registerForm.soId || undefined,
+      soNumber: registerForm.soNumber,
+      waId: registerForm.waId || undefined,
+      waNumber: registerForm.waNumber,
+      itemCode: registerForm.itemCode,
+      serialNumber: registerForm.serialNumber,
+      networkId: registerForm.networkId || undefined,
+      deviceName: registerForm.deviceName,
+      deviceType: registerForm.deviceType,
+    };
     try {
-      const payload = {
-        soId: registerForm.soId || undefined,
-        soNumber: registerForm.soNumber,
-        waId: registerForm.waId || undefined,
-        waNumber: registerForm.waNumber,
-        itemCode: registerForm.itemCode,
-        serialNumber: registerForm.serialNumber,
-        networkId: registerForm.networkId || undefined,
-        deviceName: registerForm.deviceName,
-        deviceType: registerForm.deviceType,
-      };
-      try {
-        await httpClient.post('/plugins/device/devices', payload);
-      } catch {
-        await httpClient.post('/plugins/testing/devices', payload);
-      }
-      ElMessage.success('Đăng ký thiết bị thành công!');
-      registerDialogVisible.value = false;
-      loadDevices();
-    } catch (err: any) {
-      console.error('Error registering device:', err);
-      ElMessage.error(err?.message || 'Không thể đăng ký thiết bị');
-    } finally {
-      submittingRegister.value = false;
+      await httpClient.post('/plugins/device/devices', payload);
+    } catch {
+      await httpClient.post('/plugins/testing/devices', payload);
     }
-  });
+    cyberToast.success('Đăng ký thiết bị thành công!');
+    registerDialogVisible.value = false;
+    resetRegisterForm();
+    loadDevices();
+  } catch (err: any) {
+    console.error('Error registering device:', err);
+    cyberToast.error(err?.message || 'Không thể đăng ký thiết bị');
+  } finally {
+    submittingRegister.value = false;
+  }
+}
+
+function getDeviceTypeBadgeClass(type: string): string {
+  switch (type) {
+    case 'lorawan_node': return 'badge-info badge-outline';
+    case 'lorawan_gateway': return 'badge-success badge-outline';
+    case 'modbus_rtu': return 'badge-warning badge-outline';
+    case 'modbus_tcp': return 'badge-secondary badge-outline';
+    default: return 'badge-ghost';
+  }
+}
+
+function getDeviceTypeLabel(type: string): string {
+  switch (type) {
+    case 'lorawan_node': return 'LoRaWAN Node';
+    case 'lorawan_gateway': return 'LoRaWAN Gateway';
+    case 'modbus_rtu': return 'Modbus RTU';
+    case 'modbus_tcp': return 'Modbus TCP';
+    default: return type || 'Chưa phân loại';
+  }
+}
+
+function getStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'active':
+    case 'passed': return 'badge-success text-success-content';
+    case 'failed': return 'badge-error text-error-content';
+    case 'testing': return 'badge-warning text-warning-content';
+    default: return 'badge-ghost';
+  }
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
 }
 
 onMounted(() => {
   loadDevices();
 });
 </script>
-
-<style scoped>
-.device-view {
-  padding: 16px;
-  background-color: var(--el-bg-color-page, #0b132b);
-  min-height: calc(100vh - 60px);
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.view-header .title {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  color: var(--el-text-color-primary, #e0e6ed);
-}
-
-.view-header .subtitle {
-  font-size: 0.85rem;
-  color: var(--el-text-color-secondary, #7d8da1);
-}
-
-.filter-card {
-  border-radius: 8px;
-}
-
-.table-card {
-  border-radius: 8px;
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.w-full {
-  width: 100%;
-}
-
-.mt-3 {
-  margin-top: 12px;
-}
-
-.font-mono {
-  font-family: monospace;
-}
-
-.font-bold {
-  font-weight: 600;
-}
-
-.text-xs {
-  font-size: 12px;
-}
-
-.text-muted {
-  color: var(--el-text-color-secondary, #888);
-}
-
-.text-info {
-  color: #409eff;
-}
-
-.text-warning {
-  color: #e6a23c;
-}
-</style>

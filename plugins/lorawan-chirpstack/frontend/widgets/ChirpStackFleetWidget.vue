@@ -1,33 +1,37 @@
 <template>
-  <div class="cs-widget-card">
-    <div class="cs-widget-stats">
-      <div class="stat-cell">
-        <span class="cell-label">Máy chủ</span>
-        <span class="cell-value" :class="isOnline ? 'text-green' : 'text-gray'">{{ serverStatusText }}</span>
-        <span class="cell-sub">ChirpStack v4</span>
+  <div class="cs-widget-card flex flex-col gap-3">
+    <div class="cs-widget-stats grid grid-cols-4 gap-2 bg-base-200/60 p-3 rounded-lg border border-base-content/10">
+      <div class="stat-cell flex flex-col items-center text-center gap-0.5">
+        <span class="cell-label text-[11px] text-base-content/60 font-medium">Máy chủ</span>
+        <span class="cell-value text-base font-bold font-mono" :class="isOnline ? 'text-success' : 'text-base-content/40'">{{ serverStatusText }}</span>
+        <span class="cell-sub text-[10px] text-base-content/50">ChirpStack v4</span>
       </div>
-      <div class="stat-cell">
-        <span class="cell-label">Gateways</span>
-        <span class="cell-value text-blue">{{ gatewayCount !== null ? gatewayCount : '—' }}</span>
-        <span class="cell-sub">{{ isOnline ? 'Đang hoạt động' : 'Chưa kết nối' }}</span>
+      <div class="stat-cell flex flex-col items-center text-center gap-0.5">
+        <span class="cell-label text-[11px] text-base-content/60 font-medium">Gateways</span>
+        <span class="cell-value text-base font-bold font-mono text-info">{{ gatewayCount !== null ? gatewayCount : '—' }}</span>
+        <span class="cell-sub text-[10px] text-base-content/50">{{ isOnline ? 'Đang hoạt động' : 'Chưa kết nối' }}</span>
       </div>
-      <div class="stat-cell">
-        <span class="cell-label">Thiết bị</span>
-        <span class="cell-value text-purple">{{ deviceCount !== null ? deviceCount : '—' }}</span>
-        <span class="cell-sub">{{ isOnline ? 'Đã đăng ký' : 'Chưa kết nối' }}</span>
+      <div class="stat-cell flex flex-col items-center text-center gap-0.5">
+        <span class="cell-label text-[11px] text-base-content/60 font-medium">Thiết bị</span>
+        <span class="cell-value text-base font-bold font-mono text-secondary">{{ deviceCount !== null ? deviceCount : '—' }}</span>
+        <span class="cell-sub text-[10px] text-base-content/50">{{ isOnline ? 'Đã đăng ký' : 'Chưa kết nối' }}</span>
       </div>
-      <div class="stat-cell">
-        <span class="cell-label">Server</span>
-        <span class="cell-value text-teal">{{ serverCount }}</span>
-        <span class="cell-sub">Đã cấu hình</span>
+      <div class="stat-cell flex flex-col items-center text-center gap-0.5">
+        <span class="cell-label text-[11px] text-base-content/60 font-medium">Server</span>
+        <span class="cell-value text-base font-bold font-mono text-accent">{{ serverCount }}</span>
+        <span class="cell-sub text-[10px] text-base-content/50">Đã cấu hình</span>
       </div>
     </div>
 
-    <div class="cs-widget-footer">
-      <span class="sync-time">{{ lastSyncTime }}</span>
-      <el-button link type="primary" size="small" @click="$router.push('/plugins/lorawan-chirpstack')">
+    <div class="cs-widget-footer flex justify-between items-center px-1">
+      <span class="sync-time text-[11px] text-base-content/50">{{ lastSyncTime }}</span>
+      <button
+        type="button"
+        class="btn btn-link btn-xs text-primary no-underline hover:underline p-0 font-medium"
+        @click="$router.push('/plugins/lorawan-chirpstack')"
+      >
         Mở Console ChirpStack →
-      </el-button>
+      </button>
     </div>
   </div>
 </template>
@@ -73,63 +77,3 @@ onMounted(() => {
   fetchStats();
 });
 </script>
-
-<style scoped>
-.cs-widget-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.cs-widget-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  background-color: #f8fafc;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.stat-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 2px;
-}
-
-.cell-label {
-  font-size: 11px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.cell-value {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.cell-sub {
-  font-size: 10px;
-  color: #94a3b8;
-}
-
-.text-green { color: #10b981; }
-.text-blue { color: #3b82f6; }
-.text-purple { color: #8b5cf6; }
-.text-teal { color: #0d9488; }
-.text-gray { color: #94a3b8; }
-
-.cs-widget-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 4px;
-}
-
-.sync-time {
-  font-size: 11px;
-  color: #94a3b8;
-}
-</style>
