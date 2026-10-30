@@ -6,10 +6,30 @@
         <h2>Memmap Payload</h2>
         <p>Quản lý profile và tải lên payload IEC485 có kiểm tra trước khi lưu.</p>
       </div>
-      <button class="btn btn-sm btn-outline btn-info gap-2" :disabled="loading" @click="fetchProfiles">
-        <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
-        <span>Làm mới</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          v-if="activeTab === 'manager'"
+          type="button"
+          class="btn btn-sm btn-primary gap-1.5 shadow-sm"
+          @click="changeTab('upload')"
+        >
+          <Upload class="w-4 h-4" />
+          <span>Tải lên Memmap mới</span>
+        </button>
+        <button
+          v-else
+          type="button"
+          class="btn btn-sm btn-outline btn-primary gap-1.5 shadow-sm"
+          @click="changeTab('manager')"
+        >
+          <Layers class="w-4 h-4" />
+          <span>Danh sách Profile</span>
+        </button>
+        <button class="btn btn-sm btn-outline btn-info gap-2" :disabled="loading" @click="fetchProfiles">
+          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
+          <span>Làm mới</span>
+        </button>
+      </div>
     </header>
 
     <div v-if="errorMessage" role="alert" class="alert alert-error text-sm flex items-center justify-between py-2.5 shadow-sm">
@@ -20,39 +40,55 @@
       <button class="btn btn-ghost btn-xs btn-circle" @click="errorMessage = ''">✕</button>
     </div>
 
-    <div role="tablist" class="tabs tabs-boxed bg-base-300 p-1 w-fit mb-2">
+    <div role="tablist" class="tabs tabs-boxed bg-base-300/80 p-1 w-fit mb-2 border border-base-content/10">
       <button
         role="tab"
         type="button"
-        class="tab text-xs font-semibold tracking-wider transition-all"
+        class="tab tab-sm md:tab-md text-xs font-semibold tracking-wide transition-all gap-2"
         :class="{ 'tab-active !bg-primary !text-primary-content shadow': activeTab === 'manager' }"
         @click="changeTab('manager')"
       >
-        Memmap Manager
+        <Layers class="w-4 h-4" />
+        <span>Danh Sách Memmap (Manager)</span>
+        <span v-if="profiles.length > 0" class="badge badge-sm ml-1" :class="activeTab === 'manager' ? 'badge-neutral' : 'badge-ghost'">{{ profiles.length }}</span>
       </button>
       <button
         role="tab"
         type="button"
-        class="tab text-xs font-semibold tracking-wider transition-all"
+        class="tab tab-sm md:tab-md text-xs font-semibold tracking-wide transition-all gap-2"
         :class="{ 'tab-active !bg-primary !text-primary-content shadow': activeTab === 'upload' }"
         @click="changeTab('upload')"
       >
-        Memmap Upload
+        <Upload class="w-4 h-4" />
+        <span>Tải Lên Memmap (Upload)</span>
       </button>
     </div>
 
     <!-- TAB 1: Memmap Manager -->
-    <div v-show="activeTab === 'manager'" class="tab-content">
+    <div v-show="activeTab === 'manager'" class="memmap-tab-pane">
       <div class="card bg-base-200 border border-base-content/10 shadow-sm">
         <div class="card-body p-4">
           <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-content/10">
-            <span class="font-bold text-sm text-base-content">Danh sách Memmap Payload</span>
-            <input
-              v-model="searchQuery"
-              type="text"
-              class="input input-sm input-bordered bg-base-100 w-72 text-xs"
-              placeholder="Tìm SKU, firmware hoặc profile..."
-            />
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-base-content">Danh sách Memmap Payload</span>
+              <span v-if="!loading" class="text-xs text-base-content/60 font-mono">({{ profiles.length }} profile)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="input input-sm input-bordered bg-base-100 w-64 text-xs"
+                placeholder="Tìm SKU, firmware hoặc profile..."
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-primary gap-1"
+                @click="changeTab('upload')"
+              >
+                <Plus class="w-3.5 h-3.5" />
+                <span>Upload mới</span>
+              </button>
+            </div>
           </div>
           <div v-show="loading" class="flex items-center justify-center py-8">
             <span class="loading loading-spinner loading-md text-primary"></span>
@@ -64,11 +100,17 @@
     </div>
 
     <!-- TAB 2: Memmap Upload -->
-    <div v-show="activeTab === 'upload'" class="tab-content">
+    <div v-show="activeTab === 'upload'" class="memmap-tab-pane">
       <div class="card bg-base-200 border border-base-content/10 shadow-sm">
         <div class="card-body p-4">
-          <div class="pb-3 border-b border-base-content/10 mb-3">
-            <span class="font-bold text-sm text-base-content">Tải lên Memmap Payload</span>
+          <div class="flex items-center justify-between pb-3 border-b border-base-content/10 mb-3">
+            <div>
+              <span class="font-bold text-sm text-base-content">Tải lên Memmap Payload mới</span>
+              <p class="text-xs text-base-content/60 mt-0.5">Tải lên file IEC485 CSV và cấu hình thông tin SKU, firmware để lưu bản đồ bộ nhớ.</p>
+            </div>
+            <button type="button" class="btn btn-sm btn-ghost gap-1 text-xs" @click="changeTab('manager')">
+              ← Danh sách Memmap
+            </button>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
@@ -255,7 +297,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { RefreshCw, Upload, FileText, AlertTriangle } from 'lucide-vue-next';
+import { RefreshCw, Upload, FileText, AlertTriangle, Layers, Plus } from 'lucide-vue-next';
 import { cyberToast as ElMessage } from '@/services/cyberToast';
 import { cyberConfirm as ElMessageBox } from '@/services/cyberConfirm';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
@@ -280,7 +322,10 @@ const profiles = ref<RecordRow[]>([]);
 const searchQuery = ref('');
 
 watch(() => route?.query?.tab, (t) => {
-  if (t === 'upload' || t === 'manager') activeTab.value = t;
+  if (t === 'upload' || t === 'manager') {
+    activeTab.value = t;
+    handleTabChange(t);
+  }
 });
 
 function changeTab(tab: 'manager' | 'upload') {
@@ -611,7 +656,12 @@ async function handleTabChange(tab: string | number) {
 }
 
 watch(searchQuery, applyProfileFilter);
-onMounted(fetchProfiles);
+onMounted(async () => {
+  await fetchProfiles();
+  if (activeTab.value === 'upload') {
+    await handleTabChange('upload');
+  }
+});
 onBeforeUnmount(() => {
   destroyTable(profileTable);
   destroyTable(previewTable);
@@ -625,6 +675,10 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 16px;
   background: transparent;
+}
+.memmap-tab-pane {
+  display: block;
+  width: 100%;
 }
 .page-header {
   display: flex;

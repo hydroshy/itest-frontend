@@ -88,7 +88,7 @@
     <!-- Unified Tab Content Panels (v-show preserves Tabulator DOM elements) -->
     <div class="tab-panels">
       <!-- TAB 1 & 2: SALE ORDERS & HIERARCHY TREE -->
-      <div v-show="isSoTreeTab" class="tab-content">
+      <div v-show="isSoTreeTab" class="trace-tab-pane">
         <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
           <div class="filter-left flex flex-wrap items-center gap-2">
             <div class="relative">
@@ -143,7 +143,7 @@
       </div>
 
       <!-- TAB 2: DEVICE TESTING LIST -->
-      <div v-show="currentDisplayTab === 'device-testing'" class="tab-content">
+      <div v-show="currentDisplayTab === 'device-testing'" class="trace-tab-pane">
         <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
           <div class="filter-left flex flex-wrap items-center gap-2">
             <div class="relative">
@@ -231,7 +231,7 @@
       </div>
 
       <!-- TAB 3: DEVICE FINAL CONFIG LIST -->
-      <div v-show="currentDisplayTab === 'device-final-config'" class="tab-content">
+      <div v-show="currentDisplayTab === 'device-final-config'" class="trace-tab-pane">
         <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
           <div class="filter-left flex flex-wrap items-center gap-2">
             <div class="relative">
@@ -3006,7 +3006,8 @@ onBeforeUnmount(() => {
   border: 1px solid hsl(var(--b3));
 }
 
-.tab-content {
+.trace-tab-pane {
+  display: block;
   padding: 12px 0 0 0;
 }
 
