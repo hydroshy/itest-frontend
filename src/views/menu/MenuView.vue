@@ -321,9 +321,9 @@
 
     <!-- Modal Chi Tiết Phân Hệ (Đặc biệt Final Config) -->
     <Teleport to="body">
-      <dialog
+      <div
         v-if="detailModalVisible"
-        class="modal modal-open z-[9998]"
+        class="modal modal-open fixed inset-0 z-[9998] flex items-center justify-center p-4 animate-fadeIn"
       >
         <div class="modal-box max-w-2xl bg-[#0f1724] border border-slate-700/80 rounded-2xl shadow-2xl p-6 text-slate-200 max-h-[85vh] flex flex-col relative z-10">
           <!-- Header -->
@@ -433,7 +433,7 @@
           </div>
         </div>
         <div class="modal-backdrop" @click.stop.prevent></div>
-      </dialog>
+      </div>
     </Teleport>
   </div>
 </template>

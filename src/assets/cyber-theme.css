@@ -1010,7 +1010,27 @@ div.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placehold
    - Non-dismissible by clicking outside; modal only dismisses via explicit close button
    ========================================================================== */
 
+/* Default fallback: modal-backdrop is inert unless modal is actively open */
 .modal-backdrop {
+  pointer-events: none !important;
+}
+
+/* Closed modals or modals without .modal-open/[open] MUST NEVER display backdrop */
+.modal:not(.modal-open):not([open]) .modal-backdrop,
+dialog:not([open]):not(.modal-open) .modal-backdrop {
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Modal backdrop 3D ASCII overlay & blur lock - ONLY active when modal is open */
+.modal.modal-open > .modal-backdrop,
+.modal.modal-open .modal-backdrop,
+.modal[open] > .modal-backdrop,
+.modal[open] .modal-backdrop,
+dialog[open] > .modal-backdrop,
+dialog[open] .modal-backdrop {
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
@@ -1028,14 +1048,20 @@ div.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placehold
 }
 
 /* Clicking anywhere on the backdrop does not trigger closing */
-.modal-backdrop button,
-.modal-backdrop * {
+.modal.modal-open .modal-backdrop button,
+.modal.modal-open .modal-backdrop *,
+.modal[open] .modal-backdrop button,
+.modal[open] .modal-backdrop *,
+dialog[open] .modal-backdrop button,
+dialog[open] .modal-backdrop * {
   cursor: default !important;
   pointer-events: none !important;
 }
 
 /* 3D ASCII Glyphs Layer */
-.modal-backdrop::before {
+.modal.modal-open .modal-backdrop::before,
+.modal[open] .modal-backdrop::before,
+dialog[open] .modal-backdrop::before {
   content: "";
   position: absolute;
   inset: -60px;
@@ -1052,7 +1078,9 @@ div.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placehold
 }
 
 /* CRT Scanline & Depth Vignette Layer */
-.modal-backdrop::after {
+.modal.modal-open .modal-backdrop::after,
+.modal[open] .modal-backdrop::after,
+dialog[open] .modal-backdrop::after {
   content: "";
   position: absolute;
   inset: 0;

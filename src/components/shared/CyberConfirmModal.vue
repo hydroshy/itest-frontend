@@ -1,6 +1,9 @@
 <template>
-  <dialog :class="['modal modal-bottom sm:modal-middle backdrop-blur-md z-[9999]', confirmState.isOpen ? 'modal-open' : '']">
-    <div class="modal-box bg-slate-900/95 border border-slate-700/60 shadow-2xl rounded-2xl text-slate-200 font-sans p-6 max-w-md">
+  <div
+    v-if="confirmState.isOpen"
+    class="modal modal-open modal-bottom sm:modal-middle fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fadeIn"
+  >
+    <div class="relative z-10 modal-box bg-slate-900/95 border border-slate-700/60 shadow-2xl rounded-2xl text-slate-200 font-sans p-6 max-w-md">
       <!-- Title -->
       <h3 class="font-semibold text-base text-white flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2.5">
@@ -42,7 +45,7 @@
       </div>
     </div>
     <div class="modal-backdrop" @click.stop.prevent></div>
-  </dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
