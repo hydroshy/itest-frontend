@@ -161,7 +161,7 @@
     <!-- Main Content Wrapper -->
     <div class="layout-main-wrapper flex flex-col flex-1 min-w-0 h-full overflow-hidden">
       <!-- Navbar / Header -->
-      <header class="navbar h-16 min-h-[4rem] bg-[#151d2c]/90 backdrop-blur-xl border-b border-white/10 px-6 justify-between z-10">
+      <header class="navbar relative shrink-0 h-16 min-h-[4rem] bg-[#151d2c]/90 backdrop-blur-xl border-b border-white/10 px-6 justify-between z-10">
         <!-- Left: Collapse toggle, Brand & Breadcrumb -->
         <div class="flex items-center gap-4 shrink-0">
           <button
@@ -207,9 +207,8 @@
           <div class="h-5 w-px bg-white/10 mx-1"></div>
 
           <!-- User Dropdown -->
-          <div class="dropdown dropdown-end">
-            <label
-              tabindex="0"
+          <details ref="userDropdown" class="dropdown dropdown-end" @keydown.esc="closeUserDropdown" @focusout="handleUserDropdownFocusOut">
+            <summary
               class="btn btn-ghost btn-sm h-10 px-2.5 rounded-xl border border-white/10 bg-[#1a2436] hover:bg-[#202c42] hover:border-violet-500/30 flex items-center gap-2.5 cursor-pointer shadow-none transition-all"
             >
               <!-- Avatar: Modern sleek rounded-xl background -->
@@ -229,12 +228,12 @@
               </div>
               <!-- Caret Icon -->
               <span class="text-[10px] text-slate-400 ml-1">▼</span>
-            </label>
+            </summary>
 
             <!-- Dropdown Menu -->
             <ul
               tabindex="0"
-              class="dropdown-content menu p-2 shadow-none bg-[#151d2c] border border-white/10 rounded-2xl w-60 mt-2 gap-1 backdrop-blur-2xl z-50 text-xs font-sans"
+              class="dropdown-content menu absolute right-0 top-full p-2 shadow-none bg-[#151d2c] border border-white/10 rounded-2xl w-60 mt-2 gap-1 z-50 text-xs font-sans"
             >
               <!-- Header info in dropdown -->
               <li class="menu-title px-3 py-2 border-b border-white/10 mb-1">
@@ -265,7 +264,7 @@
                 </a>
               </li>
             </ul>
-          </div>
+          </details>
         </div>
       </header>
 
@@ -301,6 +300,15 @@ const pluginStore = usePluginStore();
 
 const isCollapse = ref(false);
 const profileModalVisible = ref(false);
+const userDropdown = ref<HTMLDetailsElement | null>(null);
+
+function closeUserDropdown() {
+  if (userDropdown.value) userDropdown.value.open = false;
+}
+
+function handleUserDropdownFocusOut(event: FocusEvent) {
+  if (!userDropdown.value?.contains(event.relatedTarget as Node | null)) closeUserDropdown();
+}
 
 const toggleSidebar = () => {
   isCollapse.value = !isCollapse.value;
@@ -361,6 +369,7 @@ function resolveCyberIconName(iconName?: string): string {
 }
 
 function handleUserCommand(cmd: string) {
+  closeUserDropdown();
   if (cmd === 'logout') {
     authStore.logout();
     router.push('/auth/login');

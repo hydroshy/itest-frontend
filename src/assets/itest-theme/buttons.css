@@ -2,6 +2,19 @@
    iTest Theme - Buttons & Interactive Actions
    ========================================================================== */
 
+/* Apply outside page wrappers too, including teleported dialogs. */
+.btn,
+.btn:hover,
+.btn:active,
+.btn:focus,
+.btn::before,
+.btn::after,
+.el-button {
+  --depth: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
 .el-button {
   height: var(--cyber-control-height);
   border-radius: var(--cyber-radius-sm);
