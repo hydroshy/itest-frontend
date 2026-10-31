@@ -1,12 +1,12 @@
 <template>
-  <div class="flex flex-col gap-5">
+  <div class="corporate-memphis flex flex-col gap-6">
     <!-- Header with Quick Switch to Menu -->
-    <div class="flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-[#0b2942]/85 border border-[#1d3b5a] rounded-lg backdrop-blur-md shadow-lg">
+    <div class="flex flex-wrap items-center justify-between gap-4 p-5 md:p-6 bg-[#161f30] border border-white/10 rounded-3xl">
       <div>
-        <h2 class="text-xl font-bold font-display text-[#f8fafc] tracking-wide">Bảng điều khiển Trung tâm</h2>
-        <p class="text-xs md:text-sm text-[#94a3b8] mt-1">Quản lý tổng quan hệ thống, tiện ích plugin và phân quyền menu truy cập</p>
+        <h2 class="text-xl md:text-2xl font-bold font-display text-white tracking-tight">Bảng điều khiển Trung tâm</h2>
+        <p class="text-xs md:text-sm text-slate-400 mt-1 font-sans">Quản lý tổng quan hệ thống, tiện ích plugin và phân quyền menu truy cập</p>
       </div>
-      <button class="btn btn-primary btn-sm md:btn-md gap-2" @click="goToMenu">
+      <button class="btn btn-primary btn-sm md:btn-md rounded-2xl gap-2 font-display font-medium border-0" @click="goToMenu">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
         </svg>
@@ -14,97 +14,97 @@
       </button>
     </div>
 
-    <!-- Summary Metrics with daisyUI Stats & Cards -->
+    <!-- Summary Metrics with Flat Corporate Memphis Geometry (Zero Depth Effect) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
-        <div class="stat p-4">
-          <div class="stat-figure text-[#38bdf8] p-2.5 rounded-lg bg-[#38bdf8]/10 border border-[#38bdf8]/20">
+      <div class="stats bg-[#161f30] border border-white/10 hover:border-white/20 transition-colors duration-200 text-slate-200 rounded-3xl overflow-hidden">
+        <div class="stat p-5">
+          <div class="stat-figure text-[#38bdf8] p-3 rounded-2xl bg-[#38bdf8]/10">
             <CyberIcon name="monitor" :size="24" />
           </div>
-          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Trạng thái Shell</div>
-          <div class="stat-value text-xl font-bold font-mono text-[#22da6e] drop-shadow-[0_0_8px_rgba(34,218,110,0.4)]">Hoạt động</div>
-          <div class="stat-desc text-[11px] text-[#7fdbca] font-mono mt-1">SYS.OK // ONLINE</div>
+          <div class="stat-title text-xs text-slate-400 font-sans font-medium">Trạng thái Shell</div>
+          <div class="stat-value text-2xl font-semibold font-mono tabular-nums text-emerald-400 my-0.5">Hoạt động</div>
+          <div class="stat-desc text-[11px] text-emerald-400/80 font-mono flex items-center gap-1 mt-1">SYS.OK // ONLINE</div>
         </div>
       </div>
 
-      <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
-        <div class="stat p-4">
-          <div class="stat-figure text-[#34d399] p-2.5 rounded-lg bg-[#34d399]/10 border border-[#34d399]/20">
+      <div class="stats bg-[#161f30] border border-white/10 hover:border-white/20 transition-colors duration-200 text-slate-200 rounded-3xl overflow-hidden">
+        <div class="stat p-5">
+          <div class="stat-figure text-[#34d399] p-3 rounded-2xl bg-[#34d399]/10">
             <CyberIcon name="blocks" :size="24" />
           </div>
-          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Plugins đã nạp</div>
-          <div class="stat-value text-xl font-bold font-mono text-[#f8fafc]">{{ pluginStore.plugins.length }}</div>
-          <div class="stat-desc text-[11px] text-[#7fdbca] font-mono mt-1">MODULES INSTALLED</div>
+          <div class="stat-title text-xs text-slate-400 font-sans font-medium">Plugins đã nạp</div>
+          <div class="stat-value text-2xl font-semibold font-mono tabular-nums text-white my-0.5">{{ pluginStore.plugins.length }}</div>
+          <div class="stat-desc text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-1">MODULES INSTALLED</div>
         </div>
       </div>
 
-      <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
-        <div class="stat p-4">
-          <div class="stat-figure text-[#fb923c] p-2.5 rounded-lg bg-[#fb923c]/10 border border-[#fb923c]/20">
+      <div class="stats bg-[#161f30] border border-white/10 hover:border-white/20 transition-colors duration-200 text-slate-200 rounded-3xl overflow-hidden">
+        <div class="stat p-5">
+          <div class="stat-figure text-[#fb923c] p-3 rounded-2xl bg-[#fb923c]/10">
             <CyberIcon name="grid" :size="24" />
           </div>
-          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Tiện ích (Widgets)</div>
-          <div class="stat-value text-xl font-bold font-mono text-[#f8fafc]">{{ pluginStore.widgets.length }}</div>
-          <div class="stat-desc text-[11px] text-[#ecc48d] font-mono mt-1">ACTIVE WIDGETS</div>
+          <div class="stat-title text-xs text-slate-400 font-sans font-medium">Tiện ích (Widgets)</div>
+          <div class="stat-value text-2xl font-semibold font-mono tabular-nums text-white my-0.5">{{ pluginStore.widgets.length }}</div>
+          <div class="stat-desc text-[11px] text-amber-400/80 font-mono flex items-center gap-1 mt-1">ACTIVE WIDGETS</div>
         </div>
       </div>
 
-      <div class="stats bg-[#0b2942]/85 border border-[#1d3b5a] hover:border-[#00f0ff] transition-all duration-300 shadow-lg text-[#d6deeb] backdrop-blur-md rounded-lg">
-        <div class="stat p-4">
-          <div class="stat-figure text-[#c084fc] p-2.5 rounded-lg bg-[#c084fc]/10 border border-[#c084fc]/20">
+      <div class="stats bg-[#161f30] border border-white/10 hover:border-white/20 transition-colors duration-200 text-slate-200 rounded-3xl overflow-hidden">
+        <div class="stat p-5">
+          <div class="stat-figure text-[#c084fc] p-3 rounded-2xl bg-[#c084fc]/10">
             <CyberIcon name="cpu" :size="24" />
           </div>
-          <div class="stat-title text-xs text-[#5f7e97] font-medium tracking-wide">Dynamic Routes</div>
-          <div class="stat-value text-xl font-bold font-mono text-[#f8fafc]">{{ pluginStore.dynamicRoutes.length }}</div>
-          <div class="stat-desc text-[11px] text-[#c084fc] font-mono mt-1">ROUTES INJECTED</div>
+          <div class="stat-title text-xs text-slate-400 font-sans font-medium">Dynamic Routes</div>
+          <div class="stat-value text-2xl font-semibold font-mono tabular-nums text-white my-0.5">{{ pluginStore.dynamicRoutes.length }}</div>
+          <div class="stat-desc text-[11px] text-purple-400/80 font-mono flex items-center gap-1 mt-1">ROUTES INJECTED</div>
         </div>
       </div>
     </div>
 
-    <!-- Main Content: Tabs Container using DaisyUI -->
-    <div class="bg-[#0b2942]/85 border border-[#1d3b5a] rounded-lg shadow-xl backdrop-blur-md overflow-hidden">
-      <!-- Tabs Navigation Header -->
-      <div class="flex border-b border-[#1d3b5a] bg-[#071726]/80 px-4 pt-3 gap-2">
+    <!-- Main Content: Tabs Container using Flat Corporate Memphis Panels -->
+    <div class="bg-[#161f30] border border-white/10 rounded-3xl overflow-hidden">
+      <!-- Tabs Navigation Header with Flat Segmented Pills -->
+      <div class="flex items-center gap-2 p-3 md:p-4 border-b border-white/10 bg-[#121927]/60">
         <button
           type="button"
-          class="px-4 py-2.5 text-xs md:text-sm font-semibold tracking-wide rounded-t-lg transition-all duration-200 border-t border-x"
+          class="px-5 py-2.5 text-xs md:text-sm font-semibold font-display rounded-2xl transition-all duration-200"
           :class="activeTab === 'widgets'
-            ? 'bg-[#0b2942] border-[#00f0ff] text-[#00f0ff] shadow-[0_-2px_8px_rgba(0,240,255,0.15)] -mb-px'
-            : 'border-transparent text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]/40'"
+            ? 'bg-primary text-primary-content font-bold'
+            : 'text-slate-400 hover:text-white hover:bg-white/5'"
           @click="activeTab = 'widgets'"
         >
-          TIỆN ÍCH HỆ THỐNG (WIDGETS)
+          Tiện ích Hệ thống (Widgets)
         </button>
         <button
           type="button"
-          class="px-4 py-2.5 text-xs md:text-sm font-semibold tracking-wide rounded-t-lg transition-all duration-200 border-t border-x"
+          class="px-5 py-2.5 text-xs md:text-sm font-semibold font-display rounded-2xl transition-all duration-200"
           :class="activeTab === 'menu-permission'
-            ? 'bg-[#0b2942] border-[#00f0ff] text-[#00f0ff] shadow-[0_-2px_8px_rgba(0,240,255,0.15)] -mb-px'
-            : 'border-transparent text-[#94a3b8] hover:text-[#d6deeb] hover:bg-[#0b2942]/40'"
+            ? 'bg-primary text-primary-content font-bold'
+            : 'text-slate-400 hover:text-white hover:bg-white/5'"
           @click="activeTab = 'menu-permission'"
         >
-          QUẢN LÝ PHÂN QUYỀN MENU
+          Quản lý Phân quyền Menu
         </button>
       </div>
 
       <!-- Tab Content Area -->
-      <div class="p-4 md:p-6">
+      <div class="p-5 md:p-6">
         <!-- Tab 1: Plugin Widgets -->
         <div v-show="activeTab === 'widgets'">
           <div v-if="pluginStore.widgets.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div
               v-for="widget in pluginStore.widgets"
               :key="widget.id"
-              class="card bg-[#0b2942]/85 border border-[#1d3b5a] shadow-xl backdrop-blur-md rounded-lg overflow-hidden flex flex-col"
+              class="card bg-[#1a2436] border border-white/10 rounded-2xl overflow-hidden flex flex-col"
               :class="{
                 'md:col-span-2 lg:col-span-2': widget.width === 'half',
                 'md:col-span-2 lg:col-span-3': widget.width === 'full'
               }"
             >
-              <div class="card-body p-4 flex flex-col h-full">
-                <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#1d3b5a]/60">
-                  <span class="card-title text-sm font-semibold text-[#d6deeb] font-sans m-0">{{ widget.title }}</span>
-                  <span class="badge badge-xs badge-info badge-outline font-mono text-[10px]">WIDGET</span>
+              <div class="card-body p-5 flex flex-col h-full">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+                  <span class="card-title text-sm font-bold text-white font-display m-0">{{ widget.title }}</span>
+                  <span class="badge badge-sm rounded-full bg-sky-500/15 text-sky-400 border-0 font-mono text-[10px] px-2.5 py-0.5">WIDGET</span>
                 </div>
                 <div class="flex-1">
                   <CModuleBoundary :module-name="`Widget: ${widget.title}`">
@@ -115,27 +115,27 @@
             </div>
           </div>
 
-          <div v-else class="flex flex-col items-center justify-center p-12 text-center text-[#94a3b8]">
-            <CyberIcon name="blocks" :size="48" class="text-[#5f7e97] mb-3" />
-            <p class="text-sm">Chưa có tiện ích nào được cung cấp bởi plugin hiện tại</p>
+          <div v-else class="flex flex-col items-center justify-center p-12 text-center text-slate-400 rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+            <CyberIcon name="blocks" :size="48" class="text-slate-500 mb-3" />
+            <p class="text-sm font-sans">Chưa có tiện ích nào được cung cấp bởi plugin hiện tại</p>
           </div>
         </div>
 
         <!-- Tab 2: Quản lý Phân quyền Menu theo Role & Tab Plugin -->
-        <div v-show="activeTab === 'menu-permission'" class="flex flex-col gap-4">
-          <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1d3b5a]">
+        <div v-show="activeTab === 'menu-permission'" class="flex flex-col gap-5">
+          <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
             <div>
-              <h3 class="text-base font-semibold text-[#f8fafc] font-display">Phân quyền Menu & Từng Tab Tính năng</h3>
-              <p class="text-xs text-[#94a3b8] mt-1 max-w-2xl">
+              <h3 class="text-base md:text-lg font-bold text-white font-display">Phân quyền Menu & Từng Tab Tính năng</h3>
+              <p class="text-xs text-slate-400 mt-1 max-w-2xl font-sans">
                 Cấu hình các menu card hiển thị trên trang Menu (/menu) theo từng vai trò (Role).
                 Hỗ trợ phân quyền riêng cho từng tab/tính năng (ví dụ: Final Config Tool).
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
-              <span class="text-xs font-semibold text-[#e2e8f0]">Chọn Vai trò:</span>
+              <span class="text-xs font-semibold text-slate-300 font-sans">Chọn Vai trò:</span>
               <select
                 v-model="selectedRole"
-                class="select select-bordered select-sm bg-[#0b1a2d] border-[#1d3b5a] text-[#f8fafc] focus:border-[#00f0ff] min-w-[200px]"
+                class="select select-bordered select-sm bg-[#121927] border-white/10 text-white rounded-xl focus:border-primary min-w-[200px] font-sans text-xs"
                 @change="onRoleChange"
               >
                 <option
@@ -148,7 +148,7 @@
               </select>
 
               <button
-                class="btn btn-primary btn-sm gap-1"
+                class="btn btn-primary btn-sm rounded-xl font-display font-medium border-0 gap-1"
                 :disabled="!selectedRole || savingPerms"
                 @click="saveMenuPermissions"
               >
@@ -159,7 +159,7 @@
                 Lưu Phân quyền
               </button>
 
-              <button class="btn btn-ghost btn-sm gap-1 border border-[#1d3b5a] text-[#94a3b8] hover:text-[#f8fafc]" @click="loadData">
+              <button class="btn btn-ghost btn-sm rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 font-display gap-1" @click="loadData">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
@@ -171,7 +171,7 @@
           <!-- Alert for SUPER_ADMIN -->
           <div
             v-if="selectedRole === 'SUPER_ADMIN'"
-            class="alert alert-info bg-info/10 border border-info/30 text-info text-xs py-2 px-4 rounded-md flex items-center gap-2"
+            class="alert bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs py-2.5 px-4 rounded-2xl flex items-center gap-2 font-sans"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -179,10 +179,10 @@
             <span>Vai trò <strong>SUPER_ADMIN</strong> mặc định có toàn quyền truy cập tất cả các Menu và Tab tính năng mà không bị giới hạn.</span>
           </div>
 
-          <!-- Menu Permission Table in DaisyUI -->
-          <div class="overflow-x-auto rounded-md border border-[#1d3b5a] bg-[#071726]/60">
+          <!-- Menu Permission Table with Flat Corporate Memphis Styling -->
+          <div class="overflow-x-auto rounded-2xl border border-white/10 bg-[#121927]/60">
             <table class="table table-sm w-full text-xs">
-              <thead class="bg-[#0b2942]/90 text-[#7fdbca] font-mono border-b border-[#1d3b5a]">
+              <thead class="bg-[#1a2436] text-slate-300 font-display font-semibold text-xs tracking-wider uppercase border-b border-white/10">
                 <tr>
                   <th class="text-center w-36">Cho phép hiển thị</th>
                   <th class="min-w-[200px]">Tên Menu / Tính năng</th>
@@ -192,14 +192,14 @@
                   <th class="text-center w-28">Phân loại</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-[#1d3b5a]/40 text-[#d6deeb]">
+              <tbody class="divide-y divide-white/5 text-slate-200 font-sans">
                 <tr v-if="loadingPerms">
                   <td colspan="6" class="text-center py-8">
                     <span class="loading loading-spinner loading-md text-primary"></span>
                   </td>
                 </tr>
                 <tr v-else-if="menuItemsList.length === 0">
-                  <td colspan="6" class="text-center py-8 text-[#94a3b8]">
+                  <td colspan="6" class="text-center py-8 text-slate-400">
                     Không có mục menu nào
                   </td>
                 </tr>
@@ -207,12 +207,12 @@
                   v-else
                   v-for="row in menuItemsList"
                   :key="row.id"
-                  class="hover:bg-[#0b2942]/40 transition-colors"
+                  class="hover:bg-white/[0.03] transition-colors"
                 >
                   <td class="text-center">
                     <input
                       type="checkbox"
-                      class="checkbox checkbox-primary checkbox-sm border-[#1d3b5a] bg-[#0b1a2d]"
+                      class="checkbox checkbox-primary checkbox-sm rounded-lg border-white/20 bg-[#131b28]"
                       :checked="isItemChecked(row.id)"
                       :disabled="selectedRole === 'SUPER_ADMIN'"
                       @change="(e: any) => toggleItemPermission(row.id, e.target.checked)"
@@ -220,30 +220,30 @@
                   </td>
                   <td>
                     <div class="flex items-center gap-2">
-                      <span class="font-semibold text-[#f8fafc]">{{ row.title }}</span>
-                      <span v-if="row.tab" class="badge badge-warning badge-xs font-mono">
+                      <span class="font-semibold text-white font-display">{{ row.title }}</span>
+                      <span v-if="row.tab" class="badge badge-xs rounded-full bg-amber-500/15 text-amber-300 border-0 font-mono">
                         Tab: {{ row.tab }}
                       </span>
-                      <span v-else-if="row.category === 'system'" class="badge badge-ghost badge-xs font-mono text-[#94a3b8]">
+                      <span v-else-if="row.category === 'system'" class="badge badge-xs rounded-full bg-slate-700/50 text-slate-300 border-0 font-display">
                         Hệ thống
                       </span>
                     </div>
                   </td>
                   <td>
-                    <code class="font-mono text-[#00f0ff] bg-[#00f0ff]/10 px-1.5 py-0.5 rounded border border-[#00f0ff]/20">
+                    <code class="font-mono text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-lg border-0">
                       {{ row.id }}
                     </code>
                   </td>
-                  <td class="text-[#94a3b8]">{{ row.description }}</td>
+                  <td class="text-slate-400 font-sans">{{ row.description }}</td>
                   <td>
-                    <code class="font-mono text-[#ecc48d] bg-[#ecc48d]/10 px-1.5 py-0.5 rounded border border-[#ecc48d]/20">
+                    <code class="font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border-0">
                       {{ row.route }}
                     </code>
                   </td>
                   <td class="text-center">
                     <span
-                      class="badge badge-sm font-mono"
-                      :class="row.category === 'plugin' ? 'badge-success badge-outline' : 'badge-primary badge-outline'"
+                      class="badge badge-sm rounded-full border-0 font-display font-medium"
+                      :class="row.category === 'plugin' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-sky-500/15 text-sky-300'"
                     >
                       {{ row.category === 'plugin' ? 'Plugin' : 'Hệ thống' }}
                     </span>
@@ -254,15 +254,15 @@
           </div>
 
           <!-- Perm Footer Summary -->
-          <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#0b2942]/60 rounded-md border border-[#1d3b5a] text-xs text-[#94a3b8]">
+          <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-[#1a2436] rounded-2xl border border-white/10 text-xs text-slate-400 font-sans">
             <div>
-              Đã chọn: <span class="badge badge-sm badge-primary font-mono font-bold">{{ checkedIds.length }}</span> / {{ menuItemsList.length }} mục cho vai trò: <strong class="text-[#ecc48d]">{{ selectedRole }}</strong>
+              Đã chọn: <span class="badge badge-sm rounded-full bg-primary/20 text-primary border-0 font-mono font-bold">{{ checkedIds.length }}</span> / {{ menuItemsList.length }} mục cho vai trò: <strong class="text-amber-300 font-display">{{ selectedRole }}</strong>
             </div>
             <div class="flex items-center gap-2">
               <button
                 v-if="selectedRole !== 'SUPER_ADMIN'"
                 type="button"
-                class="btn btn-xs btn-outline btn-primary font-mono"
+                class="btn btn-xs rounded-xl font-display font-medium bg-primary/15 text-primary hover:bg-primary/25 border-0"
                 @click="selectAllItems"
               >
                 Chọn tất cả
@@ -270,7 +270,7 @@
               <button
                 v-if="selectedRole !== 'SUPER_ADMIN'"
                 type="button"
-                class="btn btn-xs btn-outline btn-ghost text-[#ef5350] hover:bg-[#ef5350]/20 font-mono"
+                class="btn btn-xs rounded-xl font-display font-medium bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border-0"
                 @click="clearAllItems"
               >
                 Bỏ chọn tất cả

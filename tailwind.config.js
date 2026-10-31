@@ -30,8 +30,11 @@ export default {
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['DM Sans', 'Poppins', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Poppins', 'DM Sans', 'system-ui', 'sans-serif'],
+        poppins: ['Poppins', 'system-ui', 'sans-serif'],
+        dmsans: ['DM Sans', 'system-ui', 'sans-serif'],
+        memphis: ['Poppins', 'DM Sans', 'system-ui', 'sans-serif'],
       },
     },
   },

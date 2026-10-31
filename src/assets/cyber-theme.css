@@ -1363,3 +1363,110 @@ dialog[open] .modal-backdrop::after {
   transform: scale(1) translateY(0) !important;
   opacity: 1 !important;
 }
+
+/* ==========================================================================
+   14. CORPORATE MEMPHIS UI DESIGN SYSTEM (FLAT / ZERO DEPTH EFFECT)
+   Based on daisyUI Corporate Memphis Trend:
+   - Typography: Poppins (Display/Headings) + DM Sans (Body) + JetBrains Mono (Tabular numerals)
+   - Shape Language: Rounded-3xl (1.5rem), Rounded-2xl (1.25rem), soft organic geometry, flat cards
+   - Depth Effect: EXPLICITLY DISABLED (--depth: 0, zero inset bevels, zero 3D drop-shadows, zero neon glow)
+   - Color Tone: Vibrant brand primary, soft pastel secondary/accent fills, clean flat surfaces
+   ========================================================================== */
+
+:root {
+  --memphis-font-display: 'Poppins', 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --memphis-font-body: 'DM Sans', 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --memphis-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --memphis-radius-box: 1.5rem;
+  --memphis-radius-card: 1.25rem;
+  --memphis-radius-field: 0.75rem;
+  --memphis-radius-pill: 9999px;
+  --memphis-primary: #7c3aed;
+  --memphis-primary-soft: rgba(124, 58, 237, 0.12);
+  --memphis-secondary: #38bdf8;
+  --memphis-secondary-soft: rgba(56, 189, 248, 0.12);
+  --memphis-accent: #34d399;
+  --memphis-accent-soft: rgba(52, 211, 153, 0.12);
+  --memphis-warning: #fbbf24;
+  --memphis-warning-soft: rgba(251, 191, 36, 0.12);
+  --memphis-coral: #fb7185;
+  --memphis-coral-soft: rgba(251, 113, 133, 0.12);
+}
+
+.corporate-memphis {
+  font-family: var(--memphis-font-body);
+  --depth: 0 !important;
+}
+
+.corporate-memphis .font-display,
+.corporate-memphis h1,
+.corporate-memphis h2,
+.corporate-memphis h3,
+.corporate-memphis h4 {
+  font-family: var(--memphis-font-display) !important;
+  letter-spacing: -0.015em;
+}
+
+.corporate-memphis .font-mono,
+.corporate-memphis code,
+.corporate-memphis kbd,
+.corporate-memphis .tabular-nums {
+  font-family: var(--memphis-font-mono) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Explicitly disable Depth Effect across all Memphis surfaces */
+.corporate-memphis,
+.corporate-memphis * {
+  --depth: 0 !important;
+}
+
+.corporate-memphis .stat,
+.corporate-memphis .stats,
+.corporate-memphis .card,
+.corporate-memphis .btn,
+.corporate-memphis .badge,
+.corporate-memphis .table,
+.corporate-memphis .flat-card,
+.corporate-memphis .flat-surface,
+.corporate-memphis .admin-panel,
+.corporate-memphis .admin-metrics,
+.corporate-memphis .admin-feature,
+.corporate-memphis .admin-chart-panel,
+.corporate-memphis .admin-table-panel,
+.corporate-memphis .admin-activity {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* Memphis Geometric Card & Panel Foundation */
+.corporate-memphis .memphis-card {
+  border-radius: var(--memphis-radius-card);
+  background-color: #182030;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none !important;
+}
+
+.corporate-memphis .memphis-panel {
+  border-radius: var(--memphis-radius-box);
+  background-color: #151d2c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none !important;
+}
+
+/* Memphis Soft Tint Badges (Flat, high-contrast, rounded pills) */
+.corporate-memphis .memphis-pill {
+  border-radius: var(--memphis-radius-pill);
+  font-family: var(--memphis-font-display);
+  font-weight: 500;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Vector Illustration Rendering */
+.corporate-memphis .memphis-vector {
+  user-select: none;
+  shape-rendering: geometricPrecision;
+}
+
