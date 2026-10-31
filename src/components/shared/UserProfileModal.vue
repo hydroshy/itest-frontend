@@ -1,9 +1,10 @@
 <template>
-  <div
-    v-if="visible"
-    class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
-  >
-    <!-- Modal Card Container -->
+  <Transition name="modal-fade">
+    <div
+      v-if="visible"
+      class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <!-- Modal Card Container -->
     <div
       class="relative z-10 w-full max-w-lg bg-base-300 border border-base-content/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content ring-1 ring-base-content/10"
     >
@@ -292,7 +293,8 @@
       </div>
     </div>
     <div class="modal-backdrop" @click.stop.prevent></div>
-  </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">

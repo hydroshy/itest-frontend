@@ -1,6 +1,7 @@
 <template>
-  <div v-if="visible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 animate-fadeIn">
-    <!-- Wizard Modal Container -->
+  <Transition name="modal-fade">
+    <div v-if="visible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6">
+      <!-- Wizard Modal Container -->
     <div
       class="relative z-10 w-full max-w-5xl bg-[#081d32]/95 border border-[#1d3b5a] rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_25px_rgba(0,240,255,0.15)] flex flex-col max-h-[92vh] overflow-hidden text-xs font-sans text-[#d6deeb]"
     >
@@ -452,8 +453,9 @@
         </div>
       </div>
     </div>
-    <div class="modal-backdrop" @click.stop.prevent></div>
-  </div>
+      <div class="modal-backdrop" @click.stop.prevent></div>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">

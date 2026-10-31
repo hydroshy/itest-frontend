@@ -157,8 +157,9 @@
     </div>
 
     <!-- Create / Edit User Modal -->
-    <div v-if="dialogVisible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div class="relative z-10 modal-box bg-slate-900/95 border border-slate-700/60 shadow-2xl rounded-2xl max-w-lg text-slate-200">
+    <Transition name="modal-fade">
+      <div v-if="dialogVisible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="relative z-10 modal-box bg-slate-900/95 border border-slate-700/60 shadow-2xl rounded-2xl max-w-lg text-slate-200">
         <div class="flex items-center justify-between pb-3 border-b border-slate-800">
           <h3 class="font-semibold text-base text-white">
             {{ isEdit ? 'Cập nhật Người dùng' : 'Thêm Người dùng mới' }}
@@ -252,8 +253,9 @@
           </div>
         </form>
       </div>
-      <div class="modal-backdrop" @click.stop.prevent></div>
-    </div>
+        <div class="modal-backdrop" @click.stop.prevent></div>
+      </div>
+    </Transition>
   </div>
 </template>
 

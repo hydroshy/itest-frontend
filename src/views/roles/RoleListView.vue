@@ -99,8 +99,9 @@
     </div>
 
     <!-- Dialog Thêm/Sửa vai trò (daisyUI Modal HUD) -->
-    <div v-if="dialogVisible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div class="relative z-10 modal-box bg-[#081d32] border border-[#1d3b5a] shadow-[0_0_30px_rgba(0,0,0,0.8)] max-w-md text-[#d6deeb]">
+    <Transition name="modal-fade">
+      <div v-if="dialogVisible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="relative z-10 modal-box bg-[#081d32] border border-[#1d3b5a] shadow-[0_0_30px_rgba(0,0,0,0.8)] max-w-md text-[#d6deeb]">
         <div class="flex items-center justify-between pb-3 border-b border-[#1d3b5a]">
           <h3 class="font-mono font-bold text-base text-[#7fdbca] uppercase tracking-wide">
             {{ isEdit ? 'Chỉnh sửa Vai trò' : 'Thêm Vai trò mới' }}
@@ -155,8 +156,9 @@
           </div>
         </form>
       </div>
-      <div class="modal-backdrop" @click.stop.prevent></div>
-    </div>
+        <div class="modal-backdrop" @click.stop.prevent></div>
+      </div>
+    </Transition>
 
     <!-- Role Wizard Dialog -->
     <RoleWizardDialog
