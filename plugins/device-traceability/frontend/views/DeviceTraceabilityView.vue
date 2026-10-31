@@ -1,12 +1,15 @@
 <template>
-  <div class="traceability-container">
+  <div class="traceability-container w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
     <!-- Page Header (hiển thị khi không phân lập hoặc isolated view header) -->
-    <div v-if="isIsolatedView" class="isolated-header-bar flex items-center gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
-      <button class="btn btn-ghost btn-sm gap-2" @click="goBackToMenu">
-        <ArrowLeft class="w-4 h-4" /> Trở về Menu
-      </button>
-      <span class="isolated-title font-bold text-base text-base-content">{{ isolatedTitle }}</span>
-      <div class="header-actions ml-auto flex items-center gap-2">
+    <div v-if="isIsolatedView" class="isolated-header-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/60 rounded-xl mb-4 border border-base-300 shadow-sm backdrop-blur-md">
+      <div class="flex items-center gap-3">
+        <button class="btn btn-ghost btn-sm gap-2 text-primary font-medium" @click="goBackToMenu">
+          <ArrowLeft class="w-4 h-4" /> Trở về Menu
+        </button>
+        <div class="divider divider-horizontal my-1 mx-0"></div>
+        <span class="isolated-title font-semibold text-base text-base-content">{{ isolatedTitle }}</span>
+      </div>
+      <div class="header-actions flex items-center gap-2 flex-wrap">
         <button v-if="isSoTreeTab" class="btn btn-warning btn-sm gap-1" @click="openDisSyncDialog">
           <Download class="w-4 h-4" /> Đồng bộ từ DIS (Odoo)
         </button>
@@ -22,14 +25,20 @@
       </div>
     </div>
 
-    <div v-else class="page-header flex flex-wrap items-center justify-between gap-4 pb-2 mb-4">
+    <header v-else class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
       <div class="header-title">
-        <h2 class="text-2xl font-bold flex items-center gap-2 tracking-tight">
-          <Files class="w-6 h-6 text-primary" /> Quản Lý Truy Xuất Nguồn Gốc (Traceability)
+        <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> TRACEABILITY MANAGEMENT
+        </div>
+        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
+          <Files class="w-6 h-6 text-primary" />
+          <span>Quản Lý Truy Xuất Nguồn Gốc (Traceability)</span>
         </h2>
-        <span class="subtitle text-xs text-base-content/70">Quản lý Sale Order, Work Authorization, Thiết Bị Kiểm Thử &amp; Cấu Hình Cuối</span>
+        <p class="subtitle text-xs text-base-content/70 mt-1">
+          Quản lý Sale Order, Work Authorization, Thiết Bị Kiểm Thử &amp; Cấu Hình Cuối
+        </p>
       </div>
-      <div class="header-actions flex items-center gap-2">
+      <div class="header-actions flex items-center gap-2 flex-wrap">
         <button class="btn btn-warning btn-sm gap-1" @click="openDisSyncDialog">
           <Download class="w-4 h-4" /> Đồng bộ từ DIS (Odoo)
         </button>
@@ -43,13 +52,13 @@
           <RefreshCw class="w-4 h-4" /> Làm mới dữ liệu
         </button>
       </div>
-    </div>
+    </header>
 
     <!-- Main Navigation Tabs (Hidden in Isolated View) -->
-    <div v-if="!isIsolatedView" role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300">
+    <div v-if="!isIsolatedView" role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
         role="tab"
-        class="tab font-semibold transition-all flex items-center gap-2"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
         :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'sale-orders' || activeTab === 'so-wa' }"
         @click="switchTab('sale-orders')"
       >
@@ -58,7 +67,7 @@
       </button>
       <button
         role="tab"
-        class="tab font-semibold transition-all flex items-center gap-2"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
         :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'so-item-device' }"
         @click="switchTab('so-item-device')"
       >
@@ -67,7 +76,7 @@
       </button>
       <button
         role="tab"
-        class="tab font-semibold transition-all flex items-center gap-2"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
         :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'device-testing' }"
         @click="switchTab('device-testing')"
       >
@@ -76,7 +85,7 @@
       </button>
       <button
         role="tab"
-        class="tab font-semibold transition-all flex items-center gap-2"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
         :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'device-final-config' }"
         @click="switchTab('device-final-config')"
       >
@@ -86,145 +95,149 @@
     </div>
 
     <!-- Unified Tab Content Panels (v-show preserves Tabulator DOM elements) -->
-    <div class="tab-panels">
+    <div class="tab-panels space-y-4">
       <!-- TAB 1 & 2: SALE ORDERS & HIERARCHY TREE -->
       <div v-show="isSoTreeTab" class="trace-tab-pane">
-        <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
-          <div class="filter-left flex flex-wrap items-center gap-2">
-            <div class="relative">
-              <input
-                v-model="soSearchNumber"
-                type="text"
-                placeholder="Tìm mã SO..."
-                class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
-                @keyup.enter="loadSoTreeData"
-              />
-              <button
-                v-if="soSearchNumber"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
-                @click="soSearchNumber = ''; loadSoTreeData()"
-              >✕</button>
+        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-4">
+          <div class="filter-bar flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-content/10">
+            <div class="filter-left flex flex-wrap items-center gap-2">
+              <div class="relative">
+                <input
+                  v-model="soSearchNumber"
+                  type="text"
+                  placeholder="Tìm mã SO..."
+                  class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  @keyup.enter="loadSoTreeData"
+                />
+                <button
+                  v-if="soSearchNumber"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  @click="soSearchNumber = ''; loadSoTreeData()"
+                >✕</button>
+              </div>
+              <div class="relative">
+                <input
+                  v-model="soSearchCustomer"
+                  type="text"
+                  placeholder="Tìm tên khách hàng..."
+                  class="h-8 w-52 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  @keyup.enter="loadSoTreeData"
+                />
+                <button
+                  v-if="soSearchCustomer"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  @click="soSearchCustomer = ''; loadSoTreeData()"
+                >✕</button>
+              </div>
+              <button class="btn btn-primary btn-sm gap-1" @click="loadSoTreeData">
+                <Search class="w-4 h-4" /> Tìm kiếm
+              </button>
+              <button class="btn btn-ghost btn-sm text-xs" @click="resetSoFilters">Đặt lại</button>
             </div>
-            <div class="relative">
-              <input
-                v-model="soSearchCustomer"
-                type="text"
-                placeholder="Tìm tên khách hàng..."
-                class="h-8 w-52 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
-                @keyup.enter="loadSoTreeData"
-              />
-              <button
-                v-if="soSearchCustomer"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
-                @click="soSearchCustomer = ''; loadSoTreeData()"
-              >✕</button>
+            <div class="filter-right flex flex-wrap items-center gap-2">
+              <button class="btn btn-outline btn-sm" @click="expandAllSoTree">Mở rộng tất cả</button>
+              <button class="btn btn-outline btn-sm" @click="collapseAllSoTree">Thu gọn tất cả</button>
+              <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
+                <Info class="w-4 h-4 text-info" /> Nhấp đúp hoặc chuột phải vào dòng SO để xem chi tiết &amp; danh sách WA
+              </span>
             </div>
-            <button class="btn btn-primary btn-sm gap-1" @click="loadSoTreeData">
-              <Search class="w-4 h-4" /> Tìm kiếm
-            </button>
-            <button class="btn btn-ghost btn-sm text-xs" @click="resetSoFilters">Đặt lại</button>
           </div>
-          <div class="filter-right flex flex-wrap items-center gap-2">
-            <button class="btn btn-outline btn-sm" @click="expandAllSoTree">Mở rộng tất cả</button>
-            <button class="btn btn-outline btn-sm" @click="collapseAllSoTree">Thu gọn tất cả</button>
-            <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
-              <Info class="w-4 h-4 text-info" /> Nhấp đúp hoặc chuột phải vào dòng SO để xem chi tiết & danh sách WA
-            </span>
-          </div>
-        </div>
 
-        <div class="table-wrapper relative min-h-[400px]">
-          <div ref="soTableRef" class="tabulator-custom-theme"></div>
-          <div v-if="soTreeLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
-            <Loader2 class="w-5 h-5 animate-spin text-primary" />
-            <span class="text-sm font-medium">Đang tải cây dữ liệu Sale Order...</span>
+          <div class="table-wrapper relative min-h-[400px]">
+            <div ref="soTableRef" class="tabulator-custom-theme"></div>
+            <div v-if="soTreeLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
+              <Loader2 class="w-5 h-5 animate-spin text-primary" />
+              <span class="text-sm font-medium">Đang tải cây dữ liệu Sale Order...</span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- TAB 2: DEVICE TESTING LIST -->
       <div v-show="currentDisplayTab === 'device-testing'" class="trace-tab-pane">
-        <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
-          <div class="filter-left flex flex-wrap items-center gap-2">
-            <div class="relative">
-              <input
-                v-model="testingSearchSerial"
-                type="text"
-                placeholder="Tìm S/N hoặc DevEUI..."
-                class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
-                @keyup.enter="loadTestingDevices"
-              />
-              <button
-                v-if="testingSearchSerial"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
-                @click="testingSearchSerial = ''; loadTestingDevices()"
-              >✕</button>
-            </div>
-            <div class="relative">
-              <input
-                v-model="testingSearchSo"
-                type="text"
-                placeholder="Lọc theo Mã SO..."
-                class="h-8 w-44 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
-                @keyup.enter="loadTestingDevices"
-              />
-              <button
-                v-if="testingSearchSo"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
-                @click="testingSearchSo = ''; loadTestingDevices()"
-              >✕</button>
-            </div>
-            <select v-model="testingFilterResult" class="select select-bordered select-sm w-36 h-8 min-h-0 bg-slate-900/60 text-xs border-slate-700/60 rounded-lg focus:border-primary/80" @change="loadTestingDevices">
-              <option value="">Tất cả kết quả</option>
-              <option value="PASS">PASS</option>
-              <option value="FAIL">FAIL</option>
-              <option value="NONE">NONE / PENDING</option>
-            </select>
-            <button class="btn btn-primary btn-sm gap-1" @click="loadTestingDevices">
-              <Search class="w-4 h-4" /> Lọc danh sách
-            </button>
-            <button class="btn btn-ghost btn-sm text-xs" @click="resetTestingFilters">Đặt lại</button>
-          </div>
-          <div class="filter-right flex flex-wrap items-center gap-2">
-            <button class="btn btn-success btn-sm gap-1" @click="openImportCsvDialog">
-              <Upload class="w-4 h-4" /> Import CSV
-            </button>
-            <button class="btn btn-outline btn-sm gap-1" @click="loadTestingDevices">
-              <RefreshCw class="w-4 h-4" /> Làm mới
-            </button>
-            <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
-              <Info class="w-4 h-4 text-info" /> Chuột phải để đổi trạng thái Test hoặc Xóa thiết bị
-            </span>
-          </div>
-        </div>
-
-        <div class="table-wrapper relative min-h-[400px]">
-          <div ref="testingTableRef" class="tabulator-custom-theme"></div>
-          <div v-if="testingLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
-            <Loader2 class="w-5 h-5 animate-spin text-primary" />
-            <span class="text-sm font-medium">Đang tải danh sách thiết bị kiểm thử...</span>
-          </div>
-        </div>
-
-        <!-- Pagination Bar -->
-        <div class="pagination-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mt-3 border border-base-300 text-xs">
-          <div class="text-base-content/70">
-            Tổng số: <span class="font-bold text-primary">{{ testingTotal }}</span> bản ghi
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-base-content/70">Số dòng:</span>
-            <select v-model="testingLimit" class="select select-bordered select-xs" @change="testingPage = 1; loadTestingDevices()">
-              <option :value="20">20 / trang</option>
-              <option :value="50">50 / trang</option>
-              <option :value="100">100 / trang</option>
-              <option :value="200">200 / trang</option>
-            </select>
-            <div class="join">
-              <button class="join-item btn btn-xs" :disabled="testingPage <= 1" @click="testingPage--; loadTestingDevices()">«</button>
-              <button class="join-item btn btn-xs btn-ghost pointer-events-none">
-                Trang {{ testingPage }} / {{ Math.ceil(testingTotal / testingLimit) || 1 }}
+        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-4">
+          <div class="filter-bar flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-content/10">
+            <div class="filter-left flex flex-wrap items-center gap-2">
+              <div class="relative">
+                <input
+                  v-model="testingSearchSerial"
+                  type="text"
+                  placeholder="Tìm S/N hoặc DevEUI..."
+                  class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  @keyup.enter="loadTestingDevices"
+                />
+                <button
+                  v-if="testingSearchSerial"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  @click="testingSearchSerial = ''; loadTestingDevices()"
+                >✕</button>
+              </div>
+              <div class="relative">
+                <input
+                  v-model="testingSearchSo"
+                  type="text"
+                  placeholder="Lọc theo Mã SO..."
+                  class="h-8 w-44 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  @keyup.enter="loadTestingDevices"
+                />
+                <button
+                  v-if="testingSearchSo"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  @click="testingSearchSo = ''; loadTestingDevices()"
+                >✕</button>
+              </div>
+              <select v-model="testingFilterResult" class="select select-bordered select-sm w-36 h-8 min-h-0 bg-slate-900/60 text-xs border-slate-700/60 rounded-lg focus:border-primary/80" @change="loadTestingDevices">
+                <option value="">Tất cả kết quả</option>
+                <option value="PASS">PASS</option>
+                <option value="FAIL">FAIL</option>
+                <option value="NONE">NONE / PENDING</option>
+              </select>
+              <button class="btn btn-primary btn-sm gap-1" @click="loadTestingDevices">
+                <Search class="w-4 h-4" /> Lọc danh sách
               </button>
-              <button class="join-item btn btn-xs" :disabled="testingPage >= (Math.ceil(testingTotal / testingLimit) || 1)" @click="testingPage++; loadTestingDevices()">»</button>
+              <button class="btn btn-ghost btn-sm text-xs" @click="resetTestingFilters">Đặt lại</button>
+            </div>
+            <div class="filter-right flex flex-wrap items-center gap-2">
+              <button class="btn btn-success btn-sm gap-1" @click="openImportCsvDialog">
+                <Upload class="w-4 h-4" /> Import CSV
+              </button>
+              <button class="btn btn-outline btn-sm gap-1" @click="loadTestingDevices">
+                <RefreshCw class="w-4 h-4" /> Làm mới
+              </button>
+              <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
+                <Info class="w-4 h-4 text-info" /> Chuột phải để đổi trạng thái Test hoặc Xóa thiết bị
+              </span>
+            </div>
+          </div>
+
+          <div class="table-wrapper relative min-h-[400px]">
+            <div ref="testingTableRef" class="tabulator-custom-theme"></div>
+            <div v-if="testingLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
+              <Loader2 class="w-5 h-5 animate-spin text-primary" />
+              <span class="text-sm font-medium">Đang tải danh sách thiết bị kiểm thử...</span>
+            </div>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-base-content/10 text-xs">
+            <div class="text-base-content/70">
+              Tổng số: <span class="font-bold text-primary">{{ testingTotal }}</span> bản ghi
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-base-content/70">Số dòng:</span>
+              <select v-model="testingLimit" class="select select-bordered select-xs" @change="testingPage = 1; loadTestingDevices()">
+                <option :value="20">20 / trang</option>
+                <option :value="50">50 / trang</option>
+                <option :value="100">100 / trang</option>
+                <option :value="200">200 / trang</option>
+              </select>
+              <div class="join">
+                <button class="join-item btn btn-xs" :disabled="testingPage <= 1" @click="testingPage--; loadTestingDevices()">«</button>
+                <button class="join-item btn btn-xs btn-ghost pointer-events-none">
+                  Trang {{ testingPage }} / {{ Math.ceil(testingTotal / testingLimit) || 1 }}
+                </button>
+                <button class="join-item btn btn-xs" :disabled="testingPage >= (Math.ceil(testingTotal / testingLimit) || 1)" @click="testingPage++; loadTestingDevices()">»</button>
+              </div>
             </div>
           </div>
         </div>
@@ -232,70 +245,72 @@
 
       <!-- TAB 3: DEVICE FINAL CONFIG LIST -->
       <div v-show="currentDisplayTab === 'device-final-config'" class="trace-tab-pane">
-        <div class="filter-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mb-4 border border-base-300">
-          <div class="filter-left flex flex-wrap items-center gap-2">
-            <div class="relative">
-              <input
-                v-model="configSearchSerial"
-                type="text"
-                placeholder="Tìm S/N hoặc DevEUI..."
-                class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
-                @keyup.enter="loadFinalConfigDevices"
-              />
-              <button
-                v-if="configSearchSerial"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
-                @click="configSearchSerial = ''; loadFinalConfigDevices()"
-              >✕</button>
-            </div>
-            <select v-model="configFilterStatus" class="select select-bordered select-sm w-48 h-8 min-h-0 bg-slate-900/60 text-xs border-slate-700/60 rounded-lg focus:border-primary/80" @change="loadFinalConfigDevices">
-              <option value="">Tất cả trạng thái</option>
-              <option value="CONFIGURED_PASS">CONFIGURED_PASS</option>
-              <option value="CONFIG_FAILED">CONFIG_FAILED</option>
-              <option value="NONE">UNCONFIGURED / NONE</option>
-            </select>
-            <button class="btn btn-primary btn-sm gap-1" @click="loadFinalConfigDevices">
-              <Search class="w-4 h-4" /> Lọc danh sách
-            </button>
-            <button class="btn btn-ghost btn-sm text-xs" @click="resetConfigFilters">Đặt lại</button>
-          </div>
-          <div class="filter-right flex flex-wrap items-center gap-2">
-            <button class="btn btn-outline btn-sm gap-1" @click="loadFinalConfigDevices">
-              <RefreshCw class="w-4 h-4" /> Làm mới
-            </button>
-            <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
-              <Info class="w-4 h-4 text-info" /> Chuột phải để xem Session / Đổi trạng thái Config / Xóa
-            </span>
-          </div>
-        </div>
-
-        <div class="table-wrapper relative min-h-[400px]">
-          <div ref="configTableRef" class="tabulator-custom-theme"></div>
-          <div v-if="configLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
-            <Loader2 class="w-5 h-5 animate-spin text-primary" />
-            <span class="text-sm font-medium">Đang tải danh sách thiết bị cấu hình cuối...</span>
-          </div>
-        </div>
-
-        <!-- Pagination Bar -->
-        <div class="pagination-bar flex flex-wrap items-center justify-between gap-3 p-3 bg-base-200/50 rounded-lg mt-3 border border-base-300 text-xs">
-          <div class="text-base-content/70">
-            Tổng số: <span class="font-bold text-primary">{{ configTotal }}</span> bản ghi
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-base-content/70">Số dòng:</span>
-            <select v-model="configLimit" class="select select-bordered select-xs" @change="configPage = 1; loadFinalConfigDevices()">
-              <option :value="20">20 / trang</option>
-              <option :value="50">50 / trang</option>
-              <option :value="100">100 / trang</option>
-              <option :value="200">200 / trang</option>
-            </select>
-            <div class="join">
-              <button class="join-item btn btn-xs" :disabled="configPage <= 1" @click="configPage--; loadFinalConfigDevices()">«</button>
-              <button class="join-item btn btn-xs btn-ghost pointer-events-none">
-                Trang {{ configPage }} / {{ Math.ceil(configTotal / configLimit) || 1 }}
+        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-4">
+          <div class="filter-bar flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-content/10">
+            <div class="filter-left flex flex-wrap items-center gap-2">
+              <div class="relative">
+                <input
+                  v-model="configSearchSerial"
+                  type="text"
+                  placeholder="Tìm S/N hoặc DevEUI..."
+                  class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  @keyup.enter="loadFinalConfigDevices"
+                />
+                <button
+                  v-if="configSearchSerial"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  @click="configSearchSerial = ''; loadFinalConfigDevices()"
+                >✕</button>
+              </div>
+              <select v-model="configFilterStatus" class="select select-bordered select-sm w-48 h-8 min-h-0 bg-slate-900/60 text-xs border-slate-700/60 rounded-lg focus:border-primary/80" @change="loadFinalConfigDevices">
+                <option value="">Tất cả trạng thái</option>
+                <option value="CONFIGURED_PASS">CONFIGURED_PASS</option>
+                <option value="CONFIG_FAILED">CONFIG_FAILED</option>
+                <option value="NONE">UNCONFIGURED / NONE</option>
+              </select>
+              <button class="btn btn-primary btn-sm gap-1" @click="loadFinalConfigDevices">
+                <Search class="w-4 h-4" /> Lọc danh sách
               </button>
-              <button class="join-item btn btn-xs" :disabled="configPage >= (Math.ceil(configTotal / configLimit) || 1)" @click="configPage++; loadFinalConfigDevices()">»</button>
+              <button class="btn btn-ghost btn-sm text-xs" @click="resetConfigFilters">Đặt lại</button>
+            </div>
+            <div class="filter-right flex flex-wrap items-center gap-2">
+              <button class="btn btn-outline btn-sm gap-1" @click="loadFinalConfigDevices">
+                <RefreshCw class="w-4 h-4" /> Làm mới
+              </button>
+              <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
+                <Info class="w-4 h-4 text-info" /> Chuột phải để xem Session / Đổi trạng thái Config / Xóa
+              </span>
+            </div>
+          </div>
+
+          <div class="table-wrapper relative min-h-[400px]">
+            <div ref="configTableRef" class="tabulator-custom-theme"></div>
+            <div v-if="configLoading" class="loading-overlay absolute inset-0 bg-base-300/60 backdrop-blur-sm flex items-center justify-center gap-2 z-10">
+              <Loader2 class="w-5 h-5 animate-spin text-primary" />
+              <span class="text-sm font-medium">Đang tải danh sách thiết bị cấu hình cuối...</span>
+            </div>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-base-content/10 text-xs">
+            <div class="text-base-content/70">
+              Tổng số: <span class="font-bold text-primary">{{ configTotal }}</span> bản ghi
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-base-content/70">Số dòng:</span>
+              <select v-model="configLimit" class="select select-bordered select-xs" @change="configPage = 1; loadFinalConfigDevices()">
+                <option :value="20">20 / trang</option>
+                <option :value="50">50 / trang</option>
+                <option :value="100">100 / trang</option>
+                <option :value="200">200 / trang</option>
+              </select>
+              <div class="join">
+                <button class="join-item btn btn-xs" :disabled="configPage <= 1" @click="configPage--; loadFinalConfigDevices()">«</button>
+                <button class="join-item btn btn-xs btn-ghost pointer-events-none">
+                  Trang {{ configPage }} / {{ Math.ceil(configTotal / configLimit) || 1 }}
+                </button>
+                <button class="join-item btn btn-xs" :disabled="configPage >= (Math.ceil(configTotal / configLimit) || 1)" @click="configPage++; loadFinalConfigDevices()">»</button>
+              </div>
             </div>
           </div>
         </div>
@@ -2927,35 +2942,15 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .traceability-container {
-  padding: 20px;
-  background-color: transparent;
   min-height: calc(100vh - 80px);
 }
 
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  background: hsl(var(--b2) / 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 16px 20px;
-  border-radius: 8px;
-  border: 1px solid hsl(var(--b3));
+  margin-bottom: 1rem;
 }
 
 .isolated-header-bar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  background: hsl(var(--b2) / 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 12px 20px;
-  border-radius: 8px;
-  border: 1px solid hsl(var(--b3));
+  margin-bottom: 1rem;
 }
 
 .isolated-title {
@@ -2966,56 +2961,35 @@ onBeforeUnmount(() => {
 }
 
 .isolated-content-panel {
-  background: hsl(var(--b2) / 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid hsl(var(--b3));
+  border-radius: 12px;
 }
 
 .header-title h2 {
   margin: 0;
-  font-family: var(--cyber-font-display);
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  color: #f1f5f9;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .header-title .subtitle {
   font-size: 13px;
-  color: #94a3b8;
   margin-top: 4px;
-  display: inline-block;
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
 .main-tabs {
-  background: hsl(var(--b2) / 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 8px;
-  border: 1px solid hsl(var(--b3));
+  border-radius: 12px;
 }
 
 .trace-tab-pane {
   display: block;
-  padding: 12px 0 0 0;
 }
 
 .filter-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -3049,7 +3023,7 @@ onBeforeUnmount(() => {
   position: relative;
   min-height: 380px;
   border: 1px solid hsl(var(--b3));
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   background: hsl(var(--b1));
 }
@@ -3074,8 +3048,6 @@ onBeforeUnmount(() => {
 
 .pagination-bar {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
 }
 
 .mono-font {
