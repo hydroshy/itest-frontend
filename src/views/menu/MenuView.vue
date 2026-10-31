@@ -1,10 +1,21 @@
 <template>
   <div class="launcher-view flex-1 flex flex-col justify-start w-full max-w-[1720px] mx-auto px-4 sm:px-8 xl:px-12 pt-2 sm:pt-4 pb-4 select-none min-h-[calc(100vh-4rem)]">
-    <!-- Top Bar Portal: Search & Category Filters (Teleported to Navbar) -->
-    <Teleport to="#layout-navbar-center" v-if="mounted && hasNavbarPortal">
-      <div class="flex items-center gap-3 w-full justify-center max-w-2xl">
+    <!-- Header Banner: Title, Subtitle, Search & Category Filters -->
+    <div class="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 mb-3 bg-[#0b2942]/85 border border-[#1d3b5a] rounded-2xl backdrop-blur-md shadow-lg">
+      <div>
+        <h2 class="text-xl font-bold font-['Orbitron',sans-serif] text-[#f8fafc] tracking-wide flex items-center gap-2.5">
+          <CyberIcon name="grid" :size="22" class="text-primary" />
+          <span>Menu Ứng Dụng & Phân Hệ</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-[#94a3b8] mt-1">
+          Khởi chạy các tiện ích kiểm thử, cấu hình thiết bị và công cụ vận hành hệ thống ITEST
+        </p>
+      </div>
+
+      <!-- Search & Category Filters -->
+      <div class="flex flex-wrap items-center gap-3">
         <!-- Search bar with refined smooth glass style -->
-        <div class="relative flex items-center flex-1 max-w-sm group">
+        <div class="relative flex items-center min-w-[200px] max-w-xs group">
           <CyberIcon
             name="search"
             :size="14"
@@ -28,7 +39,7 @@
         </div>
 
         <!-- Category tabs -->
-        <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15 shrink-0 shadow-inner h-9 items-center flex">
+        <div class="join bg-[#0f172a]/90 p-0.5 rounded-xl border border-slate-700/60 shrink-0 shadow-inner h-9 items-center flex">
           <button
             class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
             :class="selectedCategory === 'all' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
@@ -51,58 +62,6 @@
             Plugin
           </button>
         </div>
-      </div>
-    </Teleport>
-
-    <!-- Standalone Fallback: Render search & filters inside page if navbar portal is absent -->
-    <div
-      v-if="mounted && !hasNavbarPortal"
-      class="flex flex-wrap items-center justify-between gap-3 mb-4 bg-base-200/60 p-3 rounded-2xl border border-base-content/10 shadow-sm"
-    >
-      <div class="relative flex items-center flex-1 min-w-[220px] max-w-sm group">
-        <CyberIcon
-          name="search"
-          :size="14"
-          class="absolute left-3 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none"
-        />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Tìm kiếm phân hệ..."
-          class="w-full h-9 pl-9 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-xl border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
-        />
-        <button
-          v-if="searchQuery"
-          type="button"
-          @click="searchQuery = ''"
-          class="absolute right-2.5 text-slate-400 hover:text-slate-200 text-xs transition-colors p-0.5 rounded-full"
-        >
-          ✕
-        </button>
-      </div>
-
-      <div class="join bg-base-300/80 p-0.5 rounded-xl border border-base-content/15 shrink-0 shadow-inner h-9 items-center flex">
-        <button
-          class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-          :class="selectedCategory === 'all' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
-          @click="setCategory('all')"
-        >
-          Tất cả
-        </button>
-        <button
-          class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-          :class="selectedCategory === 'system' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
-          @click="setCategory('system')"
-        >
-          Hệ thống
-        </button>
-        <button
-          class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-          :class="selectedCategory === 'plugin' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
-          @click="setCategory('plugin')"
-        >
-          Plugin
-        </button>
       </div>
     </div>
 
@@ -286,14 +245,14 @@
     <!-- Context Menu -->
     <Teleport to="body">
       <div
-        v-if="contextMenu.visible"
+        v-if="contextMenu.visible && contextMenu.card"
         class="fixed z-[9999] min-w-[210px] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl py-1 px-1 text-slate-200 select-none animate-in fade-in zoom-in-95 duration-100"
         :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
         @click.stop
       >
         <div class="px-3 py-1.5 border-b border-slate-700/50 mb-1">
-          <div class="text-xs font-semibold text-slate-100 truncate">{{ contextMenu.card?.title }}</div>
-          <div class="text-[10px] text-slate-400 truncate font-mono">{{ contextMenu.card?.pluginId || contextMenu.card?.category }}</div>
+          <div class="text-xs font-semibold text-slate-100 truncate">{{ contextMenu.card.title }}</div>
+          <div class="text-[10px] text-slate-400 truncate font-mono">{{ contextMenu.card.pluginId || contextMenu.card.category }}</div>
         </div>
         <button
           @click="openCardDetails(contextMenu.card)"
@@ -303,7 +262,7 @@
           <span>Hiển thị chi tiết</span>
         </button>
         <button
-          @click="if (contextMenu.card) navigateTo(contextMenu.card); closeContextMenu()"
+          @click="navigateTo(contextMenu.card); closeContextMenu()"
           class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-lg transition-colors text-left"
         >
           <ExternalLink :size="14" class="text-slate-400" />
@@ -322,7 +281,7 @@
     <!-- Modal Chi Tiết Phân Hệ (Đặc biệt Final Config) -->
     <Teleport to="body">
       <div
-        v-if="detailModalVisible"
+        v-if="detailModalVisible && detailCard"
         class="modal modal-open fixed inset-0 z-[9998] flex items-center justify-center p-4 animate-fadeIn"
       >
         <div class="modal-box max-w-2xl bg-[#0f1724] border border-slate-700/80 rounded-2xl shadow-2xl p-6 text-slate-200 max-h-[85vh] flex flex-col relative z-10">
@@ -330,16 +289,16 @@
           <div class="flex items-center justify-between pb-4 border-b border-slate-800">
             <div class="flex items-center gap-3">
               <div class="w-11 h-11 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
-                <CyberIcon :name="resolveCyberIconName(detailCard!)" :size="22" />
+                <CyberIcon :name="resolveCyberIconName(detailCard)" :size="22" />
               </div>
               <div>
                 <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                  {{ detailCard?.title }}
+                  {{ detailCard.title }}
                   <span class="badge badge-sm badge-outline font-mono text-[10px] border-slate-600 text-slate-300">
-                    {{ detailCard?.pluginId || detailCard?.category }}
+                    {{ detailCard.pluginId || detailCard.category }}
                   </span>
                 </h3>
-                <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">{{ detailCard?.description }}</p>
+                <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">{{ detailCard.description }}</p>
               </div>
             </div>
             <button class="btn btn-ghost btn-sm btn-circle text-slate-400 hover:text-slate-100" @click="detailModalVisible = false">✕</button>
@@ -351,11 +310,11 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
               <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
                 <div class="text-[10px] text-slate-400 uppercase font-mono">Đường dẫn Route</div>
-                <div class="font-mono font-semibold text-slate-200 mt-0.5 truncate">{{ detailCard?.route || detailCard?.path || 'N/A' }}</div>
+                <div class="font-mono font-semibold text-slate-200 mt-0.5 truncate">{{ detailCard.route || detailCard.path || 'N/A' }}</div>
               </div>
               <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
                 <div class="text-[10px] text-slate-400 uppercase font-mono">Phân loại</div>
-                <div class="font-semibold text-slate-200 mt-0.5 capitalize">{{ detailCard?.category || 'Plugin' }}</div>
+                <div class="font-semibold text-slate-200 mt-0.5 capitalize">{{ detailCard.category || 'Plugin' }}</div>
               </div>
               <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
                 <div class="text-[10px] text-slate-400 uppercase font-mono">Trạng thái Adapter</div>
@@ -367,7 +326,7 @@
             </div>
 
             <!-- Specific Detail section for Final Config -->
-            <div v-if="detailCard?.pluginId === 'final-config' || detailCard?.id.includes('final-config')" class="space-y-3">
+            <div v-if="detailCard.pluginId === 'final-config' || detailCard.id?.includes('final-config')" class="space-y-3">
               <div class="flex items-center justify-between">
                 <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
                   <CyberIcon name="cpu" :size="14" class="text-primary" />
@@ -417,7 +376,7 @@
             <!-- Detail for other plugins -->
             <div v-else class="p-4 rounded-xl bg-[#162032] border border-slate-700/50 text-xs space-y-2">
               <div class="text-slate-300 font-semibold">Thông tin mô tả:</div>
-              <p class="text-slate-400 leading-relaxed">{{ detailCard?.description || 'Phân hệ chức năng trong hệ thống ITEST.' }}</p>
+              <p class="text-slate-400 leading-relaxed">{{ detailCard.description || 'Phân hệ chức năng trong hệ thống ITEST.' }}</p>
             </div>
           </div>
 
@@ -426,7 +385,7 @@
             <button class="btn btn-sm btn-ghost text-xs text-slate-400 hover:text-slate-100" @click="detailModalVisible = false">
               Đóng
             </button>
-            <button class="btn btn-sm btn-primary text-xs gap-1.5" @click="if (detailCard) navigateTo(detailCard); detailModalVisible = false">
+            <button class="btn btn-sm btn-primary text-xs gap-1.5" @click="navigateTo(detailCard); detailModalVisible = false">
               <ExternalLink :size="13" />
               <span>Đi tới phân hệ này</span>
             </button>
@@ -464,14 +423,9 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const mounted = ref(false);
-const hasNavbarPortal = ref(false);
 const loading = ref(false);
 const searchQuery = ref('');
 const selectedCategory = ref('all');
-const cards = ref<MenuCardItem[]>([]);
-const currentPage = ref(1);
-const slideDirection = ref<'next' | 'prev'>('next');
-const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1280);
 
 // Fallback static items based on standard requirements
 const defaultStaticCards: MenuCardItem[] = [
@@ -485,6 +439,33 @@ const defaultStaticCards: MenuCardItem[] = [
     order: 1,
   },
   {
+    id: 'users',
+    title: 'Quản lý Người dùng',
+    description: 'Quản lý danh sách người dùng, kích hoạt tài khoản và gán vai trò.',
+    icon: 'users',
+    route: '/users',
+    category: 'system',
+    order: 2,
+  },
+  {
+    id: 'roles',
+    title: 'Quản lý Phân quyền',
+    description: 'Thiết lập nhóm vai trò và quyền hạn chi tiết trong hệ thống.',
+    icon: 'roles',
+    route: '/roles',
+    category: 'system',
+    order: 3,
+  },
+  {
+    id: 'plugins',
+    title: 'Quản lý Plugin',
+    description: 'Xem danh sách plugin đã cài đặt, trạng thái nạp và thông số chẩn đoán.',
+    icon: 'plugins',
+    route: '/plugins',
+    category: 'system',
+    order: 4,
+  },
+  {
     id: 'final-config:tool',
     title: 'Final Config Tool',
     description: 'Nạp cấu hình thiết bị tự động qua Web Serial và kiểm thử 4 công đoạn.',
@@ -493,7 +474,7 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'final-config',
     tab: 'tool',
     category: 'plugin',
-    order: 2,
+    order: 5,
   },
   {
     id: 'final-config:manager',
@@ -504,7 +485,7 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'final-config',
     tab: 'manager',
     category: 'plugin',
-    order: 3,
+    order: 6,
   },
   {
     id: 'final-config:create',
@@ -515,7 +496,7 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'final-config',
     tab: 'create',
     category: 'plugin',
-    order: 4,
+    order: 7,
   },
   {
     id: 'device-traceability:so',
@@ -526,7 +507,7 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'device-traceability',
     tab: 'so',
     category: 'plugin',
-    order: 5,
+    order: 8,
   },
   {
     id: 'device-traceability:devices',
@@ -537,7 +518,7 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'device-traceability',
     tab: 'devices',
     category: 'plugin',
-    order: 6,
+    order: 9,
   },
   {
     id: 'memmap-manager:manager',
@@ -548,7 +529,7 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'memmap-manager',
     tab: 'manager',
     category: 'plugin',
-    order: 7,
+    order: 10,
   },
   {
     id: 'memmap-manager:upload',
@@ -559,7 +540,7 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'memmap-manager',
     tab: 'upload',
     category: 'plugin',
-    order: 8,
+    order: 11,
   },
   {
     id: 'dis-manager:dashboard',
@@ -570,7 +551,7 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'dis-manager',
     tab: 'dashboard',
     category: 'plugin',
-    order: 9,
+    order: 12,
   },
   {
     id: 'lorawan-chirpstack:integration',
@@ -581,9 +562,14 @@ const defaultStaticCards: MenuCardItem[] = [
     pluginId: 'lorawan-chirpstack',
     tab: 'integration',
     category: 'plugin',
-    order: 10,
+    order: 13,
   },
 ];
+
+const cards = ref<MenuCardItem[]>([...defaultStaticCards]);
+const currentPage = ref(1);
+const slideDirection = ref<'next' | 'prev'>('next');
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1280);
 
 // Responsive calculation of cards per page to maintain strictly 2 rows
 const cardsPerPage = computed(() => {
@@ -597,8 +583,8 @@ async function fetchMenuCards() {
   loading.value = true;
   try {
     const res: any = await httpClient.get('/menu/my-cards');
-    const items = res?.data || res?.items || res;
-    if (Array.isArray(items)) {
+    const items = Array.isArray(res) ? res : (res?.data || res?.items);
+    if (Array.isArray(items) && items.length > 0) {
       cards.value = items.map((item: any) => ({
         ...item,
         path: item.route || item.path,
@@ -606,14 +592,15 @@ async function fetchMenuCards() {
       return;
     }
   } catch (err) {
-    console.warn('Backend /api/menu/my-cards request failed:', err);
+    console.warn('Backend /api/v1/menu/my-cards request failed:', err);
   } finally {
     loading.value = false;
   }
 
-  // Fallback phòng vệ (chỉ dùng khi API gặp sự cố mạng hoặc lỗi kết nối)
-  const userRoles = authStore.roles.map((r: string) => r.toUpperCase());
+  // Fallback an toàn khi API trả về rỗng hoặc chưa nạp được role
+  const userRoles = (authStore.roles || []).map((r: string) => r.toUpperCase());
   const isAdmin =
+    userRoles.length === 0 ||
     userRoles.includes('ADMIN') ||
     userRoles.includes('SUPER_ADMIN') ||
     userRoles.includes('ADMINISTRATOR');
@@ -625,15 +612,16 @@ async function fetchMenuCards() {
       return (
         card.id === 'final-config:tool' ||
         card.id === 'device-traceability:devices' ||
-        card.id === 'lorawan-chirpstack:integration'
+        card.id === 'lorawan-chirpstack:integration' ||
+        card.id === 'dashboard'
       );
     });
   } else if (userRoles.includes('END_USER')) {
     cards.value = defaultStaticCards.filter((card) => {
-      return card.id === 'final-config:tool';
+      return card.id === 'final-config:tool' || card.id === 'dashboard';
     });
   } else {
-    cards.value = [];
+    cards.value = [...defaultStaticCards];
   }
 }
 
@@ -725,8 +713,9 @@ function navigateTo(card: MenuCardItem) {
   }
 }
 
-function resolveCyberIconName(card: MenuCardItem): string {
-  const raw = `${card.id} ${card.icon || ''} ${card.title || ''}`.toLowerCase();
+function resolveCyberIconName(card?: MenuCardItem | null): string {
+  if (!card) return 'tools';
+  const raw = `${card.id || ''} ${card.icon || ''} ${card.title || ''}`.toLowerCase();
   if (raw.includes('dashboard') || raw.includes('odometer') || raw.includes('databoard')) return 'dashboard';
   if (raw.includes('cpu') || raw.includes('final-config') || raw.includes('chip')) return 'cpu';
   if (raw.includes('trace') || raw.includes('tools') || raw.includes('barcode') || raw.includes('scan') || raw.includes('so')) return 'traceability';
@@ -799,19 +788,19 @@ async function openCardDetails(card: MenuCardItem | null) {
   finalConfigProfiles.value = [];
   finalConfigStatus.value = null;
 
-  if (card.pluginId === 'final-config' || card.id.includes('final-config')) {
+  if (card.pluginId === 'final-config' || card.id?.includes('final-config')) {
     detailModalLoading.value = true;
     try {
       const [statusRes, profilesRes] = await Promise.allSettled([
-        httpClient.get('/api/plugins/final-config/status'),
-        httpClient.get('/api/plugins/final-config/profiles'),
+        httpClient.get('/plugins/final-config/status'),
+        httpClient.get('/plugins/final-config/profiles'),
       ]);
 
-      if (statusRes.status === 'fulfilled' && statusRes.value?.data) {
-        finalConfigStatus.value = statusRes.value.data;
+      if (statusRes.status === 'fulfilled' && statusRes.value) {
+        finalConfigStatus.value = statusRes.value;
       }
-      if (profilesRes.status === 'fulfilled' && profilesRes.value?.data) {
-        const raw = profilesRes.value.data;
+      if (profilesRes.status === 'fulfilled' && profilesRes.value) {
+        const raw = profilesRes.value;
         finalConfigProfiles.value = Array.isArray(raw) ? raw : (raw.data || []);
       }
     } catch (err) {
@@ -837,7 +826,6 @@ function handleKeyDown(e: KeyboardEvent) {
 
 onMounted(() => {
   mounted.value = true;
-  hasNavbarPortal.value = !!document.getElementById('layout-navbar-center');
   fetchMenuCards();
   window.addEventListener('resize', handleResize);
   window.addEventListener('keydown', handleKeyDown);
