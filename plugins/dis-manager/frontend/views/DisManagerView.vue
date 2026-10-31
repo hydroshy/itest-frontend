@@ -1,20 +1,23 @@
 <template>
-  <div class="dis-manager-view p-6 max-w-7xl mx-auto space-y-6">
+  <div class="dis-manager-view w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
     <!-- Header -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-content/10 pb-5">
-      <div>
-        <div class="flex items-center gap-2 text-2xl font-bold tracking-tight text-base-content">
-          <Share2 class="w-7 h-7 text-primary" />
-          <span>DIS (Odoo) Integration Hub</span>
+    <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
+      <div class="header-title">
+        <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> DIS ODOO HUB
         </div>
-        <p class="text-sm text-base-content/60 mt-0.5">
+        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
+          <Share2 class="w-6 h-6 text-primary" />
+          <span>DIS (Odoo) Integration Hub</span>
+        </h2>
+        <p class="subtitle text-xs text-base-content/70 mt-1">
           Giám sát kết nối DIS API Odoo, kiểm thử truy vấn Sandbox và quản lý đồng bộ Sales Order vào iTest.
         </p>
       </div>
 
-      <div class="flex items-center gap-2 flex-wrap">
+      <div class="header-actions flex items-center gap-2 flex-wrap">
         <span
-          class="badge badge-lg gap-1.5 font-mono text-xs font-semibold"
+          class="badge badge-sm sm:badge-md gap-1.5 font-mono text-xs font-semibold"
           :class="disStatus.connected ? 'badge-success text-success-content' : 'badge-error text-error-content'"
         >
           <span class="w-2 h-2 rounded-full bg-current"></span>
@@ -22,7 +25,7 @@
         </span>
 
         <span
-          class="badge badge-lg badge-outline gap-1 font-mono text-xs font-semibold"
+          class="badge badge-sm sm:badge-md badge-outline gap-1 font-mono text-xs font-semibold"
           :class="disStatus.isMock ? 'badge-warning' : 'badge-primary'"
         >
           {{ disStatus.isMock ? 'MOCK MODE' : 'LIVE API' }}
@@ -30,7 +33,7 @@
 
         <button
           type="button"
-          class="btn btn-primary btn-sm gap-2"
+          class="btn btn-primary btn-sm gap-2 shadow-sm"
           :disabled="checkingStatus"
           @click="fetchStatus"
         >
@@ -41,29 +44,32 @@
     </header>
 
     <!-- Main Tabs -->
-    <div class="tabs tabs-boxed bg-base-300/50 p-1 rounded-xl w-fit">
+    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
+        role="tab"
         type="button"
-        class="tab text-sm font-medium gap-2 transition-all"
-        :class="{ 'tab-active': activeTab === 'diagnostics' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'diagnostics' }"
         @click="activeTab = 'diagnostics'"
       >
         <Monitor class="w-4 h-4" />
         Chẩn đoán & Cấu hình
       </button>
       <button
+        role="tab"
         type="button"
-        class="tab text-sm font-medium gap-2 transition-all"
-        :class="{ 'tab-active': activeTab === 'orders' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'orders' }"
         @click="activeTab = 'orders'"
       >
         <List class="w-4 h-4" />
         Tra cứu & Đồng bộ SO
       </button>
       <button
+        role="tab"
         type="button"
-        class="tab text-sm font-medium gap-2 transition-all"
-        :class="{ 'tab-active': activeTab === 'sandbox' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'sandbox' }"
         @click="activeTab = 'sandbox'"
       >
         <Terminal class="w-4 h-4" />

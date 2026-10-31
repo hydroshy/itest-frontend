@@ -1,20 +1,21 @@
 <template>
-  <section class="final-config-page">
+  <section class="final-config-page w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
     <!-- Nếu ở chế độ Isolate Tab (chỉ mở 1 tab cụ thể, ví dụ từ Menu Launcher) -->
     <div v-if="isIsolatedView" class="isolated-tool-wrapper">
-      <div class="isolated-header">
-        <button class="btn btn-ghost btn-sm gap-2" @click="goBackToMenu">
+      <div class="isolated-header flex items-center gap-3 p-3 bg-base-200/60 rounded-xl mb-4 border border-base-300 shadow-sm backdrop-blur-md">
+        <button class="btn btn-ghost btn-sm gap-2 text-primary font-medium" @click="goBackToMenu">
           <ArrowLeft class="w-4 h-4" />
           Trở về Menu
         </button>
-        <span class="isolated-title">{{ isolatedTitle }}</span>
+        <div class="divider divider-horizontal my-1 mx-0"></div>
+        <span class="isolated-title font-semibold text-base text-base-content">{{ isolatedTitle }}</span>
       </div>
 
       <!-- Nội dung tương ứng với tab được phân lập -->
       <FinalConfigTool v-if="currentIsolatedTab === 'tool'" />
 
       <div v-else-if="currentIsolatedTab === 'manager'">
-        <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
           <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-3 border-b border-base-content/10">
             <span class="font-bold text-base">Danh sách Final Config</span>
             <div class="flex flex-wrap items-center gap-2">
@@ -44,7 +45,7 @@
       </div>
 
       <div v-else-if="currentIsolatedTab === 'create'">
-        <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
           <div class="pb-3 mb-3 border-b border-base-content/10">
             <span class="font-bold text-base">Tạo Final Config</span>
           </div>
@@ -129,19 +130,23 @@
 
     <!-- Chế độ đầy đủ với các Tab thông thường -->
     <template v-else>
-      <header class="page-header flex flex-wrap items-center justify-between gap-4 mb-4">
+      <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
         <div>
           <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
             <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> FINAL CONFIG
           </div>
-          <h2 class="text-2xl font-bold tracking-tight">Final Config</h2>
-          <p class="text-sm text-base-content/70">Tạo cấu hình cuối từ Memmap Payload đã được kiểm tra.</p>
+          <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5 mt-0.5">
+            <SlidersHorizontal class="w-6 h-6 text-primary" /> Final Config
+          </h2>
+          <p class="subtitle text-xs text-base-content/70 mt-1">Tạo cấu hình cuối từ Memmap Payload đã được kiểm tra.</p>
         </div>
-        <button class="btn btn-outline btn-sm gap-2" :disabled="loading" @click="fetchProfiles">
-          <span v-if="loading" class="loading loading-spinner loading-xs"></span>
-          <RefreshCw v-else class="w-4 h-4" />
-          Làm mới
-        </button>
+        <div class="header-actions flex items-center gap-2">
+          <button class="btn btn-outline btn-sm gap-2" :disabled="loading" @click="fetchProfiles">
+            <span v-if="loading" class="loading loading-spinner loading-xs"></span>
+            <RefreshCw v-else class="w-4 h-4" />
+            Làm mới
+          </button>
+        </div>
       </header>
 
       <div v-if="errorMessage" class="alert alert-error text-sm mb-4">
@@ -153,27 +158,30 @@
       </div>
 
       <!-- Navigation Tabs -->
-      <div class="tabs tabs-boxed bg-base-200/50 p-1 mb-4 inline-flex">
+      <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
         <button
+          role="tab"
           type="button"
-          class="tab font-semibold tracking-wide text-xs md:text-sm"
-          :class="{ 'tab-active': activeTab === 'manager' }"
+          class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+          :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'manager' }"
           @click="activeTab = 'manager'; handleTabChange('manager')"
         >
           FINAL CONFIG MANAGER
         </button>
         <button
+          role="tab"
           type="button"
-          class="tab font-semibold tracking-wide text-xs md:text-sm"
-          :class="{ 'tab-active': activeTab === 'create' }"
+          class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+          :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'create' }"
           @click="activeTab = 'create'; handleTabChange('create')"
         >
           FINAL CONFIG CREATE
         </button>
         <button
+          role="tab"
           type="button"
-          class="tab font-semibold tracking-wide text-xs md:text-sm"
-          :class="{ 'tab-active': activeTab === 'tool' }"
+          class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+          :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'tool' }"
           @click="activeTab = 'tool'; handleTabChange('tool')"
         >
           FINAL CONFIG TOOL
@@ -182,7 +190,7 @@
 
       <!-- Tab 1: Manager -->
       <div v-if="activeTab === 'manager'">
-        <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
           <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-3 border-b border-base-content/10">
             <span class="font-bold text-base">Danh sách Final Config</span>
             <div class="relative">
@@ -206,7 +214,7 @@
 
       <!-- Tab 2: Create -->
       <div v-else-if="activeTab === 'create'">
-        <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
           <div class="pb-3 mb-3 border-b border-base-content/10">
             <span class="font-bold text-base">Tạo Final Config</span>
           </div>
@@ -361,7 +369,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { RefreshCw, ArrowLeft, AlertTriangle, X, Search, Eye, Trash2 } from 'lucide-vue-next';
+import { RefreshCw, ArrowLeft, AlertTriangle, X, Search, Eye, Trash2, SlidersHorizontal } from 'lucide-vue-next';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 import { cyberToast, cyberConfirm } from '@/cyber/hud';

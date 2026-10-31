@@ -1,18 +1,21 @@
 <template>
-  <div class="testing-view p-4 space-y-4">
+  <div class="testing-view w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
     <!-- Header -->
-    <div class="flex flex-wrap items-center justify-between gap-4 pb-2">
-      <div class="header-left">
-        <h2 class="text-2xl font-bold flex items-center gap-2 tracking-tight">
+    <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
+      <div class="header-title">
+        <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> GATEWAY TESTING
+        </div>
+        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
           <Gauge class="w-6 h-6 text-primary" />
-          Gateway Testing
+          <span>Gateway Testing</span>
         </h2>
-        <span class="text-xs text-base-content/70">
+        <p class="subtitle text-xs text-base-content/70 mt-1">
           Giám sát gói tin Dual Payload (Raw/Decoded) &amp; phiên kiểm thử Gateway kết nối ChirpStack
-        </span>
+        </p>
       </div>
-      <div class="flex items-center gap-2">
-        <button class="btn btn-primary btn-sm gap-2" @click="openCreateSessionDialog">
+      <div class="header-actions flex items-center gap-2 flex-wrap">
+        <button class="btn btn-primary btn-sm gap-2 shadow-sm" @click="openCreateSessionDialog">
           <Plus class="w-4 h-4" />
           Tạo Phiên Test Mới
         </button>
@@ -22,31 +25,35 @@
           Làm Mới
         </button>
       </div>
-    </div>
+    </header>
 
     <!-- Navigation Tabs -->
-    <div class="tabs tabs-boxed bg-base-200/50 p-1 inline-flex">
+    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
+        role="tab"
         type="button"
-        class="tab font-semibold tracking-wide text-xs md:text-sm"
-        :class="{ 'tab-active': activeTab === 'gateway-sessions' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'gateway-sessions' }"
         @click="activeTab = 'gateway-sessions'; handleTabChange('gateway-sessions')"
       >
+        <Activity class="w-4 h-4" />
         Gateway Test Sessions
       </button>
       <button
+        role="tab"
         type="button"
-        class="tab font-semibold tracking-wide text-xs md:text-sm"
-        :class="{ 'tab-active': activeTab === 'packets' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'packets' }"
         @click="activeTab = 'packets'; handleTabChange('packets')"
       >
+        <Radio class="w-4 h-4" />
         Giám Sát Gói Tin (Packets)
       </button>
     </div>
 
     <!-- TAB 1: Gateway Test Sessions -->
     <div v-if="activeTab === 'gateway-sessions'">
-      <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10">
           <h3 class="font-bold text-base">Lịch Sử Phiên Test Gateway (ChirpStack)</h3>
           <button class="btn btn-primary btn-sm gap-1" @click="openCreateSessionDialog">
@@ -147,7 +154,7 @@
 
     <!-- TAB 2: Giám sát gói tin (Packets) -->
     <div v-if="activeTab === 'packets'" class="space-y-4">
-      <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
           <div class="form-control">
             <label class="label py-0.5"><span class="label-text text-xs">DevEUI / Gateway ID</span></label>
@@ -199,7 +206,7 @@
         </div>
       </div>
 
-      <div class="card border border-base-content/10 bg-base-100 shadow-sm p-4">
+      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
         <div class="overflow-x-auto relative">
           <div v-if="loadingPackets" class="absolute inset-0 bg-base-100/60 backdrop-blur-xs flex items-center justify-center z-10">
             <span class="loading loading-spinner loading-md text-primary"></span>
@@ -394,6 +401,7 @@ import {
   FileText,
   Binary,
   Radio,
+  Activity,
   X,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/cyber/hud';

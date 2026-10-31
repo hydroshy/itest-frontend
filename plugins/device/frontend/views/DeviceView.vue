@@ -1,20 +1,23 @@
 <template>
-  <div class="device-view p-6 max-w-7xl mx-auto space-y-6">
+  <div class="device-view w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
     <!-- Header -->
-    <header class="view-header flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-content/10 pb-5">
-      <div>
-        <div class="flex items-center gap-2 text-2xl font-bold tracking-tight text-base-content">
-          <Cpu class="w-7 h-7 text-primary" />
-          <span>Thiết Bị (Devices)</span>
+    <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
+      <div class="header-title">
+        <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> DEVICE REPOSITORY
         </div>
-        <p class="text-sm text-base-content/60 mt-0.5">
+        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
+          <Cpu class="w-6 h-6 text-primary" />
+          <span>Thiết Bị (Devices)</span>
+        </h2>
+        <p class="subtitle text-xs text-base-content/70 mt-1">
           Quản lý thiết bị IoT, liên kết truy vết Traceability (SO/WA/Item Code) độc lập
         </p>
       </div>
-      <div class="header-right flex items-center gap-2">
+      <div class="header-actions flex items-center gap-2 flex-wrap">
         <button
           type="button"
-          class="btn btn-primary btn-sm gap-2"
+          class="btn btn-primary btn-sm gap-2 shadow-sm"
           @click="openRegisterDialog"
         >
           <Plus class="w-4 h-4" />
@@ -33,7 +36,7 @@
     </header>
 
     <!-- Filter Card -->
-    <div class="card bg-base-200/60 border border-base-content/10 p-4 shadow-sm backdrop-blur-md">
+    <div class="card bg-base-200/60 border border-base-300 rounded-xl p-4 shadow-sm backdrop-blur-md mb-4">
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-3 items-end">
         <div class="form-control sm:col-span-2 md:col-span-3 lg:col-span-3">
           <label class="label py-1"><span class="label-text text-xs font-medium">Tìm kiếm</span></label>
@@ -103,7 +106,7 @@
     </div>
 
     <!-- Table Card -->
-    <div class="card bg-base-200/50 border border-base-content/10 shadow-sm overflow-hidden">
+    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md overflow-hidden">
       <div class="overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
           <thead class="bg-base-300/60 font-mono text-xs uppercase text-base-content/70">

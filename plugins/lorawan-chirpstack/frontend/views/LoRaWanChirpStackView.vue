@@ -1,13 +1,16 @@
 <template>
-  <section class="chirpstack-page p-6 max-w-7xl mx-auto space-y-6">
-    <header class="page-header flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-content/10 pb-5">
+  <section class="chirpstack-page w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
+    <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
       <div>
-        <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-semibold tracking-wider uppercase mb-1">
+        <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold mb-0.5">
           <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
           CHIRPSTACK v4
         </div>
-        <h2 class="text-2xl font-bold tracking-tight text-base-content">LoRaWAN Network Console</h2>
-        <p class="text-sm text-base-content/60 mt-0.5">Quản lý Network Server, Gateway, thiết bị và theo dõi uplink telemetry.</p>
+        <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5 mt-0.5">
+          <Radio class="w-6 h-6 text-primary" />
+          <span>LoRaWAN Network Console</span>
+        </h2>
+        <p class="subtitle text-xs text-base-content/70 mt-1">Quản lý Network Server, Gateway, thiết bị và theo dõi uplink telemetry.</p>
       </div>
       <div class="header-actions flex items-center gap-2">
         <button
@@ -21,7 +24,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-sm gap-2"
+          class="btn btn-primary btn-sm gap-2 shadow-sm"
           @click="serverDialogVisible = true"
         >
           <Plus class="w-4 h-4" />
@@ -46,7 +49,7 @@
       <div
         v-for="item in summaryCards"
         :key="item.label"
-        class="card bg-base-200/70 border border-base-content/10 shadow-sm p-4 backdrop-blur-md flex flex-col justify-between min-h-[110px]"
+        class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm p-4 backdrop-blur-md flex flex-col justify-between min-h-[110px]"
       >
         <span class="text-xs font-mono text-base-content/60 uppercase tracking-wider">{{ item.label }}</span>
         <strong class="text-3xl font-mono font-bold my-1" :class="item.colorClass">{{ item.value }}</strong>
@@ -55,16 +58,17 @@
     </div>
 
     <!-- Main Navigation Tabs -->
-    <div class="tabs tabs-boxed bg-base-300/40 p-1 flex flex-wrap gap-1 border border-base-content/10">
+    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
         v-for="t in tabList"
         :key="t.name"
+        role="tab"
         type="button"
-        class="tab font-medium text-xs transition-all"
-        :class="{ 'tab-active font-semibold shadow-sm': activeTab === t.name }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === t.name }"
         @click="activeTab = t.name"
       >
-        <component :is="t.icon" class="w-3.5 h-3.5 mr-1.5 inline-block" />
+        <component :is="t.icon" class="w-4 h-4 mr-1 inline-block" />
         {{ t.label }}
       </button>
     </div>

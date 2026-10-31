@@ -1,21 +1,24 @@
 <template>
-  <div class="decoder-view p-6 max-w-7xl mx-auto space-y-6">
+  <div class="decoder-view w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
     <!-- Header -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-content/10 pb-5">
-      <div>
-        <div class="flex items-center gap-2 text-2xl font-bold tracking-tight text-base-content">
-          <Cpu class="w-7 h-7 text-primary" />
-          <span>Bộ Giải Mã LoRaWAN (Payload Decoder)</span>
+    <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
+      <div class="header-title">
+        <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> DECODER ENGINE
         </div>
-        <p class="text-sm text-base-content/60 mt-0.5">
+        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
+          <Cpu class="w-6 h-6 text-primary" />
+          <span>Bộ Giải Mã LoRaWAN (Payload Decoder)</span>
+        </h2>
+        <p class="subtitle text-xs text-base-content/70 mt-1">
           Quản lý script JS giải mã payload chuẩn LoRaWAN, nhận diện tự động theo SKU &amp; LONG_FW từ MemMap.
         </p>
       </div>
 
-      <div class="flex items-center gap-2 flex-wrap">
+      <div class="header-actions flex items-center gap-2 flex-wrap">
         <button
           type="button"
-          class="btn btn-primary btn-sm gap-2"
+          class="btn btn-primary btn-sm gap-2 shadow-sm"
           @click="openCreateDialog"
         >
           <Plus class="w-4 h-4" />
@@ -35,29 +38,32 @@
     </header>
 
     <!-- Main Tabs -->
-    <div class="tabs tabs-boxed bg-base-300/50 p-1 rounded-xl w-fit">
+    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
+        role="tab"
         type="button"
-        class="tab text-sm font-medium gap-2 transition-all"
-        :class="{ 'tab-active': activeTab === 'list' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'list' }"
         @click="activeTab = 'list'"
       >
         <List class="w-4 h-4" />
         Danh Sách Bộ Giải Mã
       </button>
       <button
+        role="tab"
         type="button"
-        class="tab text-sm font-medium gap-2 transition-all"
-        :class="{ 'tab-active': activeTab === 'memmap' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'memmap' }"
         @click="activeTab = 'memmap'"
       >
         <Link2 class="w-4 h-4" />
         Khớp Nối Với MemMap
       </button>
       <button
+        role="tab"
         type="button"
-        class="tab text-sm font-medium gap-2 transition-all"
-        :class="{ 'tab-active': activeTab === 'sandbox' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'sandbox' }"
         @click="activeTab = 'sandbox'"
       >
         <Terminal class="w-4 h-4" />

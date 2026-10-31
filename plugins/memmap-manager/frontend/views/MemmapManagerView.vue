@@ -1,12 +1,16 @@
 <template>
-  <section class="memmap-page">
-    <header class="page-header">
+  <section class="memmap-page w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
+    <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
       <div>
-        <div class="eyebrow"><span class="live-dot" /> MEMMAP PAYLOAD</div>
-        <h2>Memmap Payload</h2>
-        <p>Quản lý profile và tải lên payload IEC485 có kiểm tra trước khi lưu.</p>
+        <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> MEMMAP PAYLOAD
+        </div>
+        <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5 mt-0.5">
+          <Layers class="w-6 h-6 text-primary" /> Memmap Payload
+        </h2>
+        <p class="subtitle text-xs text-base-content/70 mt-1">Quản lý profile và tải lên payload IEC485 có kiểm tra trước khi lưu.</p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="header-actions flex items-center gap-2">
         <button
           v-if="activeTab === 'manager'"
           type="button"
@@ -40,12 +44,12 @@
       <button class="btn btn-ghost btn-xs btn-circle" @click="errorMessage = ''">✕</button>
     </div>
 
-    <div role="tablist" class="tabs tabs-boxed bg-base-300/80 p-1 w-fit mb-2 border border-base-content/10">
+    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
         role="tab"
         type="button"
-        class="tab tab-sm md:tab-md text-xs font-semibold tracking-wide transition-all gap-2"
-        :class="{ 'tab-active !bg-primary !text-primary-content shadow': activeTab === 'manager' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'manager' }"
         @click="changeTab('manager')"
       >
         <Layers class="w-4 h-4" />
@@ -55,8 +59,8 @@
       <button
         role="tab"
         type="button"
-        class="tab tab-sm md:tab-md text-xs font-semibold tracking-wide transition-all gap-2"
-        :class="{ 'tab-active !bg-primary !text-primary-content shadow': activeTab === 'upload' }"
+        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'upload' }"
         @click="changeTab('upload')"
       >
         <Upload class="w-4 h-4" />
@@ -66,8 +70,8 @@
 
     <!-- TAB 1: Memmap Manager -->
     <div v-show="activeTab === 'manager'" class="memmap-tab-pane">
-      <div class="card bg-base-200 border border-base-content/10 shadow-sm">
-        <div class="card-body p-4">
+      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
+        <div>
           <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-content/10">
             <div class="flex items-center gap-2">
               <span class="font-bold text-sm text-base-content">Danh sách Memmap Payload</span>
@@ -101,8 +105,8 @@
 
     <!-- TAB 2: Memmap Upload -->
     <div v-show="activeTab === 'upload'" class="memmap-tab-pane">
-      <div class="card bg-base-200 border border-base-content/10 shadow-sm">
-        <div class="card-body p-4">
+      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
+        <div>
           <div class="flex items-center justify-between pb-3 border-b border-base-content/10 mb-3">
             <div>
               <span class="font-bold text-sm text-base-content">Tải lên Memmap Payload mới</span>
