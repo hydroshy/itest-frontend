@@ -1051,8 +1051,9 @@ div.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placehold
 /* ==========================================================================
    12. 3D ASCII OVERLAY MODAL BACKDROP (inspired by annnimate.com/animations/ascii-overlay)
    - Smooth fade-in & fade-out backdrop filter animation on modal open/close
-   - Wide centered ASCII art DAVITEQ made of ASCII glyphs in sky blue (#38bdf8) with cyan bloom
-   - Full horizontal width stretch (96vw) across modal background
+   - Wide centered ASCII art DAVITEQ made of diverse ASCII glyphs (+, -, [, ], |, _, /, \, hex)
+   - Positioned in upper zone (above modal card) to avoid obstruction
+   - Full horizontal width stretch across modal background
    - Surrounding 3D matrix ASCII glyph field interspersed in perspective depth
    - CRT scanline grid & peripheral vignette
    - Non-dismissible by clicking outside; modal only dismisses via explicit close button
@@ -1069,7 +1070,7 @@ dialog:not([open]):not(.modal-open) .modal-backdrop {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Modal backdrop 3D ASCII overlay & blur lock - ONLY active when modal is open */
@@ -1092,7 +1093,6 @@ dialog[open] .modal-backdrop {
   background-color: rgba(6, 11, 20, 0.72) !important;
   backdrop-filter: blur(12px) saturate(140%) brightness(0.65) !important;
   -webkit-backdrop-filter: blur(12px) saturate(140%) brightness(0.65) !important;
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
   animation: modalBackdropFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
@@ -1107,7 +1107,7 @@ dialog[open] .modal-backdrop * {
   pointer-events: none !important;
 }
 
-/* 3D ASCII Glyphs Layer with Full-Width DAVITEQ Sky Blue ASCII Art & Floating Surrounding Matrix */
+/* 3D ASCII Glyphs Layer with High-Tech DAVITEQ Hex-Box ASCII Art & Floating Surrounding Matrix */
 .modal.modal-open .modal-backdrop::before,
 .modal[open] .modal-backdrop::before,
 dialog[open] .modal-backdrop::before {
@@ -1115,16 +1115,16 @@ dialog[open] .modal-backdrop::before {
   position: absolute;
   inset: -80px;
   background-image:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221800%22%20height%3D%22300%22%20viewBox%3D%220%200%201800%20300%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22skyGlow%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%223.5%22%20result%3D%22b1%22%20%2F%3E%0A%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%227%22%20result%3D%22b2%22%20%2F%3E%0A%20%20%20%20%20%20%3CfeMerge%3E%0A%20%20%20%20%20%20%20%20%3CfeMergeNode%20in%3D%22b2%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3CfeMergeNode%20in%3D%22b1%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3CfeMergeNode%20in%3D%22SourceGraphic%22%20%2F%3E%0A%20%20%20%20%20%20%3C%2FfeMerge%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22backdropDim%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23060b14%22%20stop-opacity%3D%220.95%22%20%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2265%25%22%20stop-color%3D%22%23060b14%22%20stop-opacity%3D%220.82%22%20%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23060b14%22%20stop-opacity%3D%220%22%20%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Cstyle%3E%0A%20%20%20%20.ascii-brand%20%7B%0A%20%20%20%20%20%20font-family%3A%20ui-monospace%2C%20%27JetBrains%20Mono%27%2C%20%27Courier%20New%27%2C%20monospace%3B%0A%20%20%20%20%20%20font-size%3A%2026px%3B%0A%20%20%20%20%20%20font-weight%3A%20700%3B%0A%20%20%20%20%20%20fill%3A%20%2338bdf8%3B%0A%20%20%20%20%20%20letter-spacing%3A%202px%3B%0A%20%20%20%20%20%20filter%3A%20url(%23skyGlow)%3B%0A%20%20%20%20%7D%0A%20%20%20%20.ascii-sub%20%7B%0A%20%20%20%20%20%20font-family%3A%20ui-monospace%2C%20%27JetBrains%20Mono%27%2C%20monospace%3B%0A%20%20%20%20%20%20font-size%3A%2013px%3B%0A%20%20%20%20%20%20font-weight%3A%20600%3B%0A%20%20%20%20%20%20fill%3A%20rgba(56%2C%20189%2C%20248%2C%200.65)%3B%0A%20%20%20%20%20%20letter-spacing%3A%204px%3B%0A%20%20%20%20%7D%0A%20%20%3C%2Fstyle%3E%0A%20%20%3Cellipse%20cx%3D%22900%22%20cy%3D%22150%22%20rx%3D%22900%22%20ry%3D%22150%22%20fill%3D%22url(%23backdropDim)%22%20%2F%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2236%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-sub%22%3E%2B--%5B%20DAVITEQ%20INDUSTRIAL%20IOT%20PLATFORM%20%5D--------------------------------------------------%5B%20NODE.01%20%5D--%2B%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2274%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-brand%22%3E%23%23%23%23%23%23%23%23%20%20%20%20%20%20%20%20%23%23%23%20%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%23%23%23%23%20%20%20%20%23%23%23%23%23%23%23%23%23%20%20%23%23%23%23%23%23%23%23%23%20%20%20%23%23%23%23%23%23%23%20%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22104%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-brand%22%3E%23%23%20%20%20%20%20%23%23%20%20%20%20%20%20%23%23%20%23%23%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%23%23%23%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%20%23%23%20%20%20%20%20%23%23%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22134%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-brand%22%3E%23%23%20%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%23%23%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%23%23%23%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%20%23%23%20%20%20%20%20%23%23%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22164%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-brand%22%3E%23%23%20%20%20%20%20%23%23%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%23%23%23%20%20%20%20%20%23%23%23%23%23%23%20%20%20%20%20%23%23%20%20%20%20%20%23%23%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22194%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-brand%22%3E%23%23%20%20%20%20%20%23%23%20%20%20%20%23%23%23%23%23%23%23%23%23%20%20%20%23%23%20%20%20%23%23%20%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%23%23%23%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%20%23%23%20%20%23%23%20%23%23%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22224%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-brand%22%3E%23%23%20%20%20%20%20%23%23%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%23%23%20%23%23%20%20%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%23%23%23%20%20%20%20%20%23%23%20%20%20%20%20%20%20%20%20%23%23%20%20%20%20%23%23%20%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22254%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-brand%22%3E%23%23%23%23%23%23%23%23%20%20%20%20%20%23%23%20%20%20%20%20%23%23%20%20%20%20%20%23%23%23%20%20%20%20%20%20%20%23%23%23%23%20%20%20%20%20%20%20%23%23%23%20%20%20%20%20%23%23%23%23%23%23%23%23%23%20%20%20%23%23%23%23%23%20%23%23%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22286%22%20text-anchor%3D%22middle%22%20class%3D%22ascii-sub%22%3E%2B--%5B%20REALTIME_DEVICE_TELEMETRY%20%5D--------------------------------------------%5B%20v2.0-PROD%20%5D--%2B%3C%2Ftext%3E%0A%3C%2Fsvg%3E"),
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221800%22%20height%3D%22240%22%20viewBox%3D%220%200%201800%20240%22%20xml%3Aspace%3D%22preserve%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22skyGlow%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%223%22%20result%3D%22b1%22%20%2F%3E%0A%20%20%20%20%20%20%3CfeGaussianBlur%20stdDeviation%3D%226%22%20result%3D%22b2%22%20%2F%3E%0A%20%20%20%20%20%20%3CfeMerge%3E%0A%20%20%20%20%20%20%20%20%3CfeMergeNode%20in%3D%22b2%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3CfeMergeNode%20in%3D%22b1%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3CfeMergeNode%20in%3D%22SourceGraphic%22%20%2F%3E%0A%20%20%20%20%20%20%3C%2FfeMerge%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22backdropDim%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23060b14%22%20stop-opacity%3D%220.94%22%20%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2270%25%22%20stop-color%3D%22%23060b14%22%20stop-opacity%3D%220.80%22%20%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23060b14%22%20stop-opacity%3D%220%22%20%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Cstyle%3E%0A%20%20%20%20text%20%7B%0A%20%20%20%20%20%20font-family%3A%20%27Courier%20New%27%2C%20Courier%2C%20monospace%2C%20%27JetBrains%20Mono%27%3B%0A%20%20%20%20%20%20font-size%3A%2019px%3B%0A%20%20%20%20%20%20white-space%3A%20pre%20!important%3B%0A%20%20%20%20%7D%0A%20%20%20%20.ascii-glyph%20%7B%0A%20%20%20%20%20%20font-weight%3A%20700%3B%0A%20%20%20%20%20%20fill%3A%20%2338bdf8%3B%0A%20%20%20%20%20%20filter%3A%20url(%23skyGlow)%3B%0A%20%20%20%20%20%20letter-spacing%3A%200.5px%3B%0A%20%20%20%20%7D%0A%20%20%20%20.ascii-frame%20%7B%0A%20%20%20%20%20%20font-weight%3A%20600%3B%0A%20%20%20%20%20%20fill%3A%20rgba(56%2C%20189%2C%20248%2C%200.72)%3B%0A%20%20%20%20%20%20letter-spacing%3A%200.5px%3B%0A%20%20%20%20%7D%0A%20%20%3C%2Fstyle%3E%0A%20%20%3Cellipse%20cx%3D%22900%22%20cy%3D%22120%22%20rx%3D%22900%22%20ry%3D%22120%22%20fill%3D%22url(%23backdropDim)%22%20%2F%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2236%22%20text-anchor%3D%22middle%22%20xml%3Aspace%3D%22preserve%22%20class%3D%22ascii-frame%22%3E%2B--%5B%200x44%20%5D-----%2B%20%20%2B--%5B%200x41%20%5D----%2B%20%20%2B--%5B%200x56%20%5D----%2B%20%20%2B-%5B%200x49%20%5D-%2B%20%20%2B--%5B%200x54%20%5D----%2B%20%20%2B--%5B%200x45%20%5D----%2B%20%20%2B--%5B%200x51%20%5D----%2B%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2260%22%20text-anchor%3D%22middle%22%20xml%3Aspace%3D%22preserve%22%20class%3D%22ascii-glyph%22%3E%7C%20%20______%20%20%20%20%20%20%20%7C%20%20%7C%20%20%20%20%20____%20%20%20%20%20%7C%20%20%7C%20%20__%20%20%20%20%20%20__%20%20%7C%20%20%7C%20%20______%20%20%7C%20%20%7C%20%20%20_______%20%20%20%20%7C%20%20%7C%20%20%20______%20%20%20%20%20%7C%20%20%7C%20%20%20%20%20____%20%20%20%20%20%7C%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2284%22%20text-anchor%3D%22middle%22%20xml%3Aspace%3D%22preserve%22%20class%3D%22ascii-glyph%22%3E%7C%20%7C%20%20__%20%20%5C%20%20%20%20%20%20%7C%20%20%7C%20%20%20%20%2F%20%20%20%20%5C%20%20%20%20%7C%20%20%7C%20%20%5C%20%5C%20%20%20%20%2F%20%2F%20%20%7C%20%20%7C%20%7C__%20%20__%7C%20%7C%20%20%7C%20%20%7C__%20%20%20__%7C%20%20%20%7C%20%20%7C%20%20%7C%20%20____%7C%20%20%20%20%7C%20%20%7C%20%20%20%20%2F%20__%20%5C%20%20%20%20%7C%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22108%22%20text-anchor%3D%22middle%22%20xml%3Aspace%3D%22preserve%22%20class%3D%22ascii-glyph%22%3E%7C%20%7C%20%7C%20%20%5C%20%20%7C%20%20%20%20%20%7C%20%20%7C%20%20%20%2F%20%20%2F%5C%20%20%5C%20%20%20%7C%20%20%7C%20%20%20%5C%20%5C%20%20%2F%20%2F%20%20%20%7C%20%20%7C%20%20%20%20%7C%20%7C%20%20%20%7C%20%20%7C%20%20%20%20%20%7C%20%7C%20%20%20%20%20%20%7C%20%20%7C%20%20%7C%20%7C__%20%20%20%20%20%20%20%7C%20%20%7C%20%20%20%7C%20%7C%20%20%7C%20%7C%20%20%20%7C%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22132%22%20text-anchor%3D%22middle%22%20xml%3Aspace%3D%22preserve%22%20class%3D%22ascii-glyph%22%3E%7C%20%7C%20%7C%20%20%20%7C%20%7C%20%20%20%20%20%7C%20%20%7C%20%20%2F%20%20%2F%20%20%5C%20%20%5C%20%20%7C%20%20%7C%20%20%20%20%5C%20%5C%2F%20%2F%20%20%20%20%7C%20%20%7C%20%20%20%20%7C%20%7C%20%20%20%7C%20%20%7C%20%20%20%20%20%7C%20%7C%20%20%20%20%20%20%7C%20%20%7C%20%20%7C%20%20__%7C%20%20%20%20%20%20%7C%20%20%7C%20%20%20%7C%20%7C%20%20%7C%20%7C%20%20%20%7C%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22156%22%20text-anchor%3D%22middle%22%20xml%3Aspace%3D%22preserve%22%20class%3D%22ascii-glyph%22%3E%7C%20%7C%20%7C__%2F%20%20%7C%20%20%20%20%20%7C%20%20%7C%20%20%7C%20%20%2F__%5C%20%20%7C%20%20%7C%20%20%7C%20%20%20%20%20%5C%20%20%2F%20%20%20%20%20%7C%20%20%7C%20%20%20_%7C%20%7C_%20%20%7C%20%20%7C%20%20%20%20%20%7C%20%7C%20%20%20%20%20%20%7C%20%20%7C%20%20%7C%20%7C____%20%20%20%20%20%7C%20%20%7C%20%20%20%7C%20%5C__%2F%20%7C%20%20%20%7C%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22180%22%20text-anchor%3D%22middle%22%20xml%3Aspace%3D%22preserve%22%20class%3D%22ascii-glyph%22%3E%7C%20%7C______%2F%20%20%20%20%20%20%7C%20%20%7C%20%20%7C__%2F%20%20%5C__%7C%20%20%7C%20%20%7C%20%20%20%20%20%20%5C%2F%20%20%20%20%20%20%7C%20%20%7C%20%20%7C_____%7C%20%7C%20%20%7C%20%20%20%20%20%7C_%7C%20%20%20%20%20%20%7C%20%20%7C%20%20%7C______%7C%20%20%20%20%7C%20%20%7C%20%20%20%20%5C___%5C_%5C%20%20%20%7C%3C%2Ftext%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%22204%22%20text-anchor%3D%22middle%22%20xml%3Aspace%3D%22preserve%22%20class%3D%22ascii-frame%22%3E%2B---------------%2B%20%20%2B--------------%2B%20%20%2B--------------%2B%20%20%2B----------%2B%20%20%2B--------------%2B%20%20%2B--------------%2B%20%20%2B--------------%2B%3C%2Ftext%3E%0A%3C%2Fsvg%3E"),
     url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22160%22%20height%3D%22160%22%20viewBox%3D%220%200%20160%20160%22%3E%20%3Cstyle%3E%20text%20%7B%20font-family%3A%20ui-monospace%2C%20Menlo%2C%20Monaco%2C%20Consolas%2C%20monospace%3B%20font-size%3A%2011px%3B%20font-weight%3A%20600%3B%20%7D%20.t1%20%7B%20fill%3A%20rgba(56%2C%20189%2C%20248%2C%200.32)%3B%20%7D%20.t2%20%7B%20fill%3A%20rgba(52%2C%20211%2C%20153%2C%200.28)%3B%20%7D%20.t3%20%7B%20fill%3A%20rgba(167%2C%20139%2C%20250%2C%200.25)%3B%20%7D%20.td%20%7B%20fill%3A%20rgba(148%2C%20163%2C%20184%2C%200.16)%3B%20%7D%20%3C%2Fstyle%3E%20%3Ctext%20x%3D%228%22%20y%3D%2218%22%20class%3D%22t1%22%3E%2B%3C%2Ftext%3E%20%3Ctext%20x%3D%2234%22%20y%3D%2218%22%20class%3D%22td%22%3E.%3C%2Ftext%3E%20%3Ctext%20x%3D%2260%22%20y%3D%2218%22%20class%3D%22t2%22%3E%23%3C%2Ftext%3E%20%3Ctext%20x%3D%2286%22%20y%3D%2218%22%20class%3D%22td%22%3E%3A%3C%2Ftext%3E%20%3Ctext%20x%3D%22110%22%20y%3D%2218%22%20class%3D%22t1%22%3E%5B0%5D%3C%2Ftext%3E%20%3Ctext%20x%3D%22144%22%20y%3D%2218%22%20class%3D%22td%22%3E~%3C%2Ftext%3E%20%3Ctext%20x%3D%2210%22%20y%3D%2244%22%20class%3D%22td%22%3E-%3C%2Ftext%3E%20%3Ctext%20x%3D%2234%22%20y%3D%2244%22%20class%3D%22t3%22%3E%40%3C%2Ftext%3E%20%3Ctext%20x%3D%2260%22%20y%3D%2244%22%20class%3D%22td%22%3E*%3C%2Ftext%3E%20%3Ctext%20x%3D%2286%22%20y%3D%2244%22%20class%3D%22t2%22%3E%26amp%3B%3C%2Ftext%3E%20%3Ctext%20x%3D%22112%22%20y%3D%2244%22%20class%3D%22td%22%3E.%3C%2Ftext%3E%20%3Ctext%20x%3D%22142%22%20y%3D%2244%22%20class%3D%22t1%22%3E1%3C%2Ftext%3E%20%3Ctext%20x%3D%228%22%20y%3D%2270%22%20class%3D%22t2%22%3E%2F%2F%3C%2Ftext%3E%20%3Ctext%20x%3D%2236%22%20y%3D%2270%22%20class%3D%22td%22%3E%3A%3C%2Ftext%3E%20%3Ctext%20x%3D%2260%22%20y%3D%2270%22%20class%3D%22t1%22%3E%25%3C%2Ftext%3E%20%3Ctext%20x%3D%2286%22%20y%3D%2270%22%20class%3D%22t3%22%3E*%3C%2Ftext%3E%20%3Ctext%20x%3D%22112%22%20y%3D%2270%22%20class%3D%22td%22%3E-%3C%2Ftext%3E%20%3Ctext%20x%3D%22140%22%20y%3D%2270%22%20class%3D%22t2%22%3E%26lt%3B%3C%2Ftext%3E%20%3Ctext%20x%3D%2212%22%20y%3D%2296%22%20class%3D%22t3%22%3E%3F%3C%2Ftext%3E%20%3Ctext%20x%3D%2238%22%20y%3D%2296%22%20class%3D%22t1%22%3E0x%3C%2Ftext%3E%20%3Ctext%20x%3D%2262%22%20y%3D%2296%22%20class%3D%22td%22%3E%2B%3C%2Ftext%3E%20%3Ctext%20x%3D%2288%22%20y%3D%2296%22%20class%3D%22t2%22%3E%3D%3C%2Ftext%3E%20%3Ctext%20x%3D%22112%22%20y%3D%2296%22%20class%3D%22td%22%3E.%3C%2Ftext%3E%20%3Ctext%20x%3D%22138%22%20y%3D%2296%22%20class%3D%22t3%22%3E%23%3C%2Ftext%3E%20%3Ctext%20x%3D%228%22%20y%3D%22122%22%20class%3D%22td%22%3E%7E%3C%2Ftext%3E%20%3Ctext%20x%3D%2234%22%20y%3D%22122%22%20class%3D%22t2%22%3E%5B%5D%3C%2Ftext%3E%20%3Ctext%20x%3D%2262%22%20y%3D%22122%22%20class%3D%22t1%22%3E%2F%3C%2Ftext%3E%20%3Ctext%20x%3D%2286%22%20y%3D%22122%22%20class%3D%22td%22%3E%3A%3C%2Ftext%3E%20%3Ctext%20x%3D%22110%22%20y%3D%22122%22%20class%3D%22t3%22%3E%26gt%3B%3C%2Ftext%3E%20%3Ctext%20x%3D%22142%22%20y%3D%22122%22%20class%3D%22t1%22%3E0%3C%2Ftext%3E%20%3Ctext%20x%3D%2210%22%20y%3D%22148%22%20class%3D%22t1%22%3E%24%3C%2Ftext%3E%20%3Ctext%20x%3D%2236%22%20y%3D%22148%22%20class%3D%22td%22%3E.%3C%2Ftext%3E%20%3Ctext%20x%3D%2260%22%20y%3D%22148%22%20class%3D%22t3%22%3E%21%3C%2Ftext%3E%20%3Ctext%20x%3D%2288%22%20y%3D%22148%22%20class%3D%22td%22%3E-%3C%2Ftext%3E%20%3Ctext%20x%3D%22112%22%20y%3D%22148%22%20class%3D%22t2%22%3E%2B%3C%2Ftext%3E%20%3Ctext%20x%3D%22140%22%20y%3D%22148%22%20class%3D%22td%22%3E%3B%3C%2Ftext%3E%20%3C%2Fsvg%3E");
   background-position:
-    center center,
+    center 6vh,
     center center;
   background-repeat:
     no-repeat,
     repeat;
   background-size:
-    min(1800px, 96vw) auto,
+    min(1760px, 94vw) auto,
     160px 160px;
   transform: perspective(700px) rotateX(12deg) scale(1.12);
   transform-origin: center center;
@@ -1132,9 +1132,9 @@ dialog[open] .modal-backdrop::before {
     asciiBackdropFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
     asciiBackdropFloat 24s ease-in-out 0.5s infinite alternate;
   pointer-events: none;
-  opacity: 0.92;
-  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.98) 45%, rgba(0, 0, 0, 0.6) 82%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.98) 45%, rgba(0, 0, 0, 0.6) 82%, transparent 100%);
+  opacity: 0.95;
+  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.98) 50%, rgba(0, 0, 0, 0.65) 85%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.98) 50%, rgba(0, 0, 0, 0.65) 85%, transparent 100%);
 }
 
 /* CRT Scanline & Depth Vignette Layer */
@@ -1157,6 +1157,7 @@ dialog[open] .modal-backdrop::after {
   animation: modalScanlineFadeIn 0.4s ease-out forwards;
 }
 
+/* Backdrop Keyframes: Fade In */
 @keyframes modalBackdropFadeIn {
   0% {
     opacity: 0;
@@ -1170,17 +1171,44 @@ dialog[open] .modal-backdrop::after {
   }
 }
 
+/* Backdrop Keyframes: Fade Out */
+@keyframes modalBackdropFadeOut {
+  0% {
+    opacity: 1;
+    backdrop-filter: blur(12px) saturate(140%) brightness(0.65);
+    -webkit-backdrop-filter: blur(12px) saturate(140%) brightness(0.65);
+  }
+  100% {
+    opacity: 0;
+    backdrop-filter: blur(0px) saturate(100%) brightness(1);
+    -webkit-backdrop-filter: blur(0px) saturate(100%) brightness(1);
+  }
+}
+
+/* ASCII Layer Keyframes */
 @keyframes asciiBackdropFadeIn {
   0% {
     opacity: 0;
-    transform: perspective(700px) rotateX(12deg) translateY(14px) scale(0.98);
+    transform: perspective(700px) rotateX(12deg) translateY(18px) scale(0.96);
   }
   100% {
-    opacity: 0.92;
+    opacity: 0.95;
     transform: perspective(700px) rotateX(12deg) translateY(0px) scale(1.12);
   }
 }
 
+@keyframes asciiBackdropFadeOut {
+  0% {
+    opacity: 0.95;
+    transform: perspective(700px) rotateX(12deg) translateY(0px) scale(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(700px) rotateX(12deg) translateY(-18px) scale(0.96);
+  }
+}
+
+/* Scanline Keyframes */
 @keyframes modalScanlineFadeIn {
   0% {
     opacity: 0;
@@ -1190,6 +1218,16 @@ dialog[open] .modal-backdrop::after {
   }
 }
 
+@keyframes modalScanlineFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Floating animation */
 @keyframes asciiBackdropFloat {
   0% {
     transform: perspective(700px) rotateX(12deg) translateY(0px) scale(1.12);
@@ -1206,33 +1244,70 @@ dialog[open] .modal-backdrop::after {
    13. MODAL FADE IN & FADE OUT TRANSITIONS (Vue <Transition name="modal-fade">)
    ========================================================================== */
 .modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+.modal.modal-fade-enter-active {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .modal-fade-enter-from,
-.modal-fade-leave-to {
+.modal.modal-fade-enter-from {
   opacity: 0 !important;
-  pointer-events: none !important;
 }
 
 .modal-fade-enter-to,
-.modal-fade-leave-from {
+.modal.modal-fade-enter-to {
   opacity: 1 !important;
 }
 
+.modal-fade-leave-active,
+.modal.modal-fade-leave-active {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: none !important;
+}
+
+.modal-fade-leave-to,
+.modal.modal-fade-leave-to {
+  opacity: 0 !important;
+}
+
+/* Explicit backdrop animation during leave */
+.modal-fade-leave-active .modal-backdrop {
+  animation: modalBackdropFadeOut 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.modal-fade-leave-active .modal-backdrop::before {
+  animation: asciiBackdropFadeOut 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.modal-fade-leave-active .modal-backdrop::after {
+  animation: modalScanlineFadeOut 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* Explicit backdrop animation during enter */
+.modal-fade-enter-active .modal-backdrop {
+  animation: modalBackdropFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.modal-fade-enter-active .modal-backdrop::before {
+  animation: asciiBackdropFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.modal-fade-enter-active .modal-backdrop::after {
+  animation: modalScanlineFadeIn 0.35s ease-out forwards !important;
+}
+
+/* Modal box transform & scale during transitions */
 .modal-fade-enter-active .modal-box,
-.modal-fade-leave-active .modal-box,
 .modal-fade-enter-active [class*="modal-container"],
+.modal-fade-leave-active .modal-box,
 .modal-fade-leave-active [class*="modal-container"] {
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .modal-fade-enter-from .modal-box,
-.modal-fade-leave-to .modal-box,
 .modal-fade-enter-from [class*="modal-container"],
+.modal-fade-leave-to .modal-box,
 .modal-fade-leave-to [class*="modal-container"] {
-  transform: scale(0.96) translateY(8px) !important;
+  transform: scale(0.95) translateY(12px) !important;
   opacity: 0 !important;
 }
 
