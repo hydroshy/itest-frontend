@@ -269,7 +269,7 @@
       </header>
 
       <!-- Content Area protected by CModuleBoundary -->
-      <main class="layout-content relative z-0 flex-1 overflow-y-auto p-4 sm:p-6" :class="{ 'menu-layout-mode p-2 sm:p-4': route.path === '/menu', 'from-menu': route.query.from === 'menu' || isFromMenu }">
+      <main class="layout-content relative flex-1 overflow-y-auto p-4 sm:p-6" :class="{ 'menu-layout-mode p-2 sm:p-4': route.path === '/menu', 'from-menu': route.query.from === 'menu' || isFromMenu }">
         <CModuleBoundary moduleName="AppContent">
           <router-view v-slot="{ Component }">
             <transition name="fade-transform" mode="out-in">
