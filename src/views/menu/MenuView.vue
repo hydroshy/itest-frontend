@@ -1,10 +1,10 @@
 <template>
   <div class="launcher-view flex-1 flex flex-col justify-start w-full max-w-[1720px] mx-auto px-4 sm:px-8 xl:px-12 pt-2 sm:pt-4 pb-4 select-none min-h-[calc(100vh-4rem)]">
     <!-- Header Banner: Title, Subtitle, Search & Category Filters -->
-    <div class="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 mb-3 bg-[#0b2942]/85 border border-[#1d3b5a] rounded-2xl backdrop-blur-md shadow-lg">
+    <div class="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 mb-3 bg-[#151d2c] border border-white/10 rounded-3xl shadow-none">
       <div>
         <h2 class="text-xl font-bold font-display text-[#f8fafc] tracking-wide flex items-center gap-2.5">
-          <CyberIcon name="grid" :size="22" class="text-primary" />
+          <CyberIcon name="grid" :size="22" class="text-violet-400" />
           <span>Menu Ứng Dụng & Phân Hệ</span>
         </h2>
         <p class="text-xs sm:text-sm text-[#94a3b8] mt-1">
@@ -14,18 +14,18 @@
 
       <!-- Search & Category Filters -->
       <div class="flex flex-wrap items-center gap-3">
-        <!-- Search bar with refined smooth glass style -->
+        <!-- Search bar with refined smooth Memphis style -->
         <div class="relative flex items-center min-w-[200px] max-w-xs group">
           <CyberIcon
             name="search"
             :size="14"
-            class="absolute left-3 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none"
+            class="absolute left-3 text-slate-400 group-focus-within:text-violet-400 transition-colors pointer-events-none"
           />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Tìm kiếm phân hệ..."
-            class="w-full h-9 pl-9 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-xl border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+            class="w-full h-9 pl-9 pr-8 bg-[#1a2436] hover:bg-[#202c42] focus:bg-[#202c42] text-xs text-slate-200 placeholder:text-slate-400/60 placeholder:italic placeholder:font-light rounded-xl border border-white/10 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 shadow-none transition-all outline-none"
           />
           <button
             v-if="searchQuery"
@@ -39,24 +39,24 @@
         </div>
 
         <!-- Category tabs -->
-        <div class="join bg-[#0f172a]/90 p-0.5 rounded-xl border border-slate-700/60 shrink-0 shadow-inner h-9 items-center flex">
+        <div class="join bg-[#1a2436] p-0.5 rounded-xl border border-white/10 shrink-0 shadow-none h-9 items-center flex">
           <button
             class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-            :class="selectedCategory === 'all' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+            :class="selectedCategory === 'all' ? 'bg-violet-600 text-white font-semibold shadow-none border-none' : 'btn-ghost text-slate-400 hover:text-white'"
             @click="setCategory('all')"
           >
             Tất cả
           </button>
           <button
             class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-            :class="selectedCategory === 'system' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+            :class="selectedCategory === 'system' ? 'bg-violet-600 text-white font-semibold shadow-none border-none' : 'btn-ghost text-slate-400 hover:text-white'"
             @click="setCategory('system')"
           >
             Hệ thống
           </button>
           <button
             class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-            :class="selectedCategory === 'plugin' ? 'btn-primary font-semibold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
+            :class="selectedCategory === 'plugin' ? 'bg-violet-600 text-white font-semibold shadow-none border-none' : 'btn-ghost text-slate-400 hover:text-white'"
             @click="setCategory('plugin')"
           >
             Plugin
@@ -79,17 +79,17 @@
               <div
                 v-for="i in cardsPerPage"
                 :key="i"
-                class="card bg-[#162032] border border-slate-700/80 rounded-2xl p-5 min-h-[180px] flex flex-col justify-between animate-pulse shadow-md"
+                class="card bg-[#1a2436] border border-white/10 rounded-2xl p-5 min-h-[180px] flex flex-col justify-between animate-pulse shadow-none"
               >
                 <div class="flex items-center justify-between">
-                  <div class="w-10 h-10 rounded-xl bg-[#1f2d45]"></div>
-                  <div class="w-16 h-5 rounded-md bg-[#1f2d45]"></div>
+                  <div class="w-10 h-10 rounded-xl bg-[#202c42]"></div>
+                  <div class="w-16 h-5 rounded-md bg-[#202c42]"></div>
                 </div>
                 <div class="space-y-2">
-                  <div class="w-3/4 h-4 rounded bg-[#1f2d45]"></div>
-                  <div class="w-full h-3 rounded bg-[#1f2d45]/80"></div>
+                  <div class="w-3/4 h-4 rounded bg-[#202c42]"></div>
+                  <div class="w-full h-3 rounded bg-[#202c42]/80"></div>
                 </div>
-                <div class="w-1/2 h-3 rounded bg-[#1f2d45]/80 pt-2 border-t border-slate-700/40"></div>
+                <div class="w-1/2 h-3 rounded bg-[#202c42]/80 pt-2 border-t border-white/10"></div>
               </div>
             </div>
 
@@ -124,19 +124,19 @@
               <div
                 v-for="card in paginatedCards"
                 :key="card.id"
-                class="card bg-[#162032] hover:bg-[#1c2940] border border-slate-700/80 hover:border-primary/80 rounded-2xl p-5 sm:p-6 shadow-lg shadow-black/40 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden min-h-[185px]"
+                class="card bg-[#1a2436] hover:bg-[#202c42] border border-white/10 hover:border-violet-500/40 rounded-2xl p-5 sm:p-6 shadow-none transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden min-h-[185px]"
                 @click="navigateTo(card)"
                 @contextmenu.prevent="handleContextMenu($event, card)"
               >
                 <!-- Top Row: Icon + Category Badge -->
                 <div class="flex items-center justify-between">
                   <div
-                    class="w-11 h-11 rounded-xl bg-[#0f1724] border border-slate-700/70 flex items-center justify-center group-hover:scale-105 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-200 shadow-inner"
+                    class="w-11 h-11 rounded-xl bg-[#151d2c] border border-white/10 flex items-center justify-center group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/15 transition-all duration-200 shadow-none"
                   >
                     <CyberIcon
                       :name="resolveCyberIconName(card)"
                       :size="22"
-                      class="text-primary group-hover:text-primary transition-colors"
+                      class="text-violet-400 group-hover:text-violet-300 transition-colors"
                     />
                   </div>
                   <div class="flex items-center gap-1.5">
@@ -150,7 +150,7 @@
                     </button>
                     <span
                       class="badge badge-sm font-mono tracking-wider font-semibold"
-                      :class="card.category === 'system' ? 'badge-info badge-outline' : 'badge-ghost border-slate-700/80 text-base-content/70'"
+                      :class="card.category === 'system' ? 'badge-info badge-outline border-sky-500/30 text-sky-400' : 'badge-ghost border-white/10 text-slate-400'"
                     >
                       {{ card.category === 'system' ? 'SYSTEM' : 'PLUGIN' }}
                     </span>
@@ -159,7 +159,7 @@
 
                 <!-- Middle Content: Title + Description -->
                 <div class="space-y-1.5 my-2">
-                  <h3 class="text-sm font-semibold text-slate-100 group-hover:text-primary transition-colors tracking-wide line-clamp-1">
+                  <h3 class="text-sm font-semibold text-slate-100 group-hover:text-violet-300 transition-colors tracking-wide line-clamp-1">
                     {{ card.title }}
                   </h3>
                   <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">
@@ -168,10 +168,10 @@
                 </div>
 
                 <!-- Bottom Action Row: Direct Link Indication -->
-                <div class="pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs font-medium text-slate-400 group-hover:text-primary transition-colors">
+                <div class="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-medium text-slate-400 group-hover:text-violet-400 transition-colors">
                   <span class="tracking-wide text-[11px]">Mở phân hệ</span>
                   <div class="flex items-center gap-1">
-                    <span class="text-[10px] text-base-content/40 group-hover:text-primary/70 uppercase font-mono tracking-wider">Khởi chạy</span>
+                    <span class="text-[10px] text-base-content/40 group-hover:text-violet-400/80 uppercase font-mono tracking-wider">Khởi chạy</span>
                     <CyberIcon
                       name="chevron-right"
                       :size="14"
@@ -246,31 +246,31 @@
     <Teleport to="body">
       <div
         v-if="contextMenu.visible && contextMenu.card"
-        class="fixed z-[9999] min-w-[210px] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl py-1 px-1 text-slate-200 select-none animate-in fade-in zoom-in-95 duration-100"
+        class="fixed z-[9999] min-w-[210px] bg-[#151d2c] border border-white/10 rounded-2xl shadow-none py-1.5 px-1.5 text-slate-200 select-none animate-in fade-in zoom-in-95 duration-100"
         :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
         @click.stop
       >
-        <div class="px-3 py-1.5 border-b border-slate-700/50 mb-1">
+        <div class="px-3 py-1.5 border-b border-white/10 mb-1">
           <div class="text-xs font-semibold text-slate-100 truncate">{{ contextMenu.card.title }}</div>
           <div class="text-[10px] text-slate-400 truncate font-mono">{{ contextMenu.card.pluginId || contextMenu.card.category }}</div>
         </div>
         <button
           @click="openCardDetails(contextMenu.card)"
-          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-primary/20 hover:text-primary rounded-lg transition-colors text-left"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-violet-500/15 hover:text-violet-300 rounded-lg transition-colors text-left"
         >
-          <Info :size="14" class="text-primary" />
+          <Info :size="14" class="text-violet-400" />
           <span>Hiển thị chi tiết</span>
         </button>
         <button
           @click="navigateTo(contextMenu.card); closeContextMenu()"
-          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-lg transition-colors text-left"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/5 rounded-lg transition-colors text-left"
         >
           <ExternalLink :size="14" class="text-slate-400" />
           <span>Mở phân hệ</span>
         </button>
         <button
           @click="openInNewTab(contextMenu.card); closeContextMenu()"
-          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-lg transition-colors text-left"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/5 rounded-lg transition-colors text-left"
         >
           <Layers :size="14" class="text-slate-400" />
           <span>Mở trong tab mới</span>
@@ -285,17 +285,17 @@
           v-if="detailModalVisible && detailCard"
           class="modal modal-open fixed inset-0 z-[9998] flex items-center justify-center p-4"
         >
-          <div class="modal-box max-w-2xl bg-[#0f1724] border border-slate-700/80 rounded-2xl shadow-2xl p-6 text-slate-200 max-h-[85vh] flex flex-col relative z-10">
+          <div class="modal-box max-w-2xl bg-[#151d2c] border border-white/10 rounded-3xl shadow-none p-6 text-slate-200 max-h-[85vh] flex flex-col relative z-10">
           <!-- Header -->
-          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div class="flex items-center justify-between pb-4 border-b border-white/10">
             <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+              <div class="w-11 h-11 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400">
                 <CyberIcon :name="resolveCyberIconName(detailCard)" :size="22" />
               </div>
               <div>
                 <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
                   {{ detailCard.title }}
-                  <span class="badge badge-sm badge-outline font-mono text-[10px] border-slate-600 text-slate-300">
+                  <span class="badge badge-sm badge-outline font-mono text-[10px] border-white/20 text-slate-300">
                     {{ detailCard.pluginId || detailCard.category }}
                   </span>
                 </h3>
@@ -309,15 +309,15 @@
           <div class="py-4 space-y-4 overflow-y-auto flex-1 pr-1">
             <!-- Metadata Grid -->
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-              <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
+              <div class="p-2.5 rounded-xl bg-[#1a2436] border border-white/10">
                 <div class="text-[10px] text-slate-400 uppercase font-mono">Đường dẫn Route</div>
                 <div class="font-mono font-semibold text-slate-200 mt-0.5 truncate">{{ detailCard.route || detailCard.path || 'N/A' }}</div>
               </div>
-              <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
+              <div class="p-2.5 rounded-xl bg-[#1a2436] border border-white/10">
                 <div class="text-[10px] text-slate-400 uppercase font-mono">Phân loại</div>
                 <div class="font-semibold text-slate-200 mt-0.5 capitalize">{{ detailCard.category || 'Plugin' }}</div>
               </div>
-              <div class="p-2.5 rounded-xl bg-[#162032] border border-slate-700/50">
+              <div class="p-2.5 rounded-xl bg-[#1a2436] border border-white/10">
                 <div class="text-[10px] text-slate-400 uppercase font-mono">Trạng thái Adapter</div>
                 <div class="font-semibold text-emerald-400 mt-0.5 flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -330,23 +330,23 @@
             <div v-if="detailCard.pluginId === 'final-config' || detailCard.id?.includes('final-config')" class="space-y-3">
               <div class="flex items-center justify-between">
                 <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                  <CyberIcon name="cpu" :size="14" class="text-primary" />
+                  <CyberIcon name="cpu" :size="14" class="text-violet-400" />
                   <span>Danh sách Profile Final Config ({{ finalConfigProfiles.length }})</span>
                 </h4>
-                <span v-if="detailModalLoading" class="loading loading-spinner loading-xs text-primary"></span>
+                <span v-if="detailModalLoading" class="loading loading-spinner loading-xs text-violet-400"></span>
               </div>
 
               <div v-if="detailModalLoading" class="py-8 text-center text-xs text-slate-400">
                 Đang tải dữ liệu cấu hình Final Config...
               </div>
 
-              <div v-else-if="finalConfigProfiles.length === 0" class="py-6 text-center text-xs text-slate-400 bg-[#162032]/50 rounded-xl border border-dashed border-slate-700/50">
+              <div v-else-if="finalConfigProfiles.length === 0" class="py-6 text-center text-xs text-slate-400 bg-[#1a2436]/50 rounded-xl border border-dashed border-white/10">
                 Chưa có profile Final Config nào được lưu trong hệ thống.
               </div>
 
-              <div v-else class="border border-slate-700/60 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
-                <table class="table table-xs w-full bg-[#162032]/60">
-                  <thead class="bg-[#1b263b] text-[11px] text-slate-300 sticky top-0">
+              <div v-else class="border border-white/10 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+                <table class="table table-xs w-full bg-[#1a2436]/60">
+                  <thead class="bg-[#1a2436] text-[11px] text-slate-300 sticky top-0">
                     <tr>
                       <th>Mã SO</th>
                       <th>Item Code</th>
@@ -357,11 +357,11 @@
                     </tr>
                   </thead>
                   <tbody class="text-xs font-mono">
-                    <tr v-for="prof in finalConfigProfiles" :key="prof.id" class="hover:bg-slate-800/50 transition-colors">
-                      <td class="font-bold text-primary">{{ prof.soNumber || '-' }}</td>
+                    <tr v-for="prof in finalConfigProfiles" :key="prof.id" class="hover:bg-[#202c42] transition-colors">
+                      <td class="font-bold text-violet-400">{{ prof.soNumber || '-' }}</td>
                       <td class="text-slate-200">{{ prof.itemCode || '-' }}</td>
                       <td class="text-slate-300">{{ prof.sku || '-' }}</td>
-                      <td><span class="badge badge-xs badge-info badge-outline">{{ prof.connectivity || 'RS485' }}</span></td>
+                      <td><span class="badge badge-xs badge-info badge-outline border-sky-500/30 text-sky-400">{{ prof.connectivity || 'RS485' }}</span></td>
                       <td class="text-center font-bold text-amber-400">{{ prof.registersCount || 0 }}</td>
                       <td>
                         <span class="badge badge-xs" :class="prof.status === 'ACTIVE' || prof.status === 'active' ? 'badge-success' : 'badge-ghost'">
@@ -375,7 +375,7 @@
             </div>
 
             <!-- Detail for other plugins -->
-            <div v-else class="p-4 rounded-xl bg-[#162032] border border-slate-700/50 text-xs space-y-2">
+            <div v-else class="p-4 rounded-xl bg-[#1a2436] border border-white/10 text-xs space-y-2">
               <div class="text-slate-300 font-semibold">Thông tin mô tả:</div>
               <p class="text-slate-400 leading-relaxed">{{ detailCard.description || 'Phân hệ chức năng trong hệ thống ITEST.' }}</p>
             </div>

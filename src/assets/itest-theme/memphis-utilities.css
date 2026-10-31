@@ -1,0 +1,71 @@
+/* ==========================================================================
+   iTest Theme - Corporate Memphis UI Utilities (Flat / Zero Depth)
+   ========================================================================== */
+
+.corporate-memphis {
+  font-family: var(--memphis-font-body);
+  --depth: 0 !important;
+}
+
+.corporate-memphis .font-display,
+.corporate-memphis h1,
+.corporate-memphis h2,
+.corporate-memphis h3,
+.corporate-memphis h4 {
+  font-family: var(--memphis-font-display) !important;
+  letter-spacing: -0.015em;
+}
+
+.corporate-memphis .font-mono,
+.corporate-memphis code,
+.corporate-memphis kbd,
+.corporate-memphis .tabular-nums {
+  font-family: var(--memphis-font-mono) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Explicitly disable Depth Effect across all Memphis surfaces */
+.corporate-memphis,
+.corporate-memphis * {
+  --depth: 0 !important;
+}
+
+.corporate-memphis .stat,
+.corporate-memphis .stats,
+.corporate-memphis .card,
+.corporate-memphis .btn,
+.corporate-memphis .badge,
+.corporate-memphis .table,
+.corporate-memphis .flat-card,
+.corporate-memphis .flat-surface,
+.corporate-memphis .admin-panel,
+.corporate-memphis .admin-metrics,
+.corporate-memphis .admin-feature,
+.corporate-memphis .admin-chart-panel,
+.corporate-memphis .admin-table-panel,
+.corporate-memphis .admin-activity {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* Memphis Geometric Card & Panel Foundation */
+.corporate-memphis .memphis-card {
+  border-radius: var(--memphis-radius-card);
+  background-color: var(--owl-bg-card, #1a2436);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none !important;
+}
+
+.corporate-memphis .memphis-panel {
+  border-radius: var(--memphis-radius-box);
+  background-color: var(--owl-bg-surface, #151d2c);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none !important;
+}
+
+/* Vector Illustration Rendering */
+.corporate-memphis .memphis-vector {
+  user-select: none;
+  shape-rendering: geometricPrecision;
+}

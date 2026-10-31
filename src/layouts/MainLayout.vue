@@ -1,14 +1,14 @@
 <template>
-  <div class="layout-container flex h-screen w-screen overflow-hidden bg-[#0b0f19] text-[#f1f5f9]">
+  <div class="layout-container flex h-screen w-screen overflow-hidden bg-[#0f172a] text-[#f8fafc]">
     <!-- Sidebar (Ẩn hoàn toàn khi ở trang Launcher /menu, hoặc khi truy cập plugin từ menu) -->
     <aside
       v-if="showSidebar"
-      class="layout-aside flex flex-col flex-shrink-0 bg-[#080c14]/90 backdrop-blur-xl border-r border-white/[0.08] transition-[width] duration-300 ease-in-out select-none z-20 overflow-hidden will-change-[width]"
+      class="layout-aside flex flex-col flex-shrink-0 bg-[#0b1120] border-r border-white/10 transition-[width] duration-300 ease-in-out select-none z-20 overflow-hidden will-change-[width]"
       :class="isCollapse ? 'w-16' : 'w-64'"
     >
       <!-- Logo Box -->
-      <div class="logo-box h-16 flex items-center justify-center gap-3 border-b border-white/[0.08] bg-[#080c14]/60 flex-shrink-0 overflow-hidden px-4">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-md shadow-sky-500/20 flex-shrink-0">
+      <div class="logo-box h-16 flex items-center justify-center gap-3 border-b border-white/10 bg-[#0b1120] flex-shrink-0 overflow-hidden px-4">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-violet-600 to-sky-400 flex items-center justify-center shadow-none flex-shrink-0">
           <span class="text-white text-xs font-bold font-mono tracking-tighter">iT</span>
         </div>
         <div
@@ -16,7 +16,7 @@
           :class="isCollapse ? 'opacity-0 w-0 pointer-events-none hidden' : 'opacity-100'"
         >
           <span class="font-bold text-sm tracking-wide text-white font-sans">
-            iTEST <span class="text-sky-400 font-mono text-xs font-semibold px-1 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20 ml-1">2.0</span>
+            iTEST <span class="text-violet-400 font-mono text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 ml-1">2.0</span>
           </span>
           <span class="text-[10px] text-slate-400 font-sans tracking-tight">Industrial Test Suite</span>
         </div>
@@ -29,10 +29,10 @@
           <li>
             <a
               class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 font-medium text-xs tracking-wide"
-              :class="activeRoute === '/menu' ? 'active bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm shadow-sky-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+              :class="activeRoute === '/menu' ? 'active bg-violet-600/15 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'"
               @click="router.push('/menu')"
             >
-              <CyberIcon name="grid" :size="18" :color="activeRoute === '/menu' ? '#38bdf8' : '#94a3b8'" />
+              <CyberIcon name="grid" :size="18" :color="activeRoute === '/menu' ? '#7c3aed' : '#94a3b8'" />
               <span v-show="!isCollapse" class="truncate font-semibold">Launcher</span>
             </a>
           </li>
@@ -40,10 +40,10 @@
           <li v-if="canAccessDashboard">
             <a
               class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 font-medium text-xs tracking-wide"
-              :class="activeRoute === '/dashboard' ? 'active bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm shadow-sky-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+              :class="activeRoute === '/dashboard' ? 'active bg-violet-600/15 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'"
               @click="router.push('/dashboard')"
             >
-              <CyberIcon name="monitor" :size="18" :color="activeRoute === '/dashboard' ? '#38bdf8' : '#94a3b8'" />
+              <CyberIcon name="monitor" :size="18" :color="activeRoute === '/dashboard' ? '#7c3aed' : '#94a3b8'" />
               <span v-show="!isCollapse" class="truncate">Dashboard</span>
             </a>
           </li>
@@ -58,11 +58,11 @@
             <li>
               <a
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 font-medium text-xs tracking-wide"
-                :class="activeRoute === '/users' ? 'active bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm shadow-sky-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+                :class="activeRoute === '/users' ? 'active bg-violet-600/15 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'"
                 :title="isCollapse ? 'Người dùng' : undefined"
                 @click="router.push('/users')"
               >
-                <CyberIcon name="users" :size="18" :color="activeRoute === '/users' ? '#38bdf8' : '#94a3b8'" />
+                <CyberIcon name="users" :size="18" :color="activeRoute === '/users' ? '#7c3aed' : '#94a3b8'" />
                 <span v-show="!isCollapse" class="truncate">Người dùng</span>
               </a>
             </li>
@@ -70,11 +70,11 @@
             <li>
               <a
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 font-medium text-xs tracking-wide"
-                :class="activeRoute === '/roles' ? 'active bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm shadow-sky-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+                :class="activeRoute === '/roles' ? 'active bg-violet-600/15 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'"
                 :title="isCollapse ? 'Vai trò & Quyền' : undefined"
                 @click="router.push('/roles')"
               >
-                <CyberIcon name="shield" :size="18" :color="activeRoute === '/roles' ? '#38bdf8' : '#94a3b8'" />
+                <CyberIcon name="shield" :size="18" :color="activeRoute === '/roles' ? '#7c3aed' : '#94a3b8'" />
                 <span v-show="!isCollapse" class="truncate">Vai trò & Quyền</span>
               </a>
             </li>
@@ -82,11 +82,11 @@
             <li>
               <a
                 class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 font-medium text-xs tracking-wide"
-                :class="activeRoute === '/plugins' ? 'active bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm shadow-sky-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+                :class="activeRoute === '/plugins' ? 'active bg-violet-600/15 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'"
                 :title="isCollapse ? 'Quản lý Plugin' : undefined"
                 @click="router.push('/plugins')"
               >
-                <CyberIcon name="cpu" :size="18" :color="activeRoute === '/plugins' ? '#38bdf8' : '#94a3b8'" />
+                <CyberIcon name="cpu" :size="18" :color="activeRoute === '/plugins' ? '#7c3aed' : '#94a3b8'" />
                 <span v-show="!isCollapse" class="truncate">Quản lý Plugin</span>
               </a>
             </li>
@@ -103,7 +103,7 @@
               <!-- Item with sub-menus -->
               <li v-if="menu.children && menu.children.length > 0">
                 <details v-if="!isCollapse" :open="activeRoute.startsWith(menu.path)">
-                  <summary class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-medium">
+                  <summary class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 text-slate-400 hover:text-white hover:bg-white/5 text-xs font-medium">
                     <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" color="#94a3b8" class="flex-shrink-0" />
                     <span class="truncate">{{ menu.title }}</span>
                   </summary>
@@ -111,10 +111,10 @@
                     <li v-for="sub in menu.children" :key="sub.id">
                       <a
                         class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors duration-150"
-                        :class="activeRoute === sub.path ? 'active bg-sky-500/15 text-sky-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+                        :class="activeRoute === sub.path ? 'active bg-violet-600/15 text-violet-300 font-medium' : 'text-slate-400 hover:text-white hover:bg-white/5'"
                         @click="router.push(sub.path)"
                       >
-                        <CyberIcon v-if="sub.icon" :name="resolveCyberIconName(sub.icon)" :size="14" :color="activeRoute === sub.path ? '#38bdf8' : '#94a3b8'" class="flex-shrink-0" />
+                        <CyberIcon v-if="sub.icon" :name="resolveCyberIconName(sub.icon)" :size="14" :color="activeRoute === sub.path ? '#7c3aed' : '#94a3b8'" class="flex-shrink-0" />
                         <span class="truncate">{{ sub.title }}</span>
                       </a>
                     </li>
@@ -124,11 +124,11 @@
                 <a
                   v-else
                   class="flex items-center justify-center px-3 py-2.5 rounded-xl transition-colors duration-150"
-                  :class="activeRoute.startsWith(menu.path) ? 'active bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+                  :class="activeRoute.startsWith(menu.path) ? 'active bg-violet-600/15 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'"
                   :title="menu.title"
                   @click="router.push(menu.children[0]?.path || menu.path)"
                 >
-                  <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute.startsWith(menu.path) ? '#38bdf8' : '#94a3b8'" class="flex-shrink-0" />
+                  <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute.startsWith(menu.path) ? '#7c3aed' : '#94a3b8'" class="flex-shrink-0" />
                 </a>
               </li>
 
@@ -136,17 +136,17 @@
               <li v-else>
                 <a
                   class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 text-xs font-medium"
-                  :class="activeRoute === menu.path ? 'active bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm shadow-sky-500/10' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+                  :class="activeRoute === menu.path ? 'active bg-violet-600/15 text-violet-300 border border-violet-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'"
                   :title="isCollapse ? menu.title : undefined"
                   @click="router.push(menu.path)"
                 >
                   <div class="flex items-center gap-3 min-w-0">
-                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute === menu.path ? '#38bdf8' : '#94a3b8'" class="flex-shrink-0" />
+                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute === menu.path ? '#7c3aed' : '#94a3b8'" class="flex-shrink-0" />
                     <span v-show="!isCollapse" class="truncate">{{ menu.title }}</span>
                   </div>
                   <span
                     v-if="menu.badge && !isCollapse"
-                    class="badge badge-xs font-mono bg-sky-500/20 text-sky-300 border-sky-500/30 flex-shrink-0 rounded-full"
+                    class="badge badge-xs font-mono bg-violet-500/20 text-violet-300 border-violet-500/30 flex-shrink-0 rounded-full"
                   >
                     {{ menu.badge }}
                   </span>
@@ -161,12 +161,12 @@
     <!-- Main Content Wrapper -->
     <div class="layout-main-wrapper flex flex-col flex-1 min-w-0 h-full overflow-hidden">
       <!-- Navbar / Header -->
-      <header class="navbar h-16 min-h-[4rem] bg-[#111827]/80 backdrop-blur-xl border-b border-white/[0.08] px-6 justify-between z-10">
+      <header class="navbar h-16 min-h-[4rem] bg-[#151d2c]/90 backdrop-blur-xl border-b border-white/10 px-6 justify-between z-10">
         <!-- Left: Collapse toggle, Brand & Breadcrumb -->
         <div class="flex items-center gap-4 shrink-0">
           <button
             v-if="showSidebar"
-            class="btn btn-ghost btn-sm btn-square rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60"
+            class="btn btn-ghost btn-sm btn-square rounded-xl text-slate-400 hover:text-white hover:bg-white/5"
             :title="isCollapse ? 'Mở rộng sidebar' : 'Thu gọn sidebar'"
             @click="toggleSidebar"
           >
@@ -176,7 +176,7 @@
           <!-- Breadcrumb / Page Title -->
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-white tracking-wide font-sans">{{ currentRouteTitle }}</span>
-            <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-none"></div>
           </div>
         </div>
 
@@ -188,10 +188,10 @@
           <!-- Return to Launcher button -->
           <button
             v-if="route.path !== '/menu'"
-            class="btn btn-ghost btn-sm rounded-xl text-xs gap-2 text-slate-300 hover:text-white hover:bg-slate-800/60 border border-white/[0.06]"
+            class="btn btn-ghost btn-sm rounded-xl text-xs gap-2 text-slate-300 hover:text-white hover:bg-white/5 border border-white/10"
             @click="router.push('/menu')"
           >
-            <CyberIcon name="grid" :size="16" color="#38bdf8" />
+            <CyberIcon name="grid" :size="16" color="#7c3aed" />
             <span class="hidden md:inline font-medium">Launcher</span>
           </button>
 
@@ -204,17 +204,17 @@
             />
           </div>
 
-          <div class="h-5 w-px bg-white/[0.08] mx-1"></div>
+          <div class="h-5 w-px bg-white/10 mx-1"></div>
 
           <!-- User Dropdown -->
           <div class="dropdown dropdown-end">
             <label
               tabindex="0"
-              class="btn btn-ghost btn-sm h-10 px-2.5 rounded-xl border border-white/[0.08] bg-slate-900/60 hover:bg-slate-800/80 hover:border-sky-500/30 flex items-center gap-2.5 cursor-pointer shadow-sm transition-all"
+              class="btn btn-ghost btn-sm h-10 px-2.5 rounded-xl border border-white/10 bg-[#1a2436] hover:bg-[#202c42] hover:border-violet-500/30 flex items-center gap-2.5 cursor-pointer shadow-none transition-all"
             >
               <!-- Avatar: Modern sleek rounded-xl background -->
               <div class="avatar placeholder flex-shrink-0">
-                <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-500 text-white font-bold flex items-center justify-center text-xs select-none shadow-sm shadow-sky-500/20">
+                <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-violet-600 to-sky-400 text-white font-bold flex items-center justify-center text-xs select-none shadow-none">
                   <span class="leading-none">{{ userInitial }}</span>
                 </div>
               </div>
@@ -223,7 +223,7 @@
                 <span class="text-xs font-semibold text-white font-sans">
                   {{ authStore.user?.fullName || authStore.user?.username || 'User' }}
                 </span>
-                <span class="text-[10px] font-mono text-sky-400 tracking-wider uppercase">
+                <span class="text-[10px] font-mono text-violet-400 tracking-wider uppercase">
                   {{ primaryRole }}
                 </span>
               </div>
@@ -234,29 +234,29 @@
             <!-- Dropdown Menu -->
             <ul
               tabindex="0"
-              class="dropdown-content menu p-2 shadow-2xl bg-slate-900/95 border border-white/[0.1] rounded-2xl w-60 mt-2 gap-1 backdrop-blur-2xl z-50 text-xs font-sans"
+              class="dropdown-content menu p-2 shadow-none bg-[#151d2c] border border-white/10 rounded-2xl w-60 mt-2 gap-1 backdrop-blur-2xl z-50 text-xs font-sans"
             >
               <!-- Header info in dropdown -->
-              <li class="menu-title px-3 py-2 border-b border-white/[0.08] mb-1">
-                <span class="text-[10px] font-mono text-sky-400 uppercase tracking-wider">Tài khoản cá nhân</span>
+              <li class="menu-title px-3 py-2 border-b border-white/10 mb-1">
+                <span class="text-[10px] font-mono text-violet-400 uppercase tracking-wider">Tài khoản cá nhân</span>
                 <span class="text-xs text-white font-medium mt-0.5 truncate">{{ authStore.user?.email || authStore.user?.username }}</span>
               </li>
 
               <li>
-                <a class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-slate-800/60 hover:text-sky-400 text-slate-300 transition-colors" @click="handleUserCommand('profile')">
-                  <CyberIcon name="users" :size="16" color="#38bdf8" />
+                <a class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-violet-500/15 hover:text-violet-300 text-slate-300 transition-colors" @click="handleUserCommand('profile')">
+                  <CyberIcon name="users" :size="16" color="#7c3aed" />
                   <span class="flex-1 font-medium">Hồ sơ người dùng</span>
                 </a>
               </li>
 
               <li v-if="canAccessAdmin">
-                <a class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-slate-800/60 hover:text-sky-400 text-slate-300 transition-colors" @click="handleUserCommand('roles')">
-                  <CyberIcon name="shield" :size="16" color="#38bdf8" />
+                <a class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-violet-500/15 hover:text-violet-300 text-slate-300 transition-colors" @click="handleUserCommand('roles')">
+                  <CyberIcon name="shield" :size="16" color="#7c3aed" />
                   <span class="flex-1 font-medium">Phân quyền hệ thống</span>
                 </a>
               </li>
 
-              <div class="divider my-1 border-white/[0.06]"></div>
+              <div class="divider my-1 border-white/10"></div>
 
               <li>
                 <a class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-colors" @click="handleUserCommand('logout')">

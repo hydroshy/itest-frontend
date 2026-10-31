@@ -1,15 +1,15 @@
 <template>
   <div class="roles-management-container p-6 space-y-6">
     <!-- Page Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-[#1d3b5a]/60">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-white/10">
       <div>
         <div class="flex items-center gap-2">
-          <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#7fdbca] shadow-[0_0_8px_#7fdbca]"></span>
-          <h2 class="text-xl font-bold tracking-wide text-[#d6deeb] uppercase font-mono">Quản lý Phân quyền & Vai trò</h2>
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-violet-400"></span>
+          <h2 class="text-xl font-bold tracking-wide text-white uppercase font-sans">Quản lý Phân quyền & Vai trò</h2>
         </div>
-        <p class="text-xs text-[#5f7e97] mt-1">Thiết lập nhóm quyền hạn, vai trò và phạm vi thao tác của người dùng trong hệ thống</p>
+        <p class="text-xs text-slate-400 mt-1">Thiết lập nhóm quyền hạn, vai trò và phạm vi thao tác của người dùng trong hệ thống</p>
       </div>
-      <button class="btn btn-sm bg-[#7fdbca] hover:bg-[#68cbb9] text-[#011627] font-semibold border-none shadow-[0_0_12px_rgba(127,219,202,0.35)]" @click="openCreateDialog">
+      <button class="btn btn-sm bg-violet-600 hover:bg-violet-500 text-white font-semibold border-none shadow-none rounded-xl" @click="openCreateDialog">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
@@ -18,26 +18,26 @@
     </div>
 
     <!-- Table Section (daisyUI Card & Table) -->
-    <div class="card bg-[#081d32]/95 border border-[#1d3b5a] shadow-xl rounded-lg overflow-hidden">
+    <div class="card bg-[#151d2c] border border-white/10 shadow-none rounded-2xl overflow-hidden">
       <div class="overflow-x-auto">
         <table class="table table-zebra w-full text-xs">
           <thead>
-            <tr class="bg-[#0b2942]/80 border-b border-[#1d3b5a] text-[#7fdbca] font-mono uppercase tracking-wider">
-              <th class="w-44">Mã vai trò</th>
-              <th class="min-w-[180px]">Tên vai trò</th>
-              <th class="min-w-[240px]">Mô tả</th>
-              <th class="text-center w-72">Thao tác</th>
+            <tr class="bg-[#1a2436] border-b border-white/10 text-slate-300 font-sans uppercase tracking-wider">
+              <th class="w-44 py-3.5 px-4">Mã vai trò</th>
+              <th class="min-w-[180px] py-3.5 px-4">Tên vai trò</th>
+              <th class="min-w-[240px] py-3.5 px-4">Mô tả</th>
+              <th class="text-center w-72 py-3.5 px-4">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
               <td colspan="4" class="text-center py-10">
-                <span class="loading loading-spinner text-[#7fdbca]"></span>
-                <p class="text-xs text-[#5f7e97] mt-2 font-mono">Đang tải danh sách vai trò...</p>
+                <span class="loading loading-spinner text-violet-400"></span>
+                <p class="text-xs text-slate-400 mt-2 font-sans">Đang tải danh sách vai trò...</p>
               </td>
             </tr>
             <tr v-else-if="roles.length === 0">
-              <td colspan="4" class="text-center py-10 text-[#5f7e97] font-mono">
+              <td colspan="4" class="text-center py-10 text-slate-400 font-sans">
                 Không có vai trò nào trong hệ thống
               </td>
             </tr>
@@ -45,21 +45,21 @@
               v-else
               v-for="row in roles"
               :key="row.id"
-              class="border-b border-[#1d3b5a]/40 hover:bg-[#0b2942]/40 transition-colors"
+              class="border-b border-white/5 hover:bg-[#202c42]/50 transition-colors"
             >
-              <td>
-                <span class="badge badge-sm bg-[#011627] border border-[#7fdbca]/50 text-[#7fdbca] font-mono font-bold tracking-wide">
+              <td class="py-3 px-4">
+                <span class="badge badge-sm bg-[#1a2436] border border-violet-500/30 text-violet-300 font-mono font-bold tracking-wide">
                   {{ row.code }}
                 </span>
               </td>
-              <td>
-                <span class="font-bold text-[#d6deeb]">{{ row.name }}</span>
+              <td class="py-3 px-4">
+                <span class="font-bold text-white">{{ row.name }}</span>
               </td>
-              <td class="text-[#5f7e97]">{{ row.description || '—' }}</td>
-              <td class="text-center">
+              <td class="text-slate-400 py-3 px-4">{{ row.description || '—' }}</td>
+              <td class="text-center py-3 px-4">
                 <div class="flex items-center justify-center gap-2">
                   <button
-                    class="btn btn-xs bg-[#0b2942] hover:bg-[#1d3b5a] text-[#7fdbca] border border-[#7fdbca]/40 hover:border-[#7fdbca] font-mono shadow-[0_0_8px_rgba(127,219,202,0.2)]"
+                    class="btn btn-xs bg-violet-600/15 hover:bg-violet-600/25 text-violet-300 border border-violet-500/30 hover:border-violet-500/50 font-sans rounded-lg shadow-none"
                     @click="openWizard(row)"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,7 +69,7 @@
                   </button>
 
                   <button
-                    class="btn btn-xs btn-ghost text-[#ecc48d] hover:bg-[#ecc48d]/20"
+                    class="btn btn-xs btn-ghost text-amber-400 hover:bg-amber-400/10 rounded-lg"
                     title="Chỉnh sửa vai trò"
                     @click="openEditDialog(row)"
                   >
@@ -81,7 +81,7 @@
 
                   <button
                     v-if="row.code !== 'admin'"
-                    class="btn btn-xs btn-ghost text-[#ef5350] hover:bg-[#ef5350]/20"
+                    class="btn btn-xs btn-ghost text-rose-400 hover:bg-rose-400/10 rounded-lg"
                     title="Xóa vai trò"
                     @click="deleteRole(row)"
                   >
@@ -101,53 +101,53 @@
     <!-- Dialog Thêm/Sửa vai trò (daisyUI Modal HUD) -->
     <Transition name="modal-fade">
       <div v-if="dialogVisible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="relative z-10 modal-box bg-[#081d32] border border-[#1d3b5a] shadow-[0_0_30px_rgba(0,0,0,0.8)] max-w-md text-[#d6deeb]">
-        <div class="flex items-center justify-between pb-3 border-b border-[#1d3b5a]">
-          <h3 class="font-mono font-bold text-base text-[#7fdbca] uppercase tracking-wide">
+        <div class="relative z-10 modal-box bg-[#151d2c] border border-white/10 shadow-none rounded-3xl max-w-md text-slate-200">
+        <div class="flex items-center justify-between pb-3 border-b border-white/10">
+          <h3 class="font-sans font-bold text-base text-violet-400 uppercase tracking-wide">
             {{ isEdit ? 'Chỉnh sửa Vai trò' : 'Thêm Vai trò mới' }}
           </h3>
-          <button class="btn btn-sm btn-circle btn-ghost text-[#5f7e97] hover:text-[#d6deeb]" @click="dialogVisible = false">✕</button>
+          <button class="btn btn-sm btn-circle btn-ghost text-slate-400 hover:text-white" @click="dialogVisible = false">✕</button>
         </div>
 
-        <form @submit.prevent="submitForm" class="py-4 space-y-4 text-xs font-mono">
+        <form @submit.prevent="submitForm" class="py-4 space-y-4 text-xs font-sans">
           <div>
-            <label class="block text-[#5f7e97] uppercase mb-1">Mã vai trò <span class="text-[#ef5350]">*</span></label>
+            <label class="block text-slate-400 uppercase mb-1">Mã vai trò <span class="text-rose-400">*</span></label>
             <input
               v-model="form.code"
               type="text"
               :disabled="isEdit"
               placeholder="vd: operator, technician"
-              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none disabled:bg-[#0b2942]/40"
+              class="input input-sm w-full bg-[#1a2436] border-white/10 text-white focus:border-violet-500/50 focus:outline-none disabled:bg-[#1a2436]/40 rounded-xl"
               required
             />
           </div>
 
           <div>
-            <label class="block text-[#5f7e97] uppercase mb-1">Tên vai trò <span class="text-[#ef5350]">*</span></label>
+            <label class="block text-slate-400 uppercase mb-1">Tên vai trò <span class="text-rose-400">*</span></label>
             <input
               v-model="form.name"
               type="text"
               placeholder="vd: Kỹ thuật viên vận hành"
-              class="input input-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none"
+              class="input input-sm w-full bg-[#1a2436] border-white/10 text-white focus:border-violet-500/50 focus:outline-none rounded-xl"
               required
             />
           </div>
 
           <div>
-            <label class="block text-[#5f7e97] uppercase mb-1">Mô tả</label>
+            <label class="block text-slate-400 uppercase mb-1">Mô tả</label>
             <textarea
               v-model="form.description"
               rows="3"
               placeholder="Mô tả trách nhiệm của vai trò"
-              class="textarea textarea-sm w-full bg-[#011627] border-[#1d3b5a] text-[#d6deeb] focus:border-[#7fdbca] focus:outline-none"
+              class="textarea textarea-sm w-full bg-[#1a2436] border-white/10 text-white focus:border-violet-500/50 focus:outline-none rounded-xl"
             ></textarea>
           </div>
 
-          <div class="modal-action pt-4 border-t border-[#1d3b5a]">
-            <button type="button" class="btn btn-sm btn-ghost text-[#5f7e97]" @click="dialogVisible = false">Hủy</button>
+          <div class="modal-action pt-4 border-t border-white/10">
+            <button type="button" class="btn btn-sm btn-ghost text-slate-400 rounded-xl" @click="dialogVisible = false">Hủy</button>
             <button
               type="submit"
-              class="btn btn-sm bg-[#7fdbca] hover:bg-[#68cbb9] text-[#011627] font-semibold border-none"
+              class="btn btn-sm bg-violet-600 hover:bg-violet-500 text-white font-semibold border-none rounded-xl"
               :disabled="submitting"
             >
               <span v-if="submitting" class="loading loading-spinner loading-xs"></span>

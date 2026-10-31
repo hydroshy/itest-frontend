@@ -1,0 +1,66 @@
+/* ==========================================================================
+   iTest Theme - Cards, Containers & Panels
+   ========================================================================== */
+
+.el-card,
+.cyber-card,
+.panel-card,
+.table-card {
+  background: var(--owl-bg-surface) !important;
+  border: 1px solid var(--owl-border) !important;
+  border-radius: var(--cyber-radius) !important;
+  box-shadow: none !important;
+  color: var(--owl-text-primary) !important;
+}
+
+.el-card__header {
+  background: var(--owl-bg-aside) !important;
+  border-bottom: 1px solid var(--owl-border) !important;
+  padding: 14px 18px !important;
+  color: var(--owl-text-bright) !important;
+  font-family: var(--cyber-font-display) !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+}
+
+.el-card__body {
+  padding: 18px !important;
+}
+
+/* Modern Rounded Geometric Panels */
+.cyber-card,
+.cyber-hud-panel,
+.cyber-panel,
+[data-augmented-ui] {
+  border-radius: 0.75rem !important;
+  border: 1px solid var(--owl-border, rgba(255, 255, 255, 0.08)) !important;
+  background: var(--owl-bg-surface, #151d2c) !important;
+  color: var(--owl-text-primary, #f8fafc) !important;
+  transition: border-color 0.2s ease, background-color 0.2s ease !important;
+  box-shadow: none !important;
+}
+
+.cyber-card:hover,
+.cyber-hud-panel:hover,
+.cyber-panel:hover,
+[data-augmented-ui]:hover {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.profile-modal-container,
+.profile-modal-container[data-augmented-ui] {
+  border-radius: 1rem !important;
+  border: 1px solid var(--owl-border, rgba(255, 255, 255, 0.08)) !important;
+  background: var(--owl-bg-surface, #151d2c) !important;
+  box-shadow: none !important;
+}
+
+.user-summary-card,
+.user-summary-card[data-augmented-ui] {
+  border-radius: 0.75rem !important;
+  border: 1px solid var(--owl-border, rgba(255, 255, 255, 0.08)) !important;
+  background: var(--owl-bg-card, #1a2436) !important;
+  box-shadow: none !important;
+}

@@ -1,0 +1,58 @@
+/* ==========================================================================
+   iTest Theme - Tags, Badges & Monospace Values
+   ========================================================================== */
+
+.el-tag {
+  border-radius: 4px;
+  font-weight: 500;
+  border-width: 1px;
+  box-shadow: none !important;
+}
+
+.el-tag--primary {
+  background: var(--owl-teal-dim);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--owl-teal);
+}
+
+.el-tag--success {
+  background: var(--owl-mint-dim);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: var(--owl-mint);
+}
+
+.el-tag--warning {
+  background: var(--owl-amber-dim);
+  border-color: rgba(251, 191, 36, 0.35);
+  color: var(--owl-amber);
+}
+
+.el-tag--danger {
+  background: var(--owl-coral-dim);
+  border-color: rgba(251, 113, 133, 0.35);
+  color: var(--owl-coral);
+}
+
+.el-tag--info {
+  background: var(--owl-blue-dim);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--owl-blue);
+}
+
+/* Technical Monospace Values (EUI, Serial, IP) */
+.font-mono,
+.code-val,
+.mac-address,
+.eui-text {
+  font-family: var(--cyber-font-mono) !important;
+  letter-spacing: 0.5px;
+}
+
+/* Memphis Soft Tint Badges (Flat, high-contrast, rounded pills) */
+.corporate-memphis .memphis-pill {
+  border-radius: var(--memphis-radius-pill);
+  font-family: var(--memphis-font-display);
+  font-weight: 500;
+  border: none !important;
+  box-shadow: none !important;
+}

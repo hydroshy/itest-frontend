@@ -205,7 +205,7 @@ Dùng cho bảng tĩnh, danh sách ngắn (< 50 dòng) hoặc bảng tóm tắt:
 ```
 
 ### 3.2 Bảng Lớn Tabulator (`.cyber-tabulator`)
-Hệ thống đã chuẩn hóa CSS cho `.cyber-tabulator` trong `src/assets/cyber-theme.css`. Khi tạo Tabulator table trong các plugins:
+Hệ thống đã chuẩn hóa CSS cho `.cyber-tabulator` trong `src/assets/itest-theme.css` (thư mục `src/assets/itest-theme/tabulator.css`). Khi tạo Tabulator table trong các plugins:
 1. Container element: `<div ref="tableEl" class="cyber-tabulator rounded-xl border border-base-content/15 overflow-hidden"></div>`.
 2. Header tự động phẳng, nền `#2A303C`, border mảnh `rgba(178, 204, 214, 0.12)`.
 3. Row hover nhẹ nhàng, selection nền mờ xanh dịu, không glow.

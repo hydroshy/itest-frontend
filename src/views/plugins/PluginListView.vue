@@ -1,89 +1,89 @@
 <template>
-  <div class="plugin-list-container flex flex-col gap-6 p-4 sm:p-6 bg-[#011627] min-h-full text-[#d6deeb]">
+  <div class="plugin-list-container flex flex-col gap-6 p-4 sm:p-6 bg-[#0f172a] min-h-full text-[#f8fafc]">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0b2942]/60 p-5 rounded-lg border border-[#1d3b5a]/60 shadow-lg backdrop-blur-md">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#151d2c] p-5 rounded-2xl border border-white/10 shadow-none backdrop-blur-md">
       <div>
-        <h2 class="text-xl sm:text-2xl font-black text-[#00f0ff] uppercase tracking-wider flex items-center gap-2">
-          <CyberIcon name="plugins" :size="24" color="#00f0ff" />
-          Quản lý Plugin Frontend
+        <h2 class="text-xl sm:text-2xl font-bold text-white tracking-wide flex items-center gap-2.5">
+          <CyberIcon name="plugins" :size="24" color="#7c3aed" />
+          <span>Quản lý Plugin Frontend</span>
         </h2>
-        <p class="text-xs text-[#94a3b8] mt-1 font-mono">
+        <p class="text-xs text-slate-400 mt-1 font-sans">
           Danh sách các plugin được biên dịch tại build-time cùng Frontend Shell
         </p>
       </div>
-      <div class="badge badge-info badge-outline gap-2 font-mono text-xs py-3 px-4 border-[#00f0ff]/40 bg-[#081d32]/80">
-        <span class="w-2 h-2 rounded-full bg-[#00f0ff] animate-pulse"></span>
+      <div class="badge badge-outline gap-2 font-mono text-xs py-3 px-4 border-violet-500/30 bg-[#1a2436] text-violet-300 rounded-xl">
+        <span class="w-2 h-2 rounded-full bg-violet-400 animate-pulse"></span>
         SDK v{{ pluginStore.diagnostics.sdkVersion }} | Tự động sinh lúc: {{ formattedDate }}
       </div>
     </div>
 
     <!-- Table Card Container -->
-    <div class="card bg-[#0b2942]/80 border border-[#1d3b5a] shadow-2xl rounded-lg overflow-hidden backdrop-blur-md">
+    <div class="card bg-[#151d2c] border border-white/10 shadow-none rounded-2xl overflow-hidden">
       <div class="overflow-x-auto">
         <table class="table table-zebra w-full text-left">
           <!-- head -->
           <thead>
-            <tr class="bg-[#081d32] border-b border-[#1d3b5a] text-[#7fdbca] font-mono text-xs uppercase tracking-wider">
-              <th class="py-3 px-4">Mã Plugin (ID)</th>
-              <th class="py-3 px-4">Tên hiển thị</th>
-              <th class="py-3 px-4 text-center">Phiên bản</th>
-              <th class="py-3 px-4">Mô tả</th>
-              <th class="py-3 px-4 text-center">Trạng thái</th>
-              <th class="py-3 px-4 text-center">Điểm gắn (Slots)</th>
-              <th class="py-3 px-4 text-center">Thao tác</th>
+            <tr class="bg-[#1a2436] border-b border-white/10 text-slate-300 font-sans text-xs uppercase tracking-wider">
+              <th class="py-3.5 px-4">Mã Plugin (ID)</th>
+              <th class="py-3.5 px-4">Tên hiển thị</th>
+              <th class="py-3.5 px-4 text-center">Phiên bản</th>
+              <th class="py-3.5 px-4">Mô tả</th>
+              <th class="py-3.5 px-4 text-center">Trạng thái</th>
+              <th class="py-3.5 px-4 text-center">Điểm gắn (Slots)</th>
+              <th class="py-3.5 px-4 text-center">Thao tác</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-[#1d3b5a]/50 text-xs font-sans">
+          <tbody class="divide-y divide-white/5 text-xs font-sans">
             <tr
               v-for="row in pluginStore.plugins"
               :key="row.definition.manifest.id"
-              class="hover:bg-[#133e63]/40 transition-colors"
+              class="hover:bg-[#202c42]/50 transition-colors"
             >
               <!-- Plugin ID -->
-              <td class="py-3 px-4 font-mono font-bold text-[#00f0ff]">
+              <td class="py-3.5 px-4 font-mono font-bold text-violet-400">
                 {{ row.definition.manifest.id }}
               </td>
 
               <!-- Display Name -->
-              <td class="py-3 px-4 font-semibold text-[#d6deeb]">
+              <td class="py-3.5 px-4 font-semibold text-white">
                 {{ row.definition.manifest.name }}
               </td>
 
               <!-- Version -->
-              <td class="py-3 px-4 text-center">
-                <span class="badge badge-sm badge-outline font-mono border-[#7fdbca]/60 text-[#7fdbca] bg-[#011627]/50">
+              <td class="py-3.5 px-4 text-center">
+                <span class="badge badge-sm badge-outline font-mono border-white/20 text-slate-300 bg-[#1a2436]">
                   {{ row.definition.manifest.version }}
                 </span>
               </td>
 
               <!-- Description -->
-              <td class="py-3 px-4 text-[#94a3b8] max-w-xs truncate" :title="row.definition.manifest.description">
+              <td class="py-3.5 px-4 text-slate-400 max-w-xs truncate" :title="row.definition.manifest.description">
                 {{ row.definition.manifest.description || 'Không có mô tả' }}
               </td>
 
               <!-- Status -->
-              <td class="py-3 px-4 text-center">
+              <td class="py-3.5 px-4 text-center">
                 <span
-                  class="badge badge-sm font-mono font-semibold"
-                  :class="row.status === 'active' ? 'badge-success bg-[#7fdbca]/20 text-[#7fdbca] border-[#7fdbca]/40' : 'badge-ghost text-[#94a3b8] border-[#94a3b8]/40'"
+                  class="badge badge-sm font-sans font-medium rounded-full"
+                  :class="row.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700/30 text-slate-400 border border-white/10'"
                 >
                   {{ row.status === 'active' ? 'Đang hoạt động' : 'Tắt' }}
                 </span>
               </td>
 
               <!-- Extension Points -->
-              <td class="py-3 px-4 text-center">
+              <td class="py-3.5 px-4 text-center">
                 <div class="flex flex-wrap gap-1 justify-center">
                   <span
                     v-for="ext in (row.definition.manifest.extensions || [])"
                     :key="ext.slot"
-                    class="badge badge-xs badge-info font-mono bg-[#00f0ff]/10 text-[#00f0ff] border-[#00f0ff]/30"
+                    class="badge badge-xs font-mono bg-violet-500/10 text-violet-300 border border-violet-500/20"
                   >
                     {{ ext.slot }}
                   </span>
                   <span
                     v-if="!(row.definition.manifest.extensions?.length)"
-                    class="text-[#5f7e97] text-[11px] italic"
+                    class="text-slate-500 text-[11px] italic"
                   >
                     (Không có)
                   </span>
@@ -91,10 +91,10 @@
               </td>
 
               <!-- Toggle Action -->
-              <td class="py-3 px-4 text-center">
+              <td class="py-3.5 px-4 text-center">
                 <input
                   type="checkbox"
-                  class="toggle toggle-sm toggle-info bg-[#081d32] border-[#1d3b5a] checked:bg-[#00f0ff] checked:border-[#00f0ff]"
+                  class="toggle toggle-sm bg-[#1a2436] border-white/20 checked:bg-violet-600 checked:border-violet-600"
                   :checked="row.status === 'active'"
                   @change="togglePlugin(row)"
                 />
@@ -102,7 +102,7 @@
             </tr>
 
             <tr v-if="pluginStore.plugins.length === 0">
-              <td colspan="7" class="py-8 text-center text-[#5f7e97] font-mono">
+              <td colspan="7" class="py-8 text-center text-slate-500 font-sans">
                 Không tìm thấy plugin nào được nạp.
               </td>
             </tr>

@@ -6,22 +6,22 @@
     >
       <!-- Modal Card Container -->
     <div
-      class="relative z-10 w-full max-w-lg bg-base-300 border border-base-content/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content ring-1 ring-base-content/10"
+      class="relative z-10 w-full max-w-lg bg-base-300 border border-white/10 rounded-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content shadow-none"
     >
-      <!-- Top Accent Line -->
-      <div class="h-1 w-full bg-gradient-to-r from-primary via-info to-primary/40"></div>
+      <!-- Top Accent Line (Corporate Memphis Gradient) -->
+      <div class="h-1 w-full bg-gradient-to-r from-primary via-secondary to-primary/40"></div>
 
       <!-- Modal Header -->
       <div class="p-5 pb-3 border-b border-base-content/10 bg-base-200">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shadow-sm">
+            <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
             <div>
-              <h3 class="text-base font-bold text-base-content tracking-wide">
+              <h3 class="text-base font-bold text-base-content tracking-wide font-display">
                 Hồ sơ &amp; Thông tin cá nhân
               </h3>
               <p class="text-xs text-base-content/60 mt-0.5">
@@ -41,9 +41,9 @@
 
       <!-- Identity Summary Card -->
       <div class="p-5 pb-0">
-        <div class="p-4 bg-base-200 border border-base-content/15 rounded-xl flex items-center justify-between shadow-sm">
+        <div class="p-4 bg-base-200 border border-base-content/15 rounded-xl flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-xl bg-primary/20 border border-primary/40 text-primary font-bold text-base flex items-center justify-center shadow-inner">
+            <div class="w-11 h-11 rounded-xl bg-primary/20 border border-primary/40 text-primary font-bold text-base flex items-center justify-center">
               {{ userInitials }}
             </div>
             <div>
@@ -73,7 +73,7 @@
           <button
             type="button"
             class="tab flex-1 text-xs font-medium rounded-lg transition-all"
-            :class="activeTab === 'profile' ? 'tab-active !bg-primary !text-primary-content font-semibold shadow-sm' : 'text-base-content/70 hover:text-base-content'"
+            :class="activeTab === 'profile' ? 'tab-active !bg-primary !text-primary-content font-semibold' : 'text-base-content/70 hover:text-base-content'"
             @click="activeTab = 'profile'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,7 +84,7 @@
           <button
             type="button"
             class="tab flex-1 text-xs font-medium rounded-lg transition-all"
-            :class="activeTab === 'password' ? 'tab-active !bg-primary !text-primary-content font-semibold shadow-sm' : 'text-base-content/70 hover:text-base-content'"
+            :class="activeTab === 'password' ? 'tab-active !bg-primary !text-primary-content font-semibold' : 'text-base-content/70 hover:text-base-content'"
             @click="activeTab = 'password'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -283,7 +283,7 @@
             <button
               type="submit"
               :disabled="submittingPassword"
-              class="btn btn-sm btn-primary shadow-sm"
+              class="btn btn-sm btn-primary"
             >
               <span v-if="submittingPassword" class="loading loading-spinner loading-xs mr-1"></span>
               Cập nhật mật khẩu

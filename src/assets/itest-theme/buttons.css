@@ -1,0 +1,103 @@
+/* ==========================================================================
+   iTest Theme - Buttons & Interactive Actions
+   ========================================================================== */
+
+.el-button {
+  height: var(--cyber-control-height);
+  border-radius: var(--cyber-radius-sm);
+  font-family: var(--cyber-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--owl-border);
+  background: var(--owl-bg-card);
+  color: var(--owl-text-primary);
+  box-shadow: none !important;
+}
+
+.el-button:hover {
+  border-color: var(--owl-teal);
+  color: var(--owl-teal);
+  background: var(--owl-bg-card-hover);
+}
+
+/* Primary Button */
+.el-button--primary {
+  background: var(--owl-primary, #7c3aed) !important;
+  border: 1px solid var(--owl-primary, #7c3aed) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.el-button--primary:hover {
+  background: #6d28d9 !important;
+  border-color: #6d28d9 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.el-button--primary:active {
+  transform: translateY(0);
+}
+
+/* Success Button */
+.el-button--success {
+  background: rgba(52, 211, 153, 0.15) !important;
+  border: 1px solid var(--owl-mint, #34d399) !important;
+  color: var(--owl-mint, #34d399) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.el-button--success:hover {
+  background: var(--owl-mint, #34d399) !important;
+  border-color: var(--owl-mint, #34d399) !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+/* Warning Button */
+.el-button--warning {
+  background: rgba(251, 191, 36, 0.15) !important;
+  border: 1px solid var(--owl-amber, #fbbf24) !important;
+  color: var(--owl-amber, #fbbf24) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.el-button--warning:hover {
+  background: var(--owl-amber, #fbbf24) !important;
+  border-color: var(--owl-amber, #fbbf24) !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+/* Danger Button */
+.el-button--danger {
+  background: rgba(251, 113, 133, 0.15) !important;
+  border: 1px solid var(--owl-coral, #fb7185) !important;
+  color: var(--owl-coral, #fb7185) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.el-button--danger:hover {
+  background: var(--owl-coral, #fb7185) !important;
+  border-color: var(--owl-coral, #fb7185) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Small Action Buttons */
+.el-button--small {
+  height: 30px;
+  padding: 4px 10px;
+  font-size: 12px;
+}

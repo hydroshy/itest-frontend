@@ -9,7 +9,7 @@ Hướng dẫn chuẩn hóa theme Dark Minimalist Tech và Design Tokens ngữ n
 Toàn bộ hệ thống chạy trên theme `dim` của DaisyUI: `<html lang="vi" class="dark" data-theme="dim">`.
 Không bao giờ hardcode mã màu HEX trực tiếp trong template. Sử dụng các tokens sau:
 
-| Tên Token DaisyUI | Giá Trị HEX (Theme `dim`) | Biến Hệ Thống (`cyber-theme.css`) | Mục Đích Sử Dụng |
+| Tên Token DaisyUI | Giá Trị HEX (Theme `dim`) | Biến Hệ Thống (`itest-theme.css`) | Mục Đích Sử Dụng |
 | :--- | :--- | :--- | :--- |
 | `base-100` | `#20252E` | `--owl-bg-canvas` | Nền canvas chính (background toàn màn hình trang) |
 | `base-200` | `#2A303C` | `--owl-bg-surface` | Nền khối cấp 1 (Header, Sidebar, Filter bar, Container) |

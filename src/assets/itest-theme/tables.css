@@ -1,0 +1,42 @@
+/* ==========================================================================
+   iTest Theme - Element Plus Tables
+   ========================================================================== */
+
+.el-table {
+  background-color: transparent !important;
+  --el-table-border-color: var(--owl-border) !important;
+  --el-table-header-bg-color: var(--owl-bg-aside) !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-row-hover-bg-color: rgba(124, 58, 237, 0.08) !important;
+  --el-table-text-color: var(--owl-text-primary) !important;
+  --el-table-header-text-color: var(--owl-teal) !important;
+  border-radius: var(--cyber-radius);
+  overflow: hidden;
+  box-shadow: none !important;
+}
+
+.el-table th.el-table__cell {
+  background-color: var(--owl-bg-aside) !important;
+  color: var(--owl-teal) !important;
+  font-family: var(--cyber-font-display) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid var(--owl-border) !important;
+  padding: 12px 14px !important;
+}
+
+.el-table td.el-table__cell {
+  background-color: var(--owl-bg-surface) !important;
+  border-bottom: 1px solid var(--owl-border-light) !important;
+  color: var(--owl-text-primary) !important;
+  padding: 12px 14px !important;
+  font-size: 13px !important;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background-color: var(--owl-bg-card) !important;
+}
+
+.el-table__body tr:hover > td.el-table__cell {
+  background-color: var(--owl-bg-card-hover) !important;
+}

@@ -19,11 +19,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--owl-bg-canvas, #011627);
+  background-color: var(--owl-bg-canvas, #0f172a);
   background-image:
-    radial-gradient(circle at 50% 20%, rgba(127, 219, 202, 0.08) 0%, transparent 60%),
-    linear-gradient(rgba(29, 59, 90, 0.2) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(29, 59, 90, 0.2) 1px, transparent 1px);
+    radial-gradient(circle at 50% 20%, rgba(124, 58, 237, 0.08) 0%, transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 100% 100%, 36px 36px, 36px 36px;
   padding: 20px;
   overflow: hidden;
@@ -34,12 +34,12 @@
   z-index: 2;
   width: 100%;
   max-width: 440px;
-  background: var(--owl-bg-surface, #081d32);
-  border: 1px solid var(--owl-border, #1d3b5a);
-  border-radius: var(--cyber-radius-xl, 16px);
+  background: var(--owl-bg-surface, #151d2c);
+  border: 1px solid var(--owl-border, rgba(255, 255, 255, 0.1));
+  border-radius: 24px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 24px rgba(127, 219, 202, 0.08);
+  box-shadow: none;
   padding: 40px 36px;
 }
 
@@ -52,7 +52,7 @@
   font-family: var(--cyber-font-mono, monospace);
   font-size: 11px;
   font-weight: 600;
-  color: var(--owl-teal, #7fdbca);
+  color: var(--owl-primary, #7c3aed);
   letter-spacing: 1.5px;
   margin-bottom: 8px;
 }
@@ -70,14 +70,14 @@
   font-family: var(--cyber-font-body, sans-serif);
   font-size: 12px;
   font-weight: 500;
-  color: var(--owl-text-secondary, #7e97b8);
+  color: var(--owl-text-secondary, #94a3b8);
   margin: 0;
   letter-spacing: 0.5px;
 }
 
 /* Deep overrides for login inputs inside auth card */
 :deep(.el-form-item__label) {
-  color: var(--owl-text-primary, #d6deeb) !important;
+  color: var(--owl-text-primary, #f1f5f9) !important;
   font-family: var(--cyber-font-display, sans-serif);
   font-weight: 500;
   font-size: 13px;
@@ -85,16 +85,16 @@
 }
 
 :deep(.el-input__wrapper) {
-  background: var(--owl-bg-input, #0b253e) !important;
-  border: 1px solid var(--owl-border, #1d3b5a) !important;
-  border-radius: var(--cyber-radius-sm, 6px) !important;
+  background: var(--owl-bg-input, #1a2436) !important;
+  border: 1px solid var(--owl-border, rgba(255, 255, 255, 0.1)) !important;
+  border-radius: 12px !important;
   box-shadow: none !important;
   transition: all 0.2s ease;
 }
 
 :deep(.el-input__wrapper.is-focus) {
-  border-color: var(--owl-teal, #7fdbca) !important;
-  box-shadow: 0 0 0 2px var(--owl-teal-dim, rgba(127, 219, 202, 0.15)) !important;
+  border-color: var(--owl-primary, #7c3aed) !important;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2) !important;
 }
 
 :deep(.el-input__inner) {
@@ -103,19 +103,19 @@
 }
 
 :deep(.el-checkbox__label) {
-  color: var(--owl-text-secondary, #7e97b8) !important;
+  color: var(--owl-text-secondary, #94a3b8) !important;
   font-size: 13px;
 }
 
 :deep(.el-button--primary) {
-  background: var(--owl-teal, #7fdbca) !important;
+  background: var(--owl-primary, #7c3aed) !important;
   border: none !important;
-  color: #011627 !important;
+  color: #ffffff !important;
   font-family: var(--cyber-font-display, sans-serif);
   font-weight: 600;
   letter-spacing: 0.5px;
-  border-radius: var(--cyber-radius-sm, 6px) !important;
-  box-shadow: 0 4px 14px rgba(127, 219, 202, 0.25) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
   transition: all 0.2s ease;
 }
 

@@ -1,0 +1,80 @@
+/* ==========================================================================
+   iTest Theme - Forms, Filter Bars & Input Controls
+   ========================================================================== */
+
+/* Unified Filter Bar */
+.filter-card,
+.cyber-filter-bar,
+.filter-form-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--owl-bg-surface) !important;
+  border: 1px solid var(--owl-border) !important;
+  border-radius: var(--cyber-radius) !important;
+  padding: 14px 18px !important;
+  margin-bottom: 16px !important;
+  box-shadow: none !important;
+}
+
+.filter-card .el-card__body,
+.cyber-filter-bar .el-card__body {
+  padding: 0 !important;
+  width: 100%;
+}
+
+.filter-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  width: 100%;
+}
+
+.filter-form .el-form-item {
+  margin-bottom: 0 !important;
+  margin-right: 0 !important;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-form .el-form-item__label {
+  color: var(--owl-text-secondary) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding-right: 8px !important;
+}
+
+/* Form Controls Uniform Styling */
+.el-input__wrapper,
+.el-select .el-input__wrapper,
+.el-date-editor.el-input__wrapper {
+  background-color: var(--owl-bg-card) !important;
+  box-shadow: 0 0 0 1px var(--owl-border) inset !important;
+  border-radius: var(--cyber-radius-sm) !important;
+  height: var(--cyber-control-height) !important;
+  padding: 1px 12px !important;
+  transition: all 0.2s ease !important;
+}
+
+.el-input__inner {
+  color: var(--owl-text-primary) !important;
+  font-family: var(--cyber-font-body) !important;
+  font-size: 13px !important;
+}
+
+.el-input__inner::placeholder {
+  color: var(--owl-text-muted) !important;
+}
+
+.el-input__wrapper:hover,
+.el-select .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--owl-text-secondary) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1.5px var(--owl-border-focus) inset !important;
+}

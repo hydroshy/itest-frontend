@@ -1,0 +1,85 @@
+/* ==========================================================================
+   iTest Theme - Global Reset & Base Typography
+   ========================================================================== */
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  background-color: var(--owl-bg-canvas);
+  color: var(--owl-text-primary);
+  font-family: var(--cyber-font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure form controls and interactive elements inherit uniform typography (preflight: false normalization) */
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+/* DaisyUI component font normalization across Shell and Plugins */
+.btn,
+.input,
+.select,
+.textarea,
+.badge,
+.table,
+.menu,
+.tab,
+.stat-title,
+.stat-value,
+.stat-desc {
+  font-family: inherit;
+}
+
+/* Monospace code elements standard reset across Shell and Plugins */
+code,
+kbd,
+samp,
+pre,
+.font-mono {
+  font-family: var(--cyber-font-mono) !important;
+}
+
+/* Typography utility classes */
+.font-display {
+  font-family: var(--cyber-font-display) !important;
+}
+
+.font-sans {
+  font-family: var(--cyber-font-body) !important;
+}
+
+/* Smooth Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--owl-bg-canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--owl-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--owl-teal);
+}
+
+/* Modern App Wrapper Background */
+.layout-main-wrapper {
+  background-color: var(--owl-bg-canvas) !important;
+  background-image: none !important;
+  color: var(--owl-text-primary);
+}
