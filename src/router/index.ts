@@ -81,18 +81,12 @@ router.beforeEach((to, from) => {
   }
 
   if (to.name === 'Login' && authStore.isAuthenticated) {
-    // Nếu user có quyền/role thì chuyển về Dashboard, ngược lại về Menu Launcher
-    const hasRole = authStore.roles.length > 0;
-    return { name: hasRole ? 'Dashboard' : 'MenuLauncher' };
+    return { name: authStore.hasPermission('dashboard:view') ? 'Dashboard' : 'MenuLauncher' };
   }
 
-  // Guard Dashboard cho người dùng chưa có role
-  if (to.name === 'Dashboard' && authStore.isAuthenticated) {
-    const hasRole = authStore.roles.length > 0;
-    if (!hasRole) {
-      console.warn('[Router] User has no roles, redirecting from Dashboard to MenuLauncher');
-      return { name: 'MenuLauncher' };
-    }
+  // Match the sidebar permission before mounting Dashboard and calling its APIs.
+  if (to.name === 'Dashboard' && !authStore.hasPermission('dashboard:view')) {
+    return { name: 'MenuLauncher' };
   }
 
   return true;
