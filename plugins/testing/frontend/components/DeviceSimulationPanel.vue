@@ -16,7 +16,10 @@
               >
                 {{ joinStatus }}
               </span>
-              <span v-if="autoLoopActive" class="badge badge-xs badge-info animate-pulse font-mono">
+              <span v-if="flowRunning" class="badge badge-xs badge-info animate-pulse font-mono">
+                FLOW RUNNING ({{ flowSpeed }}x)
+              </span>
+              <span v-else-if="autoLoopActive" class="badge badge-xs badge-info animate-pulse font-mono">
                 LOOPING ({{ autoIntervalSec }}s)
               </span>
             </div>
@@ -43,6 +46,76 @@
           <div class="px-3 py-1.5 rounded-lg bg-base-100 border border-base-300 flex items-center gap-2">
             <span class="text-base-content/60">Uplink FCnt:</span>
             <span class="font-mono font-bold text-info">{{ fCnt }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin & Sub-Admin Simulation Profile Linkage Card -->
+    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm p-4 backdrop-blur-md">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-content/10">
+        <div class="flex items-center gap-2">
+          <BookmarkCheck class="w-4 h-4 text-primary" />
+          <div>
+            <div class="font-bold text-sm flex items-center gap-2">
+              <span>Liên Kết Thiết Bị Mẫu &amp; Kịch Bản Giả Lập</span>
+              <span class="badge badge-xs badge-primary font-mono">ADMIN &amp; SUB-ADMIN</span>
+            </div>
+            <div class="text-[11px] text-base-content/60">
+              Gán Simu ID với Item Code và Long_FW để tự động nạp cấu hình và kích hoạt kịch bản chạy test
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-outline btn-primary btn-xs" @click="showCreateModal = true">
+            <Plus class="w-3.5 h-3.5" />
+            Tạo Thiết Bị Mẫu (Admin)
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-3 items-end">
+        <!-- Dropdown Chọn Thiết Bị Cần Test -->
+        <div class="md:col-span-5 form-control">
+          <label class="label py-1">
+            <span class="label-text font-medium text-xs flex items-center gap-1.5">
+              <Layers class="w-3.5 h-3.5 text-accent" />
+              Chọn Thiết Bị Cần Test (Mẫu Đã Gán Simu ID)
+            </span>
+          </label>
+          <select
+            v-model="selectedProfileId"
+            class="select select-bordered select-sm w-full font-mono text-xs"
+            @change="onProfileSelected"
+          >
+            <option v-for="prof in simulationProfiles" :key="prof.simuId" :value="prof.simuId">
+              [{{ prof.simuId }}] {{ prof.itemCode }} - {{ prof.targetDeviceName }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Active Profile Info Details -->
+        <div class="md:col-span-7 flex flex-wrap items-center gap-2 p-2 rounded-lg bg-base-100 border border-base-300">
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-base-content/50">Simu ID:</span>
+            <span class="badge badge-sm badge-primary font-mono font-bold">{{ activeProfile.simuId }}</span>
+          </div>
+          <div class="divider divider-horizontal m-0"></div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-base-content/50">Item Code:</span>
+            <span class="badge badge-sm badge-neutral font-mono">{{ activeProfile.itemCode }}</span>
+          </div>
+          <div class="divider divider-horizontal m-0"></div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-base-content/50">Long FW:</span>
+            <span class="badge badge-sm badge-accent font-mono text-[11px] truncate max-w-[200px]" :title="activeProfile.longFw">
+              {{ activeProfile.longFw }}
+            </span>
+          </div>
+          <div class="divider divider-horizontal m-0"></div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-base-content/50">Flow Test:</span>
+            <span class="badge badge-sm badge-info font-mono">{{ activeProfile.flowDurationMinutes }} phút</span>
           </div>
         </div>
       </div>
@@ -499,27 +572,119 @@
               </div>
             </div>
 
-            <!-- Step 3: Periodic Auto Loop -->
-            <div class="p-3 rounded-lg bg-base-100 border border-base-300 flex items-center justify-between gap-2">
-              <div>
-                <div class="font-bold text-xs">3. Tự Động Định Kỳ (Loop)</div>
-                <div class="text-[11px] text-base-content/60">Tự phát sinh dữ liệu cảm biến &amp; gửi lặp lại</div>
+            <!-- Step 3: Simulation Flow Runner (Sub-Admin Thiết Lập) -->
+            <div class="p-3 rounded-lg bg-base-100 border border-base-300 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-xs flex items-center gap-1.5">
+                    <span>3. Kịch Bản Simulation Flow</span>
+                    <span class="badge badge-xs badge-info font-mono uppercase">Sub-Admin</span>
+                  </div>
+                  <div class="text-[11px] text-base-content/60">
+                    Chạy Flow {{ activeProfile.flowDurationMinutes }}p, Downlink còi lúc 1p, tự kết thúc sau {{ activeProfile.flowDurationMinutes }}p
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <!-- Speed selector -->
+                  <select
+                    v-model.number="flowSpeed"
+                    class="select select-bordered select-xs font-mono"
+                    :disabled="flowRunning"
+                    title="Tốc độ mô phỏng"
+                  >
+                    <option :value="1">1x (Chuẩn)</option>
+                    <option :value="10">10x (Nhanh)</option>
+                    <option :value="60">60x (Siêu tốc 30s)</option>
+                  </select>
+                </div>
               </div>
-              <div class="flex items-center gap-1.5">
-                <select v-model.number="autoIntervalSec" class="select select-bordered select-xs font-mono" :disabled="autoLoopActive">
-                  <option :value="3">3s</option>
-                  <option :value="5">5s</option>
-                  <option :value="10">10s</option>
-                  <option :value="30">30s</option>
-                </select>
-                <button
-                  class="btn btn-sm"
-                  :class="autoLoopActive ? 'btn-error' : 'btn-outline btn-info'"
-                  @click="toggleAutoLoop"
+
+              <!-- Flow Status & Progress HUD -->
+              <div class="p-2 rounded bg-base-200/70 border border-base-300/80 space-y-1.5 font-mono text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-base-content/60 flex items-center gap-1">
+                    <Clock class="w-3.5 h-3.5" />
+                    Đếm Ngược Flow:
+                  </span>
+                  <span class="font-bold text-sm" :class="flowRunning ? 'text-primary animate-pulse' : 'text-base-content/70'">
+                    {{ countdownDisplay }} / {{ activeProfile.flowDurationMinutes }}:00
+                  </span>
+                </div>
+                <progress
+                  class="progress w-full h-1.5"
+                  :class="flowRunning ? 'progress-primary' : 'progress-ghost'"
+                  :value="flowProgressPercent"
+                  max="100"
+                ></progress>
+                <div class="flex items-center justify-between text-[10px] text-base-content/60">
+                  <span>Tiến độ: {{ flowProgressPercent.toFixed(1) }}% ({{ Math.floor(flowElapsedSeconds / 60) }}m {{ (flowElapsedSeconds % 60).toString().padStart(2, '0') }}s)</span>
+                  <span v-if="flowRunning" class="text-success font-bold animate-pulse">FLOW ĐANG CHẠY</span>
+                  <span v-else-if="flowCompleted" class="text-info font-bold">HOÀN TẤT ({{ activeProfile.flowDurationMinutes }}P)</span>
+                  <span v-else class="text-base-content/40">SẴN SÀNG</span>
+                </div>
+              </div>
+
+              <!-- Buzzer Actuator Indicator -->
+              <div
+                v-if="buzzerActive"
+                class="p-2 rounded-lg bg-warning/20 border border-warning text-warning text-xs flex items-center justify-between animate-pulse"
+              >
+                <div class="flex items-center gap-1.5 font-bold">
+                  <Bell class="w-4 h-4 text-warning animate-bounce" />
+                  <span>CÒI GIẢ LẬP ĐANG KÍCH HOẠT (BUZZER ACTIVE)!</span>
+                </div>
+                <button class="btn btn-xs btn-warning btn-outline" @click="buzzerActive = false">
+                  Tắt Còi
+                </button>
+              </div>
+
+              <!-- Timed Action Milestones List -->
+              <div class="space-y-1 text-[11px]">
+                <div
+                  v-for="action in activeProfile.timedActions"
+                  :key="action.id"
+                  class="flex items-center justify-between px-2 py-1 rounded bg-base-200/50 border border-base-300"
                 >
-                  <Square v-if="autoLoopActive" class="w-3.5 h-3.5" />
-                  <Play v-else class="w-3.5 h-3.5" />
-                  <span>{{ autoLoopActive ? 'Dừng' : 'Chạy Loop' }}</span>
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="badge badge-xs font-mono"
+                      :class="action.executed ? 'badge-success text-success-content' : 'badge-ghost'"
+                    >
+                      {{ action.executed ? '✓ ĐÃ CHẠY' : `${action.triggerMinute}m` }}
+                    </span>
+                    <span :class="action.executed ? 'line-through text-base-content/50' : 'text-base-content/80'">
+                      {{ action.label }}
+                    </span>
+                  </div>
+                  <span class="font-mono text-[10px] text-base-content/50">Port {{ action.fPort }} ({{ action.payloadHex }})</span>
+                </div>
+              </div>
+
+              <!-- Flow Control Buttons -->
+              <div class="flex items-center gap-2 pt-1">
+                <button
+                  v-if="!flowRunning"
+                  class="btn btn-sm btn-primary flex-1 gap-1"
+                  @click="startFlow"
+                >
+                  <Play class="w-3.5 h-3.5" />
+                  <span>Bắt Đầu Chạy Flow</span>
+                </button>
+                <button
+                  v-else
+                  class="btn btn-sm btn-error flex-1 gap-1"
+                  @click="stopFlow"
+                >
+                  <Square class="w-3.5 h-3.5" />
+                  <span>Dừng Flow</span>
+                </button>
+                <button
+                  class="btn btn-sm btn-ghost btn-square"
+                  title="Đặt lại Flow"
+                  :disabled="flowRunning"
+                  @click="resetFlow"
+                >
+                  <RotateCcw class="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -554,7 +719,7 @@
 
           <div ref="logContainer" class="flex-1 overflow-y-auto p-2.5 rounded-lg bg-black/80 font-mono text-[11px] space-y-1.5 border border-white/10 select-text">
             <div v-if="logs.length === 0" class="text-base-content/40 italic py-6 text-center">
-              Chưa có sự kiện nào. Hãy nhấn "Kích Hoạt Join" hoặc "Phát Sóng" để bắt đầu mô phỏng.
+              Chưa có sự kiện nào. Hãy nhấn "Kích Hoạt Join" hoặc "Bắt Đầu Chạy Flow" để bắt đầu mô phỏng.
             </div>
             <div
               v-for="log in logs"
@@ -570,6 +735,105 @@
         </div>
       </div>
     </div>
+
+    <!-- Dialog Tạo / Liên Kết Thiết Bị Mẫu Mới (Admin) -->
+    <dialog class="modal" :class="{ 'modal-open': showCreateModal }">
+      <div class="modal-box w-11/12 max-w-2xl bg-base-100 border border-base-300 p-5 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10">
+          <h3 class="font-bold text-base flex items-center gap-2">
+            <BookmarkCheck class="w-5 h-5 text-primary" />
+            Tạo &amp; Liên Kết Thiết Bị Mẫu (Admin Mode)
+          </h3>
+          <button class="btn btn-ghost btn-xs btn-circle" @click="showCreateModal = false">✕</button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Simu ID *</span></label>
+              <input
+                v-model="newProfileForm.simuId"
+                type="text"
+                placeholder="SIMU-LORA-SAMPLE01"
+                class="input input-bordered input-sm font-mono"
+              />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Tên Mẫu / Thiết Bị *</span></label>
+              <input
+                v-model="newProfileForm.targetDeviceName"
+                type="text"
+                placeholder="LoRa Node Đo Nhiệt Cảnh Báo"
+                class="input input-bordered input-sm"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Item Code (Gán thiết bị cần test) *</span></label>
+              <input
+                v-model="newProfileForm.itemCode"
+                type="text"
+                placeholder="ITEM-9901-SMART-PLUG"
+                class="input input-bordered input-sm font-mono"
+              />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Long FW (Firmware bản dài) *</span></label>
+              <input
+                v-model="newProfileForm.longFw"
+                type="text"
+                placeholder="v1.2.0-rc3-long-fw-build9482"
+                class="input input-bordered input-sm font-mono"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Thời Lượng Flow (Phút)</span></label>
+              <input
+                v-model.number="newProfileForm.flowDurationMinutes"
+                type="number"
+                min="1"
+                max="180"
+                class="input input-bordered input-sm font-mono"
+              />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Kịch Bản Cảm Biến</span></label>
+              <select v-model="newProfileForm.presetId" class="select select-bordered select-sm">
+                <option value="env">Môi trường (Temp/Humi)</option>
+                <option value="water">Đồng hồ nước</option>
+                <option value="gps">GPS Tracker</option>
+                <option value="custom">Tùy chỉnh HEX</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Băng Tần LoRa</span></label>
+              <select v-model="newProfileForm.region" class="select select-bordered select-sm">
+                <option value="AS923-1">AS923-1</option>
+                <option value="VN923">VN923</option>
+                <option value="EU868">EU868</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-base-200/50 border border-base-300 text-[11px] space-y-1">
+            <div class="font-semibold text-primary">Kịch bản mặc định Sub-Admin:</div>
+            <div>• Phút 01:00: Downlink bật thiết bị còi giả lập (Port 10, Payload 0101)</div>
+            <div>• Phút 05:00: Downlink cấu hình lại chu kỳ đo (Port 10, Payload 02001E)</div>
+            <div>• Phút {{ newProfileForm.flowDurationMinutes }}:00: Tự động kết thúc flow mô phỏng</div>
+          </div>
+        </div>
+
+        <div class="modal-action">
+          <button class="btn btn-ghost btn-sm" @click="showCreateModal = false">Hủy</button>
+          <button class="btn btn-primary btn-sm" @click="saveNewTemplateProfile">Lưu &amp; Liên Kết</button>
+        </div>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -585,9 +849,46 @@ import {
   Terminal,
   Play,
   Square,
+  RotateCcw,
+  Clock,
+  Bell,
+  BookmarkCheck,
+  Plus,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
+
+export interface TimedFlowAction {
+  id: string;
+  triggerMinute: number;
+  actionType: 'downlink_buzzer' | 'downlink_command' | 'change_rate';
+  label: string;
+  payloadHex: string;
+  fPort: number;
+  executed?: boolean;
+}
+
+export interface SimulationProfile {
+  simuId: string;
+  profileName: string;
+  itemCode: string;
+  longFw: string;
+  targetDeviceName: string;
+  activation: 'OTAA' | 'ABP';
+  devEui: string;
+  appEui: string;
+  appKey: string;
+  devAddr?: string;
+  region: string;
+  sf: string;
+  bw: number;
+  fPort: number;
+  presetId: string;
+  flowDurationMinutes: number;
+  autoTerminate: boolean;
+  uplinkIntervalSec: number;
+  timedActions: TimedFlowAction[];
+}
 
 interface SimulationLog {
   id: string;
@@ -599,7 +900,205 @@ interface SimulationLog {
 
 const emit = defineEmits<{
   (e: 'packet-sent', packet: any): void;
+  (e: 'packet-emitted', packet: any): void;
 }>();
+
+// Initial Template Profiles (Linked by Admin, Flow by Sub-Admin)
+const simulationProfiles = reactive<SimulationProfile[]>([
+  {
+    simuId: 'SIMU-LORA-SP01',
+    profileName: 'Ổ Cắm Thông Minh & Còi Báo Động (Chuẩn 30 Phút)',
+    itemCode: 'ITEM-9901-SMART-PLUG',
+    longFw: 'v1.2.0-rc3-long-fw-build9482',
+    targetDeviceName: 'Smart Socket Multi-Sensor Node',
+    activation: 'OTAA',
+    devEui: '70B3D57ED005ABCD',
+    appEui: '0000000000000000',
+    appKey: '2B7E151628AED2A6ABF7158809CF4F3C',
+    region: 'AS923-1',
+    sf: 'SF7',
+    bw: 125,
+    fPort: 2,
+    presetId: 'env',
+    flowDurationMinutes: 30,
+    autoTerminate: true,
+    uplinkIntervalSec: 10,
+    timedActions: [
+      {
+        id: 'act-sp-1',
+        triggerMinute: 1,
+        actionType: 'downlink_buzzer',
+        label: 'Downlink bật thiết bị còi giả lập lúc 1 phút',
+        payloadHex: '0101',
+        fPort: 10,
+        executed: false,
+      },
+      {
+        id: 'act-sp-2',
+        triggerMinute: 5,
+        actionType: 'downlink_command',
+        label: 'Downlink cấu hình chu kỳ đo 15s',
+        payloadHex: '02000F',
+        fPort: 10,
+        executed: false,
+      },
+      {
+        id: 'act-sp-3',
+        triggerMinute: 15,
+        actionType: 'downlink_buzzer',
+        label: 'Downlink tắt thiết bị còi giả lập',
+        payloadHex: '0100',
+        fPort: 10,
+        executed: false,
+      },
+      {
+        id: 'act-sp-4',
+        triggerMinute: 30,
+        actionType: 'change_rate',
+        label: 'Tự động kết thúc Flow sau 30 phút',
+        payloadHex: 'FF',
+        fPort: 10,
+        executed: false,
+      },
+    ],
+  },
+  {
+    simuId: 'SIMU-LORA-WM02',
+    profileName: 'Đồng Hồ Nước Siêu Âm LoRaWAN DN15',
+    itemCode: 'ITEM-5520-WATER-METER',
+    longFw: 'v2.4.1-long-fw-build1029',
+    targetDeviceName: 'Water Meter Ultrasonic DN15',
+    activation: 'OTAA',
+    devEui: '70B3D57ED0052211',
+    appEui: '0000000000000000',
+    appKey: '0102030405060708090A0B0C0D0E0F10',
+    region: 'VN923',
+    sf: 'SF8',
+    bw: 125,
+    fPort: 1,
+    presetId: 'water',
+    flowDurationMinutes: 30,
+    autoTerminate: true,
+    uplinkIntervalSec: 10,
+    timedActions: [
+      {
+        id: 'act-wm-1',
+        triggerMinute: 1,
+        actionType: 'downlink_buzzer',
+        label: 'Downlink đóng van ngắt nước & bật còi cảnh báo',
+        payloadHex: 'AA000101',
+        fPort: 1,
+        executed: false,
+      },
+      {
+        id: 'act-wm-2',
+        triggerMinute: 10,
+        actionType: 'downlink_command',
+        label: 'Downlink mở lại van cấp nước',
+        payloadHex: 'AA01',
+        fPort: 1,
+        executed: false,
+      },
+      {
+        id: 'act-wm-3',
+        triggerMinute: 30,
+        actionType: 'change_rate',
+        label: 'Tự động kết thúc sau 30 phút',
+        payloadHex: 'FF',
+        fPort: 1,
+        executed: false,
+      },
+    ],
+  },
+  {
+    simuId: 'SIMU-LORA-ENV03',
+    profileName: 'Cảm Biến Khí & Cảnh Báo Khói Cháy',
+    itemCode: 'ITEM-8812-ENV-SENSOR',
+    longFw: 'v1.0.5-long-fw-build3311',
+    targetDeviceName: 'Gas & Smoke Industrial Node',
+    activation: 'OTAA',
+    devEui: '70B3D57ED0059988',
+    appEui: '0000000000000000',
+    appKey: 'A1B2C3D4E5F60102030405060708090A',
+    region: 'AS923-1',
+    sf: 'SF7',
+    bw: 125,
+    fPort: 3,
+    presetId: 'env',
+    flowDurationMinutes: 30,
+    autoTerminate: true,
+    uplinkIntervalSec: 10,
+    timedActions: [
+      {
+        id: 'act-env-1',
+        triggerMinute: 1,
+        actionType: 'downlink_buzzer',
+        label: 'Downlink bật còi báo khói giả lập',
+        payloadHex: '0101',
+        fPort: 10,
+        executed: false,
+      },
+      {
+        id: 'act-env-2',
+        triggerMinute: 12,
+        actionType: 'downlink_buzzer',
+        label: 'Downlink tắt còi báo khói',
+        payloadHex: '0100',
+        fPort: 10,
+        executed: false,
+      },
+      {
+        id: 'act-env-3',
+        triggerMinute: 30,
+        actionType: 'change_rate',
+        label: 'Tự động kết thúc sau 30 phút',
+        payloadHex: 'FF',
+        fPort: 10,
+        executed: false,
+      },
+    ],
+  },
+]);
+
+const selectedProfileId = ref<string>('SIMU-LORA-SP01');
+const activeProfile = computed(() => {
+  return simulationProfiles.find((p) => p.simuId === selectedProfileId.value) || simulationProfiles[0];
+});
+
+// Admin Modal State
+const showCreateModal = ref<boolean>(false);
+const newProfileForm = reactive({
+  simuId: '',
+  targetDeviceName: '',
+  itemCode: '',
+  longFw: '',
+  flowDurationMinutes: 30,
+  presetId: 'env',
+  region: 'AS923-1',
+});
+
+// Flow Engine State
+const flowRunning = ref<boolean>(false);
+const flowCompleted = ref<boolean>(false);
+const flowElapsedSeconds = ref<number>(0);
+const flowSpeed = ref<number>(1);
+const buzzerActive = ref<boolean>(false);
+let flowIntervalTimer: any = null;
+let lastUplinkSentSecond = -1;
+
+const countdownDisplay = computed(() => {
+  const totalSeconds = (activeProfile.value?.flowDurationMinutes || 30) * 60;
+  const remain = Math.max(0, totalSeconds - flowElapsedSeconds.value);
+  const m = Math.floor(remain / 60);
+  const s = remain % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+});
+
+const flowProgressPercent = computed(() => {
+  const totalSeconds = (activeProfile.value?.flowDurationMinutes || 30) * 60;
+  if (totalSeconds <= 0) return 0;
+  return Math.min(100, (flowElapsedSeconds.value / totalSeconds) * 100);
+});
 
 // Simulation Config
 const config = reactive({
@@ -944,14 +1443,215 @@ function simulateDownlinkReception() {
   }, 1000);
 }
 
+// Flow Engine & Simulation Profile Handlers
+function onProfileSelected() {
+  const p = simulationProfiles.find((item) => item.simuId === selectedProfileId.value);
+  if (!p) return;
+  config.deviceName = p.targetDeviceName;
+  config.activation = p.activation;
+  config.devEui = p.devEui;
+  config.appEui = p.appEui;
+  config.appKey = p.appKey;
+  if (p.devAddr) config.devAddr = p.devAddr;
+  config.region = p.region;
+  config.sf = p.sf;
+  config.bw = p.bw;
+  config.fPort = p.fPort;
+  selectPreset(p.presetId);
+  resetFlow();
+  addLog('PROFILE', `Đã liên kết Profile [${p.simuId}] - Item Code: ${p.itemCode} - Long FW: ${p.longFw}`, 'info');
+}
+
+function startFlow() {
+  if (flowRunning.value) return;
+  if (flowCompleted.value) {
+    resetFlow();
+  }
+  flowRunning.value = true;
+  flowCompleted.value = false;
+  addLog('FLOW_START', `Bắt đầu chạy flow giả lập: ${activeProfile.value.simuId} (${activeProfile.value.flowDurationMinutes} phút, Tốc độ ${flowSpeed.value}x)`, 'warning');
+  cyberToast.success(`Bắt đầu chạy Flow giả lập (${activeProfile.value.flowDurationMinutes} phút)`);
+
+  if (lastUplinkSentSecond === -1) {
+    sendSingleUplink();
+    lastUplinkSentSecond = 0;
+  }
+
+  let lastTick = Date.now();
+  flowIntervalTimer = setInterval(() => {
+    const now = Date.now();
+    const deltaSec = ((now - lastTick) / 1000) * flowSpeed.value;
+    lastTick = now;
+    flowElapsedSeconds.value += deltaSec;
+
+    // Check timed action milestones
+    if (activeProfile.value?.timedActions) {
+      for (const action of activeProfile.value.timedActions) {
+        if (!action.executed && flowElapsedSeconds.value >= action.triggerMinute * 60) {
+          action.executed = true;
+          executeFlowAction(action);
+        }
+      }
+    }
+
+    // Periodic Uplink
+    const intervalSec = activeProfile.value.uplinkIntervalSec || 10;
+    if (flowElapsedSeconds.value - lastUplinkSentSecond >= intervalSec) {
+      lastUplinkSentSecond = flowElapsedSeconds.value;
+      if (activePresetId.value === 'env') {
+        const deltaTemp = (Math.random() - 0.5) * 0.4;
+        const deltaHum = (Math.random() - 0.5) * 1.5;
+        sensorData.temperature = Math.max(15, Math.min(45, Number((sensorData.temperature + deltaTemp).toFixed(1))));
+        sensorData.humidity = Math.max(30, Math.min(95, Math.round(sensorData.humidity + deltaHum)));
+      } else if (activePresetId.value === 'water') {
+        sensorData.waterVolume = Number((sensorData.waterVolume + 0.002).toFixed(3));
+      }
+      updatePayloadHex();
+      sendSingleUplink();
+    }
+
+    // Termination after total duration
+    const totalSeconds = (activeProfile.value.flowDurationMinutes || 30) * 60;
+    if (flowElapsedSeconds.value >= totalSeconds) {
+      finishFlow();
+    }
+  }, 250);
+}
+
+function executeFlowAction(action: TimedFlowAction) {
+  if (action.actionType === 'downlink_buzzer') {
+    if (action.payloadHex === '0101' || action.payloadHex.includes('0101')) {
+      buzzerActive.value = true;
+      addLog('ACTUATOR', `[Phút ${action.triggerMinute}] Downlink FPort ${action.fPort} (0x${action.payloadHex}) -> KÍCH HOẠT CÒI BÁO ĐỘNG GIẢ LẬP!`, 'warning');
+      cyberToast.warning(`[Flow] Kích hoạt còi giả lập lúc ${action.triggerMinute} phút!`);
+    } else {
+      buzzerActive.value = false;
+      addLog('ACTUATOR', `[Phút ${action.triggerMinute}] Downlink FPort ${action.fPort} (0x${action.payloadHex}) -> TẮT CÒI BÁO ĐỘNG GIẢ LẬP.`, 'info');
+      cyberToast.info(`[Flow] Đã tắt còi giả lập lúc ${action.triggerMinute} phút.`);
+    }
+  } else if (action.actionType === 'downlink_command') {
+    addLog('DOWNLINK_CMD', `[Phút ${action.triggerMinute}] Lệnh Downlink Port ${action.fPort} (0x${action.payloadHex}): ${action.label}`, 'success');
+    cyberToast.info(`[Flow Downlink] ${action.label}`);
+  } else if (action.actionType === 'change_rate') {
+    addLog('FLOW_STEP', `[Phút ${action.triggerMinute}] ${action.label}`, 'info');
+  }
+}
+
+function stopFlow() {
+  if (flowIntervalTimer) {
+    clearInterval(flowIntervalTimer);
+    flowIntervalTimer = null;
+  }
+  flowRunning.value = false;
+  addLog('FLOW_STOP', `Đã tạm dừng Flow giả lập tại thời điểm ${countdownDisplay.value}`, 'info');
+}
+
+function finishFlow() {
+  if (flowIntervalTimer) {
+    clearInterval(flowIntervalTimer);
+    flowIntervalTimer = null;
+  }
+  flowRunning.value = false;
+  flowCompleted.value = true;
+  buzzerActive.value = false;
+  addLog('FLOW_COMPLETE', `Flow giả lập [${activeProfile.value.simuId}] đã chạy xong ${activeProfile.value.flowDurationMinutes} phút và tự động kết thúc!`, 'success');
+  cyberToast.success(`Flow giả lập đã kết thúc thành công sau ${activeProfile.value.flowDurationMinutes} phút!`);
+}
+
+function resetFlow() {
+  if (flowIntervalTimer) {
+    clearInterval(flowIntervalTimer);
+    flowIntervalTimer = null;
+  }
+  flowRunning.value = false;
+  flowCompleted.value = false;
+  flowElapsedSeconds.value = 0;
+  lastUplinkSentSecond = -1;
+  buzzerActive.value = false;
+  if (activeProfile.value?.timedActions) {
+    activeProfile.value.timedActions.forEach((act) => {
+      act.executed = false;
+    });
+  }
+  addLog('FLOW_RESET', 'Đã đặt lại bộ đếm Flow giả lập về 00:00', 'info');
+}
+
+function saveNewTemplateProfile() {
+  if (!newProfileForm.simuId || !newProfileForm.itemCode) {
+    cyberToast.warning('Vui lòng nhập Simu ID và Item Code!');
+    return;
+  }
+
+  const durationMin = newProfileForm.flowDurationMinutes || 30;
+  const newProfile: SimulationProfile = {
+    simuId: newProfileForm.simuId.trim().toUpperCase(),
+    profileName: newProfileForm.targetDeviceName.trim() || newProfileForm.simuId.trim(),
+    itemCode: newProfileForm.itemCode.trim().toUpperCase(),
+    longFw: newProfileForm.longFw.trim() || 'v1.0.0-long-fw-default',
+    targetDeviceName: newProfileForm.targetDeviceName.trim() || 'Custom Prototype Node',
+    activation: 'OTAA',
+    devEui: '70B3D57E' + Math.floor(Math.random() * 0xffffffff).toString(16).toUpperCase().padStart(8, '0'),
+    appEui: '0000000000000000',
+    appKey: '2B7E151628AED2A6ABF7158809CF4F3C',
+    region: newProfileForm.region || 'AS923-1',
+    sf: 'SF7',
+    bw: 125,
+    fPort: 10,
+    presetId: newProfileForm.presetId,
+    flowDurationMinutes: durationMin,
+    autoTerminate: true,
+    uplinkIntervalSec: 10,
+    timedActions: [
+      {
+        id: `act-${Date.now()}-1`,
+        triggerMinute: 1,
+        actionType: 'downlink_buzzer',
+        label: 'Downlink bật thiết bị còi giả lập lúc 1 phút',
+        payloadHex: '0101',
+        fPort: 10,
+        executed: false,
+      },
+      {
+        id: `act-${Date.now()}-2`,
+        triggerMinute: Math.max(2, Math.floor(durationMin / 2)),
+        actionType: 'downlink_buzzer',
+        label: 'Downlink tắt thiết bị còi giả lập',
+        payloadHex: '0100',
+        fPort: 10,
+        executed: false,
+      },
+      {
+        id: `act-${Date.now()}-3`,
+        triggerMinute: durationMin,
+        actionType: 'change_rate',
+        label: `Tự động kết thúc sau ${durationMin} phút`,
+        payloadHex: 'FF',
+        fPort: 10,
+        executed: false,
+      },
+    ],
+  };
+
+  simulationProfiles.push(newProfile);
+  selectedProfileId.value = newProfile.simuId;
+  onProfileSelected();
+  showCreateModal.value = false;
+  addLog('ADMIN', `Admin tạo thành công thiết bị mẫu mới: ${newProfile.simuId} gắn với Item Code ${newProfile.itemCode}`, 'success');
+  cyberToast.success(`Đã lưu thiết bị mẫu ${newProfile.simuId} thành công!`);
+}
+
 onUnmounted(() => {
   if (loopTimer) {
     clearInterval(loopTimer);
   }
+  if (flowIntervalTimer) {
+    clearInterval(flowIntervalTimer);
+  }
 });
 
-// Initialize with valid payload hex
+// Initialize with valid payload hex and default profile config
 updatePayloadHex();
+onProfileSelected();
 </script>
 
 <style scoped>
