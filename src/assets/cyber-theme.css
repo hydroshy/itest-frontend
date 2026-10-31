@@ -73,7 +73,7 @@
   --cyber-text-muted: var(--owl-text-muted);
 
   /* Refined Typography Tokens */
-  --cyber-font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --cyber-font-display: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --cyber-font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --cyber-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   --font-family-mono: var(--cyber-font-mono);
@@ -119,7 +119,8 @@
    4. GLOBAL RESET & BASE TYPOGRAPHY
    ========================================================================== */
 html,
-body {
+body,
+#app {
   margin: 0;
   padding: 0;
   background-color: var(--owl-bg-canvas);
@@ -129,6 +130,51 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure form controls and interactive elements inherit uniform typography (preflight: false normalization) */
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+/* DaisyUI component font normalization across Shell and Plugins */
+.btn,
+.input,
+.select,
+.textarea,
+.badge,
+.table,
+.menu,
+.tab,
+.stat-title,
+.stat-value,
+.stat-desc {
+  font-family: inherit;
+}
+
+/* Monospace code elements standard reset across Shell and Plugins */
+code,
+kbd,
+samp,
+pre,
+.font-mono {
+  font-family: var(--cyber-font-mono) !important;
+}
+
+/* Typography utility classes */
+.font-display {
+  font-family: var(--cyber-font-display) !important;
+}
+
+.font-sans {
+  font-family: var(--cyber-font-body) !important;
 }
 
 /* Smooth Scrollbars */

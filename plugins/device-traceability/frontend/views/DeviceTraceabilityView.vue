@@ -2976,7 +2976,7 @@ onBeforeUnmount(() => {
 
 .header-title h2 {
   margin: 0;
-  font-family: var(--cyber-font-display, 'Rajdhani', sans-serif);
+  font-family: var(--cyber-font-display);
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -3079,7 +3079,7 @@ onBeforeUnmount(() => {
 }
 
 .mono-font {
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-family: var(--cyber-font-mono);
 }
 
 .serial-text {
@@ -3212,7 +3212,7 @@ onBeforeUnmount(() => {
   padding: 1px 6px;
   border-radius: 4px;
   font-size: 11px;
-  font-family: Consolas, monospace;
+  font-family: var(--cyber-font-mono);
 }
 
 .deveui-code {
@@ -3356,7 +3356,7 @@ onBeforeUnmount(() => {
   border-radius: 6px;
   max-height: 380px;
   overflow-y: auto;
-  font-family: Consolas, monospace;
+  font-family: var(--cyber-font-mono);
   font-size: 12px;
   margin-top: 10px;
 }

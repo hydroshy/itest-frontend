@@ -595,7 +595,7 @@ const statusDisplayText = computed(() => {
 }
 
 .header-debug-stats {
-  font-family: monospace;
+  font-family: var(--cyber-font-mono);
   font-size: 12px;
   color: var(--el-text-color-secondary, #94a3b8);
   display: flex;
@@ -950,7 +950,7 @@ const statusDisplayText = computed(() => {
 }
 
 .stage-idx {
-  font-family: monospace;
+  font-family: var(--cyber-font-mono);
   font-size: 11px;
   font-weight: 700;
   color: var(--el-text-color-secondary, #94a3b8);
@@ -967,7 +967,7 @@ const statusDisplayText = computed(() => {
   flex-direction: column;
   gap: 4px;
   font-size: 12px;
-  font-family: monospace;
+  font-family: var(--cyber-font-mono);
   color: var(--el-text-color-regular, #94a3b8);
 }
 
@@ -1029,7 +1029,7 @@ const statusDisplayText = computed(() => {
   border: 1px solid rgba(0, 240, 255, 0.2);
   border-radius: 6px;
   padding: 10px 14px;
-  font-family: monospace;
+  font-family: var(--cyber-font-mono);
   font-size: 12px;
   display: flex;
   flex-direction: column;

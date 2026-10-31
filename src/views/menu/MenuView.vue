@@ -3,7 +3,7 @@
     <!-- Header Banner: Title, Subtitle, Search & Category Filters -->
     <div class="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 mb-3 bg-[#0b2942]/85 border border-[#1d3b5a] rounded-2xl backdrop-blur-md shadow-lg">
       <div>
-        <h2 class="text-xl font-bold font-['Orbitron',sans-serif] text-[#f8fafc] tracking-wide flex items-center gap-2.5">
+        <h2 class="text-xl font-bold font-display text-[#f8fafc] tracking-wide flex items-center gap-2.5">
           <CyberIcon name="grid" :size="22" class="text-primary" />
           <span>Menu Ứng Dụng & Phân Hệ</span>
         </h2>

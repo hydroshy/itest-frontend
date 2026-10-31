@@ -3,7 +3,7 @@
     <!-- Header with Quick Switch to Menu -->
     <div class="flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-[#0b2942]/85 border border-[#1d3b5a] rounded-lg backdrop-blur-md shadow-lg">
       <div>
-        <h2 class="text-xl font-bold font-['Orbitron',sans-serif] text-[#f8fafc] tracking-wide">Bảng điều khiển Trung tâm</h2>
+        <h2 class="text-xl font-bold font-display text-[#f8fafc] tracking-wide">Bảng điều khiển Trung tâm</h2>
         <p class="text-xs md:text-sm text-[#94a3b8] mt-1">Quản lý tổng quan hệ thống, tiện ích plugin và phân quyền menu truy cập</p>
       </div>
       <button class="btn btn-primary btn-sm md:btn-md gap-2" @click="goToMenu">
@@ -125,7 +125,7 @@
         <div v-show="activeTab === 'menu-permission'" class="flex flex-col gap-4">
           <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1d3b5a]">
             <div>
-              <h3 class="text-base font-semibold text-[#f8fafc] font-['Orbitron',sans-serif]">Phân quyền Menu & Từng Tab Tính năng</h3>
+              <h3 class="text-base font-semibold text-[#f8fafc] font-display">Phân quyền Menu & Từng Tab Tính năng</h3>
               <p class="text-xs text-[#94a3b8] mt-1 max-w-2xl">
                 Cấu hình các menu card hiển thị trên trang Menu (/menu) theo từng vai trò (Role).
                 Hỗ trợ phân quyền riêng cho từng tab/tính năng (ví dụ: Final Config Tool).
