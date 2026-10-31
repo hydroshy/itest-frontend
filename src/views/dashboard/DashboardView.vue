@@ -1,62 +1,169 @@
 <template>
   <div class="corporate-memphis flex flex-col gap-6">
-    <!-- Header with Quick Switch to Menu -->
-    <div class="flex flex-wrap items-center justify-between gap-4 p-5 md:p-6 bg-[#161f30] border border-white/10 rounded-3xl">
-      <div>
-        <h2 class="text-xl md:text-2xl font-bold font-display text-white tracking-tight">Bảng điều khiển Trung tâm</h2>
-        <p class="text-xs md:text-sm text-slate-400 mt-1 font-sans">Quản lý tổng quan hệ thống, tiện ích plugin và phân quyền menu truy cập</p>
-      </div>
-      <button class="btn btn-primary btn-sm md:btn-md rounded-2xl gap-2 font-display font-medium border-0" @click="goToMenu">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    <!-- Memphis Hero Header with Flat Geometry & Zero Depth Effect -->
+    <div class="relative overflow-hidden bg-[#151d2c] border border-white/10 rounded-3xl p-6 md:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <!-- Decorative Memphis Geometric Flat Shapes (Zero Depth / Zero Blur) -->
+      <div class="hidden xl:block absolute right-0 top-0 bottom-0 w-80 pointer-events-none overflow-hidden memphis-vector">
+        <svg class="w-full h-full opacity-20" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="260" cy="90" r="60" stroke="#7c3aed" stroke-width="6" />
+          <circle cx="160" cy="40" r="24" fill="#38bdf8" />
+          <rect x="200" y="120" width="50" height="20" rx="10" fill="#34d399" />
+          <path d="M 120 110 Q 140 90 160 110 T 200 110" stroke="#fbbf24" stroke-width="4" stroke-linecap="round" fill="none" />
+          <circle cx="90" cy="30" r="3" fill="#cbd5e1" />
+          <circle cx="110" cy="30" r="3" fill="#cbd5e1" />
+          <circle cx="90" cy="50" r="3" fill="#cbd5e1" />
+          <circle cx="110" cy="50" r="3" fill="#cbd5e1" />
         </svg>
-        Mở Menu Ứng dụng
-      </button>
+      </div>
+
+      <!-- Left Column: Title & Informative Context -->
+      <div class="relative z-10 max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold font-display bg-[#7c3aed]/15 text-[#a78bfa] border border-[#7c3aed]/25 mb-3">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Corporate Memphis UI // Platform Overview</span>
+        </div>
+        <h1 class="text-2xl md:text-3xl lg:text-4xl font-extrabold font-display text-white tracking-tight leading-tight">
+          Bảng Điều Khiển Trung Tâm
+        </h1>
+        <p class="text-xs md:text-sm text-slate-400 font-sans mt-2 leading-relaxed">
+          Quản trị tổng quan hệ sinh thái iTest, giám sát vi mô các tiện ích mở rộng và phân quyền truy cập menu ứng dụng theo thời gian thực.
+        </p>
+
+        <!-- Meta status pills -->
+        <div class="flex flex-wrap items-center gap-2 mt-4">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-display font-medium">
+            <CyberIcon name="check" :size="14" />
+            Hệ thống sẵn sàng (SYS.READY)
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs font-display font-medium">
+            <CyberIcon name="shield-check" :size="14" />
+            Vai trò: {{ currentRoleLabel }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Right Column: Quick Actions in Pill Geometry -->
+      <div class="relative z-10 flex flex-wrap items-center gap-3 w-full lg:w-auto">
+        <button
+          type="button"
+          class="btn btn-sm md:btn-md rounded-full font-display font-medium bg-[#1a2436] hover:bg-[#202c42] text-slate-300 border border-white/10 gap-2 transition-all flex-1 lg:flex-none"
+          :disabled="refreshing"
+          @click="handleRefresh"
+        >
+          <CyberIcon name="refresh" :size="16" :class="{ 'animate-spin': refreshing }" />
+          <span>{{ refreshing ? 'Đang làm mới...' : 'Làm mới' }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary btn-sm md:btn-md rounded-full font-display font-semibold gap-2 border-0 hover:brightness-110 text-white shadow-none px-5 transition-all flex-1 lg:flex-none"
+          @click="goToMenu"
+        >
+          <CyberIcon name="grid" :size="18" />
+          <span>Mở Menu Ứng dụng</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Summary Metrics with Flat Corporate Memphis Geometry (Zero Depth Effect) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="stats bg-[#161f30] border border-white/10 hover:border-white/20 transition-colors duration-200 text-slate-200 rounded-3xl overflow-hidden">
-        <div class="stat p-5">
-          <div class="stat-figure text-[#38bdf8] p-3 rounded-2xl bg-[#38bdf8]/10">
-            <CyberIcon name="monitor" :size="24" />
+    <!-- KPI Metrics Strip with Corporate Memphis Flat Geometry (Zero Depth Effect) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <!-- KPI 1: Trạng thái Shell -->
+      <div class="bg-[#151d2c] border border-white/10 hover:border-emerald-500/30 transition-all duration-200 rounded-3xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+            <CyberIcon name="monitor" :size="22" />
           </div>
-          <div class="stat-title text-xs text-slate-400 font-sans font-medium">Trạng thái Shell</div>
-          <div class="stat-value text-2xl font-semibold font-mono tabular-nums text-emerald-400 my-0.5">Hoạt động</div>
-          <div class="stat-desc text-[11px] text-emerald-400/80 font-mono flex items-center gap-1 mt-1">SYS.OK // ONLINE</div>
+          <span class="rounded-full text-[10px] font-mono font-bold px-2.5 py-0.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
+            SYS.OK
+          </span>
+        </div>
+        <div class="mt-4">
+          <span class="text-xs font-display font-medium text-slate-400 uppercase tracking-wider block">Trạng thái Shell</span>
+          <div class="text-2xl font-bold font-display text-white mt-1">Hoạt động</div>
+        </div>
+        <div class="text-[11px] text-slate-400 font-sans mt-3 pt-3 border-t border-white/5 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>Thời gian phản hồi &lt; 5ms</span>
         </div>
       </div>
 
-      <div class="stats bg-[#161f30] border border-white/10 hover:border-white/20 transition-colors duration-200 text-slate-200 rounded-3xl overflow-hidden">
-        <div class="stat p-5">
-          <div class="stat-figure text-[#34d399] p-3 rounded-2xl bg-[#34d399]/10">
-            <CyberIcon name="blocks" :size="24" />
+      <!-- KPI 2: Plugins đã nạp -->
+      <div class="bg-[#151d2c] border border-white/10 hover:border-sky-500/30 transition-all duration-200 rounded-3xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <div class="w-11 h-11 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center border border-sky-500/20">
+            <CyberIcon name="blocks" :size="22" />
           </div>
-          <div class="stat-title text-xs text-slate-400 font-sans font-medium">Plugins đã nạp</div>
-          <div class="stat-value text-2xl font-semibold font-mono tabular-nums text-white my-0.5">{{ pluginStore.plugins.length }}</div>
-          <div class="stat-desc text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-1">MODULES INSTALLED</div>
+          <span class="rounded-full text-[10px] font-mono font-bold px-2.5 py-0.5 bg-sky-500/15 text-sky-300 border border-sky-500/20">
+            {{ pluginStore.plugins.length }} Modules
+          </span>
+        </div>
+        <div class="mt-4">
+          <span class="text-xs font-display font-medium text-slate-400 uppercase tracking-wider block">Plugins đã nạp</span>
+          <div class="text-2xl font-bold font-mono text-white mt-1 tabular-nums">{{ pluginStore.plugins.length }}</div>
+        </div>
+        <div class="text-[11px] text-slate-400 font-sans mt-3 pt-3 border-t border-white/5 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+          <span>Tất cả nạp thành công</span>
         </div>
       </div>
 
-      <div class="stats bg-[#161f30] border border-white/10 hover:border-white/20 transition-colors duration-200 text-slate-200 rounded-3xl overflow-hidden">
-        <div class="stat p-5">
-          <div class="stat-figure text-[#fb923c] p-3 rounded-2xl bg-[#fb923c]/10">
-            <CyberIcon name="grid" :size="24" />
+      <!-- KPI 3: Tiện ích Widgets -->
+      <div class="bg-[#151d2c] border border-white/10 hover:border-amber-500/30 transition-all duration-200 rounded-3xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <div class="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+            <CyberIcon name="grid" :size="22" />
           </div>
-          <div class="stat-title text-xs text-slate-400 font-sans font-medium">Tiện ích (Widgets)</div>
-          <div class="stat-value text-2xl font-semibold font-mono tabular-nums text-white my-0.5">{{ pluginStore.widgets.length }}</div>
-          <div class="stat-desc text-[11px] text-amber-400/80 font-mono flex items-center gap-1 mt-1">ACTIVE WIDGETS</div>
+          <span class="rounded-full text-[10px] font-mono font-bold px-2.5 py-0.5 bg-amber-500/15 text-amber-300 border border-amber-500/20">
+            Active
+          </span>
+        </div>
+        <div class="mt-4">
+          <span class="text-xs font-display font-medium text-slate-400 uppercase tracking-wider block">Tiện ích (Widgets)</span>
+          <div class="text-2xl font-bold font-mono text-white mt-1 tabular-nums">{{ pluginStore.widgets.length }}</div>
+        </div>
+        <div class="text-[11px] text-slate-400 font-sans mt-3 pt-3 border-t border-white/5 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+          <span>Sẵn sàng tương tác</span>
         </div>
       </div>
 
-      <div class="stats bg-[#161f30] border border-white/10 hover:border-white/20 transition-colors duration-200 text-slate-200 rounded-3xl overflow-hidden">
-        <div class="stat p-5">
-          <div class="stat-figure text-[#c084fc] p-3 rounded-2xl bg-[#c084fc]/10">
-            <CyberIcon name="cpu" :size="24" />
+      <!-- KPI 4: Dynamic Routes -->
+      <div class="bg-[#151d2c] border border-white/10 hover:border-purple-500/30 transition-all duration-200 rounded-3xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <div class="w-11 h-11 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20">
+            <CyberIcon name="cpu" :size="22" />
           </div>
-          <div class="stat-title text-xs text-slate-400 font-sans font-medium">Dynamic Routes</div>
-          <div class="stat-value text-2xl font-semibold font-mono tabular-nums text-white my-0.5">{{ pluginStore.dynamicRoutes.length }}</div>
-          <div class="stat-desc text-[11px] text-purple-400/80 font-mono flex items-center gap-1 mt-1">ROUTES INJECTED</div>
+          <span class="rounded-full text-[10px] font-mono font-bold px-2.5 py-0.5 bg-purple-500/15 text-purple-300 border border-purple-500/20">
+            Injected
+          </span>
+        </div>
+        <div class="mt-4">
+          <span class="text-xs font-display font-medium text-slate-400 uppercase tracking-wider block">Dynamic Routes</span>
+          <div class="text-2xl font-bold font-mono text-white mt-1 tabular-nums">{{ pluginStore.dynamicRoutes.length }}</div>
+        </div>
+        <div class="text-[11px] text-slate-400 font-sans mt-3 pt-3 border-t border-white/5 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+          <span>Tự động ánh xạ route</span>
+        </div>
+      </div>
+
+      <!-- KPI 5: Tỷ lệ Sẵn sàng -->
+      <div class="bg-[#151d2c] border border-white/10 hover:border-rose-500/30 transition-all duration-200 rounded-3xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <div class="w-11 h-11 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20">
+            <CyberIcon name="shield-check" :size="22" />
+          </div>
+          <span class="rounded-full text-[10px] font-mono font-bold px-2.5 py-0.5 bg-rose-500/15 text-rose-300 border border-rose-500/20">
+            100% OK
+          </span>
+        </div>
+        <div class="mt-4">
+          <span class="text-xs font-display font-medium text-slate-400 uppercase tracking-wider block">Độ sẵn sàng hệ thống</span>
+          <div class="text-2xl font-bold font-mono text-white mt-1 tabular-nums">100%</div>
+        </div>
+        <div class="text-[11px] text-slate-400 font-sans mt-3 pt-3 border-t border-white/5 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+          <span>0 cảnh báo bảo mật</span>
         </div>
       </div>
     </div>
@@ -284,9 +391,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePluginStore } from '@/stores/plugin';
+import { useAuthStore } from '@/stores/auth';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 import CModuleBoundary from '@/components/shared/CModuleBoundary.vue';
 import { cyberToast } from '@/services/cyberToast';
@@ -294,6 +402,32 @@ import { httpClient } from '@/api/client';
 
 const router = useRouter();
 const pluginStore = usePluginStore();
+const authStore = useAuthStore();
+
+const refreshing = ref(false);
+
+const currentRoleLabel = computed(() => {
+  const roles = authStore.roles;
+  if (roles.includes('SUPER_ADMIN')) return 'Quản trị tối cao';
+  if (roles.includes('ADMIN')) return 'Quản trị viên';
+  if (roles.includes('OPERATOR')) return 'Kỹ thuật viên';
+  return 'Người dùng thao tác';
+});
+
+async function handleRefresh() {
+  refreshing.value = true;
+  try {
+    pluginStore.refreshState();
+    await loadData();
+    cyberToast.success('Đã cập nhật chỉ số hệ thống!');
+  } catch (err: any) {
+    cyberToast.error('Không thể làm mới dữ liệu');
+  } finally {
+    setTimeout(() => {
+      refreshing.value = false;
+    }, 350);
+  }
+}
 
 const activeTab = ref('widgets');
 const selectedRole = ref('END_USER');

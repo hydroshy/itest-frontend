@@ -146,6 +146,7 @@ export const usePluginStore = defineStore('plugin', () => {
     registerDynamicRoutes,
     enablePlugin,
     disablePlugin,
+    refreshState,
     getExtensionPoints,
   };
 });
