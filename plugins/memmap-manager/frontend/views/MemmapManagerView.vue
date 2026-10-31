@@ -44,7 +44,7 @@
       <button class="btn btn-ghost btn-xs btn-circle" @click="errorMessage = ''">✕</button>
     </div>
 
-    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
+    <div v-if="!isIsolatedView" role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
         role="tab"
         type="button"
@@ -315,6 +315,7 @@ type RecordRow = Record<string, unknown>;
 interface PreviewResponse { valid: boolean; profile?: RecordRow; registers?: RecordRow[]; errors?: string[]; }
 
 const route = useRoute();
+const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const router = useRouter();
 const authStore = useAuthStore();
 const currentUsername = computed(() => authStore.user?.username || (localStorage.getItem('itest_user') ? (() => { try { return JSON.parse(localStorage.getItem('itest_user') || '{}')?.username || ''; } catch { return ''; } })() : ''));

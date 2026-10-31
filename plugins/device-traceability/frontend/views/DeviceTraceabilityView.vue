@@ -1142,7 +1142,7 @@ const router = useRouter();
 
 // Isolated view check: chỉ khi url có ?isolated=true
 const isIsolatedView = computed(() => {
-  return route.query.isolated === 'true';
+  return route.query.from === 'menu' || route.query.isolated === 'true';
 });
 
 const resolveTabName = (tab?: any): string => {

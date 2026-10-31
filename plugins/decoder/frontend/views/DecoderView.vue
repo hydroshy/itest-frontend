@@ -38,7 +38,7 @@
     </header>
 
     <!-- Main Tabs -->
-    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
+    <div v-if="!isIsolatedView" role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
         role="tab"
         type="button"
@@ -611,7 +611,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import {
   Cpu,
   Plus,
@@ -698,7 +699,13 @@ async function requestWithFallback(method: 'get' | 'post' | 'put' | 'delete', pa
 }
 
 // State
+const route = useRoute();
+const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const activeTab = ref<'list' | 'memmap' | 'sandbox'>('list');
+watch(() => route.query.tab, (value) => {
+  const tab = value === 'memmaps' ? 'memmap' : value;
+  if (typeof tab === 'string' && ["list","memmap","sandbox"].includes(tab)) activeTab.value = tab as typeof activeTab.value;
+}, { immediate: true });
 const loading = ref(false);
 const scriptList = ref<any[]>([]);
 

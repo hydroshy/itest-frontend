@@ -58,7 +58,7 @@
     </div>
 
     <!-- Main Navigation Tabs -->
-    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
+    <div v-if="!isIsolatedView" role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
         v-for="t in tabList"
         :key="t.name"
@@ -479,7 +479,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import {
   RefreshCw,
   Plus,
@@ -554,7 +555,13 @@ const testingId = ref<string | null>(null);
 const submitting = ref(false);
 const tenantsLoading = ref(false);
 
+const route = useRoute();
+const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const activeTab = ref('servers');
+watch(() => route.query.tab, (value) => {
+  const tab = value === 'overview' ? 'servers' : value;
+  if (typeof tab === 'string' && ["servers","tenants","gateways","devices","telemetry"].includes(tab)) activeTab.value = tab as typeof activeTab.value;
+}, { immediate: true });
 
 const tabList = [
   { name: 'servers', label: 'Network Servers', icon: Server },

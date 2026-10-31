@@ -28,7 +28,7 @@
     </header>
 
     <!-- Navigation Tabs -->
-    <div role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
+    <div v-if="!isIsolatedView" role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
         role="tab"
         type="button"
@@ -390,7 +390,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   Gauge,
@@ -409,6 +409,7 @@ import { httpClient } from '@/api/client';
 import GatewayRegistrationModal from '../components/GatewayRegistrationModal.vue';
 
 const route = useRoute();
+const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const router = useRouter();
 
 const activeTab = ref('gateway-sessions');
@@ -577,6 +578,13 @@ function viewSessionPackets(session: any) {
 function openCreateSessionDialog() {
   createSessionDialogVisible.value = true;
 }
+
+watch(() => route.query.tab, (tab) => {
+  if (typeof tab === 'string' && ['packets', 'gateway-sessions'].includes(tab)) {
+    activeTab.value = tab;
+    refreshActiveTab();
+  }
+});
 
 onMounted(() => {
   const queryTab = route.query.tab as string;
