@@ -76,11 +76,11 @@
 
       <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-3 items-end">
         <!-- Dropdown Chọn Thiết Bị Cần Test -->
-        <div class="md:col-span-5 form-control">
+        <div class="md:col-span-4 form-control">
           <label class="label py-1">
             <span class="label-text font-medium text-xs flex items-center gap-1.5">
               <Layers class="w-3.5 h-3.5 text-accent" />
-              Chọn Thiết Bị Cần Test (Mẫu Đã Gán Simu ID)
+              Chọn Thiết Bị Cần Test (Gán Simu ID)
             </span>
           </label>
           <select
@@ -89,13 +89,13 @@
             @change="onProfileSelected"
           >
             <option v-for="prof in simulationProfiles" :key="prof.simuId" :value="prof.simuId">
-              [{{ prof.simuId }}] {{ prof.itemCode }} - {{ prof.targetDeviceName }}
+              [{{ prof.simuId }}] {{ prof.itemCode }} - {{ prof.deviceName || prof.targetDeviceName }} (SN: {{ prof.serialNumber || 'N/A' }})
             </option>
           </select>
         </div>
 
-        <!-- Active Profile Info Details -->
-        <div class="md:col-span-7 flex flex-wrap items-center gap-2 p-2 rounded-lg bg-base-100 border border-base-300">
+        <!-- Active Profile Info Details (Aligned with Device Entity Schema) -->
+        <div class="md:col-span-8 flex flex-wrap items-center gap-2 p-2 rounded-lg bg-base-100 border border-base-300">
           <div class="flex items-center gap-1 text-xs">
             <span class="text-base-content/50">Simu ID:</span>
             <span class="badge badge-sm badge-primary font-mono font-bold">{{ activeProfile.simuId }}</span>
@@ -107,10 +107,30 @@
           </div>
           <div class="divider divider-horizontal m-0"></div>
           <div class="flex items-center gap-1 text-xs">
+            <span class="text-base-content/50">Serial:</span>
+            <span class="badge badge-sm badge-outline font-mono text-primary">{{ activeProfile.serialNumber || 'SN-TMPL-SP01' }}</span>
+          </div>
+          <div class="divider divider-horizontal m-0"></div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-base-content/50">DevEUI:</span>
+            <span class="badge badge-sm badge-outline font-mono text-accent">{{ activeProfile.networkId || activeProfile.devEui }}</span>
+          </div>
+          <div class="divider divider-horizontal m-0"></div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-base-content/50">Loại:</span>
+            <span class="badge badge-sm badge-ghost font-mono">{{ activeProfile.deviceType || 'lorawan_node' }}</span>
+          </div>
+          <div class="divider divider-horizontal m-0"></div>
+          <div class="flex items-center gap-1 text-xs">
             <span class="text-base-content/50">Long FW:</span>
-            <span class="badge badge-sm badge-accent font-mono text-[11px] truncate max-w-[200px]" :title="activeProfile.longFw">
+            <span class="badge badge-sm badge-accent font-mono text-[11px] truncate max-w-[180px]" :title="activeProfile.longFw">
               {{ activeProfile.longFw }}
             </span>
+          </div>
+          <div class="divider divider-horizontal m-0"></div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-base-content/50">Trạng Thái:</span>
+            <span class="badge badge-sm badge-success font-mono uppercase">{{ activeProfile.status || 'TEMPLATE' }}</span>
           </div>
           <div class="divider divider-horizontal m-0"></div>
           <div class="flex items-center gap-1 text-xs">
@@ -736,101 +756,247 @@
       </div>
     </div>
 
-    <!-- Dialog Tạo / Liên Kết Thiết Bị Mẫu Mới (Admin) -->
+    <!-- Dialog Tạo / Liên Kết Thiết Bị Mẫu Mới (Admin Mode) - Theo Cấu Trúc Device -->
     <dialog class="modal" :class="{ 'modal-open': showCreateModal }">
-      <div class="modal-box w-11/12 max-w-2xl bg-base-100 border border-base-300 p-5 shadow-2xl">
+      <div class="modal-box w-11/12 max-w-3xl bg-base-100 border border-base-300 p-5 shadow-2xl">
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10">
           <h3 class="font-bold text-base flex items-center gap-2">
             <BookmarkCheck class="w-5 h-5 text-primary" />
-            Tạo &amp; Liên Kết Thiết Bị Mẫu (Admin Mode)
+            Tạo &amp; Liên Kết Thiết Bị Mẫu (Theo Cấu Trúc Device Đã Có)
           </h3>
           <button class="btn btn-ghost btn-xs btn-circle" @click="showCreateModal = false">✕</button>
         </div>
 
-        <div class="space-y-3 text-xs">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Simu ID *</span></label>
-              <input
-                v-model="newProfileForm.simuId"
-                type="text"
-                placeholder="SIMU-LORA-SAMPLE01"
-                class="input input-bordered input-sm font-mono"
-              />
-            </div>
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Tên Mẫu / Thiết Bị *</span></label>
-              <input
-                v-model="newProfileForm.targetDeviceName"
-                type="text"
-                placeholder="LoRa Node Đo Nhiệt Cảnh Báo"
-                class="input input-bordered input-sm"
-              />
-            </div>
+        <!-- Mode Switcher Tabs -->
+        <div class="tabs tabs-boxed bg-base-200/80 p-1 mb-4 flex">
+          <button
+            type="button"
+            class="tab flex-1 text-xs font-semibold gap-1.5 transition-all"
+            :class="{ 'tab-active bg-primary text-primary-content': modalMode === 'bind_existing' }"
+            @click="modalMode = 'bind_existing'"
+          >
+            <Layers class="w-3.5 h-3.5" />
+            1. Chọn Thiết Bị Đã Có Trong Hệ Thống
+          </button>
+          <button
+            type="button"
+            class="tab flex-1 text-xs font-semibold gap-1.5 transition-all"
+            :class="{ 'tab-active bg-primary text-primary-content': modalMode === 'create_new' }"
+            @click="modalMode = 'create_new'"
+          >
+            <Plus class="w-3.5 h-3.5" />
+            2. Tạo Thiết Bị Mẫu Mới (Chuẩn Device Schema)
+          </button>
+        </div>
+
+        <!-- Mode 1: Select Existing System Device -->
+        <div v-if="modalMode === 'bind_existing'" class="space-y-3 text-xs">
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold flex items-center justify-between w-full">
+                <span>Chọn Thiết Bị Đã Đăng Ký Trong Hệ Thống (Device Repository) *</span>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs text-primary h-auto min-h-0 py-0.5 px-1"
+                  @click="loadExistingDevices"
+                >
+                  <RotateCcw class="w-3 h-3" :class="{ 'animate-spin': loadingExistingDevices }" />
+                  Làm mới
+                </button>
+              </span>
+            </label>
+            <select
+              v-model="selectedExistingDeviceId"
+              class="select select-bordered select-sm font-mono text-xs w-full"
+              @change="onExistingDeviceSelected"
+            >
+              <option value="" disabled>-- Chọn một thiết bị từ hệ thống để làm mẫu --</option>
+              <option
+                v-for="d in existingDevices"
+                :key="d.id || d.serialNumber"
+                :value="d.id || d.serialNumber"
+              >
+                [{{ d.serialNumber || d.serial_number }}] {{ d.deviceName || d.device_name }} - {{ d.networkId || d.network_id || 'No DevEUI' }} ({{ d.itemCode || d.item_code || 'No ItemCode' }})
+              </option>
+            </select>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Item Code (Gán thiết bị cần test) *</span></label>
-              <input
-                v-model="newProfileForm.itemCode"
-                type="text"
-                placeholder="ITEM-9901-SMART-PLUG"
-                class="input input-bordered input-sm font-mono"
-              />
+          <!-- Existing Device Preview Card -->
+          <div v-if="newProfileForm.serialNumber" class="p-3 rounded-lg bg-base-200/70 border border-base-300 space-y-1.5">
+            <div class="font-bold text-xs text-primary flex items-center justify-between">
+              <span>Thông tin thiết bị đã chọn (Device Structure)</span>
+              <span class="badge badge-xs badge-success uppercase">{{ newProfileForm.status }}</span>
             </div>
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Long FW (Firmware bản dài) *</span></label>
-              <input
-                v-model="newProfileForm.longFw"
-                type="text"
-                placeholder="v1.2.0-rc3-long-fw-build9482"
-                class="input input-bordered input-sm font-mono"
-              />
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+              <div><span class="text-base-content/60">Tên:</span> <span class="font-semibold">{{ newProfileForm.deviceName }}</span></div>
+              <div><span class="text-base-content/60">Serial:</span> <span class="font-mono font-bold">{{ newProfileForm.serialNumber }}</span></div>
+              <div><span class="text-base-content/60">DevEUI:</span> <span class="font-mono text-accent">{{ newProfileForm.networkId }}</span></div>
+              <div><span class="text-base-content/60">Loại:</span> <span class="badge badge-xs badge-ghost">{{ newProfileForm.deviceType }}</span></div>
+              <div><span class="text-base-content/60">Item Code:</span> <span class="font-mono">{{ newProfileForm.itemCode || 'Chưa gán' }}</span></div>
+              <div><span class="text-base-content/60">Mã SO:</span> <span class="font-mono">{{ newProfileForm.soNumber || 'N/A' }}</span></div>
+              <div><span class="text-base-content/60">Mã WA:</span> <span class="font-mono">{{ newProfileForm.waNumber || 'N/A' }}</span></div>
+              <div><span class="text-base-content/60">Plugin:</span> <span class="font-mono">testing</span></div>
             </div>
           </div>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Thời Lượng Flow (Phút)</span></label>
-              <input
-                v-model.number="newProfileForm.flowDurationMinutes"
-                type="number"
-                min="1"
-                max="180"
-                class="input input-bordered input-sm font-mono"
-              />
+        <!-- Mode 2: Create New Device Structure Form -->
+        <div v-else class="space-y-3 text-xs">
+          <div class="p-2.5 rounded-lg bg-base-200/50 border border-base-300 space-y-2">
+            <div class="font-bold text-xs text-primary flex items-center gap-1.5">
+              <Cpu class="w-3.5 h-3.5" />
+              <span>1. Cấu Trúc Định Danh Thiết Bị (Device Entity Schema)</span>
             </div>
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Kịch Bản Cảm Biến</span></label>
-              <select v-model="newProfileForm.presetId" class="select select-bordered select-sm">
-                <option value="env">Môi trường (Temp/Humi)</option>
-                <option value="water">Đồng hồ nước</option>
-                <option value="gps">GPS Tracker</option>
-                <option value="custom">Tùy chỉnh HEX</option>
-              </select>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Tên Thiết Bị Mẫu *</span></label>
+                <input
+                  v-model="newProfileForm.deviceName"
+                  type="text"
+                  placeholder="LoRa Smart Socket Sensor"
+                  class="input input-bordered input-sm"
+                />
+              </div>
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Loại Thiết Bị (Device Type)</span></label>
+                <select v-model="newProfileForm.deviceType" class="select select-bordered select-sm">
+                  <option value="lorawan_node">LoRaWAN Node (End Device)</option>
+                  <option value="smart_socket">Ổ Cắm Thông Minh</option>
+                  <option value="water_meter">Đồng Hồ Nước</option>
+                  <option value="sensor">Cảm Biến Môi Trường</option>
+                  <option value="gps_tracker">Thiết Bị GPS Tracker</option>
+                </select>
+              </div>
             </div>
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Băng Tần LoRa</span></label>
-              <select v-model="newProfileForm.region" class="select select-bordered select-sm">
-                <option value="AS923-1">AS923-1</option>
-                <option value="VN923">VN923</option>
-                <option value="EU868">EU868</option>
-              </select>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Số Serial (Serial Number) *</span></label>
+                <input
+                  v-model="newProfileForm.serialNumber"
+                  type="text"
+                  placeholder="SN-TMPL-SP01"
+                  class="input input-bordered input-sm font-mono"
+                />
+              </div>
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Network ID / DevEUI (16 Hex) *</span></label>
+                <input
+                  v-model="newProfileForm.networkId"
+                  type="text"
+                  placeholder="70B3D57ED005ABCD"
+                  class="input input-bordered input-sm font-mono uppercase"
+                  maxlength="16"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Mã Đơn Hàng (SO Number)</span></label>
+                <input
+                  v-model="newProfileForm.soNumber"
+                  type="text"
+                  placeholder="SO-2025-001"
+                  class="input input-bordered input-sm font-mono"
+                />
+              </div>
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Lệnh Sản Xuất (WA Number)</span></label>
+                <input
+                  v-model="newProfileForm.waNumber"
+                  type="text"
+                  placeholder="WA-2025-001"
+                  class="input input-bordered input-sm font-mono"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Common Section: Simulation & Firmware Binding -->
+        <div class="space-y-3 text-xs mt-3">
+          <div class="p-2.5 rounded-lg bg-base-200/50 border border-base-300 space-y-2">
+            <div class="font-bold text-xs text-accent flex items-center gap-1.5">
+              <BookmarkCheck class="w-3.5 h-3.5" />
+              <span>2. Gán Simu ID với Item Code &amp; Long FW</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Simu ID *</span></label>
+                <input
+                  v-model="newProfileForm.simuId"
+                  type="text"
+                  placeholder="SIMU-LORA-SAMPLE01"
+                  class="input input-bordered input-sm font-mono"
+                />
+              </div>
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Item Code (Gán thiết bị cần test) *</span></label>
+                <input
+                  v-model="newProfileForm.itemCode"
+                  type="text"
+                  placeholder="ITEM-9901-SMART-PLUG"
+                  class="input input-bordered input-sm font-mono"
+                />
+              </div>
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Long FW (Firmware bản dài) *</span></label>
+                <input
+                  v-model="newProfileForm.longFw"
+                  type="text"
+                  placeholder="v1.2.0-rc3-long-fw-build9482"
+                  class="input input-bordered input-sm font-mono"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Thời Lượng Flow (Phút)</span></label>
+                <input
+                  v-model.number="newProfileForm.flowDurationMinutes"
+                  type="number"
+                  min="1"
+                  max="180"
+                  class="input input-bordered input-sm font-mono"
+                />
+              </div>
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Kịch Bản Cảm Biến</span></label>
+                <select v-model="newProfileForm.presetId" class="select select-bordered select-sm">
+                  <option value="env">Môi trường (Temp/Humi)</option>
+                  <option value="water">Đồng hồ nước</option>
+                  <option value="gps">GPS Tracker</option>
+                  <option value="custom">Tùy chỉnh HEX</option>
+                </select>
+              </div>
+              <div class="form-control">
+                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Băng Tần LoRa</span></label>
+                <select v-model="newProfileForm.region" class="select select-bordered select-sm">
+                  <option value="AS923-1">AS923-1</option>
+                  <option value="VN923">VN923</option>
+                  <option value="EU868">EU868</option>
+                </select>
+              </div>
             </div>
           </div>
 
           <div class="p-2.5 rounded-lg bg-base-200/50 border border-base-300 text-[11px] space-y-1">
             <div class="font-semibold text-primary">Kịch bản mặc định Sub-Admin:</div>
             <div>• Phút 01:00: Downlink bật thiết bị còi giả lập (Port 10, Payload 0101)</div>
-            <div>• Phút 05:00: Downlink cấu hình lại chu kỳ đo (Port 10, Payload 02001E)</div>
+            <div>• Phút {{ Math.max(2, Math.floor(newProfileForm.flowDurationMinutes / 2)) }}:00: Downlink tắt thiết bị còi giả lập (Port 10, Payload 0100)</div>
             <div>• Phút {{ newProfileForm.flowDurationMinutes }}:00: Tự động kết thúc flow mô phỏng</div>
           </div>
         </div>
 
-        <div class="modal-action">
+        <div class="modal-action mt-4">
           <button class="btn btn-ghost btn-sm" @click="showCreateModal = false">Hủy</button>
-          <button class="btn btn-primary btn-sm" @click="saveNewTemplateProfile">Lưu &amp; Liên Kết</button>
+          <button class="btn btn-primary btn-sm" @click="saveNewTemplateProfile">
+            <BookmarkCheck class="w-4 h-4" />
+            Lưu &amp; Liên Kết Thiết Bị Mẫu
+          </button>
         </div>
       </div>
     </dialog>
@@ -838,7 +1004,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onUnmounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import {
   Cpu,
   Key,
@@ -873,6 +1039,17 @@ export interface SimulationProfile {
   profileName: string;
   itemCode: string;
   longFw: string;
+  // Cấu trúc chuẩn theo Device Entity trong hệ thống
+  serialNumber?: string;
+  networkId?: string;
+  deviceName?: string;
+  deviceType?: string;
+  pluginId?: string;
+  soId?: string;
+  soNumber?: string;
+  waId?: string;
+  waNumber?: string;
+  status?: string;
   targetDeviceName: string;
   activation: 'OTAA' | 'ABP';
   devEui: string;
@@ -903,13 +1080,21 @@ const emit = defineEmits<{
   (e: 'packet-emitted', packet: any): void;
 }>();
 
-// Initial Template Profiles (Linked by Admin, Flow by Sub-Admin)
+// Initial Template Profiles (Theo chuẩn Device Entity đã có)
 const simulationProfiles = reactive<SimulationProfile[]>([
   {
     simuId: 'SIMU-LORA-SP01',
     profileName: 'Ổ Cắm Thông Minh & Còi Báo Động (Chuẩn 30 Phút)',
     itemCode: 'ITEM-9901-SMART-PLUG',
     longFw: 'v1.2.0-rc3-long-fw-build9482',
+    serialNumber: 'SN-TMPL-SP01',
+    networkId: '70B3D57ED005ABCD',
+    deviceName: 'Smart Socket Multi-Sensor Node',
+    deviceType: 'smart_socket',
+    pluginId: 'testing',
+    soNumber: 'SO-2025-001',
+    waNumber: 'WA-2025-001',
+    status: 'template',
     targetDeviceName: 'Smart Socket Multi-Sensor Node',
     activation: 'OTAA',
     devEui: '70B3D57ED005ABCD',
@@ -967,6 +1152,14 @@ const simulationProfiles = reactive<SimulationProfile[]>([
     profileName: 'Đồng Hồ Nước Siêu Âm LoRaWAN DN15',
     itemCode: 'ITEM-5520-WATER-METER',
     longFw: 'v2.4.1-long-fw-build1029',
+    serialNumber: 'SN-TMPL-WM02',
+    networkId: '70B3D57ED0052211',
+    deviceName: 'Water Meter Ultrasonic DN15',
+    deviceType: 'water_meter',
+    pluginId: 'testing',
+    soNumber: 'SO-2025-002',
+    waNumber: 'WA-2025-002',
+    status: 'template',
     targetDeviceName: 'Water Meter Ultrasonic DN15',
     activation: 'OTAA',
     devEui: '70B3D57ED0052211',
@@ -1015,6 +1208,14 @@ const simulationProfiles = reactive<SimulationProfile[]>([
     profileName: 'Cảm Biến Khí & Cảnh Báo Khói Cháy',
     itemCode: 'ITEM-8812-ENV-SENSOR',
     longFw: 'v1.0.5-long-fw-build3311',
+    serialNumber: 'SN-TMPL-ENV03',
+    networkId: '70B3D57ED0059988',
+    deviceName: 'Gas & Smoke Industrial Node',
+    deviceType: 'sensor',
+    pluginId: 'testing',
+    soNumber: 'SO-2025-003',
+    waNumber: 'WA-2025-003',
+    status: 'template',
     targetDeviceName: 'Gas & Smoke Industrial Node',
     activation: 'OTAA',
     devEui: '70B3D57ED0059988',
@@ -1065,17 +1266,124 @@ const activeProfile = computed(() => {
   return simulationProfiles.find((p) => p.simuId === selectedProfileId.value) || simulationProfiles[0];
 });
 
-// Admin Modal State
+// Admin Modal & Device Template Management State
 const showCreateModal = ref<boolean>(false);
+const modalMode = ref<'bind_existing' | 'create_new'>('bind_existing');
+const loadingExistingDevices = ref<boolean>(false);
+const existingDevices = ref<any[]>([]);
+const selectedExistingDeviceId = ref<string>('');
+
 const newProfileForm = reactive({
   simuId: '',
-  targetDeviceName: '',
+  serialNumber: '',
+  networkId: '',
+  deviceName: '',
+  deviceType: 'lorawan_node',
+  pluginId: 'testing',
+  soNumber: '',
+  waNumber: '',
+  status: 'template',
   itemCode: '',
   longFw: '',
   flowDurationMinutes: 30,
   presetId: 'env',
   region: 'AS923-1',
 });
+
+async function loadExistingDevices() {
+  loadingExistingDevices.value = true;
+  try {
+    const res = await httpClient.get<any>('/plugins/testing/devices');
+    const list = res.data?.data || res.data || [];
+    if (Array.isArray(list) && list.length > 0) {
+      existingDevices.value = list;
+    } else {
+      const resDev = await httpClient.get<any>('/devices');
+      const listDev = resDev.data?.data || resDev.data || [];
+      existingDevices.value = Array.isArray(listDev) ? listDev : [];
+    }
+  } catch (err) {
+    existingDevices.value = [
+      {
+        id: 'dev-001',
+        serialNumber: 'SN-PROD-2025-001',
+        networkId: '70B3D57ED005A101',
+        deviceName: 'LoRa Smart Meter DN20',
+        deviceType: 'water_meter',
+        itemCode: 'ITEM-5520-WATER-METER',
+        soNumber: 'SO-2025-08',
+        waNumber: 'WA-2025-14',
+        status: 'active',
+      },
+      {
+        id: 'dev-002',
+        serialNumber: 'SN-PROD-2025-002',
+        networkId: '70B3D57ED005B202',
+        deviceName: 'Industrial Gas Monitor',
+        deviceType: 'sensor',
+        itemCode: 'ITEM-8812-ENV-SENSOR',
+        soNumber: 'SO-2025-09',
+        waNumber: 'WA-2025-15',
+        status: 'active',
+      },
+    ];
+  } finally {
+    loadingExistingDevices.value = false;
+  }
+}
+
+function onExistingDeviceSelected() {
+  const dev = existingDevices.value.find(
+    (d) =>
+      (d.id && d.id === selectedExistingDeviceId.value) ||
+      (d.serialNumber && d.serialNumber === selectedExistingDeviceId.value) ||
+      (d.serial_number && d.serial_number === selectedExistingDeviceId.value)
+  );
+  if (!dev) return;
+  const sNum = dev.serialNumber || dev.serial_number || '';
+  const netId = dev.networkId || dev.network_id || '';
+  const dName = dev.deviceName || dev.device_name || '';
+  const dType = dev.deviceType || dev.device_type || 'lorawan_node';
+  const iCode = dev.itemCode || dev.item_code || '';
+  const so = dev.soNumber || dev.so_number || '';
+  const wa = dev.waNumber || dev.wa_number || '';
+
+  newProfileForm.serialNumber = sNum;
+  newProfileForm.networkId = netId;
+  newProfileForm.deviceName = dName;
+  newProfileForm.deviceType = dType;
+  newProfileForm.itemCode = iCode;
+  newProfileForm.soNumber = so;
+  newProfileForm.waNumber = wa;
+  newProfileForm.status = 'template';
+
+  if (!newProfileForm.simuId) {
+    const cleanSn = sNum.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    newProfileForm.simuId = `SIMU-${cleanSn || 'DEV'}`;
+  }
+  if (!newProfileForm.longFw) {
+    newProfileForm.longFw = `v1.0.0-long-fw-build${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+}
+
+async function loadSimulationProfiles() {
+  try {
+    const res = await httpClient.get<any>('/plugins/testing/simulation/profiles');
+    const profiles = res.data?.data || res.data;
+    if (Array.isArray(profiles) && profiles.length > 0) {
+      for (const p of profiles) {
+        const idx = simulationProfiles.findIndex((item) => item.simuId === p.simuId);
+        if (idx >= 0) {
+          simulationProfiles[idx] = { ...simulationProfiles[idx], ...p };
+        } else {
+          simulationProfiles.push(p);
+        }
+      }
+    }
+  } catch (err) {
+    // Keep local seeded profiles
+  }
+}
 
 // Flow Engine State
 const flowRunning = ref<boolean>(false);
@@ -1447,9 +1755,9 @@ function simulateDownlinkReception() {
 function onProfileSelected() {
   const p = simulationProfiles.find((item) => item.simuId === selectedProfileId.value);
   if (!p) return;
-  config.deviceName = p.targetDeviceName;
+  config.deviceName = p.deviceName || p.targetDeviceName;
   config.activation = p.activation;
-  config.devEui = p.devEui;
+  config.devEui = p.networkId || p.devEui;
   config.appEui = p.appEui;
   config.appKey = p.appKey;
   if (p.devAddr) config.devAddr = p.devAddr;
@@ -1459,7 +1767,11 @@ function onProfileSelected() {
   config.fPort = p.fPort;
   selectPreset(p.presetId);
   resetFlow();
-  addLog('PROFILE', `Đã liên kết Profile [${p.simuId}] - Item Code: ${p.itemCode} - Long FW: ${p.longFw}`, 'info');
+  addLog(
+    'PROFILE',
+    `Đã liên kết Profile [${p.simuId}] - Thiết Bị Mẫu: ${p.deviceName || p.targetDeviceName} (SN: ${p.serialNumber || 'N/A'}, DevEUI: ${p.networkId || p.devEui}) - Item Code: ${p.itemCode} - Long FW: ${p.longFw}`,
+    'info'
+  );
 }
 
 function startFlow() {
@@ -1576,21 +1888,39 @@ function resetFlow() {
   addLog('FLOW_RESET', 'Đã đặt lại bộ đếm Flow giả lập về 00:00', 'info');
 }
 
-function saveNewTemplateProfile() {
+async function saveNewTemplateProfile() {
   if (!newProfileForm.simuId || !newProfileForm.itemCode) {
     cyberToast.warning('Vui lòng nhập Simu ID và Item Code!');
     return;
   }
+  if (!newProfileForm.serialNumber) {
+    cyberToast.warning('Vui lòng nhập hoặc chọn Serial Number thiết bị!');
+    return;
+  }
 
   const durationMin = newProfileForm.flowDurationMinutes || 30;
+  const devEui = (
+    newProfileForm.networkId ||
+    '70B3D57E' + Math.floor(Math.random() * 0xffffffff).toString(16).toUpperCase().padStart(8, '0')
+  ).toUpperCase();
+  const targetName = (newProfileForm.deviceName || newProfileForm.serialNumber).trim();
+
   const newProfile: SimulationProfile = {
     simuId: newProfileForm.simuId.trim().toUpperCase(),
-    profileName: newProfileForm.targetDeviceName.trim() || newProfileForm.simuId.trim(),
+    profileName: targetName,
     itemCode: newProfileForm.itemCode.trim().toUpperCase(),
     longFw: newProfileForm.longFw.trim() || 'v1.0.0-long-fw-default',
-    targetDeviceName: newProfileForm.targetDeviceName.trim() || 'Custom Prototype Node',
+    serialNumber: newProfileForm.serialNumber.trim(),
+    networkId: devEui,
+    deviceName: targetName,
+    deviceType: newProfileForm.deviceType || 'lorawan_node',
+    pluginId: 'testing',
+    soNumber: newProfileForm.soNumber?.trim() || '',
+    waNumber: newProfileForm.waNumber?.trim() || '',
+    status: 'template',
+    targetDeviceName: targetName,
     activation: 'OTAA',
-    devEui: '70B3D57E' + Math.floor(Math.random() * 0xffffffff).toString(16).toUpperCase().padStart(8, '0'),
+    devEui: devEui,
     appEui: '0000000000000000',
     appKey: '2B7E151628AED2A6ABF7158809CF4F3C',
     region: newProfileForm.region || 'AS923-1',
@@ -1632,13 +1962,37 @@ function saveNewTemplateProfile() {
     ],
   };
 
-  simulationProfiles.push(newProfile);
+  // Synchronize to backend database (devices & simulation_profiles tables)
+  try {
+    await httpClient.post('/plugins/testing/simulation/profiles', newProfile);
+  } catch (err) {
+    console.warn('Backend sync warning (saved to session):', err);
+  }
+
+  const existingIdx = simulationProfiles.findIndex((p) => p.simuId === newProfile.simuId);
+  if (existingIdx >= 0) {
+    simulationProfiles[existingIdx] = newProfile;
+  } else {
+    simulationProfiles.push(newProfile);
+  }
+
   selectedProfileId.value = newProfile.simuId;
   onProfileSelected();
   showCreateModal.value = false;
-  addLog('ADMIN', `Admin tạo thành công thiết bị mẫu mới: ${newProfile.simuId} gắn với Item Code ${newProfile.itemCode}`, 'success');
-  cyberToast.success(`Đã lưu thiết bị mẫu ${newProfile.simuId} thành công!`);
+  addLog(
+    'ADMIN',
+    `Admin tạo & liên kết thành công thiết bị mẫu: [${newProfile.simuId}] - ${newProfile.deviceName} (SN: ${newProfile.serialNumber}) gán với Item Code ${newProfile.itemCode}`,
+    'success'
+  );
+  cyberToast.success(`Đã lưu & liên kết thiết bị mẫu ${newProfile.simuId} thành công!`);
 }
+
+onMounted(() => {
+  loadExistingDevices();
+  loadSimulationProfiles();
+  updatePayloadHex();
+  onProfileSelected();
+});
 
 onUnmounted(() => {
   if (loopTimer) {
