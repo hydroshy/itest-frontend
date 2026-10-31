@@ -1421,7 +1421,12 @@ const onImportSoChanged = async (soIdVal: string) => {
     return;
   }
   try {
-    const res = await fetch(`/api/plugins/device-traceability/so/${encodeURIComponent(soIdVal)}/wa`, {
+    const params = new URLSearchParams(
+      found?.soNumber || soIdVal.includes('/')
+        ? { soNumber: found?.soNumber || soIdVal }
+        : { soId: soIdVal },
+    );
+    const res = await fetch(`/api/plugins/device-traceability/wa?${params}`, {
       headers: getAuthHeaders(),
     });
     if (res.ok) {
@@ -2660,7 +2665,7 @@ const submitCreateWa = async () => {
       soId: targetSoId,
     };
 
-    const res = await fetch(`/api/plugins/device-traceability/so/${targetSoId}/wa`, {
+    const res = await fetch(`/api/plugins/device-traceability/so/${encodeURIComponent(targetSoId)}/wa`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -2687,7 +2692,7 @@ const viewSoDetail = async (soId: string) => {
   selectedSo.value = null;
 
   try {
-    const res = await fetch(`/api/plugins/device-traceability/so/${soId}`, {
+    const res = await fetch(`/api/plugins/device-traceability/so/${encodeURIComponent(soId)}`, {
       headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
