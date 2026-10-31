@@ -1070,7 +1070,41 @@ dialog:not([open]):not(.modal-open) .modal-backdrop {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
-  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transform: translateY(28px) !important;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.modal:not(.modal-open):not([open]) .modal-backdrop::before,
+dialog:not([open]):not(.modal-open) .modal-backdrop::before {
+  opacity: 0 !important;
+  transform: perspective(700px) rotateX(12deg) translateY(48px) scale(0.96) !important;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.38s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.modal:not(.modal-open):not([open]) .modal-backdrop::after,
+dialog:not([open]):not(.modal-open) .modal-backdrop::after {
+  opacity: 0 !important;
+  transform: translateY(24px) !important;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.modal:not(.modal-open):not([open]) .modal-box,
+dialog:not([open]):not(.modal-open) .modal-box {
+  transform: scale(0.95) translateY(28px) !important;
+  opacity: 0 !important;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.modal.modal-open .modal-box,
+.modal[open] .modal-box,
+dialog[open] .modal-box {
+  transform: scale(1) translateY(0) !important;
+  opacity: 1 !important;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Modal backdrop 3D ASCII overlay & blur lock - ONLY active when modal is open */
@@ -1171,15 +1205,17 @@ dialog[open] .modal-backdrop::after {
   }
 }
 
-/* Backdrop Keyframes: Fade Out */
+/* Backdrop Keyframes: Fade Out with Smooth Downward Glide */
 @keyframes modalBackdropFadeOut {
   0% {
     opacity: 1;
+    transform: translateY(0px);
     backdrop-filter: blur(12px) saturate(140%) brightness(0.65);
     -webkit-backdrop-filter: blur(12px) saturate(140%) brightness(0.65);
   }
   100% {
     opacity: 0;
+    transform: translateY(28px);
     backdrop-filter: blur(0px) saturate(100%) brightness(1);
     -webkit-backdrop-filter: blur(0px) saturate(100%) brightness(1);
   }
@@ -1189,7 +1225,7 @@ dialog[open] .modal-backdrop::after {
 @keyframes asciiBackdropFadeIn {
   0% {
     opacity: 0;
-    transform: perspective(700px) rotateX(12deg) translateY(18px) scale(0.96);
+    transform: perspective(700px) rotateX(12deg) translateY(-20px) scale(0.96);
   }
   100% {
     opacity: 0.95;
@@ -1204,7 +1240,7 @@ dialog[open] .modal-backdrop::after {
   }
   100% {
     opacity: 0;
-    transform: perspective(700px) rotateX(12deg) translateY(-18px) scale(0.96);
+    transform: perspective(700px) rotateX(12deg) translateY(48px) scale(0.96);
   }
 }
 
@@ -1221,9 +1257,11 @@ dialog[open] .modal-backdrop::after {
 @keyframes modalScanlineFadeOut {
   0% {
     opacity: 1;
+    transform: translateY(0px);
   }
   100% {
     opacity: 0;
+    transform: translateY(24px);
   }
 }
 
@@ -1260,7 +1298,7 @@ dialog[open] .modal-backdrop::after {
 
 .modal-fade-leave-active,
 .modal.modal-fade-leave-active {
-  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1) !important;
   pointer-events: none !important;
 }
 
@@ -1271,15 +1309,15 @@ dialog[open] .modal-backdrop::after {
 
 /* Explicit backdrop animation during leave */
 .modal-fade-leave-active .modal-backdrop {
-  animation: modalBackdropFadeOut 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: modalBackdropFadeOut 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 .modal-fade-leave-active .modal-backdrop::before {
-  animation: asciiBackdropFadeOut 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: asciiBackdropFadeOut 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 .modal-fade-leave-active .modal-backdrop::after {
-  animation: modalScanlineFadeOut 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: modalScanlineFadeOut 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 /* Explicit backdrop animation during enter */
@@ -1297,17 +1335,24 @@ dialog[open] .modal-backdrop::after {
 
 /* Modal box transform & scale during transitions */
 .modal-fade-enter-active .modal-box,
-.modal-fade-enter-active [class*="modal-container"],
+.modal-fade-enter-active [class*="modal-container"] {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
 .modal-fade-leave-active .modal-box,
 .modal-fade-leave-active [class*="modal-container"] {
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .modal-fade-enter-from .modal-box,
-.modal-fade-enter-from [class*="modal-container"],
+.modal-fade-enter-from [class*="modal-container"] {
+  transform: scale(0.96) translateY(-16px) !important;
+  opacity: 0 !important;
+}
+
 .modal-fade-leave-to .modal-box,
 .modal-fade-leave-to [class*="modal-container"] {
-  transform: scale(0.95) translateY(12px) !important;
+  transform: scale(0.95) translateY(28px) !important;
   opacity: 0 !important;
 }
 
