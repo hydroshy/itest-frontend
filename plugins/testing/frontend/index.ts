@@ -4,21 +4,12 @@ import TestingView from './views/TestingView.vue';
 export const testingPlugin: FrontendPluginDefinition = {
   manifest: {
     id: 'testing',
-    name: 'GATEWAY TESTING',
-    version: '1.0.0',
+    name: 'TESTING',
+    version: '1.1.0',
     sdkVersion: '^1.0.0',
-    description: 'Hệ thống Gateway Testing chuyên biệt: giám sát luồng gói tin Dual Payload (Raw/Decoded JSONB, RF metrics) từ ChirpStack và quản lý phiên kiểm thử Gateway.',
+    description: 'Hệ thống kiểm thử LoRaWAN toàn diện: Gateway Testing kết nối ChirpStack, Device Simulation giả lập thiết bị (OTAA/ABP, RF params, payload builder) và Device Auto Check kiểm tra tự động kết quả gói tin.',
     author: 'ITEST IoT Platform Team',
     features: [
-      {
-        id: 'testing:packets',
-        title: 'Giám Sát Gói Tin (Packets)',
-        description: 'Giám sát trực quan luồng gói tin Dual Payload (Raw HEX/Base64 + Decoded JSONB) và RF info',
-        icon: 'Connection',
-        tab: 'packets',
-        route: '/plugins/testing?tab=packets',
-        order: 1,
-      },
       {
         id: 'testing:gateway-sessions',
         title: 'Gateway Test Sessions',
@@ -26,20 +17,47 @@ export const testingPlugin: FrontendPluginDefinition = {
         icon: 'Odometer',
         tab: 'gateway-sessions',
         route: '/plugins/testing?tab=gateway-sessions',
+        order: 1,
+      },
+      {
+        id: 'testing:packets',
+        title: 'Giám Sát Gói Tin (Packets)',
+        description: 'Giám sát trực quan luồng gói tin Dual Payload (Raw HEX/Base64 + Decoded JSONB) và RF info',
+        icon: 'Connection',
+        tab: 'packets',
+        route: '/plugins/testing?tab=packets',
         order: 2,
+      },
+      {
+        id: 'testing:device-simulation',
+        title: 'Device Simulation',
+        description: 'Mô phỏng giả lập hoạt động thiết bị LoRaWAN (OTAA Join, Uplink, Downlink Rx1/Rx2, cảm biến)',
+        icon: 'Cpu',
+        tab: 'device-simulation',
+        route: '/plugins/testing?tab=device-simulation',
+        order: 3,
+      },
+      {
+        id: 'testing:device-auto-check',
+        title: 'Device Auto Check',
+        description: 'Tự động kiểm tra tính hợp lệ của gói tin LoRaWAN, đối soát trường dữ liệu và đánh giá PASS/FAIL',
+        icon: 'CheckCircle',
+        tab: 'device-auto-check',
+        route: '/plugins/testing?tab=device-auto-check',
+        order: 4,
       },
     ],
   },
 
   async setup(context) {
-    context.logger.info('Initializing Gateway Testing frontend plugin');
+    context.logger.info('Initializing LoRaWAN Testing Suite frontend plugin');
 
     context.registerRoute({
       path: '/plugins/testing',
       name: 'testing-plugin',
       component: TestingView,
       meta: {
-        title: 'Gateway Testing',
+        title: 'LoRaWAN Testing',
         icon: 'Odometer',
         requiresAuth: true,
       },
@@ -47,7 +65,7 @@ export const testingPlugin: FrontendPluginDefinition = {
 
     context.registerMenu({
       id: 'testing-menu',
-      title: 'Gateway Testing',
+      title: 'LoRaWAN Testing',
       icon: 'Odometer',
       path: '/plugins/testing',
       order: 15,
@@ -63,6 +81,18 @@ export const testingPlugin: FrontendPluginDefinition = {
           title: 'Gói Tin (Packets)',
           icon: 'Connection',
           path: '/plugins/testing?tab=packets',
+        },
+        {
+          id: 'testing-menu-simulation',
+          title: 'Device Simulation',
+          icon: 'Cpu',
+          path: '/plugins/testing?tab=device-simulation',
+        },
+        {
+          id: 'testing-menu-auto-check',
+          title: 'Device Auto Check',
+          icon: 'CheckCircle',
+          path: '/plugins/testing?tab=device-auto-check',
         },
       ],
     });

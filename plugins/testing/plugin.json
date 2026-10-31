@@ -1,10 +1,10 @@
 {
   "id": "testing",
-  "name": "GATEWAY TESTING",
-  "version": "1.0.0",
+  "name": "TESTING",
+  "version": "1.1.0",
   "sdkVersion": "^1.0.0",
   "type": "FRONTEND",
-  "description": "Hệ thống Gateway Testing chuyên biệt: giám sát luồng gói tin Dual Payload (Raw/Decoded JSONB, RF metrics) từ ChirpStack và quản lý phiên kiểm thử Gateway.",
+  "description": "Bộ công cụ kiểm thử LoRaWAN toàn diện: Gateway Testing kết nối ChirpStack, Device Simulation giả lập thiết bị (OTAA/ABP, RF params, payload builder) và Device Auto Check kiểm tra tự động kết quả gói tin.",
   "author": "ITEST IoT Platform Team",
   "frontend": "frontend/index.ts",
   "enabledByDefault": true,
@@ -17,6 +17,16 @@
     {
       "namespace": "testing",
       "resource": "gateway-session",
+      "action": "manage"
+    },
+    {
+      "namespace": "testing",
+      "resource": "device-simulation",
+      "action": "manage"
+    },
+    {
+      "namespace": "testing",
+      "resource": "device-auto-check",
       "action": "manage"
     }
   ]

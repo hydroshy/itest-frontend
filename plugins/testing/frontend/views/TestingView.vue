@@ -4,20 +4,40 @@
     <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
       <div class="header-title">
         <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
-          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> GATEWAY TESTING
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> LORAWAN TESTING SUITE
         </div>
         <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
           <Gauge class="w-6 h-6 text-primary" />
-          <span>Gateway Testing</span>
+          <span>LoRaWAN Testing Suite</span>
         </h2>
         <p class="subtitle text-xs text-base-content/70 mt-1">
-          Giám sát gói tin Dual Payload (Raw/Decoded) &amp; phiên kiểm thử Gateway kết nối ChirpStack
+          Hệ thống kiểm thử Gateway kết nối ChirpStack, giám sát gói tin Dual Payload, Giả lập thiết bị LoRaWAN &amp; Tự động kiểm tra chất lượng (Device Auto Check)
         </p>
       </div>
       <div class="header-actions flex items-center gap-2 flex-wrap">
-        <button class="btn btn-primary btn-sm gap-2 shadow-sm" @click="openCreateSessionDialog">
+        <button
+          v-if="activeTab === 'gateway-sessions'"
+          class="btn btn-primary btn-sm gap-2 shadow-sm"
+          @click="openCreateSessionDialog"
+        >
           <Plus class="w-4 h-4" />
           Tạo Phiên Test Mới
+        </button>
+        <button
+          v-if="activeTab === 'device-simulation'"
+          class="btn btn-outline btn-success btn-sm gap-2 shadow-sm"
+          @click="selectTab('device-auto-check')"
+        >
+          <CheckCircle2 class="w-4 h-4" />
+          Chuyển Sang Auto Check
+        </button>
+        <button
+          v-if="activeTab === 'device-auto-check'"
+          class="btn btn-outline btn-primary btn-sm gap-2 shadow-sm"
+          @click="selectTab('device-simulation')"
+        >
+          <Cpu class="w-4 h-4" />
+          Chuyển Sang Giả Lập
         </button>
         <button class="btn btn-outline btn-sm gap-2" :disabled="loading" @click="refreshActiveTab">
           <span v-if="loading" class="loading loading-spinner loading-xs"></span>
@@ -30,24 +50,16 @@
     <!-- Navigation Tabs -->
     <div v-if="!isIsolatedView" role="tablist" class="tabs tabs-boxed bg-base-200/60 p-1 mb-4 border border-base-300 rounded-xl flex flex-wrap gap-1">
       <button
+        v-for="t in tabList"
+        :key="t.name"
         role="tab"
         type="button"
         class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
-        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'gateway-sessions' }"
-        @click="activeTab = 'gateway-sessions'; handleTabChange('gateway-sessions')"
+        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === t.name }"
+        @click="selectTab(t.name)"
       >
-        <Activity class="w-4 h-4" />
-        Gateway Test Sessions
-      </button>
-      <button
-        role="tab"
-        type="button"
-        class="tab font-semibold transition-all flex items-center gap-2 rounded-lg"
-        :class="{ 'tab-active !bg-primary !text-primary-content shadow-sm': activeTab === 'packets' }"
-        @click="activeTab = 'packets'; handleTabChange('packets')"
-      >
-        <Radio class="w-4 h-4" />
-        Giám Sát Gói Tin (Packets)
+        <component :is="t.icon" class="w-4 h-4" />
+        {{ t.label }}
       </button>
     </div>
 
@@ -309,6 +321,16 @@
       </div>
     </div>
 
+    <!-- TAB 3: Device Simulation (Giả Lập Thiết Bị) -->
+    <div v-if="activeTab === 'device-simulation'">
+      <DeviceSimulationPanel @packet-emitted="onDevicePacketEmitted" />
+    </div>
+
+    <!-- TAB 4: Device Auto Check (Kiểm Tra Tự Động) -->
+    <div v-if="activeTab === 'device-auto-check'">
+      <DeviceAutoCheckPanel ref="autoCheckPanelRef" />
+    </div>
+
     <!-- Dialog Chi Tiết Gói Tin Dual Payload -->
     <dialog class="modal" :class="{ 'modal-open': packetDetailVisible }">
       <div v-if="selectedPacket" class="modal-box w-11/12 max-w-3xl border border-base-content/10 bg-base-100 p-6">
@@ -403,17 +425,45 @@ import {
   Radio,
   Activity,
   X,
+  Cpu,
+  CheckCircle2,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/cyber/hud';
 import { httpClient } from '@/api/client';
 import GatewayRegistrationModal from '../components/GatewayRegistrationModal.vue';
+import DeviceSimulationPanel from '../components/DeviceSimulationPanel.vue';
+import DeviceAutoCheckPanel from '../components/DeviceAutoCheckPanel.vue';
 
 const route = useRoute();
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const router = useRouter();
 
+const VALID_TABS = ['gateway-sessions', 'packets', 'device-simulation', 'device-auto-check'];
+
+const tabList = [
+  { name: 'gateway-sessions', label: 'Gateway Test Sessions', icon: Activity },
+  { name: 'packets', label: 'Giám Sát Gói Tin (Packets)', icon: Radio },
+  { name: 'device-simulation', label: 'Device Simulation (Giả Lập)', icon: Cpu },
+  { name: 'device-auto-check', label: 'Device Auto Check (Tự Động)', icon: CheckCircle2 },
+];
+
 const activeTab = ref('gateway-sessions');
 const loading = ref(false);
+const autoCheckPanelRef = ref<any>(null);
+
+function selectTab(tabName: string) {
+  activeTab.value = tabName;
+  handleTabChange(tabName);
+  if (!isIsolatedView.value) {
+    router.replace({ query: { ...route.query, tab: tabName } }).catch(() => {});
+  }
+}
+
+function onDevicePacketEmitted(packet: any) {
+  if (autoCheckPanelRef.value?.handleIncomingPacket) {
+    autoCheckPanelRef.value.handleIncomingPacket(packet);
+  }
+}
 
 // Packets State
 const loadingPackets = ref(false);
@@ -580,7 +630,7 @@ function openCreateSessionDialog() {
 }
 
 watch(() => route.query.tab, (tab) => {
-  if (typeof tab === 'string' && ['packets', 'gateway-sessions'].includes(tab)) {
+  if (typeof tab === 'string' && VALID_TABS.includes(tab)) {
     activeTab.value = tab;
     refreshActiveTab();
   }
@@ -588,7 +638,7 @@ watch(() => route.query.tab, (tab) => {
 
 onMounted(() => {
   const queryTab = route.query.tab as string;
-  if (queryTab && ['packets', 'gateway-sessions'].includes(queryTab)) {
+  if (queryTab && VALID_TABS.includes(queryTab)) {
     activeTab.value = queryTab;
   }
   if (route.query.networkId) {
