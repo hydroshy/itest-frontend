@@ -372,11 +372,11 @@ function resolveCyberIconName(iconName?: string): string {
   return 'monitor';
 }
 
-function handleUserCommand(cmd: string) {
+async function handleUserCommand(cmd: string) {
   closeUserDropdown();
   if (cmd === 'logout') {
-    authStore.logout();
-    router.push('/auth/login');
+    await authStore.logout();
+    await router.replace('/auth/login');
   } else if (cmd === 'roles') {
     router.push('/roles');
   } else if (cmd === 'profile') {
