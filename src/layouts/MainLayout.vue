@@ -207,8 +207,8 @@
           <div class="h-5 w-px bg-white/10 mx-1"></div>
 
           <!-- User Dropdown -->
-          <details ref="userDropdown" class="dropdown dropdown-end" @keydown.esc="closeUserDropdown" @focusout="handleUserDropdownFocusOut">
-            <summary
+          <div>
+            <button ref="userDropdownTrigger" type="button" popovertarget="user-account-menu" @click="positionUserDropdown"
               class="btn btn-ghost btn-sm h-10 px-2.5 rounded-xl border border-white/10 bg-[#1a2436] hover:bg-[#202c42] hover:border-violet-500/30 flex items-center gap-2.5 cursor-pointer shadow-none transition-all"
             >
               <!-- Avatar: Modern sleek rounded-xl background -->
@@ -228,12 +228,12 @@
               </div>
               <!-- Caret Icon -->
               <span class="text-[10px] text-slate-400 ml-1">▼</span>
-            </summary>
+            </button>
 
-            <!-- Dropdown Menu -->
+            <!-- Native popover escapes dashboard stacking contexts. -->
             <ul
-              tabindex="0"
-              class="dropdown-content menu absolute right-0 top-full p-2 shadow-none bg-[#151d2c] border border-white/10 rounded-2xl w-60 mt-2 gap-1 z-50 text-xs font-sans"
+              id="user-account-menu" ref="userDropdown" popover="auto"
+              class="user-account-menu menu p-2 shadow-none bg-[#151d2c] border border-white/10 rounded-2xl w-60 gap-1 text-xs font-sans"
             >
               <!-- Header info in dropdown -->
               <li class="menu-title px-3 py-2 border-b border-white/10 mb-1">
@@ -264,7 +264,7 @@
                 </a>
               </li>
             </ul>
-          </details>
+          </div>
         </div>
       </header>
 
@@ -300,14 +300,18 @@ const pluginStore = usePluginStore();
 
 const isCollapse = ref(false);
 const profileModalVisible = ref(false);
-const userDropdown = ref<HTMLDetailsElement | null>(null);
+const userDropdown = ref<HTMLUListElement | null>(null);
+const userDropdownTrigger = ref<HTMLButtonElement | null>(null);
 
 function closeUserDropdown() {
-  if (userDropdown.value) userDropdown.value.open = false;
+  userDropdown.value?.hidePopover();
 }
 
-function handleUserDropdownFocusOut(event: FocusEvent) {
-  if (!userDropdown.value?.contains(event.relatedTarget as Node | null)) closeUserDropdown();
+function positionUserDropdown() {
+  const trigger = userDropdownTrigger.value?.getBoundingClientRect();
+  if (!trigger || !userDropdown.value) return;
+  userDropdown.value.style.top = `${trigger.bottom + 8}px`;
+  userDropdown.value.style.right = `${window.innerWidth - trigger.right}px`;
 }
 
 const toggleSidebar = () => {
@@ -382,6 +386,21 @@ function handleUserCommand(cmd: string) {
 </script>
 
 <style scoped>
+/* Top layer prevents view banners from painting over the account menu. */
+.user-account-menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  background: #151d2c;
+}
+
+.user-account-menu:not(:popover-open) {
+  display: none;
+}
+
 .layout-aside {
   contain: layout paint;
 }
