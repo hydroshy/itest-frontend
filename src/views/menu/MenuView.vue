@@ -769,7 +769,8 @@ function openInNewTab(card: MenuCardItem | null) {
   if (!card) return;
   const target = card.route || card.path;
   if (target) {
-    const url = router.resolve(target).href;
+    const separator = target.includes('?') ? '&' : '?';
+    const url = router.resolve(target.startsWith('/plugins/') ? `${target}${separator}from=menu` : target).href;
     window.open(url, '_blank');
   }
 }
