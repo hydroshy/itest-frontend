@@ -1,11 +1,11 @@
 <template>
   <div class="device-auto-check-panel space-y-4">
-    <!-- Top HUD Banner -->
-    <div class="cyber-hud-banner p-4 rounded-xl bg-base-200/70 border border-base-300 relative backdrop-blur-md shadow-sm">
+    <!-- Top Banner -->
+    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-success/10 border border-success/30 flex items-center justify-center text-success">
-            <CheckCircle2 class="w-5 h-5 animate-pulse" />
+          <div class="w-10 h-10 rounded-lg bg-success/10 border border-success/20 flex items-center justify-center text-success">
+            <CheckCircle2 class="w-5 h-5" />
           </div>
           <div>
             <div class="flex items-center gap-2">
@@ -202,6 +202,46 @@
       </div>
     </div>
 
+    <!-- Live Auto Check Event Console Card -->
+    <div class="card bg-base-200 border border-base-content/10 shadow-sm rounded-box p-4 flex flex-col h-[320px]">
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-base-content/10">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full" :class="realtimeEvaluating ? 'bg-success' : 'bg-base-content/30'"></span>
+          <Terminal class="w-4 h-4 text-primary" />
+          <h3 class="font-bold text-sm text-base-content">Live Auto Check Event Console</h3>
+          <span class="badge badge-neutral badge-sm font-mono text-[10px]">{{ autoCheckLogs.length }} logs</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-ghost btn-xs text-base-content/70 hover:bg-base-300" @click="clearAutoCheckLogs">
+            Xóa Log
+          </button>
+        </div>
+      </div>
+
+      <div
+        ref="autoCheckLogContainer"
+        class="flex-1 overflow-y-auto p-3 rounded-lg bg-base-300 font-mono text-[11px] space-y-1.5 border border-base-content/5 select-text"
+      >
+        <div v-if="autoCheckLogs.length === 0" class="text-base-content/40 italic py-8 text-center text-xs">
+          Chưa có sự kiện đánh giá nào. Bật "Bật Live Auto Check" hoặc nhấn "Kiểm Tra Lô Gói Tin" để nhận logs thời gian thực.
+        </div>
+        <div
+          v-for="log in autoCheckLogs"
+          :key="log.id"
+          class="leading-relaxed break-all flex items-start gap-2 py-0.5"
+        >
+          <span class="text-base-content/40 text-[10px] select-none font-mono shrink-0">[{{ log.time }}]</span>
+          <span
+            class="badge badge-xs font-mono font-bold shrink-0 uppercase"
+            :class="getLogBadgeClass(log.type)"
+          >
+            {{ log.tag }}
+          </span>
+          <span class="flex-1" :class="getLogTextColor(log.type)">{{ log.message }}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Rules Configuration Modal -->
     <dialog class="modal" :class="{ 'modal-open': rulesModalVisible }">
       <div class="modal-box w-11/12 max-w-3xl bg-base-100 border border-base-300 p-5">
@@ -277,14 +317,14 @@
 
           <div>
             <div class="font-bold text-xs mb-1 text-base-content/70">Raw HEX:</div>
-            <div class="p-2 bg-black/60 rounded border border-white/10 text-primary break-all">
+            <div class="p-2 bg-base-300 rounded border border-base-content/10 text-primary break-all font-mono text-xs">
               {{ selectedResult.rawPayload || '—' }}
             </div>
           </div>
 
           <div>
             <div class="font-bold text-xs mb-1 text-base-content/70">Decoded JSON:</div>
-            <pre class="p-2.5 bg-black/60 rounded border border-white/10 text-success text-[11px] overflow-x-auto">{{ JSON.stringify(selectedResult.decodedPayload, null, 2) }}</pre>
+            <pre class="p-2.5 bg-base-300 rounded border border-base-content/10 text-success text-[11px] overflow-x-auto font-mono">{{ JSON.stringify(selectedResult.decodedPayload, null, 2) }}</pre>
           </div>
 
           <div>
@@ -320,7 +360,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, nextTick } from 'vue';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -330,9 +370,75 @@ import {
   Download,
   Radio,
   Signal,
+  Terminal,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
+
+interface AutoCheckLog {
+  id: string;
+  time: string;
+  tag: string;
+  type: 'success' | 'warning' | 'error' | 'info' | 'data';
+  message: string;
+}
+
+const autoCheckLogs = ref<AutoCheckLog[]>([]);
+const autoCheckLogContainer = ref<HTMLElement | null>(null);
+
+function addAutoCheckLog(tag: string, message: string, type: 'success' | 'warning' | 'error' | 'info' | 'data' = 'info') {
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+  autoCheckLogs.value.push({
+    id: `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    time,
+    tag,
+    type,
+    message,
+  });
+  if (autoCheckLogs.value.length > 200) {
+    autoCheckLogs.value.shift();
+  }
+  nextTick(() => {
+    if (autoCheckLogContainer.value) {
+      autoCheckLogContainer.value.scrollTop = autoCheckLogContainer.value.scrollHeight;
+    }
+  });
+}
+
+function clearAutoCheckLogs() {
+  autoCheckLogs.value = [];
+}
+
+function getLogBadgeClass(type: string) {
+  switch (type) {
+    case 'success':
+      return 'badge-success text-success-content';
+    case 'warning':
+      return 'badge-warning text-warning-content';
+    case 'error':
+      return 'badge-error text-error-content';
+    case 'data':
+      return 'badge-info text-info-content';
+    default:
+      return 'badge-neutral text-neutral-content';
+  }
+}
+
+function getLogTextColor(type: string) {
+  switch (type) {
+    case 'success':
+      return 'text-success';
+    case 'warning':
+      return 'text-warning';
+    case 'error':
+      return 'text-error';
+    case 'data':
+      return 'text-info';
+    default:
+      return 'text-base-content/85';
+  }
+}
 
 interface CheckRule {
   id: string;
@@ -706,9 +812,3 @@ defineExpose({
   handleIncomingPacket,
 });
 </script>
-
-<style scoped>
-.cyber-hud-banner {
-  background: linear-gradient(135deg, rgba(20, 35, 30, 0.7) 0%, rgba(13, 24, 20, 0.8) 100%);
-}
-</style>

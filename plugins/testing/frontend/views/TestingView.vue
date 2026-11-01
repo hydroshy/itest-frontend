@@ -4,7 +4,7 @@
     <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
       <div class="header-title">
         <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
-          <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> LORAWAN TESTING SUITE
+          <span class="w-2 h-2 rounded-full bg-primary" /> LORAWAN TESTING SUITE
         </div>
         <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
           <Gauge class="w-6 h-6 text-primary" />
@@ -428,7 +428,7 @@ import {
   Cpu,
   CheckCircle2,
 } from 'lucide-vue-next';
-import { cyberToast } from '@/cyber/hud';
+import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
 import GatewayRegistrationModal from '../components/GatewayRegistrationModal.vue';
 import DeviceSimulationPanel from '../components/DeviceSimulationPanel.vue';

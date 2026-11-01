@@ -1,11 +1,11 @@
 <template>
   <div class="device-simulation-panel space-y-4">
-    <!-- Top HUD Banner -->
-    <div class="cyber-hud-banner p-4 rounded-xl bg-base-200/70 border border-base-300 relative backdrop-blur-md shadow-sm">
+    <!-- Top Banner -->
+    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
-            <Cpu class="w-5 h-5 animate-pulse" />
+          <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <Cpu class="w-5 h-5" />
           </div>
           <div>
             <div class="flex items-center gap-2">
@@ -619,7 +619,7 @@
                 </div>
               </div>
 
-              <!-- Flow Status & Progress HUD -->
+              <!-- Flow Status & Progress Bar -->
               <div class="p-2 rounded bg-base-200/70 border border-base-300/80 space-y-1.5 font-mono text-xs">
                 <div class="flex items-center justify-between">
                   <span class="text-base-content/60 flex items-center gap-1">
@@ -722,34 +722,39 @@
           </div>
         </div>
 
-        <!-- Live Simulation Terminal Log Card -->
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm p-4 backdrop-blur-md flex flex-col h-[400px]">
+        <!-- Live Simulation Event Console -->
+        <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 flex flex-col h-[400px]">
           <div class="flex items-center justify-between pb-2 mb-2 border-b border-base-content/10">
-            <h3 class="font-bold text-sm flex items-center gap-2">
-              <Terminal class="w-4 h-4 text-success" />
-              Live Simulation Event Console
-            </h3>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-mono text-base-content/50">{{ logs.length }} logs</span>
-              <button class="btn btn-ghost btn-xs text-base-content/70" @click="clearLogs">
+              <span class="w-2 h-2 rounded-full bg-success"></span>
+              <Terminal class="w-4 h-4 text-primary" />
+              <h3 class="font-bold text-sm text-base-content">Live Simulation Event Console</h3>
+              <span class="badge badge-neutral badge-sm font-mono text-[10px]">{{ logs.length }} logs</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn btn-ghost btn-xs text-base-content/70 hover:bg-base-300" @click="clearLogs">
                 Xóa Log
               </button>
             </div>
           </div>
 
-          <div ref="logContainer" class="flex-1 overflow-y-auto p-2.5 rounded-lg bg-black/80 font-mono text-[11px] space-y-1.5 border border-white/10 select-text">
-            <div v-if="logs.length === 0" class="text-base-content/40 italic py-6 text-center">
+          <div ref="logContainer" class="flex-1 overflow-y-auto p-3 rounded-lg bg-base-300 font-mono text-[11px] space-y-1.5 border border-base-content/5 select-text">
+            <div v-if="logs.length === 0" class="text-base-content/40 italic py-8 text-center text-xs">
               Chưa có sự kiện nào. Hãy nhấn "Kích Hoạt Join" hoặc "Bắt Đầu Chạy Flow" để bắt đầu mô phỏng.
             </div>
             <div
               v-for="log in logs"
               :key="log.id"
-              class="leading-relaxed break-all"
-              :class="getLogColor(log.type)"
+              class="leading-relaxed break-all flex items-start gap-2 py-0.5"
             >
-              <span class="text-base-content/40">[{{ log.time }}]</span>
-              <span class="font-bold ml-1">[{{ log.tag }}]</span>
-              <span class="ml-1">{{ log.message }}</span>
+              <span class="text-base-content/40 text-[10px] select-none font-mono shrink-0">[{{ log.time }}]</span>
+              <span
+                class="badge badge-xs font-mono font-bold shrink-0 uppercase"
+                :class="getLogBadgeClass(log.type)"
+              >
+                {{ log.tag }}
+              </span>
+              <span class="flex-1" :class="getLogTextColor(log.type)">{{ log.message }}</span>
             </div>
           </div>
         </div>
@@ -1534,7 +1539,22 @@ function clearLogs() {
   logs.value = [];
 }
 
-function getLogColor(type: string) {
+function getLogBadgeClass(type: string) {
+  switch (type) {
+    case 'success':
+      return 'badge-success text-success-content';
+    case 'warning':
+      return 'badge-warning text-warning-content';
+    case 'error':
+      return 'badge-error text-error-content';
+    case 'data':
+      return 'badge-info text-info-content';
+    default:
+      return 'badge-neutral text-neutral-content';
+  }
+}
+
+function getLogTextColor(type: string) {
   switch (type) {
     case 'success':
       return 'text-success';
@@ -1543,10 +1563,14 @@ function getLogColor(type: string) {
     case 'error':
       return 'text-error';
     case 'data':
-      return 'text-primary';
+      return 'text-info';
     default:
-      return 'text-base-content/80';
+      return 'text-base-content/85';
   }
+}
+
+function getLogColor(type: string) {
+  return getLogTextColor(type);
 }
 
 function generateRandomDevEui() {
@@ -2007,9 +2031,3 @@ onUnmounted(() => {
 updatePayloadHex();
 onProfileSelected();
 </script>
-
-<style scoped>
-.cyber-hud-banner {
-  background: linear-gradient(135deg, rgba(20, 27, 45, 0.7) 0%, rgba(13, 18, 30, 0.8) 100%);
-}
-</style>

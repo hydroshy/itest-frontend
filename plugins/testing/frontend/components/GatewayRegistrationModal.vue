@@ -19,20 +19,18 @@
 
       <!-- Content Wrapper -->
       <div class="dialog-content-wrapper relative min-h-[460px]">
-        <!-- Cyber HUD Header Banner -->
-        <div class="cyber-hud-banner mb-4 p-4 rounded-lg bg-base-200/60 border border-primary/20 relative">
-          <div class="hud-corner hud-corner-tl"></div>
-          <div class="hud-corner hud-corner-tr"></div>
-          <div class="hud-corner hud-corner-bl"></div>
-          <div class="hud-corner hud-corner-br"></div>
+        <!-- Pipeline Header Card -->
+        <div class="card bg-base-200 border border-base-content/10 shadow-sm rounded-box mb-4 p-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <Gauge class="text-primary w-6 h-6 shrink-0" />
+              <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                <Gauge class="w-5 h-5 shrink-0" />
+              </div>
               <div>
-                <div class="hud-title font-bold text-sm tracking-wide text-primary">
+                <div class="font-bold text-sm tracking-wide text-base-content">
                   GATEWAY VERIFICATION &amp; REGISTRATION PIPELINE
                 </div>
-                <div class="hud-sub text-xs text-base-content/70">
+                <div class="text-xs text-base-content/70">
                   Quy trình xác thực phần cứng, đồng bộ Packet Forwarder &amp; kích hoạt ChirpStack Session
                 </div>
               </div>
@@ -40,11 +38,11 @@
             <div class="flex items-center gap-2">
               <span
                 class="badge font-mono text-xs"
-                :class="gatewayConfig ? 'badge-success text-success-content' : 'badge-info badge-outline'"
+                :class="gatewayConfig ? 'badge-success text-success-content' : 'badge-neutral'"
               >
                 {{ gatewayConfig ? 'CONFIG LOADED' : 'AWAITING IP CONFIG' }}
               </span>
-              <span class="badge badge-warning badge-outline font-mono text-xs">
+              <span class="badge badge-neutral font-mono text-xs">
                 STEP {{ currentWizardStep + 1 }} / 4
               </span>
             </div>
@@ -360,7 +358,7 @@
           </div>
         </div>
 
-        <!-- Stepper / Execution Progress HUD Overlay -->
+        <!-- Stepper / Execution Progress Overlay -->
         <transition name="fade">
           <div v-if="submitting" class="stepper-progress-overlay absolute inset-0 bg-base-100/90 backdrop-blur-sm z-30 flex items-center justify-center p-4">
             <div class="card border border-primary/30 bg-base-200 shadow-2xl p-6 max-w-lg w-full text-center">
@@ -486,7 +484,7 @@ import {
   ArrowLeft,
   RefreshCw,
 } from 'lucide-vue-next';
-import { cyberToast } from '@/cyber/hud';
+import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
 
 const props = defineProps<{
@@ -543,7 +541,7 @@ const regionOptions = [
   { value: 'KR920', label: 'KR920', desc: 'Hàn Quốc' },
 ];
 
-// Execution HUD Steps
+// Execution Stepper Steps
 const executionSteps = [
   { label: 'Kiểm tra' },
   { label: 'Port 4050' },
@@ -939,18 +937,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.hud-corner {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-color: rgba(0, 240, 255, 0.6);
-  pointer-events: none;
-}
-.hud-corner-tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
-.hud-corner-tr { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
-.hud-corner-bl { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; }
-.hud-corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.25s ease;
