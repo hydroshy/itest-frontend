@@ -326,6 +326,11 @@
       <DeviceSimulationPanel @packet-emitted="onDevicePacketEmitted" />
     </div>
 
+    <!-- TAB: Simulation Devices (Danh Sách Thiết Bị Simulation) -->
+    <div v-if="activeTab === 'simulation-devices'">
+      <SimulationDevicesPanel />
+    </div>
+
     <!-- TAB 4: Device Auto Check (Kiểm Tra Tự Động) -->
     <div v-if="activeTab === 'device-auto-check'">
       <DeviceAutoCheckPanel ref="autoCheckPanelRef" />
@@ -433,17 +438,19 @@ import { httpClient } from '@/api/client';
 import GatewayRegistrationModal from '../components/GatewayRegistrationModal.vue';
 import DeviceSimulationPanel from '../components/DeviceSimulationPanel.vue';
 import DeviceAutoCheckPanel from '../components/DeviceAutoCheckPanel.vue';
+import SimulationDevicesPanel from '../components/SimulationDevicesPanel.vue';
 
 const route = useRoute();
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const router = useRouter();
 
-const VALID_TABS = ['gateway-sessions', 'packets', 'device-simulation', 'device-auto-check'];
+const VALID_TABS = ['gateway-sessions', 'packets', 'device-simulation', 'simulation-devices', 'device-auto-check'];
 
 const tabList = [
   { name: 'gateway-sessions', label: 'Gateway Test Sessions', icon: Activity },
   { name: 'packets', label: 'Giám Sát Gói Tin (Packets)', icon: Radio },
-  { name: 'device-simulation', label: 'Device Simulation (Giả Lập)', icon: Cpu },
+  { name: 'device-simulation', label: 'Device Simulation (Tạo Flow)', icon: Cpu },
+  { name: 'simulation-devices', label: 'Thiết Bị Simulation', icon: Radio },
   { name: 'device-auto-check', label: 'Device Auto Check (Tự Động)', icon: CheckCircle2 },
 ];
 
