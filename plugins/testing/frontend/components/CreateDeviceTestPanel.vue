@@ -5,18 +5,18 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-            <FlaskConical class="w-5 h-5" />
+            <Cpu class="w-5 h-5" />
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <h2 class="text-base font-bold tracking-wide uppercase text-base-content">
-                TẠO KIỂM THỬ THIẾT BỊ (CREATE DEVICE TESTING)
+                TẠO THIẾT BỊ TEST (CREATE DEVICE TESTING)
               </h2>
-              <span class="badge badge-primary badge-sm font-mono font-bold">DEVICE TESTING PIPELINE</span>
-              <span class="badge badge-neutral badge-sm font-mono">daisyUI Dim</span>
+              <span class="badge badge-primary badge-sm font-mono font-bold">LORAWAN 3-STEP FLOW</span>
+              <span class="badge badge-neutral badge-sm font-mono">ATH TEMPLATE</span>
             </div>
             <p class="text-xs text-base-content/60 mt-0.5">
-              Thiết lập phiên kiểm thử thiết bị (DUT), gắn kịch bản giả lập (Flow Blocks) và kích hoạt bộ quy tắc đánh giá Auto Check tự động
+              Quy trình 3 bước: 1. Khai báo SO/WA &amp; Network Server &bull; 2. Đọc nhanh thanh ghi 0..259 qua Serial Tool &bull; 3. Tự động đăng ký ChirpStack
             </p>
           </div>
         </div>
@@ -25,436 +25,499 @@
           <button
             type="button"
             class="btn btn-sm btn-ghost gap-1.5"
-            @click="resetForm"
+            @click="resetAll"
           >
             <RotateCcw class="w-3.5 h-3.5" />
             Làm Mới
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wizard Steps Indicator -->
+    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-3">
+      <ul class="steps steps-horizontal w-full text-xs font-semibold">
+        <li
+          class="step cursor-pointer"
+          :class="currentStep >= 1 ? 'step-primary' : ''"
+          @click="goToStep(1)"
+        >
+          Bước 1: SO / WA &amp; Network Server
+        </li>
+        <li
+          class="step cursor-pointer"
+          :class="currentStep >= 2 ? 'step-primary' : ''"
+          @click="goToStep(2)"
+        >
+          Bước 2: Serial Tool Đọc Nhanh 0..259
+        </li>
+        <li
+          class="step cursor-pointer"
+          :class="currentStep >= 3 ? 'step-primary' : ''"
+          @click="goToStep(3)"
+        >
+          Bước 3: Tự Động Đăng Ký ChirpStack
+        </li>
+      </ul>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BƯỚC 1: Chọn Connectivity, SO, WA, Network Server                         -->
+    <!-- ========================================================================= -->
+    <div v-if="currentStep === 1" class="space-y-4">
+      <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
+          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary">
+            <FileText class="w-4 h-4" />
+            <span>BƯỚC 1: CHỌN THÔNG TIN CƠ BẢN &amp; LIÊN KẾT TRACEABILITY</span>
+          </div>
+          <span class="badge badge-sm badge-info font-mono">BẮT BUỘC</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Connectivity (Chỉ hỗ trợ LoRaWAN) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Chuẩn Kết Nối (Connectivity) *</span>
+            </label>
+            <div class="join w-full">
+              <input
+                type="text"
+                class="input input-bordered input-sm join-item flex-1 bg-base-300 font-bold text-primary text-xs"
+                value="LoRaWAN"
+                readonly
+              />
+              <span class="join-item btn btn-sm btn-neutral pointer-events-none text-xs font-mono">
+                Chỉ hỗ trợ LoRaWAN
+              </span>
+            </div>
+            <label class="label py-0.5">
+              <span class="label-text-alt text-[11px] text-base-content/60">
+                Theo yêu cầu hệ thống: Quy trình tạo thiết bị test chỉ hỗ trợ chuẩn LoRaWAN
+              </span>
+            </label>
+          </div>
+
+          <!-- Network Server -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Network Server (ChirpStack) *</span>
+              <span class="label-text-alt text-xs font-mono text-success">API Online</span>
+            </label>
+            <select
+              v-model="step1.serverId"
+              class="select select-bordered select-sm w-full text-xs font-mono"
+              @change="onNetworkServerChange"
+            >
+              <option v-for="ns in networkServers" :key="ns.id" :value="ns.id">
+                {{ ns.name }} ({{ ns.apiUrl }})
+              </option>
+            </select>
+            <label class="label py-0.5">
+              <span class="label-text-alt text-[11px] text-base-content/60 font-mono">
+                URL: {{ step1.serverUrl }}
+              </span>
+            </label>
+          </div>
+
+          <!-- Chọn SO (Sales Order) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Đơn Hàng Sản Xuất (SO Number) *</span>
+              <span class="label-text-alt text-xs text-base-content/60">Từ Device Traceability</span>
+            </label>
+            <div class="relative">
+              <select
+                v-model="step1.soNumber"
+                class="select select-bordered select-sm w-full text-xs font-mono"
+                :disabled="loadingSos"
+                @change="onSoChange"
+              >
+                <option value="">-- Chọn Sales Order (SO) --</option>
+                <option v-for="so in salesOrders" :key="so.id || so.soNumber" :value="so.soNumber">
+                  {{ so.soNumber }} {{ so.customerName ? `- ${so.customerName}` : '' }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Chọn WA (Work Assignment) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold">Lệnh Làm Việc (WA Number) *</span>
+              <span class="label-text-alt text-xs text-base-content/60">Theo SO đã chọn</span>
+            </label>
+            <select
+              v-model="step1.waNumber"
+              class="select select-bordered select-sm w-full text-xs font-mono"
+              :disabled="loadingWas || !step1.soNumber"
+              @change="onWaChange"
+            >
+              <option value="">-- Chọn Work Order (WA) --</option>
+              <option v-for="wa in workAssignments" :key="wa.id || wa.waNumber" :value="wa.waNumber">
+                {{ wa.waNumber }} {{ wa.itemCode ? `(${wa.itemCode})` : '' }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Traceability Summary Preview -->
+        <div v-if="step1.soNumber && step1.waNumber" class="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
+          <div class="font-bold text-primary flex items-center gap-2">
+            <CheckCircle2 class="w-4 h-4" />
+            <span>Đã liên kết Traceability thành công:</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-base-content/80 mt-1">
+            <div>SO: <span class="font-bold text-white">{{ step1.soNumber }}</span></div>
+            <div>WA: <span class="font-bold text-white">{{ step1.waNumber }}</span></div>
+            <div>Item Code: <span class="font-bold text-white">{{ step1.itemCode || 'Theo Sensor' }}</span></div>
+            <div>Network Server: <span class="font-bold text-white">ChirpStack</span></div>
+          </div>
+        </div>
+
+        <!-- Next Action -->
+        <div class="flex justify-end pt-2">
           <button
             type="button"
-            class="btn btn-sm btn-primary gap-1.5 shadow-sm"
-            :disabled="submitting"
-            @click="createAndStartDeviceTest"
+            class="btn btn-sm btn-primary gap-2"
+            :disabled="!step1.soNumber || !step1.waNumber"
+            @click="nextToStep2"
           >
-            <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
-            <Play class="w-3.5 h-3.5 fill-current" v-else />
-            <span>Khởi Chạy Kiểm Thử</span>
+            <span>Tiếp Tục: Bước 2 (Kết Nối Serial Tool)</span>
+            <ChevronRight class="w-4 h-4" />
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Main Configuration Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <!-- Column 1: Thông tin thiết bị kiểm thử (DUT) -->
-      <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 space-y-3">
-        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
-          <div class="flex items-center gap-2 text-xs font-bold uppercase text-primary tracking-wider">
-            <Cpu class="w-4 h-4" />
-            <span>1. Thiết Bị Kiểm Thử (DUT)</span>
+    <!-- ========================================================================= -->
+    <!-- BƯỚC 2: Serial Tool Đọc Nhanh Thanh Ghi 0..259 theo ATH_TEMPLATE.csv       -->
+    <!-- ========================================================================= -->
+    <div v-if="currentStep === 2" class="space-y-4">
+      <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-base-content/10 pb-3">
+          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary">
+            <Cable class="w-4 h-4" />
+            <span>BƯỚC 2: TOOL SERIAL &bull; ĐỌC NHANH THANH GHI 0..259 (ATH TEMPLATE)</span>
           </div>
-          <span class="badge badge-xs badge-outline">Bắt buộc</span>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span
+              class="badge badge-sm font-mono font-bold"
+              :class="serialConnected ? 'badge-success text-success-content' : 'badge-neutral'"
+            >
+              {{ serialConnected ? 'SERIAL CONNECTED' : 'SERIAL DISCONNECTED' }}
+            </span>
+            <span class="badge badge-sm badge-outline font-mono">Modbus FC 03 Chunk</span>
+          </div>
         </div>
 
-        <!-- Quick Select Existing Device -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Chọn Từ Thiết Bị Đã Có</span>
-            <span class="label-text-alt text-[10px] text-base-content/60">Hoặc tự nhập bên dưới</span>
-          </label>
-          <select
-            v-model="selectedDeviceId"
-            class="select select-bordered select-sm w-full text-xs font-mono"
-            @change="onSelectExistingDevice"
-          >
-            <option value="">-- Tự nhập thiết bị mới --</option>
-            <option v-for="d in existingDevices" :key="d.id" :value="d.id">
-              {{ d.name || d.serialNumber }} ({{ d.devEui || d.serialNumber }})
-            </option>
-          </select>
-        </div>
-
-        <!-- Device Name -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Tên Thiết Bị *</span>
-          </label>
-          <input
-            v-model="form.deviceName"
-            type="text"
-            class="input input-bordered input-sm w-full text-xs"
-            placeholder="VD: Cảm biến nhiệt ẩm phòng sạch"
-          />
-        </div>
-
-        <!-- DevEUI / Serial Number -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">DevEUI / Serial Number *</span>
-          </label>
-          <input
-            v-model="form.devEui"
-            type="text"
-            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder="VD: A84041000181A0B2"
-            maxlength="32"
-          />
-        </div>
-
-        <!-- Sensor Connectivity & SKU -->
-        <div class="grid grid-cols-2 gap-2">
+        <!-- Serial Controls Toolbar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-base-100 p-3 rounded-lg border border-base-content/10">
           <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Chuẩn Kết Nối</span>
+            <label class="label py-0.5">
+              <span class="label-text text-xs font-semibold">Cổng Kết Nối (COM Port)</span>
+            </label>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="btn btn-xs btn-outline flex-1 gap-1"
+                :disabled="serialConnected"
+                @click="requestSerialPort"
+              >
+                <Cable class="w-3.5 h-3.5" />
+                <span>{{ selectedPortName || 'Chọn Cổng COM' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-0.5">
+              <span class="label-text text-xs font-semibold">Baudrate</span>
             </label>
             <select
-              v-model="form.sensorConnectivity"
-              class="select select-bordered select-sm w-full text-xs font-medium"
+              v-model.number="serialBaudRate"
+              class="select select-bordered select-xs w-full font-mono text-xs"
+              :disabled="serialConnected"
             >
-              <option value="LoRaWAN">LoRaWAN</option>
-              <option value="Sigfox">Sigfox</option>
+              <option :value="9600">9600 (Mặc định cảm biến)</option>
+              <option :value="19200">19200</option>
+              <option :value="115200">115200</option>
             </select>
           </div>
 
           <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold">ITEM_CODE</span>
+            <label class="label py-0.5">
+              <span class="label-text text-xs font-semibold">Trạng Thái Cổng</span>
             </label>
-            <input
-              v-model="form.itemCode"
-              type="text"
-              class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-              placeholder="VD: WSLRW-TH01"
-            />
+            <div class="flex gap-2">
+              <button
+                v-if="!serialConnected"
+                type="button"
+                class="btn btn-xs btn-success text-success-content flex-1 gap-1"
+                @click="connectSerialPort"
+              >
+                <Power class="w-3.5 h-3.5" />
+                <span>Mở Cổng</span>
+              </button>
+              <button
+                v-else
+                type="button"
+                class="btn btn-xs btn-error text-error-content flex-1 gap-1"
+                @click="disconnectSerialPort"
+              >
+                <PowerOff class="w-3.5 h-3.5" />
+                <span>Đóng Cổng</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-control">
+            <label class="label py-0.5">
+              <span class="label-text text-xs font-semibold">Thao Tác Đọc</span>
+            </label>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="btn btn-xs btn-primary flex-1 gap-1 font-bold"
+                :disabled="readingRegisters"
+                @click="startFastRead0To259"
+              >
+                <span v-if="readingRegisters" class="loading loading-spinner loading-xs"></span>
+                <Zap v-else class="w-3.5 h-3.5 fill-current" />
+                <span>Bắt Đầu Đọc Nhanh</span>
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-xs btn-ghost gap-1"
+                title="Mô phỏng đọc nếu không cắm cảm biến thực"
+                :disabled="readingRegisters"
+                @click="simulateReadTemplateData"
+              >
+                <Sparkles class="w-3 h-3 text-warning" />
+                <span>Demo</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- SKU Join Input with dynamic prefix -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">SKU Mã Hàng</span>
-          </label>
-          <div class="join w-full">
-            <span class="join-item btn btn-sm btn-neutral no-animation font-mono text-xs font-bold px-2 pointer-events-none select-none">
-              {{ skuPrefix }}
+        <!-- Reading Progress Indicator -->
+        <div v-if="readingRegisters || readCompleted" class="space-y-1 bg-base-100 p-3 rounded-lg border border-base-content/10">
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="font-bold flex items-center gap-1.5">
+              <span v-if="readingRegisters" class="loading loading-spinner loading-xs text-primary"></span>
+              <CheckCircle2 v-else class="w-3.5 h-3.5 text-success" />
+              <span>{{ readingStatusText }}</span>
             </span>
-            <input
-              v-model="form.skuSuffix"
-              type="text"
-              class="input input-bordered input-sm join-item flex-1 font-mono text-xs uppercase"
-              placeholder="Nhập suffix (VD: SP01-EU868)..."
-              @input="onSkuSuffixInput"
-            />
+            <span class="font-bold text-primary">{{ readProgress }}%</span>
+          </div>
+          <progress
+            class="progress progress-primary w-full h-2"
+            :value="readProgress"
+            max="100"
+          ></progress>
+        </div>
+
+        <!-- 12 Extracted Register Parameters Table (ATH_TEMPLATE.csv) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-base-content flex items-center gap-2">
+              <Table class="w-4 h-4 text-primary" />
+              <span>DỮ LIỆU THANH GHI THIẾT BỊ (THEO ATH_TEMPLATE.CSV)</span>
+            </h3>
+            <span class="badge badge-xs badge-neutral font-mono">12 THAM SỐ CHUẨN</span>
+          </div>
+
+          <div class="overflow-x-auto rounded-lg border border-base-content/10 bg-base-100">
+            <table class="table table-xs w-full font-mono">
+              <thead class="bg-base-200/60 text-[11px] text-base-content/70">
+                <tr>
+                  <th class="w-8">#</th>
+                  <th>Tên Tham Số</th>
+                  <th>Thanh Ghi Dec</th>
+                  <th>Số Regs</th>
+                  <th>Định Dạng</th>
+                  <th>Giá Trị Đọc Được</th>
+                  <th class="text-center">Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, idx) in extractedRegisters"
+                  :key="row.key"
+                  class="hover:bg-base-200/40 transition-colors"
+                >
+                  <td class="text-base-content/40">{{ idx + 1 }}</td>
+                  <td class="font-semibold text-white">{{ row.label }}</td>
+                  <td class="text-primary font-bold">Dec {{ row.regDec }}</td>
+                  <td>{{ row.numRegs }}</td>
+                  <td><span class="badge badge-xs badge-ghost">{{ row.format }}</span></td>
+                  <td class="font-bold" :class="row.value ? 'text-success' : 'text-base-content/40'">
+                    {{ row.value || 'Chưa đọc' }}
+                  </td>
+                  <td class="text-center">
+                    <span
+                      class="badge badge-xs font-bold"
+                      :class="row.value ? 'badge-success text-success-content' : 'badge-ghost'"
+                    >
+                      {{ row.value ? 'OK' : 'PENDING' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <!-- Firmware Version -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Firmware / LONG_FW</span>
-          </label>
-          <input
-            v-model="form.longFw"
-            type="text"
-            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder="VD: 5F0102"
-          />
-        </div>
-      </div>
-
-      <!-- Column 2: Kịch bản giả lập kiểm thử (Simulation Flow) -->
-      <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 space-y-3">
-        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
-          <div class="flex items-center gap-2 text-xs font-bold uppercase text-info tracking-wider">
-            <Workflow class="w-4 h-4" />
-            <span>2. Kịch Bản Giả Lập (Simulation)</span>
-          </div>
-          <span class="badge badge-xs badge-info font-mono">FLOW</span>
-        </div>
-
-        <!-- Select Simulation Profile -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Kịch Bản Simulation Đã Lưu</span>
-          </label>
-          <select
-            v-model="form.selectedProfileId"
-            class="select select-bordered select-sm w-full text-xs"
-            @change="onSelectProfile"
+        <!-- Actions -->
+        <div class="flex items-center justify-between pt-2">
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost gap-1.5"
+            @click="currentStep = 1"
           >
-            <option value="">-- Mẫu mặc định kiểm thử nhanh (Default Verification) --</option>
-            <option v-for="p in simulationProfiles" :key="p.id || p.simuId" :value="p.id || p.simuId">
-              {{ p.simuId || p.itemCode || 'Profile' }} ({{ p.sensorConnectivity || 'LoRaWAN' }})
-            </option>
-          </select>
-        </div>
+            <ChevronLeft class="w-4 h-4" />
+            <span>Quay Lại Bước 1</span>
+          </button>
 
-        <!-- Test Flow Type Selection -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Chế Độ Kiểm Thử</span>
-          </label>
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              class="btn btn-xs transition-all"
-              :class="form.testMode === 'quick' ? 'btn-primary' : 'btn-outline'"
-              @click="form.testMode = 'quick'"
-            >
-              Nhanh (Quick Verification)
-            </button>
-            <button
-              type="button"
-              class="btn btn-xs transition-all"
-              :class="form.testMode === 'burst' ? 'btn-primary' : 'btn-outline'"
-              @click="form.testMode = 'burst'"
-            >
-              Chuỗi Gói (Burst Stress)
-            </button>
-          </div>
-        </div>
-
-        <!-- Flow Parameters -->
-        <div class="grid grid-cols-2 gap-2">
-          <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold">FPort</span>
-            </label>
-            <input
-              v-model.number="form.fPort"
-              type="number"
-              min="1"
-              max="223"
-              class="input input-bordered input-sm w-full font-mono text-xs"
-            />
-          </div>
-
-          <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Số Gói Tin (Packets)</span>
-            </label>
-            <input
-              v-model.number="form.packetCount"
-              type="number"
-              min="1"
-              max="100"
-              class="input input-bordered input-sm w-full font-mono text-xs"
-            />
-          </div>
-        </div>
-
-        <!-- Custom Raw Payload HEX -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Payload Mẫu (Hex)</span>
-            <span class="label-text-alt text-[10px] text-base-content/60">Tùy chọn</span>
-          </label>
-          <input
-            v-model="form.payloadHex"
-            type="text"
-            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder="VD: 0102640A"
-          />
-        </div>
-
-        <!-- Notes / Session Title -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Ghi Chú Phiên Test</span>
-          </label>
-          <textarea
-            v-model="form.notes"
-            class="textarea textarea-bordered textarea-xs w-full text-xs"
-            rows="3"
-            placeholder="Ghi chú mục đích kiểm tra, điều kiện môi trường..."
-          ></textarea>
-        </div>
-      </div>
-
-      <!-- Column 3: Tiêu chí Auto Check (Auto Check Criteria) -->
-      <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 space-y-3">
-        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
-          <div class="flex items-center gap-2 text-xs font-bold uppercase text-success tracking-wider">
-            <CheckCircle2 class="w-4 h-4" />
-            <span>3. Tiêu Chí Tự Động (Auto Check)</span>
-          </div>
-          <span class="badge badge-xs badge-success font-mono">AUTO EVAL</span>
-        </div>
-
-        <!-- Min RSSI & Min SNR -->
-        <div class="grid grid-cols-2 gap-2">
-          <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Min RSSI (dBm)</span>
-            </label>
-            <input
-              v-model.number="criteria.minRssi"
-              type="number"
-              class="input input-bordered input-sm w-full font-mono text-xs"
-              placeholder="-120"
-            />
-          </div>
-
-          <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Min SNR (dB)</span>
-            </label>
-            <input
-              v-model.number="criteria.minSnr"
-              type="number"
-              class="input input-bordered input-sm w-full font-mono text-xs"
-              placeholder="-10"
-            />
-          </div>
-        </div>
-
-        <!-- Expected FPort -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Expected FPort</span>
-          </label>
-          <input
-            v-model.number="criteria.expectedFPort"
-            type="number"
-            class="input input-bordered input-sm w-full font-mono text-xs"
-            placeholder="10"
-          />
-        </div>
-
-        <!-- Required Decoded Fields (comma separated) -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Trường Bắt Buộc Trong Payload</span>
-            <span class="label-text-alt text-[10px] text-base-content/60">Cách nhau dấu phẩy</span>
-          </label>
-          <input
-            v-model="criteriaRequiredFieldsText"
-            type="text"
-            class="input input-bordered input-sm w-full font-mono text-xs"
-            placeholder="temperature, humidity, battery"
-          />
-        </div>
-
-        <!-- Auto Check Summary Card -->
-        <div class="rounded-lg border border-base-content/10 bg-base-100 p-3 space-y-2 text-xs">
-          <div class="font-semibold text-base-content/80 flex items-center justify-between">
-            <span>Tóm Tắt Đánh Giá:</span>
-            <span class="badge badge-xs badge-ghost">Quy Tắc Tự Động</span>
-          </div>
-          <div class="space-y-1 text-base-content/70 text-[11px] font-mono">
-            <div>• RSSI &ge; {{ criteria.minRssi }} dBm</div>
-            <div>• SNR &ge; {{ criteria.minSnr }} dB</div>
-            <div>• FPort == {{ criteria.expectedFPort || form.fPort }}</div>
-            <div>• Decoded Payload chứa: {{ criteriaRequiredFields.length ? criteriaRequiredFields.join(', ') : 'Không giới hạn' }}</div>
-          </div>
+          <button
+            type="button"
+            class="btn btn-sm btn-primary gap-2"
+            :disabled="!hasRequiredRegisters"
+            @click="nextToStep3"
+          >
+            <span>Tiếp Tục: Bước 3 (Tự Động Đăng Ký ChirpStack)</span>
+            <ChevronRight class="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Active or Recent Device Test Executions -->
-    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 space-y-3">
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="flex items-center gap-2">
-          <Activity class="w-4 h-4 text-primary" />
-          <h3 class="text-xs font-bold uppercase tracking-wider text-base-content">
-            Lịch Sử &amp; Tiến Trình Phiên Kiểm Thử Thiết Bị (Recent Device Tests)
-          </h3>
-          <span class="badge badge-xs badge-neutral font-mono">{{ recentTests.length }}</span>
+    <!-- ========================================================================= -->
+    <!-- BƯỚC 3: Tự Động Đăng Ký Lên ChirpStack (2 Lần) & Thông Báo Gắn Pin        -->
+    <!-- ========================================================================= -->
+    <div v-if="currentStep === 3" class="space-y-4">
+      <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
+          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary">
+            <Radio class="w-4 h-4" />
+            <span>BƯỚC 3: TỰ ĐỘNG ĐĂNG KÝ LÊN NETWORK SERVER (CHIRPSTACK)</span>
+          </div>
+          <span class="badge badge-sm badge-primary font-mono">2-STEP CHIRPSTACK PROVISIONING</span>
         </div>
 
-        <button
-          type="button"
-          class="btn btn-xs btn-outline gap-1"
-          @click="fetchRecentTests"
-          :disabled="loadingRecent"
+        <!-- Status Result Alert -->
+        <div
+          v-if="step3Result.status === 'SUCCESS'"
+          class="alert alert-success shadow-lg border border-success/30 text-success-content p-4"
         >
-          <RotateCcw class="w-3 h-3" :class="{ 'animate-spin': loadingRecent }" />
-          <span>Làm Mới Danh Sách</span>
-        </button>
-      </div>
+          <div class="flex items-start gap-3 w-full">
+            <BatteryCharging class="w-8 h-8 flex-shrink-0 animate-bounce" />
+            <div class="flex-1">
+              <h3 class="font-black text-base uppercase tracking-wide">
+                ĐĂNG KÝ THÀNH CÔNG VUI LÒNG GẮN PIN CẢM BIẾN
+              </h3>
+              <p class="text-xs opacity-90 mt-1">
+                Thiết bị <strong class="underline">{{ registerData.SERIAL_NUMBER || registerData.deviceEUI }}</strong> đã được khởi tạo thành công trên ChirpStack với Device Profile và OTAA Keys. Hãy lắp pin vào thiết bị để cảm biến tiến hành JOIN mạng LoRaWAN!
+              </p>
+            </div>
+          </div>
+        </div>
 
-      <!-- Tests Table -->
-      <div class="overflow-x-auto rounded-lg border border-base-content/10 bg-base-100">
-        <table class="table table-xs w-full">
-          <thead class="bg-base-200/60 font-mono text-[11px] text-base-content/70">
-            <tr>
-              <th class="w-10 text-center">#</th>
-              <th>Mã Phiên Test</th>
-              <th>Thiết Bị (DUT)</th>
-              <th>DevEUI / Serial</th>
-              <th>Chuẩn / SKU</th>
-              <th class="text-center">Trạng Thái</th>
-              <th class="text-center">Kết Quả Auto Check</th>
-              <th>Thời Gian</th>
-              <th class="text-right">Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loadingRecent" class="text-center">
-              <td colspan="9" class="py-6 text-base-content/50">
-                <span class="loading loading-spinner loading-sm"></span>
-                <span class="ml-2 text-xs">Đang tải lịch sử kiểm thử...</span>
-              </td>
-            </tr>
-            <tr v-else-if="recentTests.length === 0" class="text-center">
-              <td colspan="9" class="py-6 text-base-content/50 text-xs">
-                Chưa có phiên kiểm thử thiết bị nào được tạo. Hãy điền form phía trên và nhấn "Khởi Chạy Kiểm Thử".
-              </td>
-            </tr>
-            <tr
-              v-else
-              v-for="(test, idx) in recentTests"
-              :key="test.id || idx"
-              class="hover:bg-base-200/40 transition-colors"
+        <div
+          v-else-if="step3Result.status === 'ERROR'"
+          class="alert alert-error shadow-lg border border-error/30 text-error-content p-4"
+        >
+          <div class="flex items-start gap-3 w-full">
+            <AlertCircle class="w-8 h-8 flex-shrink-0" />
+            <div class="flex-1">
+              <h3 class="font-bold text-base uppercase">ĐĂNG KÝ THIẾT BỊ THẤT BẠI TRÊN HỆ THỐNG</h3>
+              <p class="text-xs opacity-90 mt-1 font-mono">
+                {{ step3Result.message || 'Lỗi kết nối tới Network Server API hoặc xung đột DevEUI.' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-else-if="step3Result.status === 'PROCESSING'"
+          class="alert alert-info shadow-lg border border-info/30 text-info-content p-4"
+        >
+          <div class="flex items-center gap-3">
+            <span class="loading loading-spinner loading-md"></span>
+            <div>
+              <h3 class="font-bold text-sm uppercase">ĐANG TỰ ĐỘNG THỰC THI 2 BƯỚC ĐĂNG KÝ CHIRPSTACK...</h3>
+              <p class="text-xs opacity-90 font-mono mt-0.5">
+                1. POST /api/devices (Tạo Device) &rarr; 2. POST /api/devices/{devEui}/keys (Cài đặt OTAA Keys)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Device & ChirpStack Payload Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Device Info Summary -->
+          <div class="bg-base-100 p-4 rounded-lg border border-base-content/10 space-y-2 text-xs">
+            <div class="font-bold text-primary border-b border-base-content/10 pb-1.5 flex items-center justify-between">
+              <span>Thông Tin Thiết Bị Đăng Ký (DUT)</span>
+              <span class="badge badge-xs badge-neutral font-mono">Decoded Hardware</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 font-mono text-[11px] text-base-content/80">
+              <div>DevEUI: <strong class="text-white">{{ registerData.deviceEUI }}</strong></div>
+              <div>AppEUI (JoinEUI): <strong class="text-white">{{ registerData['LRW appEUI'] }}</strong></div>
+              <div>Serial Number: <strong class="text-white">{{ registerData.SERIAL_NUMBER }}</strong></div>
+              <div>Item Code: <strong class="text-white">{{ registerData.ITEM_CODE || step1.itemCode }}</strong></div>
+              <div>FW Code: <strong class="text-white">{{ registerData.FW_CODE }}</strong></div>
+              <div>FW Version: <strong class="text-white">{{ registerData.FW_VERSION }}</strong></div>
+              <div>HW Version: <strong class="text-white">{{ registerData.HW_VERSION }}</strong></div>
+              <div>Class / Region: <strong class="text-white">{{ registerData.class }} / {{ registerData['region code'] }}</strong></div>
+            </div>
+          </div>
+
+          <!-- ChirpStack JSON Payload Preview -->
+          <div class="bg-base-100 p-4 rounded-lg border border-base-content/10 space-y-2 text-xs">
+            <div class="font-bold text-info border-b border-base-content/10 pb-1.5 flex items-center justify-between">
+              <span>Payload ChirpStack 2 Bước</span>
+              <span class="badge badge-xs badge-info font-mono">JSON SPEC</span>
+            </div>
+            <pre class="bg-base-300 p-2.5 rounded font-mono text-[10px] text-success overflow-x-auto max-h-48 leading-tight">{{ JSON.stringify(computedChirpstackPayload, null, 2) }}</pre>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between pt-2">
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost gap-1.5"
+            @click="currentStep = 2"
+            :disabled="step3Result.status === 'PROCESSING'"
+          >
+            <ChevronLeft class="w-4 h-4" />
+            <span>Quay Lại Bước 2</span>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <button
+              v-if="step3Result.status === 'ERROR'"
+              type="button"
+              class="btn btn-sm btn-warning gap-1.5"
+              @click="executeChirpstackRegistration"
             >
-              <td class="text-center font-mono text-base-content/50">{{ idx + 1 }}</td>
-              <td class="font-mono font-semibold text-primary">
-                {{ test.testSessionId || test.id?.slice(0, 12) || `TEST-${idx + 1}` }}
-              </td>
-              <td class="font-medium">{{ test.deviceName || 'DUT' }}</td>
-              <td class="font-mono text-xs">{{ test.devEui || test.serialNumber || 'N/A' }}</td>
-              <td>
-                <span class="badge badge-xs font-mono" :class="test.sensorConnectivity === 'Sigfox' ? 'badge-accent' : 'badge-info'">
-                  {{ test.sensorConnectivity || 'LoRaWAN' }}
-                </span>
-                <span v-if="test.sku" class="ml-1 text-[11px] font-mono text-base-content/70">
-                  {{ test.sku }}
-                </span>
-              </td>
-              <td class="text-center">
-                <span
-                  class="badge badge-xs font-mono font-bold"
-                  :class="getStatusBadgeClass(test.status)"
-                >
-                  {{ test.status || 'CREATED' }}
-                </span>
-              </td>
-              <td class="text-center">
-                <span
-                  v-if="test.verdict"
-                  class="badge badge-xs font-mono font-bold"
-                  :class="test.verdict === 'PASSED' ? 'badge-success text-success-content' : 'badge-error text-error-content'"
-                >
-                  {{ test.verdict }}
-                </span>
-                <span v-else class="text-[11px] text-base-content/50 font-mono">-</span>
-              </td>
-              <td class="text-xs text-base-content/60 font-mono">
-                {{ formatDateTime(test.createdAt || test.startedAt) }}
-              </td>
-              <td class="text-right space-x-1">
-                <button
-                  class="btn btn-ghost btn-xs text-primary gap-1"
-                  @click="$emit('select-tab', 'device-auto-check')"
-                  title="Chuyển đến màn hình Auto Check"
-                >
-                  <Eye class="w-3.5 h-3.5" />
-                  <span>Xem</span>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <RotateCcw class="w-3.5 h-3.5" />
+              <span>Thử Đăng Ký Lại</span>
+            </button>
+
+            <button
+              v-if="step3Result.status === 'SUCCESS'"
+              type="button"
+              class="btn btn-sm btn-primary gap-1.5"
+              @click="finishAndReset"
+            >
+              <Plus class="w-3.5 h-3.5" />
+              <span>Tạo Thiết Bị Tiếp Theo</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -463,302 +526,528 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import {
-  FlaskConical,
-  RotateCcw,
-  Play,
   Cpu,
-  Workflow,
+  RotateCcw,
+  FileText,
+  Cable,
+  Power,
+  PowerOff,
+  Zap,
+  Sparkles,
+  Table,
   CheckCircle2,
-  Activity,
-  Eye,
+  ChevronRight,
+  ChevronLeft,
+  Radio,
+  BatteryCharging,
+  AlertCircle,
+  Plus,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
 
-const emit = defineEmits<{
-  (e: 'select-tab', tab: string): void;
-  (e: 'test-created', test: any): void;
-}>();
+// Flow Step State (1, 2, 3)
+const currentStep = ref(1);
 
-// Existing devices & simulation profiles cache
-const existingDevices = ref<any[]>([]);
-const simulationProfiles = ref<any[]>([]);
-const selectedDeviceId = ref<string>('');
+// ============================================================================
+// BƯỚC 1: SO, WA, Network Server
+// ============================================================================
+const loadingSos = ref(false);
+const loadingWas = ref(false);
+const salesOrders = ref<any[]>([]);
+const workAssignments = ref<any[]>([]);
 
-// Form state
-const form = reactive({
-  deviceName: '',
-  devEui: '',
-  sensorConnectivity: 'LoRaWAN',
-  skuSuffix: '',
+const networkServers = ref<any[]>([
+  {
+    id: 'srv-globiots-test',
+    name: 'Globiots ChirpStack Test Network Server',
+    apiUrl: 'https://chirpstack-test-api.globiots.com',
+    apiToken: '',
+    applicationId: '00000000-0000-0000-0000-000000000000',
+    deviceProfileId: '00000000-0000-0000-0000-000000000000',
+  },
+]);
+
+const step1 = reactive({
+  connectivity: 'LoRaWAN',
+  serverId: 'srv-globiots-test',
+  serverUrl: 'https://chirpstack-test-api.globiots.com',
+  apiToken: '',
+  soNumber: '',
+  waNumber: '',
   itemCode: '',
-  longFw: '',
-  selectedProfileId: '',
-  testMode: 'quick',
-  fPort: 10,
-  packetCount: 1,
-  payloadHex: '0102640A',
-  notes: '',
 });
 
-// Sku prefix reacts to sensor connectivity
-const skuPrefix = computed(() => {
-  return form.sensorConnectivity === 'Sigfox' ? 'WSSFC-' : 'WSLRW-';
-});
-
-const fullSku = computed(() => {
-  const suffix = form.skuSuffix.trim();
-  return suffix ? `${skuPrefix.value}${suffix}` : '';
-});
-
-function onSkuSuffixInput(e: Event) {
-  let val = (e.target as HTMLInputElement).value.toUpperCase();
-  if (val.startsWith('WSLRW-')) val = val.slice(6);
-  if (val.startsWith('WSSFC-')) val = val.slice(6);
-  form.skuSuffix = val;
+function onNetworkServerChange() {
+  const ns = networkServers.value.find((s) => s.id === step1.serverId);
+  if (ns) {
+    step1.serverUrl = ns.apiUrl;
+    step1.apiToken = ns.apiToken || '';
+  }
 }
 
-// Criteria State
-const criteria = reactive({
-  minRssi: -120,
-  minSnr: -10,
-  expectedFPort: 10,
-});
-const criteriaRequiredFieldsText = ref('temperature, battery');
-const criteriaRequiredFields = computed(() => {
-  return criteriaRequiredFieldsText.value
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+async function loadSalesOrders() {
+  loadingSos.value = true;
+  try {
+    const res: any = await httpClient.get('/plugins/testing/lookup/so');
+    const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || []);
+    salesOrders.value = items;
+  } catch {
+    salesOrders.value = [];
+  } finally {
+    loadingSos.value = false;
+  }
+}
+
+async function onSoChange() {
+  step1.waNumber = '';
+  if (!step1.soNumber) {
+    workAssignments.value = [];
+    return;
+  }
+  loadingWas.value = true;
+  try {
+    const res: any = await httpClient.get('/plugins/testing/lookup/wa', {
+      params: { soNumber: step1.soNumber },
+    });
+    const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || []);
+    workAssignments.value = items;
+    if (items.length > 0) {
+      step1.waNumber = items[0].waNumber || items[0].wa_number || '';
+      step1.itemCode = items[0].itemCode || items[0].item_code || '';
+    }
+  } catch {
+    workAssignments.value = [];
+  } finally {
+    loadingWas.value = false;
+  }
+}
+
+function onWaChange() {
+  const wa = workAssignments.value.find((w) => w.waNumber === step1.waNumber);
+  if (wa && wa.itemCode) {
+    step1.itemCode = wa.itemCode;
+  }
+}
+
+function nextToStep2() {
+  if (!step1.soNumber || !step1.waNumber) {
+    cyberToast.warning('Vui lòng chọn Sales Order (SO) và Work Order (WA)!');
+    return;
+  }
+  currentStep.value = 2;
+}
+
+// ============================================================================
+// BƯỚC 2: Serial Tool & Fast Read (0..259 theo ATH_TEMPLATE.csv)
+// ============================================================================
+const serialConnected = ref(false);
+const serialBaudRate = ref(9600);
+const selectedPortName = ref('');
+const readingRegisters = ref(false);
+const readProgress = ref(0);
+const readingStatusText = ref('Sẵn sàng');
+const readCompleted = ref(false);
+let activeSerialPort: any = null;
+
+// Extracted 12 Register fields
+const registerData = reactive<Record<string, string>>({
+  FW_CODE: '',
+  FW_VERSION: '',
+  HW_VERSION: '',
+  ME_VERSION: '',
+  deviceEUI: '',
+  'LRW appEUI': '',
+  'LRW appKey': '',
+  'region code': '',
+  class: '',
+  'sensor type': '',
+  SERIAL_NUMBER: '',
+  ITEM_CODE: '',
 });
 
-// Submitting & Recent Tests
-const submitting = ref(false);
-const loadingRecent = ref(false);
-const recentTests = ref<any[]>([]);
+const extractedRegisters = computed(() => [
+  { key: 'FW_CODE', label: 'FW_CODE', regDec: 0, numRegs: 5, format: 'string', value: registerData.FW_CODE },
+  { key: 'FW_VERSION', label: 'FW_VERSION', regDec: 5, numRegs: 4, format: 'string', value: registerData.FW_VERSION },
+  { key: 'HW_VERSION', label: 'HW_VERSION', regDec: 9, numRegs: 2, format: 'string', value: registerData.HW_VERSION },
+  { key: 'ME_VERSION', label: 'ME_VERSION', regDec: 15, numRegs: 2, format: 'string', value: registerData.ME_VERSION },
+  { key: 'deviceEUI', label: 'deviceEUI', regDec: 27, numRegs: 4, format: 'hex (64-bit)', value: registerData.deviceEUI },
+  { key: 'LRW appEUI', label: 'LRW appEUI (joinEui)', regDec: 31, numRegs: 4, format: 'hex (64-bit)', value: registerData['LRW appEUI'] },
+  { key: 'LRW appKey', label: 'LRW appKey', regDec: 35, numRegs: 8, format: 'hex (128-bit)', value: registerData['LRW appKey'] },
+  { key: 'region code', label: 'region code', regDec: 69, numRegs: 3, format: 'string', value: registerData['region code'] },
+  { key: 'class', label: 'class', regDec: 85, numRegs: 1, format: 'string', value: registerData.class },
+  { key: 'sensor type', label: 'sensor type', regDec: 103, numRegs: 1, format: 'uint16', value: registerData['sensor type'] },
+  { key: 'SERIAL_NUMBER', label: 'SERIAL_NUMBER', regDec: 259, numRegs: 9, format: 'string', value: registerData.SERIAL_NUMBER },
+  { key: 'ITEM_CODE', label: 'ITEM_CODE', regDec: 386, numRegs: 14, format: 'string', value: registerData.ITEM_CODE },
+]);
 
-function onSelectExistingDevice() {
-  if (!selectedDeviceId.value) return;
-  const dev = existingDevices.value.find((d) => d.id === selectedDeviceId.value);
-  if (dev) {
-    form.deviceName = dev.name || dev.deviceName || '';
-    form.devEui = dev.devEui || dev.dev_eui || dev.networkId || dev.serialNumber || '';
-    form.itemCode = dev.itemCode || dev.item_code || '';
-    form.longFw = dev.longFw || dev.long_fw || '';
-    if (dev.sku) {
-      let rawSku = dev.sku;
-      if (rawSku.startsWith('WSLRW-')) {
-        form.sensorConnectivity = 'LoRaWAN';
-        form.skuSuffix = rawSku.slice(6);
-      } else if (rawSku.startsWith('WSSFC-')) {
-        form.sensorConnectivity = 'Sigfox';
-        form.skuSuffix = rawSku.slice(6);
+const hasRequiredRegisters = computed(() => {
+  return (
+    !!registerData.deviceEUI &&
+    !!registerData['LRW appEUI'] &&
+    !!registerData['LRW appKey'] &&
+    !!registerData.SERIAL_NUMBER
+  );
+});
+
+// CRC-16 Modbus
+function calcModbusCRC16(buf: Uint8Array | number[]): number {
+  let crc = 0xffff;
+  for (let pos = 0; pos < buf.length; pos++) {
+    crc ^= buf[pos];
+    for (let i = 8; i !== 0; i--) {
+      if ((crc & 0x0001) !== 0) {
+        crc = (crc >> 1) ^ 0xa001;
       } else {
-        form.skuSuffix = rawSku;
+        crc = crc >> 1;
       }
     }
   }
+  return crc;
 }
 
-function onSelectProfile() {
-  if (!form.selectedProfileId) return;
-  const profile = simulationProfiles.value.find(
-    (p) => p.id === form.selectedProfileId || p.simuId === form.selectedProfileId,
-  );
-  if (profile) {
-    if (profile.sensorConnectivity) {
-      form.sensorConnectivity = profile.sensorConnectivity;
-    }
-    if (profile.itemCode && !form.itemCode) {
-      form.itemCode = profile.itemCode;
-    }
-    if (profile.longFw && !form.longFw) {
-      form.longFw = profile.longFw;
+function bytesToString(bytes: number[]): string {
+  return String.fromCharCode(...bytes.filter((b) => b >= 32 && b <= 126)).trim();
+}
+
+function bytesToHex(bytes: number[]): string {
+  return bytes.map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+async function requestSerialPort() {
+  if (!('serial' in navigator)) {
+    cyberToast.warning('Trình duyệt không hỗ trợ Web Serial API. Vui lòng dùng Chrome hoặc Edge!');
+    return;
+  }
+  try {
+    activeSerialPort = await (navigator as any).serial.requestPort();
+    selectedPortName.value = 'COM Port (USB)';
+    cyberToast.info('Đã chọn cổng Serial');
+  } catch (err: any) {
+    if (err.name !== 'NotFoundError') {
+      cyberToast.error(`Lỗi chọn cổng: ${err.message}`);
     }
   }
 }
 
-function resetForm() {
-  selectedDeviceId.value = '';
-  form.deviceName = '';
-  form.devEui = '';
-  form.sensorConnectivity = 'LoRaWAN';
-  form.skuSuffix = '';
-  form.itemCode = '';
-  form.longFw = '';
-  form.selectedProfileId = '';
-  form.testMode = 'quick';
-  form.fPort = 10;
-  form.packetCount = 1;
-  form.payloadHex = '0102640A';
-  form.notes = '';
-  criteria.minRssi = -120;
-  criteria.minSnr = -10;
-  criteria.expectedFPort = 10;
-  criteriaRequiredFieldsText.value = 'temperature, battery';
-  cyberToast.info('Đã làm mới form tạo kiểm thử thiết bị');
-}
-
-async function fetchInitialData() {
-  try {
-    const devRes: any = await httpClient.get('/plugins/testing/devices', {
-      params: { label: 'simulation' },
-    });
-    const items = Array.isArray(devRes?.data)
-      ? devRes.data
-      : (devRes?.data?.items || (Array.isArray(devRes) ? devRes : []));
-    existingDevices.value = items.map((it: any) => ({
-      id: it.id,
-      name: it.deviceName || it.name,
-      devEui: it.networkId || it.serialNumber || it.devEui,
-      itemCode: it.itemCode || it.item_code,
-      longFw: it.longFw || it.long_fw,
-      sku: it.metadata?.sku || it.sku,
-    }));
-  } catch {
-    existingDevices.value = [];
+async function connectSerialPort() {
+  if (!activeSerialPort) {
+    await requestSerialPort();
+    if (!activeSerialPort) return;
   }
-
   try {
-    const profRes: any = await httpClient.get('/plugins/testing/simulation/profiles');
-    const profiles = Array.isArray(profRes?.data)
-      ? profRes.data
-      : (profRes?.data?.items || (Array.isArray(profRes) ? profRes : []));
-    simulationProfiles.value = profiles;
-  } catch {
-    simulationProfiles.value = [];
+    await activeSerialPort.open({ baudRate: serialBaudRate.value });
+    serialConnected.value = true;
+    cyberToast.success('Đã mở cổng Serial thành công!');
+  } catch (err: any) {
+    cyberToast.error(`Không thể kết nối cổng: ${err.message}`);
   }
 }
 
-async function fetchRecentTests() {
-  loadingRecent.value = true;
+async function disconnectSerialPort() {
+  if (activeSerialPort) {
+    try {
+      await activeSerialPort.close();
+    } catch {}
+    activeSerialPort = null;
+  }
+  serialConnected.value = false;
+  selectedPortName.value = '';
+  cyberToast.info('Đã ngắt kết nối cổng Serial');
+}
+
+// Fast Chunk Read 0..259 & 386 (4 Chunks Modbus FC 03)
+async function startFastRead0To259() {
+  if (!serialConnected.value || !activeSerialPort) {
+    cyberToast.warning('Vui lòng kết nối cổng Serial trước khi đọc!');
+    return;
+  }
+
+  readingRegisters.value = true;
+  readProgress.value = 0;
+  readingStatusText.value = 'Đang gửi Modbus FC 03 Chunk 1 (Reg 0..99)...';
+
   try {
-    const res: any = await httpClient.get('/plugins/testing/device-tests');
-    const items = Array.isArray(res?.data)
-      ? res.data
-      : (res?.data?.items || (Array.isArray(res) ? res : []));
-    if (Array.isArray(items) && items.length > 0) {
-      recentTests.value = items;
-    }
-  } catch {
-    // If backend endpoint is being compiled or fresh, keep local history
+    const rawMemory = new Map<number, [number, number]>();
+
+    // Chunk 1: 0..99
+    await readModbusChunkFromPort(0, 100, rawMemory);
+    readProgress.value = 25;
+    readingStatusText.value = 'Đang gửi Modbus FC 03 Chunk 2 (Reg 100..199)...';
+
+    // Chunk 2: 100..199
+    await readModbusChunkFromPort(100, 100, rawMemory);
+    readProgress.value = 50;
+    readingStatusText.value = 'Đang gửi Modbus FC 03 Chunk 3 (Reg 200..267)...';
+
+    // Chunk 3: 200..267
+    await readModbusChunkFromPort(200, 68, rawMemory);
+    readProgress.value = 75;
+    readingStatusText.value = 'Đang gửi Modbus FC 03 Chunk 4 (Reg 386..399)...';
+
+    // Chunk 4: 386..399
+    await readModbusChunkFromPort(386, 14, rawMemory);
+    readProgress.value = 100;
+
+    // Decode all 12 registers from rawMemory
+    decodeRegistersFromMemory(rawMemory);
+    readCompleted.value = true;
+    readingStatusText.value = 'Đã hoàn tất đọc nhanh toàn bộ thanh ghi!';
+    cyberToast.success('Đã đọc nhanh thành công các thanh ghi theo ATH_TEMPLATE.csv!');
+  } catch (err: any) {
+    readingStatusText.value = `Lỗi đọc Modbus: ${err.message}`;
+    cyberToast.error(`Lỗi đọc thanh ghi: ${err.message}`);
   } finally {
-    loadingRecent.value = false;
+    readingRegisters.value = false;
   }
 }
 
-async function createAndStartDeviceTest() {
-  if (!form.deviceName.trim()) {
-    cyberToast.warning('Vui lòng nhập tên thiết bị kiểm thử!');
-    return;
-  }
-  if (!form.devEui.trim()) {
-    cyberToast.warning('Vui lòng nhập DevEUI hoặc Serial Number của thiết bị!');
-    return;
+async function readModbusChunkFromPort(
+  startReg: number,
+  numRegs: number,
+  rawMemory: Map<number, [number, number]>
+) {
+  if (!activeSerialPort || !activeSerialPort.readable || !activeSerialPort.writable) {
+    throw new Error('Cổng Serial không khả dụng');
   }
 
-  submitting.value = true;
-  const sessionId = `DTEST-${Date.now().toString(36).toUpperCase()}`;
+  const frame = [
+    0x01, // Slave
+    0x03, // FC 03
+    (startReg >> 8) & 0xff,
+    startReg & 0xff,
+    (numRegs >> 8) & 0xff,
+    numRegs & 0xff,
+  ];
+  const crc = calcModbusCRC16(frame);
+  frame.push(crc & 0xff, (crc >> 8) & 0xff);
+
+  const writer = activeSerialPort.writable.getWriter();
+  await writer.write(new Uint8Array(frame));
+  writer.releaseLock();
+
+  const reader = activeSerialPort.readable.getReader();
+  const expectedBytes = 5 + numRegs * 2;
+  const rxBuffer: number[] = [];
+  const timeoutMs = 1500;
+  const startTime = Date.now();
+
+  try {
+    while (rxBuffer.length < expectedBytes && Date.now() - startTime < timeoutMs) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value) {
+        rxBuffer.push(...(Array.from(value) as number[]));
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  if (rxBuffer.length < expectedBytes) {
+    throw new Error(`Timeout đọc chunk ${startReg}..${startReg + numRegs - 1}`);
+  }
+
+  // Parse registers into rawMemory
+  for (let i = 0; i < numRegs; i++) {
+    const high = rxBuffer[3 + i * 2];
+    const low = rxBuffer[3 + i * 2 + 1];
+    rawMemory.set(startReg + i, [high, low]);
+  }
+}
+
+function decodeRegistersFromMemory(rawMemory: Map<number, [number, number]>) {
+  function getBytes(start: number, count: number): number[] {
+    const bytes: number[] = [];
+    for (let i = 0; i < count; i++) {
+      const pair = rawMemory.get(start + i);
+      if (pair) bytes.push(pair[0], pair[1]);
+    }
+    return bytes;
+  }
+
+  registerData.FW_CODE = bytesToString(getBytes(0, 5));
+  registerData.FW_VERSION = bytesToString(getBytes(5, 4));
+  registerData.HW_VERSION = bytesToString(getBytes(9, 2));
+  registerData.ME_VERSION = bytesToString(getBytes(15, 2));
+  registerData.deviceEUI = bytesToHex(getBytes(27, 4));
+  registerData['LRW appEUI'] = bytesToHex(getBytes(31, 4));
+  registerData['LRW appKey'] = bytesToHex(getBytes(35, 8));
+  registerData['region code'] = bytesToString(getBytes(69, 3));
+  registerData.class = bytesToString(getBytes(85, 1));
+  const stBytes = getBytes(103, 1);
+  registerData['sensor type'] = stBytes.length >= 2 ? String((stBytes[0] << 8) | stBytes[1]) : '';
+  registerData.SERIAL_NUMBER = bytesToString(getBytes(259, 9));
+  registerData.ITEM_CODE = bytesToString(getBytes(386, 14));
+}
+
+// Simulation/Demo mode for offline verification
+function simulateReadTemplateData() {
+  readingRegisters.value = true;
+  readProgress.value = 10;
+  readingStatusText.value = 'Mô phỏng đọc Modbus FC 03 Chunk 1..4...';
+
+  setTimeout(() => {
+    readProgress.value = 50;
+    setTimeout(() => {
+      readProgress.value = 100;
+      registerData.FW_CODE = 'ATH';
+      registerData.FW_VERSION = '0601';
+      registerData.HW_VERSION = '0100';
+      registerData.ME_VERSION = '0100';
+      registerData.deviceEUI = '0080E11505012345';
+      registerData['LRW appEUI'] = '0000000000000000';
+      registerData['LRW appKey'] = '2B7E151628AED2A6ABF7158809CF4F3C';
+      registerData['region code'] = 'AS923-1';
+      registerData.class = 'A';
+      registerData['sensor type'] = '1001';
+      registerData.SERIAL_NUMBER = `SN20261101${Math.floor(1000 + Math.random() * 9000)}`;
+      registerData.ITEM_CODE = step1.itemCode || 'WSLRW-ATH-01';
+
+      readingRegisters.value = false;
+      readCompleted.value = true;
+      readingStatusText.value = 'Đã nạp dữ liệu mẫu thành công!';
+      cyberToast.success('Đã nạp dữ liệu thanh ghi mẫu thành công!');
+    }, 300);
+  }, 300);
+}
+
+function nextToStep3() {
+  if (!hasRequiredRegisters.value) {
+    cyberToast.warning('Chưa có đủ thông tin DeviceEUI, AppKey, Serial Number!');
+    return;
+  }
+  currentStep.value = 3;
+  executeChirpstackRegistration();
+}
+
+// ============================================================================
+// BƯỚC 3: Tự Động Đăng Ký ChirpStack (2 Lần) & Thông Báo Gắn Pin
+// ============================================================================
+const step3Result = reactive({
+  status: 'IDLE', // 'IDLE' | 'PROCESSING' | 'SUCCESS' | 'ERROR'
+  message: '',
+});
+
+const computedChirpstackPayload = computed(() => {
+  return {
+    step1_device: {
+      applicationId: '00000000-0000-0000-0000-000000000000',
+      description: 'ITEST 2.0',
+      devEui: registerData.deviceEUI,
+      deviceProfileId: `profile-${registerData.class || 'A'}-${registerData['region code'] || 'AS923'}`,
+      isDisabled: false,
+      joinEui: registerData['LRW appEUI'] || '0000000000000000',
+      name: registerData.SERIAL_NUMBER || `DEV-${registerData.deviceEUI}`,
+      skipFcntCheck: true,
+      variables: {
+        soNumber: step1.soNumber,
+        waNumber: step1.waNumber,
+        itemCode: registerData.ITEM_CODE || step1.itemCode,
+        fwCode: registerData.FW_CODE,
+        fwVersion: registerData.FW_VERSION,
+        hwVersion: registerData.HW_VERSION,
+      },
+    },
+    step2_deviceKeys: {
+      devEui: registerData.deviceEUI,
+      nwkKey: registerData['LRW appKey'],
+      appKey: registerData['LRW appKey'],
+    },
+  };
+});
+
+async function executeChirpstackRegistration() {
+  step3Result.status = 'PROCESSING';
+  step3Result.message = '';
+
   const payload = {
-    sessionId,
-    testSessionId: sessionId,
-    serialNumber: form.devEui.trim(),
-    deviceName: form.deviceName.trim(),
-    devEui: form.devEui.trim(),
-    sensorConnectivity: form.sensorConnectivity,
-    sku: fullSku.value,
-    itemCode: form.itemCode.trim(),
-    longFw: form.longFw.trim(),
-    simuId: form.selectedProfileId || undefined,
-    profileId: form.selectedProfileId || undefined,
-    testMode: form.testMode,
-    fPort: form.fPort,
-    packetCount: form.packetCount,
-    payloadHex: form.payloadHex.trim(),
-    notes: form.notes.trim(),
-    autoCheckCriteria: {
-      minRssi: criteria.minRssi,
-      minSnr: criteria.minSnr,
-      expectedFPort: criteria.expectedFPort || form.fPort,
-      requiredFields: criteriaRequiredFields.value,
-    },
-    criteria: {
-      minRssi: criteria.minRssi,
-      minSnr: criteria.minSnr,
-      expectedFPort: criteria.expectedFPort || form.fPort,
-      requiredFields: criteriaRequiredFields.value,
-    },
+    connectivity: 'LoRaWAN',
+    soNumber: step1.soNumber,
+    waNumber: step1.waNumber,
+    serverId: step1.serverId,
+    serverUrl: step1.serverUrl,
+    apiToken: step1.apiToken,
+    // Step 2 Registers
+    fwCode: registerData.FW_CODE,
+    fwVersion: registerData.FW_VERSION,
+    hwVersion: registerData.HW_VERSION,
+    meVersion: registerData.ME_VERSION,
+    devEui: registerData.deviceEUI,
+    appEui: registerData['LRW appEUI'],
+    appKey: registerData['LRW appKey'],
+    regionCode: registerData['region code'],
+    classMode: registerData.class,
+    sensorType: registerData['sensor type'],
+    serialNumber: registerData.SERIAL_NUMBER,
+    itemCode: registerData.ITEM_CODE || step1.itemCode,
   };
 
   try {
-    let createdRecord: any = null;
-    try {
-      const res: any = await httpClient.post('/plugins/testing/device-tests', payload);
-      createdRecord = res?.data || res;
-    } catch {
-      // Graceful fallback to trigger simulation run directly
-      await httpClient.post('/plugins/testing/simulation/run', {
-        devEui: payload.devEui,
-        name: payload.deviceName,
-        itemCode: payload.itemCode,
-        fPort: payload.fPort,
-        payloadHex: payload.payloadHex,
-        burstCount: payload.packetCount,
-      });
-      createdRecord = {
-        ...payload,
-        id: `mock-${Date.now()}`,
-        status: 'RUNNING',
-        verdict: 'PASSED',
-        createdAt: new Date().toISOString(),
-      };
+    const res: any = await httpClient.post('/plugins/testing/register-device-flow', payload);
+    const data = res?.data || res;
+
+    if (data?.success || data?.status === 'SUCCESS_ATTACH_BATTERY' || res?.status === 200) {
+      step3Result.status = 'SUCCESS';
+      step3Result.message = data?.message || 'Đăng ký Thành công vui lòng gắn pin cảm biến';
+      cyberToast.success('Đăng ký Thành công vui lòng gắn pin cảm biến');
+    } else {
+      step3Result.status = 'ERROR';
+      step3Result.message = data?.message || 'Lỗi không xác định từ Network Server';
+      cyberToast.error(step3Result.message);
     }
-
-    cyberToast.success(`Đã khởi chạy phiên kiểm thử thiết bị ${payload.testSessionId}!`);
-    recentTests.value.unshift(createdRecord || {
-      ...payload,
-      id: `session-${Date.now()}`,
-      status: 'RUNNING',
-      createdAt: new Date().toISOString(),
-    });
-
-    emit('test-created', createdRecord);
   } catch (err: any) {
-    cyberToast.error(err?.response?.data?.message || 'Lỗi khi khởi chạy kiểm thử thiết bị!');
-  } finally {
-    submitting.value = false;
+    step3Result.status = 'ERROR';
+    step3Result.message =
+      err?.response?.data?.message || err?.message || 'Lỗi khi gọi API đăng ký ChirpStack';
+    cyberToast.error(step3Result.message);
   }
 }
 
-function getStatusBadgeClass(status?: string) {
-  switch (status?.toUpperCase()) {
-    case 'PASSED':
-    case 'SUCCESS':
-      return 'badge-success text-success-content';
-    case 'RUNNING':
-    case 'EVALUATING':
-      return 'badge-primary animate-pulse';
-    case 'FAILED':
-    case 'ERROR':
-      return 'badge-error text-error-content';
-    default:
-      return 'badge-neutral';
+function goToStep(step: number) {
+  if (step === 2 && (!step1.soNumber || !step1.waNumber)) {
+    cyberToast.warning('Vui lòng hoàn thành Bước 1 trước!');
+    return;
   }
+  if (step === 3 && !hasRequiredRegisters.value) {
+    cyberToast.warning('Vui lòng hoàn thành Bước 2 (đọc thanh ghi) trước!');
+    return;
+  }
+  currentStep.value = step;
 }
 
-function formatDateTime(iso?: string) {
-  if (!iso) return '-';
-  try {
-    const d = new Date(iso);
-    return isNaN(d.getTime()) ? iso : d.toLocaleString('vi-VN');
-  } catch {
-    return iso;
-  }
+function finishAndReset() {
+  resetAll();
+  currentStep.value = 1;
+}
+
+function resetAll() {
+  step1.soNumber = '';
+  step1.waNumber = '';
+  step1.itemCode = '';
+  workAssignments.value = [];
+  registerData.FW_CODE = '';
+  registerData.FW_VERSION = '';
+  registerData.HW_VERSION = '';
+  registerData.ME_VERSION = '';
+  registerData.deviceEUI = '';
+  registerData['LRW appEUI'] = '';
+  registerData['LRW appKey'] = '';
+  registerData['region code'] = '';
+  registerData.class = '';
+  registerData['sensor type'] = '';
+  registerData.SERIAL_NUMBER = '';
+  registerData.ITEM_CODE = '';
+  readCompleted.value = false;
+  readProgress.value = 0;
+  readingStatusText.value = 'Sẵn sàng';
+  step3Result.status = 'IDLE';
+  step3Result.message = '';
+  cyberToast.info('Đã làm mới form tạo thiết bị');
 }
 
 onMounted(() => {
-  fetchInitialData();
-  fetchRecentTests();
+  loadSalesOrders();
 });
 </script>
 
