@@ -701,7 +701,7 @@ function evaluatePacket(packet: any, prevPacket?: any): EvaluationResult {
   const now = new Date();
   const time = now.toTimeString().split(' ')[0];
 
-  return {
+  const evalResult: EvaluationResult = {
     id: `eval-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     time,
     devEui: packet.networkId || packet.network_id || packet.deviceId || '70B3D57ED005ABCD',
@@ -715,6 +715,15 @@ function evaluatePacket(packet: any, prevPacket?: any): EvaluationResult {
     assertions,
     verdict: hasFail ? 'FAIL' : 'PASS',
   };
+
+  if (hasFail) {
+    const failedRules = assertions.filter((a) => !a.pass).map((a) => a.ruleName).join(', ');
+    addAutoCheckLog('RULE-FAIL', `DevEUI: ${evalResult.devEui} | FCnt: ${evalResult.fCnt} | Vi phạm: ${failedRules}`, 'error');
+  } else {
+    addAutoCheckLog('RULE-PASS', `DevEUI: ${evalResult.devEui} | FCnt: ${evalResult.fCnt} | Đạt ${assertions.length}/${assertions.length} tiêu chí`, 'success');
+  }
+
+  return evalResult;
 }
 
 // Ingest incoming packet from live stream or simulation
@@ -732,12 +741,14 @@ function handleIncomingPacket(packet: any) {
 async function runBatchEvaluation() {
   loadingCheck.value = true;
   try {
+    addAutoCheckLog('BATCH-START', 'Bắt đầu truy xuất và kiểm tra lô gói tin từ máy chủ...', 'info');
     const res: any = await httpClient.get('/plugins/testing/packets', {
       params: { limit: 20 },
     });
     const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || (Array.isArray(res) ? res : []));
 
     if (items.length === 0) {
+      addAutoCheckLog('BATCH-EMPTY', 'Không tìm thấy gói tin nào trong lịch sử để kiểm tra', 'warning');
       cyberToast.warning('Chưa có gói tin nào trong lịch sử để kiểm tra. Hãy thử phát sóng từ Device Simulation!');
       return;
     }
@@ -753,9 +764,13 @@ async function runBatchEvaluation() {
     }
 
     results.value = batchEvaluated;
+    const passed = batchEvaluated.filter((r) => r.verdict === 'PASS').length;
+    const failed = batchEvaluated.filter((r) => r.verdict === 'FAIL').length;
+    addAutoCheckLog('BATCH-DONE', `Hoàn tất kiểm tra ${batchEvaluated.length} gói tin (${passed} Đạt, ${failed} Lỗi)`, 'data');
     cyberToast.success(`Đã tự động kiểm tra ${batchEvaluated.length} gói tin thành công!`);
   } catch (err: any) {
     console.error('Error running batch evaluation:', err);
+    addAutoCheckLog('BATCH-ERR', `Lỗi kiểm tra lô: ${err?.message || 'Không rõ nguyên nhân'}`, 'error');
     cyberToast.error(err?.message || 'Không thể chạy kiểm tra lô gói tin');
   } finally {
     loadingCheck.value = false;
