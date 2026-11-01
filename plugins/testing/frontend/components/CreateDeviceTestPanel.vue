@@ -845,7 +845,7 @@ async function readModbusRaw(
     throw new Error('Cổng Serial không khả dụng');
   }
 
-  await flushUartRxBuffer(40);
+  await flushUartRxBuffer(30);
 
   const frame = [
     slave & 0xff,
@@ -862,7 +862,7 @@ async function readModbusRaw(
   try {
     await writer.write(new Uint8Array(frame));
   } finally {
-    writer.releaseLock();
+    try { writer.releaseLock(); } catch {}
   }
 
   const reader = activeSerialPort.readable.getReader();
@@ -889,26 +889,54 @@ async function readModbusRaw(
       }
     }
   } finally {
-    reader.releaseLock();
+    try { await reader.cancel(); } catch {}
+    try { reader.releaseLock(); } catch {}
   }
 
-  if (rxBuffer.length < expectedBytes) {
-    throw new Error(`Timeout đọc thanh ghi ${startReg}..${startReg + numRegs - 1} (${rxBuffer.length}/${expectedBytes} bytes)`);
+  if (rxBuffer.length < 5) {
+    throw new Error(`Không có phản hồi từ thiết bị cho thanh ghi ${startReg}`);
   }
 
-  // Verify CRC
-  const dataLen = rxBuffer.length;
-  const calcCrc = calcModbusCRC16(rxBuffer.slice(0, dataLen - 2));
-  const rxCrc = rxBuffer[dataLen - 2] | (rxBuffer[dataLen - 1] << 8);
-  if (calcCrc !== rxCrc) {
-    throw new Error(`Lỗi Modbus CRC tại thanh ghi ${startReg}`);
+  // Find valid Modbus frame header in rxBuffer to strip RS485 line noise bytes
+  let validFrame: number[] | null = null;
+  const expectedDataLen = numRegs * 2;
+
+  for (let i = 0; i <= rxBuffer.length - expectedBytes; i++) {
+    const s = rxBuffer[i];
+    const f = rxBuffer[i + 1];
+    const b = rxBuffer[i + 2];
+    if ((s === slave || s === 0 || s === 1) && f === (fc & 0xff) && b === expectedDataLen) {
+      const candidate = rxBuffer.slice(i, i + expectedBytes);
+      const calcCrc = calcModbusCRC16(candidate.slice(0, candidate.length - 2));
+      const rxCrc = candidate[candidate.length - 2] | (candidate[candidate.length - 1] << 8);
+      if (calcCrc === rxCrc) {
+        validFrame = candidate;
+        break;
+      }
+    }
   }
 
-  const byteCount = rxBuffer[2];
-  return rxBuffer.slice(3, 3 + byteCount);
+  if (!validFrame) {
+    // Direct CRC verification on buffer if alignment matches
+    if (rxBuffer.length >= expectedBytes) {
+      const candidate = rxBuffer.slice(0, expectedBytes);
+      const calcCrc = calcModbusCRC16(candidate.slice(0, candidate.length - 2));
+      const rxCrc = candidate[candidate.length - 2] | (candidate[candidate.length - 1] << 8);
+      if (calcCrc === rxCrc) {
+        validFrame = candidate;
+      }
+    }
+  }
+
+  if (!validFrame) {
+    throw new Error(`Dữ liệu nhận được không khớp hoặc sai CRC tại thanh ghi ${startReg}`);
+  }
+
+  const byteCount = validFrame[2];
+  return validFrame.slice(3, 3 + byteCount);
 }
 
-// Fast Chunk Read 0..259 & 386 (Safe chunking & MCU wake-up probe)
+// Fast Chunk Read 0..259 & 386 (Safe chunking & Dual Slave 0/1 wake-up probe)
 async function startFastRead0To259() {
   if (!serialConnected.value || !activeSerialPort) {
     cyberToast.warning('Vui lòng chọn cổng Serial trước khi đọc!');
@@ -920,51 +948,66 @@ async function startFastRead0To259() {
   readingStatusText.value = 'Đang kích hoạt / đánh thức cảm biến (MCU Wake-up probe)...';
 
   try {
-    // Giai đoạn 0: MCU Wake-up probe (gửi retry thanh ghi 0 cho đến khi sensor thức giấc)
+    // Giai đoạn 0: MCU Wake-up probe (thử cả Slave 0 theo ATH_TEMPLATE.csv và Slave 1 tiêu chuẩn)
     let mcuAwake = false;
+    let activeSlave = 0; // Ưu tiên Slave 0 theo ATH_TEMPLATE.csv
+
     for (let attempt = 1; attempt <= 6; attempt++) {
+      // Thử xen kẽ Slave 0 và Slave 1
+      const slaveToTry = attempt % 2 === 1 ? 0 : 1;
       try {
-        readingStatusText.value = `Đang đánh thức cảm biến (Lần thử ${attempt}/6)...`;
-        const testBytes = await readModbusRaw(1, 3, 0, 5, 800);
+        readingStatusText.value = `Đang đánh thức cảm biến (Slave ${slaveToTry}, Lần thử ${attempt}/6)...`;
+        const testBytes = await readModbusRaw(slaveToTry, 3, 0, 5, 800);
         if (testBytes && testBytes.length >= 10) {
           mcuAwake = true;
+          activeSlave = slaveToTry;
           break;
         }
       } catch {
-        await new Promise((r) => setTimeout(r, 250));
+        await new Promise((r) => setTimeout(r, 200));
       }
     }
 
     if (!mcuAwake) {
-      throw new Error('Cảm biến không phản hồi sau 6 lần thử. Vui lòng kiểm tra lại dây nối A/B RS485 và nguồn cảm biến.');
+      // Thử đọc với slave 1 lần cuối trước khi báo lỗi
+      try {
+        const testBytes = await readModbusRaw(1, 3, 0, 5, 1000);
+        if (testBytes && testBytes.length >= 10) {
+          mcuAwake = true;
+          activeSlave = 1;
+        }
+      } catch {}
+    }
+
+    if (!mcuAwake) {
+      throw new Error('Cảm biến không phản hồi sau 6 lần thử. Vui lòng kiểm tra cáp UART/RS485, baudrate (9600/115200) hoặc bấm "Demo Read" để thử nghiệm tiếp.');
     }
 
     const rawMemory = new Map<number, [number, number]>();
 
-    // Giai đoạn 1: Đọc nhanh theo khối an toàn (< 45 regs/khối)
-    // Khối 1: Reg 0..42 (43 regs = 86 bytes response -> lấy FW_CODE, FW_VER, HW_VER, ME_VER, devEUI, appEUI, appKey)
-    readingStatusText.value = 'Đang đọc Khối 1: Cấu hình Hardware & Keys (Reg 0..42)...';
+    // Giai đoạn 1: Đọc nhanh theo khối an toàn (< 45 regs/khối) với activeSlave đã phát hiện
+    readingStatusText.value = `Đang đọc Khối 1: Cấu hình Hardware & Keys (Slave ${activeSlave}, Reg 0..42)...`;
     readProgress.value = 20;
     try {
-      const b1 = await readModbusRaw(1, 3, 0, 43, 1200);
+      const b1 = await readModbusRaw(activeSlave, 3, 0, 43, 1200);
       for (let i = 0; i < 43; i++) {
         rawMemory.set(i, [b1[i * 2], b1[i * 2 + 1]]);
       }
     } catch {
-      // Fallback đọc từng thanh ghi nếu khối 43 regs bị từ chối
-      const bFwCode = await readModbusRaw(1, 3, 0, 5, 1000);
+      // Fallback đọc từng dải thanh ghi nếu khối 43 regs bị từ chối
+      const bFwCode = await readModbusRaw(activeSlave, 3, 0, 5, 1000);
       for (let i = 0; i < 5; i++) rawMemory.set(i, [bFwCode[i * 2], bFwCode[i * 2 + 1]]);
-      const bFwVer = await readModbusRaw(1, 3, 5, 4, 1000);
+      const bFwVer = await readModbusRaw(activeSlave, 3, 5, 4, 1000);
       for (let i = 0; i < 4; i++) rawMemory.set(5 + i, [bFwVer[i * 2], bFwVer[i * 2 + 1]]);
-      const bHwVer = await readModbusRaw(1, 3, 9, 2, 1000);
+      const bHwVer = await readModbusRaw(activeSlave, 3, 9, 2, 1000);
       for (let i = 0; i < 2; i++) rawMemory.set(9 + i, [bHwVer[i * 2], bHwVer[i * 2 + 1]]);
-      const bMeVer = await readModbusRaw(1, 3, 15, 2, 1000);
+      const bMeVer = await readModbusRaw(activeSlave, 3, 15, 2, 1000);
       for (let i = 0; i < 2; i++) rawMemory.set(15 + i, [bMeVer[i * 2], bMeVer[i * 2 + 1]]);
-      const bDevEui = await readModbusRaw(1, 3, 27, 4, 1000);
+      const bDevEui = await readModbusRaw(activeSlave, 3, 27, 4, 1000);
       for (let i = 0; i < 4; i++) rawMemory.set(27 + i, [bDevEui[i * 2], bDevEui[i * 2 + 1]]);
-      const bAppEui = await readModbusRaw(1, 3, 31, 4, 1000);
+      const bAppEui = await readModbusRaw(activeSlave, 3, 31, 4, 1000);
       for (let i = 0; i < 4; i++) rawMemory.set(31 + i, [bAppEui[i * 2], bAppEui[i * 2 + 1]]);
-      const bAppKey = await readModbusRaw(1, 3, 35, 8, 1000);
+      const bAppKey = await readModbusRaw(activeSlave, 3, 35, 8, 1000);
       for (let i = 0; i < 8; i++) rawMemory.set(35 + i, [bAppKey[i * 2], bAppKey[i * 2 + 1]]);
     }
 
