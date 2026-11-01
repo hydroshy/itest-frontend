@@ -49,12 +49,13 @@
           <label class="label py-1">
             <span class="label-text text-xs font-semibold">Sensor connectivity</span>
           </label>
-          <input
+          <select
             v-model="profileForm.sensorConnectivity"
-            type="text"
-            class="input input-bordered input-sm w-full text-xs"
-            placeholder="Sensor connectivity..."
-          />
+            class="select select-bordered select-sm w-full text-xs font-medium"
+          >
+            <option value="LoRaWAN">LoRaWAN</option>
+            <option value="Sigfox">Sigfox</option>
+          </select>
         </div>
 
         <!-- SKU -->
@@ -62,12 +63,18 @@
           <label class="label py-1">
             <span class="label-text text-xs font-semibold">SKU</span>
           </label>
-          <input
-            v-model="profileForm.sku"
-            type="text"
-            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder="SKU..."
-          />
+          <div class="join w-full">
+            <span class="join-item btn btn-sm btn-neutral no-animation font-mono text-xs font-bold px-2.5 pointer-events-none select-none">
+              {{ skuPrefix }}
+            </span>
+            <input
+              v-model="profileForm.skuSuffix"
+              type="text"
+              class="input input-bordered input-sm join-item flex-1 font-mono text-xs uppercase"
+              placeholder="Nhập suffix (VD: SP01-EU868)..."
+              @input="onSkuSuffixInput"
+            />
+          </div>
         </div>
 
         <!-- LONG_FW -->
@@ -140,11 +147,28 @@ const emit = defineEmits<{
 
 // Form state - Plain empty inputs, no mock data
 const profileForm = reactive({
-  sensorConnectivity: '',
-  sku: '',
+  sensorConnectivity: 'LoRaWAN',
+  skuSuffix: '',
   longFw: '',
   itemCode: '',
 });
+
+// Sku prefix reacts to sensor connectivity
+const skuPrefix = computed(() => {
+  return profileForm.sensorConnectivity === 'Sigfox' ? 'WSSFC-' : 'WSLRW-';
+});
+
+const fullSku = computed(() => {
+  const suffix = profileForm.skuSuffix.trim();
+  return suffix ? `${skuPrefix.value}${suffix}` : '';
+});
+
+function onSkuSuffixInput(e: Event) {
+  let val = (e.target as HTMLInputElement).value.toUpperCase();
+  if (val.startsWith('WSLRW-')) val = val.slice(6);
+  if (val.startsWith('WSSFC-')) val = val.slice(6);
+  profileForm.skuSuffix = val;
+}
 
 // Flow Blocks state
 const flowBlocks = ref<FlowBlock[]>([]);
@@ -160,8 +184,8 @@ const generatedSimuId = computed(() => {
 });
 
 function resetForm() {
-  profileForm.sensorConnectivity = '';
-  profileForm.sku = '';
+  profileForm.sensorConnectivity = 'LoRaWAN';
+  profileForm.skuSuffix = '';
   profileForm.longFw = '';
   profileForm.itemCode = '';
   flowBlocks.value = [];
@@ -185,11 +209,11 @@ async function fetchSimulationDevices() {
   try {
     let res: any;
     try {
-      res = await httpClient.get('/api/v1/plugins/testing/devices/simulation');
-    } catch {
-      res = await httpClient.get('/plugins/testing/simulation/devices', {
+      res = await httpClient.get('/plugins/testing/devices', {
         params: { label: 'simulation' },
       });
+    } catch {
+      res = await httpClient.get('/plugins/testing/devices/simulation');
     }
     const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || (Array.isArray(res) ? res : []));
     simulationDevices.value = items;
@@ -202,7 +226,7 @@ async function fetchSimulationDevices() {
 const savingProfile = ref(false);
 
 async function saveSimulationProfile() {
-  if (!profileForm.itemCode.trim() && !profileForm.sku.trim()) {
+  if (!profileForm.itemCode.trim() && !profileForm.skuSuffix.trim()) {
     cyberToast.warning('Vui lòng nhập ITEM_CODE hoặc SKU!');
     return;
   }
@@ -211,7 +235,7 @@ async function saveSimulationProfile() {
   const payload = {
     simuId: generatedSimuId.value || `SIMU-${Date.now()}`,
     sensorConnectivity: profileForm.sensorConnectivity,
-    sku: profileForm.sku,
+    sku: fullSku.value,
     longFw: profileForm.longFw,
     itemCode: profileForm.itemCode,
     flowBlocks: flowBlocks.value,

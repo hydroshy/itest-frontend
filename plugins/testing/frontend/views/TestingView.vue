@@ -23,22 +23,6 @@
           <Plus class="w-4 h-4" />
           Tạo Phiên Test Mới
         </button>
-        <button
-          v-if="activeTab === 'device-simulation'"
-          class="btn btn-outline btn-success btn-sm gap-2 shadow-sm"
-          @click="selectTab('device-auto-check')"
-        >
-          <CheckCircle2 class="w-4 h-4" />
-          Chuyển Sang Auto Check
-        </button>
-        <button
-          v-if="activeTab === 'device-auto-check'"
-          class="btn btn-outline btn-primary btn-sm gap-2 shadow-sm"
-          @click="selectTab('device-simulation')"
-        >
-          <Cpu class="w-4 h-4" />
-          Chuyển Sang Giả Lập
-        </button>
         <button class="btn btn-outline btn-sm gap-2" :disabled="loading" @click="refreshActiveTab">
           <span v-if="loading" class="loading loading-spinner loading-xs"></span>
           <RefreshCw v-else class="w-4 h-4" />
