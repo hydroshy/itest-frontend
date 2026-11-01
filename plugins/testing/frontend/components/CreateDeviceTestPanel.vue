@@ -211,32 +211,47 @@
           </div>
         </div>
 
-        <!-- Serial Controls Toolbar -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-base-100 p-3 rounded-lg border border-base-content/10">
+        <!-- Serial Controls Toolbar (Flow chuẩn Final Config Tool: Chọn cổng tự động kết nối -> Chờ bấm START) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-base-100 p-4 rounded-lg border border-base-content/10">
+          <!-- Chọn cổng COM: Bấm chọn là tự động kết nối ngay -->
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-xs font-semibold">Cổng Kết Nối (COM Port)</span>
+              <span class="label-text text-xs font-semibold">1. Cổng Kết Nối (COM Port)</span>
             </label>
             <div class="flex gap-2">
               <button
+                v-if="!serialConnected"
                 type="button"
-                class="btn btn-xs btn-outline flex-1 gap-1"
-                :disabled="serialConnected"
-                @click="requestSerialPort"
+                class="btn btn-sm btn-outline btn-primary flex-1 gap-1.5 font-bold"
+                @click="selectAndConnectPort"
               >
-                <Cable class="w-3.5 h-3.5" />
+                <Cable class="w-4 h-4" />
                 <span>{{ selectedPortName || 'Chọn Cổng COM' }}</span>
               </button>
+              <div v-else class="join w-full">
+                <span class="join-item btn btn-sm btn-success no-animation flex-1 text-xs font-mono text-success-content pointer-events-none">
+                  ✓ {{ selectedPortName || 'Cổng COM (Đã kết nối)' }}
+                </span>
+                <button
+                  type="button"
+                  class="join-item btn btn-sm btn-error text-error-content px-2"
+                  title="Ngắt kết nối cổng"
+                  @click="disconnectSerialPort"
+                >
+                  <PowerOff class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
+          <!-- Baudrate -->
           <div class="form-control">
             <label class="label py-0.5">
               <span class="label-text text-xs font-semibold">Baudrate</span>
             </label>
             <select
               v-model.number="serialBaudRate"
-              class="select select-bordered select-xs w-full font-mono text-xs"
+              class="select select-bordered select-sm w-full font-mono text-xs"
               :disabled="serialConnected"
             >
               <option :value="9600">9600 (Mặc định cảm biến)</option>
@@ -245,60 +260,70 @@
             </select>
           </div>
 
+          <!-- Trạng thái & Hướng dẫn -->
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-xs font-semibold">Trạng Thái Cổng</span>
+              <span class="label-text text-xs font-semibold">Trạng Thái Kết Nối</span>
             </label>
-            <div class="flex gap-2">
-              <button
-                v-if="!serialConnected"
-                type="button"
-                class="btn btn-xs btn-success text-success-content flex-1 gap-1"
-                @click="connectSerialPort"
-              >
-                <Power class="w-3.5 h-3.5" />
-                <span>Mở Cổng</span>
-              </button>
-              <button
-                v-else
-                type="button"
-                class="btn btn-xs btn-error text-error-content flex-1 gap-1"
-                @click="disconnectSerialPort"
-              >
-                <PowerOff class="w-3.5 h-3.5" />
-                <span>Đóng Cổng</span>
-              </button>
+            <div class="flex items-center h-8 px-2 rounded bg-base-200 text-xs font-mono">
+              <span
+                class="inline-block w-2.5 h-2.5 rounded-full mr-2"
+                :class="serialConnected ? 'bg-success animate-pulse' : 'bg-base-content/30'"
+              ></span>
+              <span class="font-bold" :class="serialConnected ? 'text-success' : 'text-base-content/60'">
+                {{ serialConnected ? 'ĐÃ KẾT NỐI (READY)' : 'CHƯA KẾT NỐI' }}
+              </span>
             </div>
           </div>
 
+          <!-- Nút START ĐỌC THANH GHI -->
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-xs font-semibold">Thao Tác Đọc</span>
+              <span class="label-text text-xs font-semibold">2. Nhấn START Để Đọc</span>
             </label>
             <div class="flex gap-2">
               <button
                 type="button"
-                class="btn btn-xs btn-primary flex-1 gap-1 font-bold"
-                :disabled="readingRegisters"
+                class="btn btn-sm btn-primary flex-1 gap-2 font-bold shadow-md"
+                :class="{ 'btn-disabled': !serialConnected || readingRegisters }"
+                :disabled="!serialConnected || readingRegisters"
                 @click="startFastRead0To259"
               >
                 <span v-if="readingRegisters" class="loading loading-spinner loading-xs"></span>
-                <Zap v-else class="w-3.5 h-3.5 fill-current" />
-                <span>Bắt Đầu Đọc Nhanh</span>
+                <Play v-else class="w-4 h-4 fill-current" />
+                <span>START ĐỌC</span>
               </button>
 
               <button
                 type="button"
-                class="btn btn-xs btn-ghost gap-1"
+                class="btn btn-sm btn-ghost gap-1"
                 title="Mô phỏng đọc nếu không cắm cảm biến thực"
                 :disabled="readingRegisters"
                 @click="simulateReadTemplateData"
               >
-                <Sparkles class="w-3 h-3 text-warning" />
+                <Sparkles class="w-3.5 h-3.5 text-warning" />
                 <span>Demo</span>
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- Hướng dẫn người dùng theo đúng flow Final Config Tool -->
+        <div
+          v-if="!serialConnected"
+          class="alert alert-info py-2 px-3 text-xs flex items-center justify-between"
+        >
+          <span>
+            👉 <strong>Flow Final Config:</strong> Nhấn <strong>"Chọn Cổng COM"</strong> ở trên, chọn cổng trong hộp thoại trình duyệt &rarr; Cổng sẽ <strong>tự động kết nối</strong>, sau đó bạn chỉ cần nhấn <strong>START ĐỌC</strong>.
+          </span>
+        </div>
+        <div
+          v-else-if="!readCompleted && !readingRegisters"
+          class="alert alert-success py-2 px-3 text-xs flex items-center justify-between text-success-content"
+        >
+          <span>
+            ⚡ Cổng COM đã sẵn sàng! Nhấn nút <strong>START ĐỌC</strong> để bắt đầu đọc 12 tham số theo ATH_TEMPLATE.csv.
+          </span>
         </div>
 
         <!-- Reading Progress Indicator -->
@@ -714,15 +739,24 @@ function bytesToHex(bytes: number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
-async function requestSerialPort() {
+async function selectAndConnectPort() {
   if (!('serial' in navigator)) {
     cyberToast.warning('Trình duyệt không hỗ trợ Web Serial API. Vui lòng dùng Chrome hoặc Edge!');
     return;
   }
   try {
-    activeSerialPort = await (navigator as any).serial.requestPort();
-    selectedPortName.value = 'COM Port (USB)';
-    cyberToast.info('Đã chọn cổng Serial');
+    const port = await (navigator as any).serial.requestPort();
+    if (!port) return;
+    activeSerialPort = port;
+    const info = port.getInfo ? port.getInfo() : {};
+    let desc = 'COM Port (USB)';
+    if (info.usbVendorId) {
+      desc = `USB (VID: 0x${info.usbVendorId.toString(16).toUpperCase()} PID: 0x${(info.usbProductId || 0).toString(16).toUpperCase()})`;
+    }
+    selectedPortName.value = desc;
+
+    // Tự động kết nối ngay theo đúng flow của Final Config Tool
+    await openActivePort();
   } catch (err: any) {
     if (err.name !== 'NotFoundError') {
       cyberToast.error(`Lỗi chọn cổng: ${err.message}`);
@@ -730,16 +764,29 @@ async function requestSerialPort() {
   }
 }
 
-async function connectSerialPort() {
-  if (!activeSerialPort) {
-    await requestSerialPort();
-    if (!activeSerialPort) return;
-  }
+async function openActivePort() {
+  if (!activeSerialPort) return;
   try {
-    await activeSerialPort.open({ baudRate: serialBaudRate.value });
+    await activeSerialPort.open({
+      baudRate: Number(serialBaudRate.value) || 9600,
+      dataBits: 8,
+      stopBits: 1,
+      parity: 'none',
+      flowControl: 'none',
+      bufferSize: 255,
+    });
+    if (activeSerialPort.setSignals) {
+      try {
+        await activeSerialPort.setSignals({
+          dataTerminalReady: true,
+          requestToSend: true,
+        });
+      } catch (e) {}
+    }
     serialConnected.value = true;
-    cyberToast.success('Đã mở cổng Serial thành công!');
+    cyberToast.success(`Đã kết nối ${selectedPortName.value || 'cổng COM'} @ ${serialBaudRate.value} bps. Hãy nhấn START để đọc.`);
   } catch (err: any) {
+    serialConnected.value = false;
     cyberToast.error(`Không thể kết nối cổng: ${err.message}`);
   }
 }
@@ -756,64 +803,53 @@ async function disconnectSerialPort() {
   cyberToast.info('Đã ngắt kết nối cổng Serial');
 }
 
-// Fast Chunk Read 0..259 & 386 (4 Chunks Modbus FC 03)
-async function startFastRead0To259() {
-  if (!serialConnected.value || !activeSerialPort) {
-    cyberToast.warning('Vui lòng kết nối cổng Serial trước khi đọc!');
-    return;
-  }
-
-  readingRegisters.value = true;
-  readProgress.value = 0;
-  readingStatusText.value = 'Đang gửi Modbus FC 03 Chunk 1 (Reg 0..99)...';
-
+// Flush UART RX buffer to drain any stray bytes
+async function flushUartRxBuffer(flushTimeoutMs = 100) {
+  if (!activeSerialPort || !activeSerialPort.readable) return;
   try {
-    const rawMemory = new Map<number, [number, number]>();
-
-    // Chunk 1: 0..99
-    await readModbusChunkFromPort(0, 100, rawMemory);
-    readProgress.value = 25;
-    readingStatusText.value = 'Đang gửi Modbus FC 03 Chunk 2 (Reg 100..199)...';
-
-    // Chunk 2: 100..199
-    await readModbusChunkFromPort(100, 100, rawMemory);
-    readProgress.value = 50;
-    readingStatusText.value = 'Đang gửi Modbus FC 03 Chunk 3 (Reg 200..267)...';
-
-    // Chunk 3: 200..267
-    await readModbusChunkFromPort(200, 68, rawMemory);
-    readProgress.value = 75;
-    readingStatusText.value = 'Đang gửi Modbus FC 03 Chunk 4 (Reg 386..399)...';
-
-    // Chunk 4: 386..399
-    await readModbusChunkFromPort(386, 14, rawMemory);
-    readProgress.value = 100;
-
-    // Decode all 12 registers from rawMemory
-    decodeRegistersFromMemory(rawMemory);
-    readCompleted.value = true;
-    readingStatusText.value = 'Đã hoàn tất đọc nhanh toàn bộ thanh ghi!';
-    cyberToast.success('Đã đọc nhanh thành công các thanh ghi theo ATH_TEMPLATE.csv!');
-  } catch (err: any) {
-    readingStatusText.value = `Lỗi đọc Modbus: ${err.message}`;
-    cyberToast.error(`Lỗi đọc thanh ghi: ${err.message}`);
-  } finally {
-    readingRegisters.value = false;
-  }
+    if (activeSerialPort.setSignals) {
+      try {
+        await activeSerialPort.setSignals({ requestToSend: false, dataTerminalReady: false });
+        await new Promise((r) => setTimeout(r, 5));
+        await activeSerialPort.setSignals({ requestToSend: true, dataTerminalReady: true });
+      } catch (e) {}
+    }
+    const reader = activeSerialPort.readable.getReader();
+    const startTime = Date.now();
+    try {
+      while (Date.now() - startTime < flushTimeoutMs) {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject('timeout'), 25));
+        try {
+          const res = (await Promise.race([reader.read(), timeoutPromise])) as any;
+          if (res?.done) break;
+        } catch {
+          break;
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  } catch (e) {}
+  await new Promise((r) => setTimeout(r, 25));
 }
 
-async function readModbusChunkFromPort(
+// Low-level Modbus FC 03 read with CRC validation
+async function readModbusRaw(
+  slave: number,
+  fc: number,
   startReg: number,
   numRegs: number,
-  rawMemory: Map<number, [number, number]>
-) {
+  timeoutMs = 1200
+): Promise<number[]> {
   if (!activeSerialPort || !activeSerialPort.readable || !activeSerialPort.writable) {
     throw new Error('Cổng Serial không khả dụng');
   }
 
+  await flushUartRxBuffer(40);
+
   const frame = [
-    0x01, // Slave
-    0x03, // FC 03
+    slave & 0xff,
+    fc & 0xff,
     (startReg >> 8) & 0xff,
     startReg & 0xff,
     (numRegs >> 8) & 0xff,
@@ -823,21 +859,33 @@ async function readModbusChunkFromPort(
   frame.push(crc & 0xff, (crc >> 8) & 0xff);
 
   const writer = activeSerialPort.writable.getWriter();
-  await writer.write(new Uint8Array(frame));
-  writer.releaseLock();
+  try {
+    await writer.write(new Uint8Array(frame));
+  } finally {
+    writer.releaseLock();
+  }
 
   const reader = activeSerialPort.readable.getReader();
-  const expectedBytes = 5 + numRegs * 2;
+  const expectedBytes = 3 + numRegs * 2 + 2;
   const rxBuffer: number[] = [];
-  const timeoutMs = 1500;
   const startTime = Date.now();
 
   try {
     while (rxBuffer.length < expectedBytes && Date.now() - startTime < timeoutMs) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (value) {
-        rxBuffer.push(...(Array.from(value) as number[]));
+      const remaining = Math.max(10, timeoutMs - (Date.now() - startTime));
+      let timeoutId: any;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('TIMEOUT')), remaining);
+      });
+      let res: any;
+      try {
+        res = await Promise.race([reader.read(), timeoutPromise]);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      if (res.done) break;
+      if (res.value) {
+        rxBuffer.push(...(Array.from(res.value) as number[]));
       }
     }
   } finally {
@@ -845,14 +893,132 @@ async function readModbusChunkFromPort(
   }
 
   if (rxBuffer.length < expectedBytes) {
-    throw new Error(`Timeout đọc chunk ${startReg}..${startReg + numRegs - 1}`);
+    throw new Error(`Timeout đọc thanh ghi ${startReg}..${startReg + numRegs - 1} (${rxBuffer.length}/${expectedBytes} bytes)`);
   }
 
-  // Parse registers into rawMemory
-  for (let i = 0; i < numRegs; i++) {
-    const high = rxBuffer[3 + i * 2];
-    const low = rxBuffer[3 + i * 2 + 1];
-    rawMemory.set(startReg + i, [high, low]);
+  // Verify CRC
+  const dataLen = rxBuffer.length;
+  const calcCrc = calcModbusCRC16(rxBuffer.slice(0, dataLen - 2));
+  const rxCrc = rxBuffer[dataLen - 2] | (rxBuffer[dataLen - 1] << 8);
+  if (calcCrc !== rxCrc) {
+    throw new Error(`Lỗi Modbus CRC tại thanh ghi ${startReg}`);
+  }
+
+  const byteCount = rxBuffer[2];
+  return rxBuffer.slice(3, 3 + byteCount);
+}
+
+// Fast Chunk Read 0..259 & 386 (Safe chunking & MCU wake-up probe)
+async function startFastRead0To259() {
+  if (!serialConnected.value || !activeSerialPort) {
+    cyberToast.warning('Vui lòng chọn cổng Serial trước khi đọc!');
+    return;
+  }
+
+  readingRegisters.value = true;
+  readProgress.value = 0;
+  readingStatusText.value = 'Đang kích hoạt / đánh thức cảm biến (MCU Wake-up probe)...';
+
+  try {
+    // Giai đoạn 0: MCU Wake-up probe (gửi retry thanh ghi 0 cho đến khi sensor thức giấc)
+    let mcuAwake = false;
+    for (let attempt = 1; attempt <= 6; attempt++) {
+      try {
+        readingStatusText.value = `Đang đánh thức cảm biến (Lần thử ${attempt}/6)...`;
+        const testBytes = await readModbusRaw(1, 3, 0, 5, 800);
+        if (testBytes && testBytes.length >= 10) {
+          mcuAwake = true;
+          break;
+        }
+      } catch {
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    }
+
+    if (!mcuAwake) {
+      throw new Error('Cảm biến không phản hồi sau 6 lần thử. Vui lòng kiểm tra lại dây nối A/B RS485 và nguồn cảm biến.');
+    }
+
+    const rawMemory = new Map<number, [number, number]>();
+
+    // Giai đoạn 1: Đọc nhanh theo khối an toàn (< 45 regs/khối)
+    // Khối 1: Reg 0..42 (43 regs = 86 bytes response -> lấy FW_CODE, FW_VER, HW_VER, ME_VER, devEUI, appEUI, appKey)
+    readingStatusText.value = 'Đang đọc Khối 1: Cấu hình Hardware & Keys (Reg 0..42)...';
+    readProgress.value = 20;
+    try {
+      const b1 = await readModbusRaw(1, 3, 0, 43, 1200);
+      for (let i = 0; i < 43; i++) {
+        rawMemory.set(i, [b1[i * 2], b1[i * 2 + 1]]);
+      }
+    } catch {
+      // Fallback đọc từng thanh ghi nếu khối 43 regs bị từ chối
+      const bFwCode = await readModbusRaw(1, 3, 0, 5, 1000);
+      for (let i = 0; i < 5; i++) rawMemory.set(i, [bFwCode[i * 2], bFwCode[i * 2 + 1]]);
+      const bFwVer = await readModbusRaw(1, 3, 5, 4, 1000);
+      for (let i = 0; i < 4; i++) rawMemory.set(5 + i, [bFwVer[i * 2], bFwVer[i * 2 + 1]]);
+      const bHwVer = await readModbusRaw(1, 3, 9, 2, 1000);
+      for (let i = 0; i < 2; i++) rawMemory.set(9 + i, [bHwVer[i * 2], bHwVer[i * 2 + 1]]);
+      const bMeVer = await readModbusRaw(1, 3, 15, 2, 1000);
+      for (let i = 0; i < 2; i++) rawMemory.set(15 + i, [bMeVer[i * 2], bMeVer[i * 2 + 1]]);
+      const bDevEui = await readModbusRaw(1, 3, 27, 4, 1000);
+      for (let i = 0; i < 4; i++) rawMemory.set(27 + i, [bDevEui[i * 2], bDevEui[i * 2 + 1]]);
+      const bAppEui = await readModbusRaw(1, 3, 31, 4, 1000);
+      for (let i = 0; i < 4; i++) rawMemory.set(31 + i, [bAppEui[i * 2], bAppEui[i * 2 + 1]]);
+      const bAppKey = await readModbusRaw(1, 3, 35, 8, 1000);
+      for (let i = 0; i < 8; i++) rawMemory.set(35 + i, [bAppKey[i * 2], bAppKey[i * 2 + 1]]);
+    }
+
+    // Khối 2: Reg 69..85 (17 regs = 34 bytes response -> lấy region code, class)
+    readingStatusText.value = 'Đang đọc Khối 2: LoRaWAN Region & Class (Reg 69..85)...';
+    readProgress.value = 45;
+    try {
+      const b2 = await readModbusRaw(1, 3, 69, 17, 1200);
+      for (let i = 0; i < 17; i++) {
+        rawMemory.set(69 + i, [b2[i * 2], b2[i * 2 + 1]]);
+      }
+    } catch {
+      const bReg = await readModbusRaw(1, 3, 69, 3, 1000);
+      for (let i = 0; i < 3; i++) rawMemory.set(69 + i, [bReg[i * 2], bReg[i * 2 + 1]]);
+      const bCls = await readModbusRaw(1, 3, 85, 1, 1000);
+      rawMemory.set(85, [bCls[0], bCls[1]]);
+    }
+
+    // Khối 3: Reg 103 (1 reg -> sensor type)
+    readingStatusText.value = 'Đang đọc Khối 3: Sensor Type (Reg 103)...';
+    readProgress.value = 65;
+    const b3 = await readModbusRaw(1, 3, 103, 1, 1000);
+    rawMemory.set(103, [b3[0], b3[1]]);
+
+    // Khối 4: Reg 259..267 (9 regs = 18 bytes -> SERIAL_NUMBER)
+    readingStatusText.value = 'Đang đọc Khối 4: Serial Number (Reg 259)...';
+    readProgress.value = 85;
+    const b4 = await readModbusRaw(1, 3, 259, 9, 1000);
+    for (let i = 0; i < 9; i++) {
+      rawMemory.set(259 + i, [b4[i * 2], b4[i * 2 + 1]]);
+    }
+
+    // Khối 5: Reg 386..399 (14 regs = 28 bytes -> ITEM_CODE)
+    readingStatusText.value = 'Đang đọc Khối 5: Item Code (Reg 386)...';
+    readProgress.value = 95;
+    try {
+      const b5 = await readModbusRaw(1, 3, 386, 14, 1000);
+      for (let i = 0; i < 14; i++) {
+        rawMemory.set(386 + i, [b5[i * 2], b5[i * 2 + 1]]);
+      }
+    } catch {}
+
+    readProgress.value = 100;
+
+    // Decode to registerData
+    decodeRegistersFromMemory(rawMemory);
+    readCompleted.value = true;
+    readingStatusText.value = 'Đã đọc thành công 12 tham số theo ATH_TEMPLATE.csv!';
+    cyberToast.success(`Đã đọc thành công thiết bị: ${registerData.SERIAL_NUMBER || registerData.deviceEUI}`);
+  } catch (err: any) {
+    readingStatusText.value = `Lỗi đọc: ${err.message}`;
+    cyberToast.error(`Lỗi đọc thanh ghi: ${err.message}`);
+  } finally {
+    readingRegisters.value = false;
   }
 }
 
