@@ -25,16 +25,6 @@
         <div class="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            class="btn btn-sm btn-outline btn-neutral"
-            @click="loadPresetFlow('standard')"
-            title="Nạp chuỗi hàm mẫu thường dùng"
-          >
-            <Sparkles class="w-3.5 h-3.5 mr-1" />
-            Kịch Bản Mẫu
-          </button>
-
-          <button
-            type="button"
             class="btn btn-sm btn-ghost text-base-content/70"
             @click="showJsonModal = true"
             title="Xem / Chỉnh sửa cấu trúc JSON"
@@ -77,17 +67,13 @@
       <div>
         <h4 class="font-bold text-sm text-base-content">Chưa có Function Block nào</h4>
         <p class="text-xs text-base-content/60 max-w-md mx-auto mt-1">
-          Bắt đầu tạo luồng kịch bản kiểm tra bằng cách thêm block hàm downlink hoặc tải kịch bản mẫu có sẵn.
+          Bắt đầu tạo luồng kịch bản kiểm tra bằng cách thêm block hàm downlink.
         </p>
       </div>
       <div class="flex items-center justify-center gap-2 pt-2">
         <button type="button" class="btn btn-sm btn-primary" @click="addNewBlock">
           <Plus class="w-4 h-4 mr-1" />
           Thêm Block Đầu Tiên
-        </button>
-        <button type="button" class="btn btn-sm btn-neutral" @click="loadPresetFlow('standard')">
-          <Sparkles class="w-3.5 h-3.5 mr-1" />
-          Nạp Kịch Bản Mẫu
         </button>
       </div>
     </div>
@@ -401,7 +387,6 @@ import {
   ArrowUp,
   ArrowDown,
   Clock,
-  Sparkles,
   Code,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
@@ -575,46 +560,6 @@ function clearAllBlocks() {
   blocks.value = [];
   emitUpdate();
   cyberToast.info('Đã xóa toàn bộ function blocks');
-}
-
-// Preset flows
-function loadPresetFlow(type: string) {
-  if (type === 'standard') {
-    blocks.value = [
-      {
-        id: `block-${Date.now()}-1`,
-        functionType: 'downlink_hex',
-        targetDevice: 'DUT',
-        delaySeconds: 0,
-        payloadHex: '01 00',
-        fPort: 10,
-        confirmed: false,
-        description: 'Bước 1: Gửi lệnh yêu cầu thiết bị DUT gửi báo cáo',
-      },
-      {
-        id: `block-${Date.now()}-2`,
-        functionType: 'delay_wait',
-        targetDevice: 'DUT',
-        delaySeconds: 15,
-        payloadHex: '',
-        fPort: 10,
-        confirmed: false,
-        description: 'Bước 2: Chờ 15s để DUT gửi gói Uplink phản hồi',
-      },
-      {
-        id: `block-${Date.now()}-3`,
-        functionType: 'downlink_hex',
-        targetDevice: 'DUT',
-        delaySeconds: 30,
-        payloadHex: '02 01 2C',
-        fPort: 10,
-        confirmed: true,
-        description: 'Bước 3: Gửi lệnh cấu hình chu kỳ truyền 300s (0x012C)',
-      },
-    ];
-    emitUpdate();
-    cyberToast.success('Đã tải kịch bản Flow mẫu gồm 3 bước!');
-  }
 }
 
 // JSON Modal helpers
