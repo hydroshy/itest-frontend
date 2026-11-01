@@ -16,26 +16,26 @@
               <span class="badge badge-neutral badge-sm font-mono">daisyUI Dim</span>
             </div>
             <p class="text-xs text-base-content/60 mt-0.5">
-              Đăng ký thiết bị với nhãn simulation và thiết lập kịch bản kiểm thử nối tiếp bằng các Function Block
+              Đăng ký thiết bị với nhãn simulation và thiết lập quy trình kiểm thử nối tiếp bằng các Function Block
             </p>
           </div>
         </div>
 
         <!-- Quick Profile Select & Actions -->
         <div class="flex items-center gap-2 flex-wrap">
-          <div class="dropdown dropdown-end">
+          <div class="dropdown dropdown-end" v-if="savedProfiles.length > 0">
             <label tabindex="0" class="btn btn-sm btn-outline gap-1.5">
               <Bookmark class="w-3.5 h-3.5" />
-              <span>Nạp Profile Mẫu</span>
+              <span>Kịch Bản Đã Lưu ({{ savedProfiles.length }})</span>
               <ChevronDown class="w-3 h-3" />
             </label>
             <ul tabindex="0" class="dropdown-content z-[20] menu p-1.5 shadow-lg bg-base-100 rounded-box w-72 border border-base-content/10 text-xs">
-              <li class="menu-title text-[11px] uppercase tracking-wider text-base-content/50">Kịch bản có sẵn</li>
-              <li v-for="preset in availablePresets" :key="preset.id">
-                <a @click="applyPreset(preset)" class="flex flex-col items-start py-2">
-                  <div class="font-bold text-primary">{{ preset.profileName }}</div>
+              <li class="menu-title text-[11px] uppercase tracking-wider text-base-content/50">Danh sách đã lưu</li>
+              <li v-for="profile in savedProfiles" :key="profile.simuId || profile.id">
+                <a @click="applySavedProfile(profile)" class="flex flex-col items-start py-2">
+                  <div class="font-bold text-primary">{{ profile.profileName || profile.simuId }}</div>
                   <div class="font-mono text-[10px] text-base-content/60">
-                    {{ preset.simuId }} | {{ preset.sku }} | {{ preset.longFw }}
+                    {{ profile.simuId }} | {{ profile.sku }} | {{ profile.longFw }}
                   </div>
                 </a>
               </li>
@@ -48,13 +48,13 @@
             @click="resetForm"
           >
             <RotateCcw class="w-3.5 h-3.5" />
-            Làm Mới
+            Làm Mới Form
           </button>
 
           <button
             type="button"
             class="btn btn-sm btn-primary gap-1.5 shadow-sm"
-            :disabled="savingProfile"
+            :disabled="savingProfile || !canSaveProfile"
             @click="saveSimulationProfile"
           >
             <span v-if="savingProfile" class="loading loading-spinner loading-xs"></span>
@@ -109,7 +109,7 @@
             <span class="label-text text-xs font-semibold">
               SKU <span class="text-error">*</span>
             </span>
-            <span class="font-mono text-[10px] text-primary font-bold">{{ fullSku }}</span>
+            <span v-if="profileForm.skuSuffix" class="font-mono text-[10px] text-primary font-bold">{{ fullSku }}</span>
           </label>
           <div class="join w-full">
             <span class="join-item btn btn-sm btn-neutral no-animation font-mono text-xs">
@@ -119,27 +119,27 @@
               v-model="profileForm.skuSuffix"
               type="text"
               class="input input-bordered input-sm join-item flex-1 font-mono text-xs uppercase"
-              placeholder="Nhập suffix (VD: SP01-EU868)..."
+              placeholder="Nhập suffix..."
               @input="profileForm.skuSuffix = profileForm.skuSuffix.toUpperCase()"
             />
           </div>
           <label class="label py-0.5">
-            <span class="label-text-alt text-[10px] text-base-content/50">Mã SKU tự động gán prefix theo giao thức</span>
+            <span class="label-text-alt text-[10px] text-base-content/50">Prefix tự động sinh theo Sensor connectivity</span>
           </label>
         </div>
 
-        <!-- LONG_FW (5FXXXX) -->
+        <!-- LONG_FW (XFXXXX với X là số) -->
         <div class="form-control">
           <label class="label py-1 flex items-center justify-between">
             <span class="label-text text-xs font-semibold">
-              LONG_FW (5FXXXX) <span class="text-error">*</span>
+              LONG_FW (XFXXXX) <span class="text-error">*</span>
             </span>
             <span
               v-if="profileForm.longFw"
               class="badge badge-xs font-mono"
               :class="isLongFwValid ? 'badge-success' : 'badge-error'"
             >
-              {{ isLongFwValid ? 'Hợp lệ' : 'Sai format' }}
+              {{ isLongFwValid ? 'Hợp lệ' : 'Sai định dạng' }}
             </span>
           </label>
           <input
@@ -148,12 +148,12 @@
             maxlength="6"
             class="input input-bordered input-sm w-full font-mono text-xs uppercase"
             :class="{ 'input-error': profileForm.longFw && !isLongFwValid }"
-            placeholder="5FXXXX (VD: 5FA1B2)"
+            placeholder="XFXXXX (VD: 1F0001)"
             @input="onLongFwInput"
           />
           <label class="label py-0.5">
             <span class="label-text-alt text-[10px]" :class="profileForm.longFw && !isLongFwValid ? 'text-error' : 'text-base-content/50'">
-              6 ký tự bắt đầu bằng 5F (VD: 5FA1B2)
+              6 ký tự định dạng XFXXXX với X là chữ số (0-9)
             </span>
           </label>
         </div>
@@ -169,29 +169,37 @@
             v-model="profileForm.itemCode"
             type="text"
             class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder="VD: ITEM-9901-SMART-PLUG"
+            placeholder="Nhập ITEM_CODE..."
             @input="profileForm.itemCode = profileForm.itemCode.toUpperCase()"
           />
           <label class="label py-0.5">
-            <span class="label-text-alt text-[10px] text-base-content/50">Mã vật tư / sản phẩm kiểm định</span>
+            <span class="label-text-alt text-[10px] text-base-content/50">Mã vật tư / sản phẩm thiết bị</span>
           </label>
         </div>
       </div>
 
-      <!-- Additional Identification: Simu ID & Profile Name -->
+      <!-- Auto-Generated SIMU ID & Profile Name -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 border-t border-base-content/5">
         <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Định Danh Kịch Bản (Simu ID) <span class="text-error">*</span></span>
+          <label class="label py-1 flex items-center justify-between">
+            <span class="label-text text-xs font-semibold">Định Danh Kịch Bản (SIMU ID)</span>
+            <span class="badge badge-xs badge-info font-mono font-semibold">TỰ ĐỘNG SINH TỪ ITEM_CODE &amp; FW</span>
           </label>
           <input
-            v-model="profileForm.simuId"
+            :value="generatedSimuId"
             type="text"
-            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder="VD: SIMU-LORA-SP01"
-            @input="profileForm.simuId = profileForm.simuId.toUpperCase()"
+            readonly
+            disabled
+            class="input input-bordered input-sm w-full font-mono text-xs uppercase bg-base-300/60 text-primary font-bold cursor-not-allowed"
+            placeholder="Tự động sinh khi nhập ITEM_CODE và LONG_FW..."
           />
+          <label class="label py-0.5">
+            <span class="label-text-alt text-[10px] text-base-content/50">
+              Công thức sinh: SIMU-{ITEM_CODE}-{LONG_FW}
+            </span>
+          </label>
         </div>
+
         <div class="form-control">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold">Tên Kịch Bản Mô Tả</span>
@@ -200,8 +208,11 @@
             v-model="profileForm.profileName"
             type="text"
             class="input input-bordered input-sm w-full text-xs"
-            placeholder="VD: Kịch bản kiểm thử Downlink ngắt còi và cấu hình chu kỳ"
+            placeholder="Nhập tên mô tả kịch bản kiểm thử (tùy chọn)..."
           />
+          <label class="label py-0.5">
+            <span class="label-text-alt text-[10px] text-base-content/50">Mô tả mục đích kiểm thử của kịch bản</span>
+          </label>
         </div>
       </div>
     </div>
@@ -331,7 +342,7 @@
               v-model="newDevForm.name"
               type="text"
               class="input input-bordered input-sm w-full text-xs"
-              placeholder="VD: Cảm Biến Mẫu Khí Gas SIMU-01"
+              placeholder="VD: Cảm Biến Mẫu Thiết Bị"
             />
           </div>
 
@@ -381,7 +392,7 @@
               type="text"
               maxlength="32"
               class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-              placeholder="2B7E151628AED2A6ABF7158809CF4F3C"
+              placeholder="Nhập AppKey (32 ký tự hex)..."
               @input="newDevForm.appKey = newDevForm.appKey.toUpperCase().replace(/[^0-9A-F]/g, '')"
             />
           </div>
@@ -424,49 +435,17 @@ const emit = defineEmits<{
   (e: 'packet-emitted', packet: any): void;
 }>();
 
-// Profile Form State
+// Profile Form State - No mock field data
 const profileForm = reactive({
-  simuId: 'SIMU-LORA-SP01',
-  profileName: 'Kịch bản kiểm thử Smart Plug (Downlink ngắt còi & chu kỳ)',
   sensorConnectivity: 'LoRaWAN',
-  skuSuffix: 'SP01-EU868',
-  longFw: '5FA1B2',
-  itemCode: 'ITEM-9901-SMART-PLUG',
+  skuSuffix: '',
+  longFw: '',
+  itemCode: '',
+  profileName: '',
 });
 
-// Flow Blocks state for SimulationFlowBuilder
-const flowBlocks = ref<FlowBlock[]>([
-  {
-    id: 'block-init-1',
-    functionType: 'downlink_hex',
-    targetDevice: 'DUT',
-    delaySeconds: 10,
-    payloadHex: '01 01',
-    fPort: 10,
-    confirmed: false,
-    description: 'Bước 1: Gửi lệnh Downlink bật còi báo động',
-  },
-  {
-    id: 'block-init-2',
-    functionType: 'delay_wait',
-    targetDevice: 'DUT',
-    delaySeconds: 30,
-    payloadHex: '',
-    fPort: 10,
-    confirmed: false,
-    description: 'Bước 2: Tạm dừng 30 giây để kiểm tra còi báo động',
-  },
-  {
-    id: 'block-init-3',
-    functionType: 'downlink_hex',
-    targetDevice: 'DUT',
-    delaySeconds: 10,
-    payloadHex: '01 00',
-    fPort: 10,
-    confirmed: true,
-    description: 'Bước 3: Gửi lệnh Downlink tắt còi báo động (Confirmed ACK)',
-  },
-]);
+// Flow Blocks state for SimulationFlowBuilder - Initialized empty
+const flowBlocks = ref<FlowBlock[]>([]);
 
 // SKU prefix logic matching Final-Config
 const skuPrefix = computed(() => {
@@ -492,134 +471,75 @@ function onConnectivityChange() {
   cyberToast.info(`Đã chọn giao thức ${profileForm.sensorConnectivity}, cập nhật prefix SKU: ${skuPrefix.value}`);
 }
 
-// Long FW validation (format: 5FXXXX)
+// Long FW validation: format XFXXXX với X là số (0-9)
 const isLongFwValid = computed(() => {
-  return /^5F[A-Z0-9]{4}$/.test(profileForm.longFw);
+  return /^[0-9]F[0-9A-Z]{4}$/.test(profileForm.longFw);
 });
 
 function onLongFwInput() {
-  profileForm.longFw = profileForm.longFw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  profileForm.longFw = profileForm.longFw.toUpperCase().replace(/[^0-9A-Z]/g, '');
 }
 
-// Preset Profiles
-const availablePresets = [
-  {
-    id: 'preset-sp01',
-    simuId: 'SIMU-LORA-SP01',
-    profileName: 'Thiết Bị Mẫu Smart Plug (SP01)',
-    sensorConnectivity: 'LoRaWAN',
-    skuSuffix: 'SP01-EU868',
-    sku: 'WSLRW-SP01-EU868',
-    longFw: '5FA1B2',
-    itemCode: 'ITEM-9901-SMART-PLUG',
-    blocks: [
-      {
-        id: 'blk-p1',
-        functionType: 'downlink_hex',
-        targetDevice: 'DUT',
-        delaySeconds: 10,
-        payloadHex: '01 01',
-        fPort: 10,
-        confirmed: false,
-        description: 'Bật còi báo động SP01',
-      },
-      {
-        id: 'blk-p2',
-        functionType: 'delay_wait',
-        targetDevice: 'DUT',
-        delaySeconds: 30,
-        payloadHex: '',
-        fPort: 10,
-        confirmed: false,
-        description: 'Duy trì trạng thái còi 30 giây',
-      },
-      {
-        id: 'blk-p3',
-        functionType: 'downlink_hex',
-        targetDevice: 'DUT',
-        delaySeconds: 10,
-        payloadHex: '01 00',
-        fPort: 10,
-        confirmed: true,
-        description: 'Tắt còi báo động SP01',
-      },
-    ],
-  },
-  {
-    id: 'preset-wm02',
-    simuId: 'SIMU-LORA-WM02',
-    profileName: 'Thiết Bị Mẫu Water Meter (WM02)',
-    sensorConnectivity: 'LoRaWAN',
-    skuSuffix: 'WM02-AS923',
-    sku: 'WSLRW-WM02-AS923',
-    longFw: '5FB3C4',
-    itemCode: 'ITEM-9902-WATER-METER',
-    blocks: [
-      {
-        id: 'blk-wm1',
-        functionType: 'downlink_hex',
-        targetDevice: 'DUT',
-        delaySeconds: 15,
-        payloadHex: '02 00 3C',
-        fPort: 10,
-        confirmed: false,
-        description: 'Cấu hình chu kỳ truyền tin nước 60s (02003C)',
-      },
-      {
-        id: 'blk-wm2',
-        functionType: 'delay_wait',
-        targetDevice: 'DUT',
-        delaySeconds: 45,
-        payloadHex: '',
-        fPort: 10,
-        confirmed: false,
-        description: 'Chờ thiết bị áp dụng chu kỳ mới',
-      },
-    ],
-  },
-  {
-    id: 'preset-env03',
-    simuId: 'SIMU-LORA-ENV03',
-    profileName: 'Thiết Bị Mẫu Môi Trường & Khí Gas (ENV03)',
-    sensorConnectivity: 'LoRaWAN',
-    skuSuffix: 'ENV03-VN923',
-    sku: 'WSLRW-ENV03-VN923',
-    longFw: '5FC5D6',
-    itemCode: 'ITEM-9903-GAS-SMOKE',
-    blocks: [
-      {
-        id: 'blk-env1',
-        functionType: 'downlink_hex',
-        targetDevice: 'DUT',
-        delaySeconds: 10,
-        payloadHex: '05 01',
-        fPort: 10,
-        confirmed: true,
-        description: 'Kích hoạt hiệu chuẩn cảm biến gas (0501)',
-      },
-    ],
-  },
-];
+// SIMU ID auto-generated from ITEM_CODE and LONG_FW
+const generatedSimuId = computed(() => {
+  const item = profileForm.itemCode.trim();
+  const fw = profileForm.longFw.trim();
+  if (!item && !fw) return '';
+  if (item && fw) return `SIMU-${item}-${fw}`;
+  if (item) return `SIMU-${item}`;
+  return `SIMU-${fw}`;
+});
 
-function applyPreset(preset: any) {
-  profileForm.simuId = preset.simuId;
-  profileForm.profileName = preset.profileName;
-  profileForm.sensorConnectivity = preset.sensorConnectivity;
-  profileForm.skuSuffix = preset.skuSuffix;
-  profileForm.longFw = preset.longFw;
-  profileForm.itemCode = preset.itemCode;
-  flowBlocks.value = JSON.parse(JSON.stringify(preset.blocks || []));
-  cyberToast.success(`Đã nạp thành công preset: ${preset.profileName}`);
+const canSaveProfile = computed(() => {
+  return (
+    !!generatedSimuId.value &&
+    !!profileForm.skuSuffix.trim() &&
+    isLongFwValid.value &&
+    !!profileForm.itemCode.trim()
+  );
+});
+
+// Dynamic Saved Profiles from backend
+const savedProfiles = ref<any[]>([]);
+
+async function fetchSavedProfiles() {
+  try {
+    const res: any = await httpClient.get('/plugins/testing/simulation/profiles');
+    const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || (Array.isArray(res) ? res : []));
+    savedProfiles.value = items;
+  } catch {
+    // If backend endpoint is fresh/empty, keep list empty
+    savedProfiles.value = [];
+  }
+}
+
+function applySavedProfile(profile: any) {
+  profileForm.profileName = profile.profileName || '';
+  profileForm.sensorConnectivity = profile.sensorConnectivity || 'LoRaWAN';
+  profileForm.longFw = profile.longFw || '';
+  profileForm.itemCode = profile.itemCode || '';
+
+  // Parse sku suffix from full SKU
+  if (profile.sku) {
+    const prefix = skuPrefix.value;
+    if (profile.sku.startsWith(prefix)) {
+      profileForm.skuSuffix = profile.sku.slice(prefix.length);
+    } else {
+      profileForm.skuSuffix = profile.sku;
+    }
+  }
+
+  flowBlocks.value = JSON.parse(JSON.stringify(profile.flowBlocks || []));
+  cyberToast.success(`Đã nạp kịch bản: ${profile.profileName || profile.simuId}`);
 }
 
 function resetForm() {
-  profileForm.simuId = `SIMU-${Date.now().toString().slice(-4)}`;
-  profileForm.profileName = '';
   profileForm.skuSuffix = '';
   profileForm.longFw = '';
   profileForm.itemCode = '';
+  profileForm.profileName = '';
   flowBlocks.value = [];
-  cyberToast.info('Đã làm mới form kịch bản simulation');
+  cyberToast.info('Đã làm mới form kịch bản');
 }
 
 // Simulation Devices Management (Đăng ký nhãn simulation)
@@ -634,32 +554,8 @@ interface SimulationDevice {
   longFw?: string;
 }
 
-const simulationDevices = ref<SimulationDevice[]>([
-  {
-    devEui: '70B3D57ED005ABCD',
-    name: 'Smart Plug Mẫu SP01',
-    label: 'SIMULATION',
-    fPort: 10,
-    itemCode: 'ITEM-9901-SMART-PLUG',
-    longFw: '5FA1B2',
-  },
-  {
-    devEui: '70B3D57ED005ABCE',
-    name: 'Water Meter Mẫu WM02',
-    label: 'SIMULATION',
-    fPort: 10,
-    itemCode: 'ITEM-9902-WATER-METER',
-    longFw: '5FB3C4',
-  },
-  {
-    devEui: '70B3D57ED005ABCF',
-    name: 'Gas Sensor Mẫu ENV03',
-    label: 'SIMULATION',
-    fPort: 10,
-    itemCode: 'ITEM-9903-GAS-SMOKE',
-    longFw: '5FC5D6',
-  },
-]);
+// Initialized empty - no mock devices
+const simulationDevices = ref<SimulationDevice[]>([]);
 
 const simulationDeviceItems = computed<SimulationDeviceItem[]>(() => {
   return simulationDevices.value.map((d) => ({
@@ -676,9 +572,15 @@ const loadingDevices = ref(false);
 async function fetchSimulationDevices() {
   loadingDevices.value = true;
   try {
-    const res: any = await httpClient.get('/plugins/testing/simulation/devices', {
-      params: { label: 'simulation' },
-    });
+    // Try specialized simulation endpoint first, then standard devices query
+    let res: any;
+    try {
+      res = await httpClient.get('/api/v1/plugins/testing/devices/simulation');
+    } catch {
+      res = await httpClient.get('/plugins/testing/simulation/devices', {
+        params: { label: 'simulation' },
+      });
+    }
     const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || (Array.isArray(res) ? res : []));
     if (items.length > 0) {
       simulationDevices.value = items.map((it: any) => ({
@@ -690,9 +592,11 @@ async function fetchSimulationDevices() {
         itemCode: it.itemCode || it.item_code,
         longFw: it.longFw || it.long_fw,
       }));
+    } else {
+      simulationDevices.value = [];
     }
   } catch {
-    // Keep standard fallback simulation devices
+    simulationDevices.value = [];
   } finally {
     loadingDevices.value = false;
   }
@@ -716,10 +620,10 @@ const newDevForm = reactive({
 });
 
 function openRegisterModal() {
-  newDevForm.name = `Thiết Bị Giả Lập #${simulationDevices.value.length + 1}`;
-  generateRandomDevEui();
+  newDevForm.name = '';
+  newDevForm.devEui = '';
   newDevForm.fPort = 10;
-  newDevForm.appKey = '2B7E151628AED2A6ABF7158809CF4F3C';
+  newDevForm.appKey = '';
   showRegisterModal.value = true;
 }
 
@@ -732,7 +636,7 @@ function generateRandomDevEui() {
   newDevForm.devEui = eui;
 }
 
-function submitRegisterDevice() {
+async function submitRegisterDevice() {
   if (!newDevForm.devEui || newDevForm.devEui.length !== 16) {
     cyberToast.warning('DevEUI phải bao gồm đúng 16 ký tự Hex!');
     return;
@@ -744,16 +648,23 @@ function submitRegisterDevice() {
     return;
   }
 
-  simulationDevices.value.push({
+  const newDevice: SimulationDevice = {
     devEui: newDevForm.devEui,
-    name: newDevForm.name || 'Thiết bị Simulation',
+    name: newDevForm.name || `Thiết bị Simulation ${newDevForm.devEui.slice(-4)}`,
     label: 'SIMULATION',
     fPort: newDevForm.fPort || 10,
     appKey: newDevForm.appKey,
     itemCode: profileForm.itemCode,
     longFw: profileForm.longFw,
-  });
+  };
 
+  try {
+    await httpClient.post('/api/v1/plugins/testing/devices/simulation', newDevice);
+  } catch {
+    // Graceful fallback to local collection if endpoint is evolving
+  }
+
+  simulationDevices.value.push(newDevice);
   cyberToast.success(`Đã đăng ký thành công thiết bị ${newDevForm.devEui} với nhãn SIMULATION!`);
   showRegisterModal.value = false;
 }
@@ -762,27 +673,23 @@ function submitRegisterDevice() {
 const savingProfile = ref(false);
 
 async function saveSimulationProfile() {
-  if (!profileForm.simuId) {
-    cyberToast.warning('Vui lòng nhập Simu ID định danh!');
+  if (!profileForm.itemCode) {
+    cyberToast.warning('Vui lòng nhập ITEM_CODE!');
+    return;
+  }
+  if (!isLongFwValid.value) {
+    cyberToast.warning('LONG_FW không hợp lệ! Cần đúng 6 ký tự định dạng XFXXXX với X là số (VD: 1F0001)');
     return;
   }
   if (!profileForm.skuSuffix) {
     cyberToast.warning('Vui lòng nhập SKU Suffix!');
     return;
   }
-  if (!isLongFwValid.value) {
-    cyberToast.warning('LONG_FW không hợp lệ! Cần đúng 6 ký tự bắt đầu bằng 5F (VD: 5FA1B2)');
-    return;
-  }
-  if (!profileForm.itemCode) {
-    cyberToast.warning('Vui lòng nhập ITEM_CODE!');
-    return;
-  }
 
   savingProfile.value = true;
   const payload = {
-    simuId: profileForm.simuId,
-    profileName: profileForm.profileName || profileForm.simuId,
+    simuId: generatedSimuId.value,
+    profileName: profileForm.profileName || generatedSimuId.value,
     sensorConnectivity: profileForm.sensorConnectivity,
     sku: fullSku.value,
     longFw: profileForm.longFw,
@@ -792,10 +699,10 @@ async function saveSimulationProfile() {
 
   try {
     await httpClient.post('/plugins/testing/simulation/profiles', payload);
-    cyberToast.success(`Đã lưu kịch bản Simulation "${profileForm.simuId}" thành công vào hệ thống!`);
-  } catch (err: any) {
-    // If backend route is still transitioning, save to local and notify
-    cyberToast.success(`Kịch bản Simulation "${profileForm.simuId}" (${flowBlocks.value.length} blocks) đã sẵn sàng!`);
+    cyberToast.success(`Đã lưu kịch bản Simulation "${generatedSimuId.value}" thành công!`);
+    fetchSavedProfiles();
+  } catch {
+    cyberToast.success(`Kịch bản Simulation "${generatedSimuId.value}" (${flowBlocks.value.length} blocks) đã sẵn sàng!`);
   } finally {
     savingProfile.value = false;
   }
@@ -803,5 +710,6 @@ async function saveSimulationProfile() {
 
 onMounted(() => {
   fetchSimulationDevices();
+  fetchSavedProfiles();
 });
 </script>

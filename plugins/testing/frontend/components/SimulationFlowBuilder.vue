@@ -531,10 +531,10 @@ function addNewBlock() {
     functionType: 'downlink_hex',
     targetDevice: 'DUT',
     delaySeconds: blocks.value.length === 0 ? 0 : 30,
-    payloadHex: '01 00',
+    payloadHex: '',
     fPort: 10,
     confirmed: false,
-    description: `Bước #${blocks.value.length + 1}: Gửi lệnh cấu hình`,
+    description: '',
   };
   blocks.value.push(newBlock);
   emitUpdate();
