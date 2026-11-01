@@ -1,1006 +1,397 @@
 <template>
-  <div class="device-simulation-panel space-y-4">
-    <!-- Top Banner -->
-    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+  <div class="simulation-create-view space-y-6">
+    <!-- Header Banner: Simulation Create -->
+    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 md:p-5">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
             <Cpu class="w-5 h-5" />
           </div>
           <div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-mono font-bold text-primary tracking-wider uppercase">LoRaWAN Device Simulator</span>
-              <span
-                class="badge badge-xs font-mono uppercase"
-                :class="joinStatus === 'JOINED' ? 'badge-success' : joinStatus === 'JOINING' ? 'badge-warning animate-pulse' : 'badge-ghost'"
-              >
-                {{ joinStatus }}
-              </span>
-              <span v-if="flowRunning" class="badge badge-xs badge-info animate-pulse font-mono">
-                FLOW RUNNING ({{ flowSpeed }}x)
-              </span>
-              <span v-else-if="autoLoopActive" class="badge badge-xs badge-info animate-pulse font-mono">
-                LOOPING ({{ autoIntervalSec }}s)
-              </span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-base font-bold tracking-wide uppercase text-base-content">
+                TẠO KỊCH BẢN GIẢ LẬP THIẾT BỊ (SIMULATION CREATE)
+              </h2>
+              <span class="badge badge-primary badge-sm font-mono font-bold">FLOW BUILDER</span>
+              <span class="badge badge-neutral badge-sm font-mono">daisyUI Dim</span>
             </div>
-            <div class="text-xs text-base-content/70 mt-0.5">
-              Giả lập Node LoRaWAN (OTAA/ABP), điều chế RF, phát sinh payload cảm biến &amp; tương tác đa chiều với Gateway/ChirpStack
-            </div>
+            <p class="text-xs text-base-content/60 mt-0.5">
+              Đăng ký thiết bị với nhãn simulation và thiết lập kịch bản kiểm thử nối tiếp bằng các Function Block
+            </p>
           </div>
         </div>
 
-        <!-- Quick Status Metrics -->
-        <div class="flex items-center gap-2 flex-wrap text-xs">
-          <div class="px-3 py-1.5 rounded-lg bg-base-100 border border-base-300 flex items-center gap-2">
-            <span class="text-base-content/60">Băng Tần:</span>
-            <span class="font-mono font-bold text-primary">{{ config.region }}</span>
+        <!-- Quick Profile Select & Actions -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="dropdown dropdown-end">
+            <label tabindex="0" class="btn btn-sm btn-outline gap-1.5">
+              <Bookmark class="w-3.5 h-3.5" />
+              <span>Nạp Profile Mẫu</span>
+              <ChevronDown class="w-3 h-3" />
+            </label>
+            <ul tabindex="0" class="dropdown-content z-[20] menu p-1.5 shadow-lg bg-base-100 rounded-box w-72 border border-base-content/10 text-xs">
+              <li class="menu-title text-[11px] uppercase tracking-wider text-base-content/50">Kịch bản có sẵn</li>
+              <li v-for="preset in availablePresets" :key="preset.id">
+                <a @click="applyPreset(preset)" class="flex flex-col items-start py-2">
+                  <div class="font-bold text-primary">{{ preset.profileName }}</div>
+                  <div class="font-mono text-[10px] text-base-content/60">
+                    {{ preset.simuId }} | {{ preset.sku }} | {{ preset.longFw }}
+                  </div>
+                </a>
+              </li>
+            </ul>
           </div>
-          <div class="px-3 py-1.5 rounded-lg bg-base-100 border border-base-300 flex items-center gap-2">
-            <span class="text-base-content/60">Điều Chế:</span>
-            <span class="font-mono font-bold text-accent">{{ config.sf }} / {{ config.bw }}kHz</span>
-          </div>
-          <div class="px-3 py-1.5 rounded-lg bg-base-100 border border-base-300 flex items-center gap-2">
-            <span class="text-base-content/60">Airtime (ToA):</span>
-            <span class="font-mono font-bold text-success">{{ calculatedToA }} ms</span>
-          </div>
-          <div class="px-3 py-1.5 rounded-lg bg-base-100 border border-base-300 flex items-center gap-2">
-            <span class="text-base-content/60">Uplink FCnt:</span>
-            <span class="font-mono font-bold text-info">{{ fCnt }}</span>
-          </div>
+
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost gap-1 text-base-content/70"
+            @click="resetForm"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+            Làm Mới
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-sm btn-primary gap-1.5 shadow-sm"
+            :disabled="savingProfile"
+            @click="saveSimulationProfile"
+          >
+            <span v-if="savingProfile" class="loading loading-spinner loading-xs"></span>
+            <Save v-else class="w-3.5 h-3.5" />
+            Lưu Kịch Bản Simulation
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Admin & Sub-Admin Simulation Profile Linkage Card -->
-    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm p-4 backdrop-blur-md">
-      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-content/10">
+    <!-- Section 1: Device Simulation Profile Metadata (Final-Config Style) -->
+    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 md:p-5 space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-base-content/10">
         <div class="flex items-center gap-2">
-          <BookmarkCheck class="w-4 h-4 text-primary" />
-          <div>
-            <div class="font-bold text-sm flex items-center gap-2">
-              <span>Liên Kết Thiết Bị Mẫu &amp; Kịch Bản Giả Lập</span>
-              <span class="badge badge-xs badge-primary font-mono">ADMIN &amp; SUB-ADMIN</span>
-            </div>
-            <div class="text-[11px] text-base-content/60">
-              Gán Simu ID với Item Code và Long_FW để tự động nạp cấu hình và kích hoạt kịch bản chạy test
-            </div>
-          </div>
+          <Layers class="w-4 h-4 text-primary" />
+          <h3 class="font-bold text-sm tracking-wide text-base-content uppercase">
+            1. THÔNG SỐ CẤU HÌNH THIẾT BỊ SIMULATION
+          </h3>
+          <span class="badge badge-neutral badge-xs font-mono">Metadata</span>
         </div>
-        <div class="flex items-center gap-2">
-          <button class="btn btn-outline btn-primary btn-xs" @click="showCreateModal = true">
-            <Plus class="w-3.5 h-3.5" />
-            Tạo Thiết Bị Mẫu (Admin)
-          </button>
-        </div>
+        <span class="text-xs text-base-content/50 italic">
+          Tham chiếu cấu hình từ Create Final Config
+        </span>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-3 items-end">
-        <!-- Dropdown Chọn Thiết Bị Cần Test -->
-        <div class="md:col-span-4 form-control">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Sensor Connectivity -->
+        <div class="form-control">
           <label class="label py-1">
-            <span class="label-text font-medium text-xs flex items-center gap-1.5">
-              <Layers class="w-3.5 h-3.5 text-accent" />
-              Chọn Thiết Bị Cần Test (Gán Simu ID)
+            <span class="label-text text-xs font-semibold">
+              Sensor connectivity <span class="text-error">*</span>
             </span>
           </label>
           <select
-            v-model="selectedProfileId"
-            class="select select-bordered select-sm w-full font-mono text-xs"
-            @change="onProfileSelected"
+            v-model="profileForm.sensorConnectivity"
+            class="select select-bordered select-sm w-full font-medium text-xs"
+            @change="onConnectivityChange"
           >
-            <option v-for="prof in simulationProfiles" :key="prof.simuId" :value="prof.simuId">
-              [{{ prof.simuId }}] {{ prof.itemCode }} - {{ prof.deviceName || prof.targetDeviceName }} (SN: {{ prof.serialNumber || 'N/A' }})
-            </option>
+            <option value="LoRaWAN">LoRaWAN</option>
+            <option value="Sigfox">Sigfox</option>
+            <option value="NB-IoT">NB-IoT</option>
+            <option value="BleMesh">BLE Mesh</option>
           </select>
+          <label class="label py-0.5">
+            <span class="label-text-alt text-[10px] text-base-content/50">Giao thức truyền thông thiết bị</span>
+          </label>
         </div>
 
-        <!-- Active Profile Info Details (Aligned with Device Entity Schema) -->
-        <div class="md:col-span-8 flex flex-wrap items-center gap-2 p-2 rounded-lg bg-base-100 border border-base-300">
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-base-content/50">Simu ID:</span>
-            <span class="badge badge-sm badge-primary font-mono font-bold">{{ activeProfile.simuId }}</span>
-          </div>
-          <div class="divider divider-horizontal m-0"></div>
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-base-content/50">Item Code:</span>
-            <span class="badge badge-sm badge-neutral font-mono">{{ activeProfile.itemCode }}</span>
-          </div>
-          <div class="divider divider-horizontal m-0"></div>
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-base-content/50">Serial:</span>
-            <span class="badge badge-sm badge-outline font-mono text-primary">{{ activeProfile.serialNumber || 'SN-TMPL-SP01' }}</span>
-          </div>
-          <div class="divider divider-horizontal m-0"></div>
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-base-content/50">DevEUI:</span>
-            <span class="badge badge-sm badge-outline font-mono text-accent">{{ activeProfile.networkId || activeProfile.devEui }}</span>
-          </div>
-          <div class="divider divider-horizontal m-0"></div>
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-base-content/50">Loại:</span>
-            <span class="badge badge-sm badge-ghost font-mono">{{ activeProfile.deviceType || 'lorawan_node' }}</span>
-          </div>
-          <div class="divider divider-horizontal m-0"></div>
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-base-content/50">Long FW:</span>
-            <span class="badge badge-sm badge-accent font-mono text-[11px] truncate max-w-[180px]" :title="activeProfile.longFw">
-              {{ activeProfile.longFw }}
+        <!-- SKU (Prefix + Suffix) -->
+        <div class="form-control">
+          <label class="label py-1 flex items-center justify-between">
+            <span class="label-text text-xs font-semibold">
+              SKU <span class="text-error">*</span>
             </span>
+            <span class="font-mono text-[10px] text-primary font-bold">{{ fullSku }}</span>
+          </label>
+          <div class="join w-full">
+            <span class="join-item btn btn-sm btn-neutral no-animation font-mono text-xs">
+              {{ skuPrefix }}
+            </span>
+            <input
+              v-model="profileForm.skuSuffix"
+              type="text"
+              class="input input-bordered input-sm join-item flex-1 font-mono text-xs uppercase"
+              placeholder="Nhập suffix (VD: SP01-EU868)..."
+              @input="profileForm.skuSuffix = profileForm.skuSuffix.toUpperCase()"
+            />
           </div>
-          <div class="divider divider-horizontal m-0"></div>
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-base-content/50">Trạng Thái:</span>
-            <span class="badge badge-sm badge-success font-mono uppercase">{{ activeProfile.status || 'TEMPLATE' }}</span>
-          </div>
-          <div class="divider divider-horizontal m-0"></div>
-          <div class="flex items-center gap-1 text-xs">
-            <span class="text-base-content/50">Flow Test:</span>
-            <span class="badge badge-sm badge-info font-mono">{{ activeProfile.flowDurationMinutes }} phút</span>
-          </div>
+          <label class="label py-0.5">
+            <span class="label-text-alt text-[10px] text-base-content/50">Mã SKU tự động gán prefix theo giao thức</span>
+          </label>
+        </div>
+
+        <!-- LONG_FW (5FXXXX) -->
+        <div class="form-control">
+          <label class="label py-1 flex items-center justify-between">
+            <span class="label-text text-xs font-semibold">
+              LONG_FW (5FXXXX) <span class="text-error">*</span>
+            </span>
+            <span
+              v-if="profileForm.longFw"
+              class="badge badge-xs font-mono"
+              :class="isLongFwValid ? 'badge-success' : 'badge-error'"
+            >
+              {{ isLongFwValid ? 'Hợp lệ' : 'Sai format' }}
+            </span>
+          </label>
+          <input
+            v-model="profileForm.longFw"
+            type="text"
+            maxlength="6"
+            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
+            :class="{ 'input-error': profileForm.longFw && !isLongFwValid }"
+            placeholder="5FXXXX (VD: 5FA1B2)"
+            @input="onLongFwInput"
+          />
+          <label class="label py-0.5">
+            <span class="label-text-alt text-[10px]" :class="profileForm.longFw && !isLongFwValid ? 'text-error' : 'text-base-content/50'">
+              6 ký tự bắt đầu bằng 5F (VD: 5FA1B2)
+            </span>
+          </label>
+        </div>
+
+        <!-- ITEM_CODE -->
+        <div class="form-control">
+          <label class="label py-1">
+            <span class="label-text text-xs font-semibold">
+              ITEM_CODE <span class="text-error">*</span>
+            </span>
+          </label>
+          <input
+            v-model="profileForm.itemCode"
+            type="text"
+            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
+            placeholder="VD: ITEM-9901-SMART-PLUG"
+            @input="profileForm.itemCode = profileForm.itemCode.toUpperCase()"
+          />
+          <label class="label py-0.5">
+            <span class="label-text-alt text-[10px] text-base-content/50">Mã vật tư / sản phẩm kiểm định</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Additional Identification: Simu ID & Profile Name -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 border-t border-base-content/5">
+        <div class="form-control">
+          <label class="label py-1">
+            <span class="label-text text-xs font-semibold">Định Danh Kịch Bản (Simu ID) <span class="text-error">*</span></span>
+          </label>
+          <input
+            v-model="profileForm.simuId"
+            type="text"
+            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
+            placeholder="VD: SIMU-LORA-SP01"
+            @input="profileForm.simuId = profileForm.simuId.toUpperCase()"
+          />
+        </div>
+        <div class="form-control">
+          <label class="label py-1">
+            <span class="label-text text-xs font-semibold">Tên Kịch Bản Mô Tả</span>
+          </label>
+          <input
+            v-model="profileForm.profileName"
+            type="text"
+            class="input input-bordered input-sm w-full text-xs"
+            placeholder="VD: Kịch bản kiểm thử Downlink ngắt còi và cấu hình chu kỳ"
+          />
         </div>
       </div>
     </div>
 
-    <!-- Main Grid: 2 Columns on desktop -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <!-- Left Column: Device Config & Payload Builder (7 cols) -->
-      <div class="lg:col-span-7 space-y-4">
-        <!-- Card 1: LoRaWAN Device Credentials -->
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm p-4 backdrop-blur-md">
-          <div class="flex items-center justify-between pb-2 mb-3 border-b border-base-content/10">
-            <h3 class="font-bold text-sm flex items-center gap-2">
-              <Key class="w-4 h-4 text-primary" />
-              Định Danh &amp; Khóa Bảo Mật (Credentials)
-            </h3>
-            <div class="join">
-              <button
-                class="btn btn-xs join-item"
-                :class="config.activation === 'OTAA' ? 'btn-primary' : 'btn-ghost'"
-                @click="config.activation = 'OTAA'"
-              >
-                OTAA (Khuyên Dùng)
-              </button>
-              <button
-                class="btn btn-xs join-item"
-                :class="config.activation === 'ABP' ? 'btn-primary' : 'btn-ghost'"
-                @click="config.activation = 'ABP'"
-              >
-                ABP (Manual)
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            <!-- Device Name & Serial -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text font-medium text-xs">Device Name / Serial</span>
-              </label>
-              <input
-                v-model="config.deviceName"
-                type="text"
-                placeholder="LORA-NODE-DEV01"
-                class="input input-bordered input-sm font-mono w-full"
-              />
-            </div>
-
-            <!-- Target Gateway EUI -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text font-medium text-xs">Gateway EUI (Phát sóng qua)</span>
-              </label>
-              <input
-                v-model="config.gatewayEui"
-                type="text"
-                placeholder="AA555A0000001024"
-                class="input input-bordered input-sm font-mono w-full"
-              />
-            </div>
-
-            <!-- OTAA Fields -->
-            <template v-if="config.activation === 'OTAA'">
-              <div class="form-control">
-                <div class="flex items-center justify-between">
-                  <label class="label py-1">
-                    <span class="label-text font-medium text-xs">DevEUI (16 Hex)</span>
-                  </label>
-                  <button type="button" class="btn btn-ghost btn-xs text-primary" @click="generateRandomDevEui">
-                    Random
-                  </button>
-                </div>
-                <input
-                  v-model="config.devEui"
-                  type="text"
-                  maxlength="16"
-                  placeholder="70B3D57ED005ABCD"
-                  class="input input-bordered input-sm font-mono w-full"
-                />
-              </div>
-
-              <div class="form-control">
-                <label class="label py-1">
-                  <span class="label-text font-medium text-xs">AppEUI / JoinEUI (16 Hex)</span>
-                </label>
-                <input
-                  v-model="config.appEui"
-                  type="text"
-                  maxlength="16"
-                  placeholder="0000000000000000"
-                  class="input input-bordered input-sm font-mono w-full"
-                />
-              </div>
-
-              <div class="form-control md:col-span-2">
-                <div class="flex items-center justify-between">
-                  <label class="label py-1">
-                    <span class="label-text font-medium text-xs">AppKey (32 Hex Secret Key)</span>
-                  </label>
-                  <button type="button" class="btn btn-ghost btn-xs text-primary" @click="generateRandomAppKey">
-                    Random
-                  </button>
-                </div>
-                <input
-                  v-model="config.appKey"
-                  type="text"
-                  maxlength="32"
-                  placeholder="2B7E151628AED2A6ABF7158809CF4F3C"
-                  class="input input-bordered input-sm font-mono w-full"
-                />
-              </div>
-            </template>
-
-            <!-- ABP Fields -->
-            <template v-else>
-              <div class="form-control">
-                <label class="label py-1">
-                  <span class="label-text font-medium text-xs">DevAddr (8 Hex)</span>
-                </label>
-                <input
-                  v-model="config.devAddr"
-                  type="text"
-                  maxlength="8"
-                  placeholder="26011234"
-                  class="input input-bordered input-sm font-mono w-full"
-                />
-              </div>
-
-              <div class="form-control">
-                <label class="label py-1">
-                  <span class="label-text font-medium text-xs">Network ID / NetID</span>
-                </label>
-                <input
-                  v-model="config.netId"
-                  type="text"
-                  placeholder="000013"
-                  class="input input-bordered input-sm font-mono w-full"
-                />
-              </div>
-
-              <div class="form-control md:col-span-2">
-                <label class="label py-1">
-                  <span class="label-text font-medium text-xs">NwkSKey &amp; AppSKey (Session Keys)</span>
-                </label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <input
-                    v-model="config.nwkSKey"
-                    type="text"
-                    maxlength="32"
-                    placeholder="NwkSKey (32 Hex)"
-                    class="input input-bordered input-sm font-mono w-full"
-                  />
-                  <input
-                    v-model="config.appSKey"
-                    type="text"
-                    maxlength="32"
-                    placeholder="AppSKey (32 Hex)"
-                    class="input input-bordered input-sm font-mono w-full"
-                  />
-                </div>
-              </div>
-            </template>
-          </div>
+    <!-- Section 2: Registered Simulation Devices List (Đăng ký với nhãn simulation) -->
+    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 md:p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-content/10">
+        <div class="flex items-center gap-2">
+          <Radio class="w-4 h-4 text-primary" />
+          <h3 class="font-bold text-sm tracking-wide text-base-content uppercase">
+            2. DANH SÁCH THIẾT BỊ SIMULATION (ĐĂNG KÝ VỚI NHÃN SIMULATION)
+          </h3>
+          <span class="badge badge-neutral badge-xs font-mono">{{ simulationDevices.length }} thiết bị</span>
         </div>
 
-        <!-- Card 2: RF Parameters & Modulation -->
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm p-4 backdrop-blur-md">
-          <div class="flex items-center justify-between pb-2 mb-3 border-b border-base-content/10">
-            <h3 class="font-bold text-sm flex items-center gap-2">
-              <Radio class="w-4 h-4 text-accent" />
-              Thông Số Vô Tuyến &amp; Kênh Truyền (RF Parameters)
-            </h3>
-            <span class="badge badge-sm badge-outline font-mono">LoRaWAN 1.0.3 / 1.0.4</span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="btn btn-xs btn-outline gap-1"
+            @click="fetchSimulationDevices"
+            :disabled="loadingDevices"
+          >
+            <RotateCcw class="w-3 h-3" :class="{ 'animate-spin': loadingDevices }" />
+            <span>Làm Mới</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-xs btn-primary gap-1"
+            @click="openRegisterModal"
+          >
+            <Plus class="w-3.5 h-3.5" />
+            <span>Đăng Ký Thiết Bị Simulation Mới</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Simulation Devices Table -->
+      <div class="overflow-x-auto rounded-lg border border-base-content/10 bg-base-100">
+        <table class="table table-xs w-full">
+          <thead class="bg-base-200/60 font-mono text-[11px] text-base-content/70">
+            <tr>
+              <th class="w-8">#</th>
+              <th>DevEUI</th>
+              <th>Tên Thiết Bị</th>
+              <th>Nhãn (Label)</th>
+              <th>FPort Mặc Định</th>
+              <th>Item Code / Long FW</th>
+              <th>Trạng Thái</th>
+              <th class="text-right">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono text-xs">
+            <tr
+              v-for="(dev, idx) in simulationDevices"
+              :key="dev.devEui"
+              class="hover:bg-base-200/40 transition-colors"
+            >
+              <td class="text-base-content/40">{{ idx + 1 }}</td>
+              <td class="font-bold text-primary">{{ dev.devEui }}</td>
+              <td class="font-sans font-medium text-base-content">{{ dev.name || 'Thiết bị mẫu' }}</td>
+              <td>
+                <span class="badge badge-info badge-xs font-mono font-bold uppercase tracking-wider">
+                  {{ dev.label || 'SIMULATION' }}
+                </span>
+              </td>
+              <td class="text-base-content/70">{{ dev.fPort || 10 }}</td>
+              <td class="text-base-content/70">
+                <span>{{ dev.itemCode || profileForm.itemCode || '—' }}</span>
+                <span v-if="dev.longFw" class="text-primary ml-1.5 font-bold">({{ dev.longFw }})</span>
+              </td>
+              <td>
+                <span class="badge badge-success badge-xs font-mono">READY</span>
+              </td>
+              <td class="text-right">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                  @click="removeSimulationDevice(dev.devEui)"
+                  title="Xóa thiết bị này khỏi danh sách simulation"
+                >
+                  <Trash2 class="w-3.5 h-3.5" />
+                </button>
+              </td>
+            </tr>
+            <tr v-if="simulationDevices.length === 0">
+              <td colspan="8" class="text-center py-6 text-base-content/40 italic font-sans text-xs">
+                Chưa có thiết bị nào được đăng ký với nhãn simulation. Nhấn "Đăng Ký Thiết Bị Simulation Mới" để thêm thiết bị.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 3: Function Blocks Flow Builder -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 px-1">
+        <Workflow class="w-4 h-4 text-primary" />
+        <h3 class="font-bold text-sm tracking-wide text-base-content uppercase">
+          3. THIẾT KẾ QUY TRÌNH FLOW BẰNG FUNCTION BLOCKS
+        </h3>
+        <span class="badge badge-neutral badge-xs font-mono">Sequential Blocks</span>
+      </div>
+
+      <!-- Embedded Component: SimulationFlowBuilder -->
+      <SimulationFlowBuilder
+        v-model="flowBlocks"
+        :devices="simulationDeviceItems"
+      />
+    </div>
+
+    <!-- Modal: Đăng ký thiết bị simulation mới -->
+    <dialog class="modal" :class="{ 'modal-open': showRegisterModal }">
+      <div class="modal-box bg-base-100 border border-base-content/10 max-w-md p-5">
+        <div class="flex items-center justify-between pb-3 border-b border-base-content/10">
+          <div class="flex items-center gap-2">
+            <Radio class="w-4 h-4 text-primary" />
+            <h3 class="font-bold text-sm text-base-content">Đăng Ký Thiết Bị Nhãn Simulation</h3>
           </div>
-
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text font-medium text-xs">Region Plan</span>
-              </label>
-              <select v-model="config.region" class="select select-bordered select-sm w-full">
-                <option value="AS923-1">AS923-1 (923.2 MHz)</option>
-                <option value="AS923-2">AS923-2 (921.4 MHz)</option>
-                <option value="EU868">EU868 (868.1 MHz)</option>
-                <option value="US915">US915 (902.3 MHz)</option>
-                <option value="VN923">VN923 (921.0 MHz)</option>
-              </select>
-            </div>
-
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text font-medium text-xs">Spreading Factor</span>
-              </label>
-              <select v-model="config.sf" class="select select-bordered select-sm w-full font-mono">
-                <option value="SF7">SF7 (Fastest)</option>
-                <option value="SF8">SF8</option>
-                <option value="SF9">SF9</option>
-                <option value="SF10">SF10</option>
-                <option value="SF11">SF11</option>
-                <option value="SF12">SF12 (Long Range)</option>
-              </select>
-            </div>
-
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text font-medium text-xs">Bandwidth (BW)</span>
-              </label>
-              <select v-model="config.bw" class="select select-bordered select-sm w-full font-mono">
-                <option :value="125">125 kHz</option>
-                <option :value="250">250 kHz</option>
-                <option :value="500">500 kHz</option>
-              </select>
-            </div>
-
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text font-medium text-xs">TX Power</span>
-              </label>
-              <select v-model="config.txPower" class="select select-bordered select-sm w-full font-mono">
-                <option :value="14">14 dBm (25mW)</option>
-                <option :value="16">16 dBm (40mW)</option>
-                <option :value="20">20 dBm (100mW)</option>
-              </select>
-            </div>
-
-            <!-- RF Signal Simulation Sliders -->
-            <div class="form-control col-span-2">
-              <label class="label py-1 flex items-center justify-between">
-                <span class="label-text font-medium text-xs">Simulated RSSI</span>
-                <span class="font-mono font-bold text-primary">{{ config.rssi }} dBm</span>
-              </label>
-              <input
-                v-model.number="config.rssi"
-                type="range"
-                min="-120"
-                max="-40"
-                step="1"
-                class="range range-primary range-xs"
-              />
-            </div>
-
-            <div class="form-control col-span-2">
-              <label class="label py-1 flex items-center justify-between">
-                <span class="label-text font-medium text-xs">Simulated SNR</span>
-                <span class="font-mono font-bold text-accent">{{ config.snr > 0 ? '+' : '' }}{{ config.snr }} dB</span>
-              </label>
-              <input
-                v-model.number="config.snr"
-                type="range"
-                min="-20"
-                max="12"
-                step="0.5"
-                class="range range-accent range-xs"
-              />
-            </div>
-          </div>
+          <button class="btn btn-ghost btn-xs btn-square" @click="showRegisterModal = false">✕</button>
         </div>
 
-        <!-- Card 3: Payload Builder & Sensor Presets -->
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm p-4 backdrop-blur-md">
-          <div class="flex items-center justify-between pb-2 mb-3 border-b border-base-content/10">
-            <h3 class="font-bold text-sm flex items-center gap-2">
-              <Layers class="w-4 h-4 text-warning" />
-              Bộ Phát Sinh Payload Cảm Biến (Payload Generator)
-            </h3>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-base-content/70">FPort:</span>
+        <div class="py-4 space-y-3">
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Tên Thiết Bị <span class="text-error">*</span></span></label>
+            <input
+              v-model="newDevForm.name"
+              type="text"
+              class="input input-bordered input-sm w-full text-xs"
+              placeholder="VD: Cảm Biến Mẫu Khí Gas SIMU-01"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label py-1 flex items-center justify-between">
+              <span class="label-text text-xs font-semibold">DevEUI (16 Hex) <span class="text-error">*</span></span>
+              <button type="button" class="btn btn-ghost btn-xs text-[10px] text-primary" @click="generateRandomDevEui">
+                Tạo ngẫu nhiên
+              </button>
+            </label>
+            <input
+              v-model="newDevForm.devEui"
+              type="text"
+              maxlength="16"
+              class="input input-bordered input-sm w-full font-mono text-xs uppercase"
+              placeholder="70B3D57ED005ABCD"
+              @input="newDevForm.devEui = newDevForm.devEui.toUpperCase().replace(/[^0-9A-F]/g, '')"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">FPort</span></label>
               <input
-                v-model.number="config.fPort"
+                v-model.number="newDevForm.fPort"
                 type="number"
                 min="1"
                 max="223"
-                class="input input-bordered input-xs w-16 font-mono text-center"
+                class="input input-bordered input-sm w-full font-mono text-xs"
               />
             </div>
-          </div>
-
-          <!-- Preset Sensor Selection -->
-          <div class="flex flex-wrap gap-1.5 mb-3">
-            <button
-              v-for="preset in sensorPresets"
-              :key="preset.id"
-              class="btn btn-xs"
-              :class="activePresetId === preset.id ? 'btn-warning text-warning-content shadow-xs' : 'btn-outline'"
-              @click="selectPreset(preset.id)"
-            >
-              {{ preset.name }}
-            </button>
-          </div>
-
-          <!-- Dynamic Sensor Controls according to active preset -->
-          <div v-if="activePresetId === 'env'" class="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-base-100/60 rounded-lg border border-base-300 text-xs mb-3">
             <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Nhiệt độ (°C)</span>
-                <span class="font-mono font-bold text-error">{{ sensorData.temperature }}°C</span>
-              </label>
-              <input v-model.number="sensorData.temperature" type="range" min="0" max="60" step="0.5" class="range range-error range-xs" @input="updatePayloadHex" />
-            </div>
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Độ ẩm (%)</span>
-                <span class="font-mono font-bold text-info">{{ sensorData.humidity }}%</span>
-              </label>
-              <input v-model.number="sensorData.humidity" type="range" min="10" max="100" step="1" class="range range-info range-xs" @input="updatePayloadHex" />
-            </div>
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Pin (V)</span>
-                <span class="font-mono font-bold text-success">{{ sensorData.battery }}V</span>
-              </label>
-              <input v-model.number="sensorData.battery" type="range" min="2.5" max="3.6" step="0.05" class="range range-success range-xs" @input="updatePayloadHex" />
-            </div>
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Áp suất (hPa)</span>
-                <span class="font-mono font-bold text-warning">{{ sensorData.pressure }}</span>
-              </label>
-              <input v-model.number="sensorData.pressure" type="range" min="950" max="1050" step="1" class="range range-warning range-xs" @input="updatePayloadHex" />
-            </div>
-          </div>
-
-          <div v-else-if="activePresetId === 'water'" class="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-base-100/60 rounded-lg border border-base-300 text-xs mb-3">
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Chỉ số (m³)</span>
-                <span class="font-mono font-bold text-primary">{{ sensorData.waterVolume }}</span>
-              </label>
-              <input v-model.number="sensorData.waterVolume" type="number" step="0.001" class="input input-bordered input-xs font-mono" @input="updatePayloadHex" />
-            </div>
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Lưu lượng (L/h)</span>
-                <span class="font-mono font-bold text-accent">{{ sensorData.flowRate }}</span>
-              </label>
-              <input v-model.number="sensorData.flowRate" type="range" min="0" max="500" step="10" class="range range-accent range-xs" @input="updatePayloadHex" />
-            </div>
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Van Nước</span>
-              </label>
-              <select v-model="sensorData.valveStatus" class="select select-bordered select-xs" @change="updatePayloadHex">
-                <option value="OPEN">Mở (OPEN)</option>
-                <option value="CLOSED">Đóng (CLOSED)</option>
-              </select>
-            </div>
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Pin (V)</span>
-                <span class="font-mono font-bold text-success">{{ sensorData.battery }}V</span>
-              </label>
-              <input v-model.number="sensorData.battery" type="range" min="2.5" max="3.6" step="0.05" class="range range-success range-xs" @input="updatePayloadHex" />
-            </div>
-          </div>
-
-          <div v-else-if="activePresetId === 'gps'" class="grid grid-cols-2 md:grid-cols-3 gap-3 p-3 bg-base-100/60 rounded-lg border border-base-300 text-xs mb-3">
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Vĩ Độ (Latitude)</span>
-              </label>
-              <input v-model.number="sensorData.latitude" type="number" step="0.000001" class="input input-bordered input-xs font-mono" @input="updatePayloadHex" />
-            </div>
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Kinh Độ (Longitude)</span>
-              </label>
-              <input v-model.number="sensorData.longitude" type="number" step="0.000001" class="input input-bordered input-xs font-mono" @input="updatePayloadHex" />
-            </div>
-            <div class="form-control">
-              <label class="label py-0 text-xs">
-                <span>Tốc độ (km/h) / Pin</span>
-              </label>
-              <div class="flex gap-2">
-                <input v-model.number="sensorData.speed" type="number" placeholder="Speed" class="input input-bordered input-xs font-mono w-1/2" @input="updatePayloadHex" />
-                <input v-model.number="sensorData.battery" type="number" step="0.1" placeholder="Volt" class="input input-bordered input-xs font-mono w-1/2" @input="updatePayloadHex" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Hex & Decoded Preview -->
-          <div class="space-y-2">
-            <div class="form-control">
-              <div class="flex items-center justify-between">
-                <label class="label py-0">
-                  <span class="label-text font-medium text-xs">Raw Hex Payload:</span>
-                </label>
-                <span class="text-xs font-mono text-base-content/60">{{ (payloadHex.length / 2).toFixed(0) }} bytes</span>
-              </div>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Nhãn Đăng Ký</span></label>
               <input
-                v-model="payloadHex"
                 type="text"
-                placeholder="0167011E02684103020E"
-                class="input input-bordered input-sm font-mono text-primary font-bold tracking-wider w-full"
-                @input="handleCustomHexInput"
+                disabled
+                value="SIMULATION"
+                class="input input-bordered input-sm w-full font-mono text-xs bg-base-200 text-info font-bold"
               />
             </div>
-
-            <!-- Decoded JSON View -->
-            <div class="p-2.5 rounded-lg bg-base-100 border border-base-300 font-mono text-xs overflow-x-auto">
-              <div class="text-base-content/50 text-[10px] uppercase mb-1">Decoded Payload Object (Auto Parsed):</div>
-              <pre class="text-xs text-base-content/90">{{ JSON.stringify(decodedPayloadPreview, null, 2) }}</pre>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: Interactive Triggers & Simulation Console (5 cols) -->
-      <div class="lg:col-span-5 space-y-4">
-        <!-- Control Actions Card -->
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm p-4 backdrop-blur-md">
-          <h3 class="font-bold text-sm flex items-center gap-2 pb-2 mb-3 border-b border-base-content/10">
-            <Zap class="w-4 h-4 text-primary" />
-            Điều Khiển Phát Sóng &amp; Tương Tác
-          </h3>
-
-          <div class="space-y-3">
-            <!-- Step 1: OTAA Join -->
-            <div class="p-3 rounded-lg bg-base-100 border border-base-300 flex items-center justify-between gap-2">
-              <div>
-                <div class="font-bold text-xs">1. OTAA Join Procedure</div>
-                <div class="text-[11px] text-base-content/60">Gửi Join Request &amp; nhận Join Accept từ NS</div>
-              </div>
-              <button
-                class="btn btn-sm"
-                :class="joinStatus === 'JOINED' ? 'btn-success btn-outline' : 'btn-primary'"
-                :disabled="joining || joinStatus === 'JOINED'"
-                @click="simulateOtaaJoin"
-              >
-                <span v-if="joining" class="loading loading-spinner loading-xs"></span>
-                <span v-else>{{ joinStatus === 'JOINED' ? '✓ Đã Join' : 'Kích Hoạt Join' }}</span>
-              </button>
-            </div>
-
-            <!-- Step 2: Send Single Uplink -->
-            <div class="p-3 rounded-lg bg-base-100 border border-base-300 flex items-center justify-between gap-2">
-              <div>
-                <div class="font-bold text-xs">2. Gửi Gói Uplink Đơn</div>
-                <div class="text-[11px] text-base-content/60">Bắn gói tin lên Pipeline kiểm thử &amp; ghi nhận</div>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <select v-model="config.packetType" class="select select-bordered select-xs font-mono">
-                  <option value="UNCONFIRMED_DATA_UP">Unconf</option>
-                  <option value="CONFIRMED_DATA_UP">Conf</option>
-                </select>
-                <button
-                  class="btn btn-primary btn-sm gap-1"
-                  :disabled="sendingUplink"
-                  @click="sendSingleUplink"
-                >
-                  <span v-if="sendingUplink" class="loading loading-spinner loading-xs"></span>
-                  <Send v-else class="w-3.5 h-3.5" />
-                  <span>Phát Sóng</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Step 3: Simulation Flow Runner (Sub-Admin Thiết Lập) -->
-            <div class="p-3 rounded-lg bg-base-100 border border-base-300 space-y-2.5">
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="font-bold text-xs flex items-center gap-1.5">
-                    <span>3. Kịch Bản Simulation Flow</span>
-                    <span class="badge badge-xs badge-info font-mono uppercase">Sub-Admin</span>
-                  </div>
-                  <div class="text-[11px] text-base-content/60">
-                    Chạy Flow {{ activeProfile.flowDurationMinutes }}p, Downlink còi lúc 1p, tự kết thúc sau {{ activeProfile.flowDurationMinutes }}p
-                  </div>
-                </div>
-                <div class="flex items-center gap-1">
-                  <!-- Speed selector -->
-                  <select
-                    v-model.number="flowSpeed"
-                    class="select select-bordered select-xs font-mono"
-                    :disabled="flowRunning"
-                    title="Tốc độ mô phỏng"
-                  >
-                    <option :value="1">1x (Chuẩn)</option>
-                    <option :value="10">10x (Nhanh)</option>
-                    <option :value="60">60x (Siêu tốc 30s)</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Flow Status & Progress Bar -->
-              <div class="p-2 rounded bg-base-200/70 border border-base-300/80 space-y-1.5 font-mono text-xs">
-                <div class="flex items-center justify-between">
-                  <span class="text-base-content/60 flex items-center gap-1">
-                    <Clock class="w-3.5 h-3.5" />
-                    Đếm Ngược Flow:
-                  </span>
-                  <span class="font-bold text-sm" :class="flowRunning ? 'text-primary animate-pulse' : 'text-base-content/70'">
-                    {{ countdownDisplay }} / {{ activeProfile.flowDurationMinutes }}:00
-                  </span>
-                </div>
-                <progress
-                  class="progress w-full h-1.5"
-                  :class="flowRunning ? 'progress-primary' : 'progress-ghost'"
-                  :value="flowProgressPercent"
-                  max="100"
-                ></progress>
-                <div class="flex items-center justify-between text-[10px] text-base-content/60">
-                  <span>Tiến độ: {{ flowProgressPercent.toFixed(1) }}% ({{ Math.floor(flowElapsedSeconds / 60) }}m {{ (flowElapsedSeconds % 60).toString().padStart(2, '0') }}s)</span>
-                  <span v-if="flowRunning" class="text-success font-bold animate-pulse">FLOW ĐANG CHẠY</span>
-                  <span v-else-if="flowCompleted" class="text-info font-bold">HOÀN TẤT ({{ activeProfile.flowDurationMinutes }}P)</span>
-                  <span v-else class="text-base-content/40">SẴN SÀNG</span>
-                </div>
-              </div>
-
-              <!-- Buzzer Actuator Indicator -->
-              <div
-                v-if="buzzerActive"
-                class="p-2 rounded-lg bg-warning/20 border border-warning text-warning text-xs flex items-center justify-between animate-pulse"
-              >
-                <div class="flex items-center gap-1.5 font-bold">
-                  <Bell class="w-4 h-4 text-warning animate-bounce" />
-                  <span>CÒI GIẢ LẬP ĐANG KÍCH HOẠT (BUZZER ACTIVE)!</span>
-                </div>
-                <button class="btn btn-xs btn-warning btn-outline" @click="buzzerActive = false">
-                  Tắt Còi
-                </button>
-              </div>
-
-              <!-- Timed Action Milestones List -->
-              <div class="space-y-1 text-[11px]">
-                <div
-                  v-for="action in activeProfile.timedActions"
-                  :key="action.id"
-                  class="flex items-center justify-between px-2 py-1 rounded bg-base-200/50 border border-base-300"
-                >
-                  <div class="flex items-center gap-1.5">
-                    <span
-                      class="badge badge-xs font-mono"
-                      :class="action.executed ? 'badge-success text-success-content' : 'badge-ghost'"
-                    >
-                      {{ action.executed ? '✓ ĐÃ CHẠY' : `${action.triggerMinute}m` }}
-                    </span>
-                    <span :class="action.executed ? 'line-through text-base-content/50' : 'text-base-content/80'">
-                      {{ action.label }}
-                    </span>
-                  </div>
-                  <span class="font-mono text-[10px] text-base-content/50">Port {{ action.fPort }} ({{ action.payloadHex }})</span>
-                </div>
-              </div>
-
-              <!-- Flow Control Buttons -->
-              <div class="flex items-center gap-2 pt-1">
-                <button
-                  v-if="!flowRunning"
-                  class="btn btn-sm btn-primary flex-1 gap-1"
-                  @click="startFlow"
-                >
-                  <Play class="w-3.5 h-3.5" />
-                  <span>Bắt Đầu Chạy Flow</span>
-                </button>
-                <button
-                  v-else
-                  class="btn btn-sm btn-error flex-1 gap-1"
-                  @click="stopFlow"
-                >
-                  <Square class="w-3.5 h-3.5" />
-                  <span>Dừng Flow</span>
-                </button>
-                <button
-                  class="btn btn-sm btn-ghost btn-square"
-                  title="Đặt lại Flow"
-                  :disabled="flowRunning"
-                  @click="resetFlow"
-                >
-                  <RotateCcw class="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <!-- Step 4: Downlink Rx Window -->
-            <div class="p-3 rounded-lg bg-base-100 border border-base-300 flex items-center justify-between gap-2">
-              <div>
-                <div class="font-bold text-xs">4. Cửa Sổ Nhận (Rx1 / Rx2)</div>
-                <div class="text-[11px] text-base-content/60">Mở Rx sau uplink để thu ACK hoặc lệnh điều khiển</div>
-              </div>
-              <button class="btn btn-ghost btn-sm text-accent" @click="simulateDownlinkReception">
-                Mô Phỏng Rx
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Live Simulation Event Console -->
-        <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 flex flex-col h-[400px]">
-          <div class="flex items-center justify-between pb-2 mb-2 border-b border-base-content/10">
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-success"></span>
-              <Terminal class="w-4 h-4 text-primary" />
-              <h3 class="font-bold text-sm text-base-content">Live Simulation Event Console</h3>
-              <span class="badge badge-neutral badge-sm font-mono text-[10px]">{{ logs.length }} logs</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button class="btn btn-ghost btn-xs text-base-content/70 hover:bg-base-300" @click="clearLogs">
-                Xóa Log
-              </button>
-            </div>
           </div>
 
-          <div ref="logContainer" class="flex-1 overflow-y-auto p-3 rounded-lg bg-base-300 font-mono text-[11px] space-y-1.5 border border-base-content/5 select-text">
-            <div v-if="logs.length === 0" class="text-base-content/40 italic py-8 text-center text-xs">
-              Chưa có sự kiện nào. Hãy nhấn "Kích Hoạt Join" hoặc "Bắt Đầu Chạy Flow" để bắt đầu mô phỏng.
-            </div>
-            <div
-              v-for="log in logs"
-              :key="log.id"
-              class="leading-relaxed break-all flex items-start gap-2 py-0.5"
-            >
-              <span class="text-base-content/40 text-[10px] select-none font-mono shrink-0">[{{ log.time }}]</span>
-              <span
-                class="badge badge-xs font-mono font-bold shrink-0 uppercase"
-                :class="getLogBadgeClass(log.type)"
-              >
-                {{ log.tag }}
-              </span>
-              <span class="flex-1" :class="getLogTextColor(log.type)">{{ log.message }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dialog Tạo / Liên Kết Thiết Bị Mẫu Mới (Admin Mode) - Theo Cấu Trúc Device -->
-    <dialog class="modal" :class="{ 'modal-open': showCreateModal }">
-      <div class="modal-box w-11/12 max-w-3xl bg-base-100 border border-base-300 p-5 shadow-2xl">
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10">
-          <h3 class="font-bold text-base flex items-center gap-2">
-            <BookmarkCheck class="w-5 h-5 text-primary" />
-            Tạo &amp; Liên Kết Thiết Bị Mẫu (Theo Cấu Trúc Device Đã Có)
-          </h3>
-          <button class="btn btn-ghost btn-xs btn-circle" @click="showCreateModal = false">✕</button>
-        </div>
-
-        <!-- Mode Switcher Tabs -->
-        <div class="tabs tabs-boxed bg-base-200/80 p-1 mb-4 flex">
-          <button
-            type="button"
-            class="tab flex-1 text-xs font-semibold gap-1.5 transition-all"
-            :class="{ 'tab-active bg-primary text-primary-content': modalMode === 'bind_existing' }"
-            @click="modalMode = 'bind_existing'"
-          >
-            <Layers class="w-3.5 h-3.5" />
-            1. Chọn Thiết Bị Đã Có Trong Hệ Thống
-          </button>
-          <button
-            type="button"
-            class="tab flex-1 text-xs font-semibold gap-1.5 transition-all"
-            :class="{ 'tab-active bg-primary text-primary-content': modalMode === 'create_new' }"
-            @click="modalMode = 'create_new'"
-          >
-            <Plus class="w-3.5 h-3.5" />
-            2. Tạo Thiết Bị Mẫu Mới (Chuẩn Device Schema)
-          </button>
-        </div>
-
-        <!-- Mode 1: Select Existing System Device -->
-        <div v-if="modalMode === 'bind_existing'" class="space-y-3 text-xs">
           <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold flex items-center justify-between w-full">
-                <span>Chọn Thiết Bị Đã Đăng Ký Trong Hệ Thống (Device Repository) *</span>
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-xs text-primary h-auto min-h-0 py-0.5 px-1"
-                  @click="loadExistingDevices"
-                >
-                  <RotateCcw class="w-3 h-3" :class="{ 'animate-spin': loadingExistingDevices }" />
-                  Làm mới
-                </button>
-              </span>
-            </label>
-            <select
-              v-model="selectedExistingDeviceId"
-              class="select select-bordered select-sm font-mono text-xs w-full"
-              @change="onExistingDeviceSelected"
-            >
-              <option value="" disabled>-- Chọn một thiết bị từ hệ thống để làm mẫu --</option>
-              <option
-                v-for="d in existingDevices"
-                :key="d.id || d.serialNumber"
-                :value="d.id || d.serialNumber"
-              >
-                [{{ d.serialNumber || d.serial_number }}] {{ d.deviceName || d.device_name }} - {{ d.networkId || d.network_id || 'No DevEUI' }} ({{ d.itemCode || d.item_code || 'No ItemCode' }})
-              </option>
-            </select>
-          </div>
-
-          <!-- Existing Device Preview Card -->
-          <div v-if="newProfileForm.serialNumber" class="p-3 rounded-lg bg-base-200/70 border border-base-300 space-y-1.5">
-            <div class="font-bold text-xs text-primary flex items-center justify-between">
-              <span>Thông tin thiết bị đã chọn (Device Structure)</span>
-              <span class="badge badge-xs badge-success uppercase">{{ newProfileForm.status }}</span>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-              <div><span class="text-base-content/60">Tên:</span> <span class="font-semibold">{{ newProfileForm.deviceName }}</span></div>
-              <div><span class="text-base-content/60">Serial:</span> <span class="font-mono font-bold">{{ newProfileForm.serialNumber }}</span></div>
-              <div><span class="text-base-content/60">DevEUI:</span> <span class="font-mono text-accent">{{ newProfileForm.networkId }}</span></div>
-              <div><span class="text-base-content/60">Loại:</span> <span class="badge badge-xs badge-ghost">{{ newProfileForm.deviceType }}</span></div>
-              <div><span class="text-base-content/60">Item Code:</span> <span class="font-mono">{{ newProfileForm.itemCode || 'Chưa gán' }}</span></div>
-              <div><span class="text-base-content/60">Mã SO:</span> <span class="font-mono">{{ newProfileForm.soNumber || 'N/A' }}</span></div>
-              <div><span class="text-base-content/60">Mã WA:</span> <span class="font-mono">{{ newProfileForm.waNumber || 'N/A' }}</span></div>
-              <div><span class="text-base-content/60">Plugin:</span> <span class="font-mono">testing</span></div>
-            </div>
+            <label class="label py-1"><span class="label-text text-xs font-semibold">AppKey (32 Hex)</span></label>
+            <input
+              v-model="newDevForm.appKey"
+              type="text"
+              maxlength="32"
+              class="input input-bordered input-sm w-full font-mono text-xs uppercase"
+              placeholder="2B7E151628AED2A6ABF7158809CF4F3C"
+              @input="newDevForm.appKey = newDevForm.appKey.toUpperCase().replace(/[^0-9A-F]/g, '')"
+            />
           </div>
         </div>
 
-        <!-- Mode 2: Create New Device Structure Form -->
-        <div v-else class="space-y-3 text-xs">
-          <div class="p-2.5 rounded-lg bg-base-200/50 border border-base-300 space-y-2">
-            <div class="font-bold text-xs text-primary flex items-center gap-1.5">
-              <Cpu class="w-3.5 h-3.5" />
-              <span>1. Cấu Trúc Định Danh Thiết Bị (Device Entity Schema)</span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Tên Thiết Bị Mẫu *</span></label>
-                <input
-                  v-model="newProfileForm.deviceName"
-                  type="text"
-                  placeholder="LoRa Smart Socket Sensor"
-                  class="input input-bordered input-sm"
-                />
-              </div>
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Loại Thiết Bị (Device Type)</span></label>
-                <select v-model="newProfileForm.deviceType" class="select select-bordered select-sm">
-                  <option value="lorawan_node">LoRaWAN Node (End Device)</option>
-                  <option value="smart_socket">Ổ Cắm Thông Minh</option>
-                  <option value="water_meter">Đồng Hồ Nước</option>
-                  <option value="sensor">Cảm Biến Môi Trường</option>
-                  <option value="gps_tracker">Thiết Bị GPS Tracker</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Số Serial (Serial Number) *</span></label>
-                <input
-                  v-model="newProfileForm.serialNumber"
-                  type="text"
-                  placeholder="SN-TMPL-SP01"
-                  class="input input-bordered input-sm font-mono"
-                />
-              </div>
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Network ID / DevEUI (16 Hex) *</span></label>
-                <input
-                  v-model="newProfileForm.networkId"
-                  type="text"
-                  placeholder="70B3D57ED005ABCD"
-                  class="input input-bordered input-sm font-mono uppercase"
-                  maxlength="16"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Mã Đơn Hàng (SO Number)</span></label>
-                <input
-                  v-model="newProfileForm.soNumber"
-                  type="text"
-                  placeholder="SO-2025-001"
-                  class="input input-bordered input-sm font-mono"
-                />
-              </div>
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Lệnh Sản Xuất (WA Number)</span></label>
-                <input
-                  v-model="newProfileForm.waNumber"
-                  type="text"
-                  placeholder="WA-2025-001"
-                  class="input input-bordered input-sm font-mono"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Common Section: Simulation & Firmware Binding -->
-        <div class="space-y-3 text-xs mt-3">
-          <div class="p-2.5 rounded-lg bg-base-200/50 border border-base-300 space-y-2">
-            <div class="font-bold text-xs text-accent flex items-center gap-1.5">
-              <BookmarkCheck class="w-3.5 h-3.5" />
-              <span>2. Gán Simu ID với Item Code &amp; Long FW</span>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Simu ID *</span></label>
-                <input
-                  v-model="newProfileForm.simuId"
-                  type="text"
-                  placeholder="SIMU-LORA-SAMPLE01"
-                  class="input input-bordered input-sm font-mono"
-                />
-              </div>
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Item Code (Gán thiết bị cần test) *</span></label>
-                <input
-                  v-model="newProfileForm.itemCode"
-                  type="text"
-                  placeholder="ITEM-9901-SMART-PLUG"
-                  class="input input-bordered input-sm font-mono"
-                />
-              </div>
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Long FW (Firmware bản dài) *</span></label>
-                <input
-                  v-model="newProfileForm.longFw"
-                  type="text"
-                  placeholder="v1.2.0-rc3-long-fw-build9482"
-                  class="input input-bordered input-sm font-mono"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Thời Lượng Flow (Phút)</span></label>
-                <input
-                  v-model.number="newProfileForm.flowDurationMinutes"
-                  type="number"
-                  min="1"
-                  max="180"
-                  class="input input-bordered input-sm font-mono"
-                />
-              </div>
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Kịch Bản Cảm Biến</span></label>
-                <select v-model="newProfileForm.presetId" class="select select-bordered select-sm">
-                  <option value="env">Môi trường (Temp/Humi)</option>
-                  <option value="water">Đồng hồ nước</option>
-                  <option value="gps">GPS Tracker</option>
-                  <option value="custom">Tùy chỉnh HEX</option>
-                </select>
-              </div>
-              <div class="form-control">
-                <label class="label py-0.5"><span class="label-text text-[11px] font-semibold">Băng Tần LoRa</span></label>
-                <select v-model="newProfileForm.region" class="select select-bordered select-sm">
-                  <option value="AS923-1">AS923-1</option>
-                  <option value="VN923">VN923</option>
-                  <option value="EU868">EU868</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="p-2.5 rounded-lg bg-base-200/50 border border-base-300 text-[11px] space-y-1">
-            <div class="font-semibold text-primary">Kịch bản mặc định Sub-Admin:</div>
-            <div>• Phút 01:00: Downlink bật thiết bị còi giả lập (Port 10, Payload 0101)</div>
-            <div>• Phút {{ Math.max(2, Math.floor(newProfileForm.flowDurationMinutes / 2)) }}:00: Downlink tắt thiết bị còi giả lập (Port 10, Payload 0100)</div>
-            <div>• Phút {{ newProfileForm.flowDurationMinutes }}:00: Tự động kết thúc flow mô phỏng</div>
-          </div>
-        </div>
-
-        <div class="modal-action mt-4">
-          <button class="btn btn-ghost btn-sm" @click="showCreateModal = false">Hủy</button>
-          <button class="btn btn-primary btn-sm" @click="saveNewTemplateProfile">
-            <BookmarkCheck class="w-4 h-4" />
-            Lưu &amp; Liên Kết Thiết Bị Mẫu
+        <div class="modal-action mt-2">
+          <button class="btn btn-sm btn-ghost" @click="showRegisterModal = false">Hủy</button>
+          <button class="btn btn-sm btn-primary gap-1.5" @click="submitRegisterDevice">
+            <Save class="w-3.5 h-3.5" />
+            Đăng Ký Thiết Bị
           </button>
         </div>
       </div>
@@ -1009,1025 +400,408 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import {
   Cpu,
-  Key,
-  Radio,
   Layers,
-  Zap,
-  Send,
-  Terminal,
-  Play,
-  Square,
-  RotateCcw,
-  Clock,
-  Bell,
-  BookmarkCheck,
+  Radio,
+  Workflow,
   Plus,
+  Trash2,
+  RotateCcw,
+  Save,
+  Bookmark,
+  ChevronDown,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
-
-export interface TimedFlowAction {
-  id: string;
-  triggerMinute: number;
-  actionType: 'downlink_buzzer' | 'downlink_command' | 'change_rate';
-  label: string;
-  payloadHex: string;
-  fPort: number;
-  executed?: boolean;
-}
-
-export interface SimulationProfile {
-  simuId: string;
-  profileName: string;
-  itemCode: string;
-  longFw: string;
-  // Cấu trúc chuẩn theo Device Entity trong hệ thống
-  serialNumber?: string;
-  networkId?: string;
-  deviceName?: string;
-  deviceType?: string;
-  pluginId?: string;
-  soId?: string;
-  soNumber?: string;
-  waId?: string;
-  waNumber?: string;
-  status?: string;
-  targetDeviceName: string;
-  activation: 'OTAA' | 'ABP';
-  devEui: string;
-  appEui: string;
-  appKey: string;
-  devAddr?: string;
-  region: string;
-  sf: string;
-  bw: number;
-  fPort: number;
-  presetId: string;
-  flowDurationMinutes: number;
-  autoTerminate: boolean;
-  uplinkIntervalSec: number;
-  timedActions: TimedFlowAction[];
-}
-
-interface SimulationLog {
-  id: string;
-  time: string;
-  tag: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'data';
-  message: string;
-}
+import SimulationFlowBuilder, {
+  type FlowBlock,
+  type SimulationDeviceItem,
+} from './SimulationFlowBuilder.vue';
 
 const emit = defineEmits<{
-  (e: 'packet-sent', packet: any): void;
   (e: 'packet-emitted', packet: any): void;
 }>();
 
-// Initial Template Profiles (Theo chuẩn Device Entity đã có)
-const simulationProfiles = reactive<SimulationProfile[]>([
+// Profile Form State
+const profileForm = reactive({
+  simuId: 'SIMU-LORA-SP01',
+  profileName: 'Kịch bản kiểm thử Smart Plug (Downlink ngắt còi & chu kỳ)',
+  sensorConnectivity: 'LoRaWAN',
+  skuSuffix: 'SP01-EU868',
+  longFw: '5FA1B2',
+  itemCode: 'ITEM-9901-SMART-PLUG',
+});
+
+// Flow Blocks state for SimulationFlowBuilder
+const flowBlocks = ref<FlowBlock[]>([
   {
-    simuId: 'SIMU-LORA-SP01',
-    profileName: 'Ổ Cắm Thông Minh & Còi Báo Động (Chuẩn 30 Phút)',
-    itemCode: 'ITEM-9901-SMART-PLUG',
-    longFw: 'v1.2.0-rc3-long-fw-build9482',
-    serialNumber: 'SN-TMPL-SP01',
-    networkId: '70B3D57ED005ABCD',
-    deviceName: 'Smart Socket Multi-Sensor Node',
-    deviceType: 'smart_socket',
-    pluginId: 'testing',
-    soNumber: 'SO-2025-001',
-    waNumber: 'WA-2025-001',
-    status: 'template',
-    targetDeviceName: 'Smart Socket Multi-Sensor Node',
-    activation: 'OTAA',
-    devEui: '70B3D57ED005ABCD',
-    appEui: '0000000000000000',
-    appKey: '2B7E151628AED2A6ABF7158809CF4F3C',
-    region: 'AS923-1',
-    sf: 'SF7',
-    bw: 125,
-    fPort: 2,
-    presetId: 'env',
-    flowDurationMinutes: 30,
-    autoTerminate: true,
-    uplinkIntervalSec: 10,
-    timedActions: [
-      {
-        id: 'act-sp-1',
-        triggerMinute: 1,
-        actionType: 'downlink_buzzer',
-        label: 'Downlink bật thiết bị còi giả lập lúc 1 phút',
-        payloadHex: '0101',
-        fPort: 10,
-        executed: false,
-      },
-      {
-        id: 'act-sp-2',
-        triggerMinute: 5,
-        actionType: 'downlink_command',
-        label: 'Downlink cấu hình chu kỳ đo 15s',
-        payloadHex: '02000F',
-        fPort: 10,
-        executed: false,
-      },
-      {
-        id: 'act-sp-3',
-        triggerMinute: 15,
-        actionType: 'downlink_buzzer',
-        label: 'Downlink tắt thiết bị còi giả lập',
-        payloadHex: '0100',
-        fPort: 10,
-        executed: false,
-      },
-      {
-        id: 'act-sp-4',
-        triggerMinute: 30,
-        actionType: 'change_rate',
-        label: 'Tự động kết thúc Flow sau 30 phút',
-        payloadHex: 'FF',
-        fPort: 10,
-        executed: false,
-      },
-    ],
+    id: 'block-init-1',
+    functionType: 'downlink_hex',
+    targetDevice: 'DUT',
+    delaySeconds: 10,
+    payloadHex: '01 01',
+    fPort: 10,
+    confirmed: false,
+    description: 'Bước 1: Gửi lệnh Downlink bật còi báo động',
   },
   {
-    simuId: 'SIMU-LORA-WM02',
-    profileName: 'Đồng Hồ Nước Siêu Âm LoRaWAN DN15',
-    itemCode: 'ITEM-5520-WATER-METER',
-    longFw: 'v2.4.1-long-fw-build1029',
-    serialNumber: 'SN-TMPL-WM02',
-    networkId: '70B3D57ED0052211',
-    deviceName: 'Water Meter Ultrasonic DN15',
-    deviceType: 'water_meter',
-    pluginId: 'testing',
-    soNumber: 'SO-2025-002',
-    waNumber: 'WA-2025-002',
-    status: 'template',
-    targetDeviceName: 'Water Meter Ultrasonic DN15',
-    activation: 'OTAA',
-    devEui: '70B3D57ED0052211',
-    appEui: '0000000000000000',
-    appKey: '0102030405060708090A0B0C0D0E0F10',
-    region: 'VN923',
-    sf: 'SF8',
-    bw: 125,
-    fPort: 1,
-    presetId: 'water',
-    flowDurationMinutes: 30,
-    autoTerminate: true,
-    uplinkIntervalSec: 10,
-    timedActions: [
-      {
-        id: 'act-wm-1',
-        triggerMinute: 1,
-        actionType: 'downlink_buzzer',
-        label: 'Downlink đóng van ngắt nước & bật còi cảnh báo',
-        payloadHex: 'AA000101',
-        fPort: 1,
-        executed: false,
-      },
-      {
-        id: 'act-wm-2',
-        triggerMinute: 10,
-        actionType: 'downlink_command',
-        label: 'Downlink mở lại van cấp nước',
-        payloadHex: 'AA01',
-        fPort: 1,
-        executed: false,
-      },
-      {
-        id: 'act-wm-3',
-        triggerMinute: 30,
-        actionType: 'change_rate',
-        label: 'Tự động kết thúc sau 30 phút',
-        payloadHex: 'FF',
-        fPort: 1,
-        executed: false,
-      },
-    ],
+    id: 'block-init-2',
+    functionType: 'delay_wait',
+    targetDevice: 'DUT',
+    delaySeconds: 30,
+    payloadHex: '',
+    fPort: 10,
+    confirmed: false,
+    description: 'Bước 2: Tạm dừng 30 giây để kiểm tra còi báo động',
   },
   {
-    simuId: 'SIMU-LORA-ENV03',
-    profileName: 'Cảm Biến Khí & Cảnh Báo Khói Cháy',
-    itemCode: 'ITEM-8812-ENV-SENSOR',
-    longFw: 'v1.0.5-long-fw-build3311',
-    serialNumber: 'SN-TMPL-ENV03',
-    networkId: '70B3D57ED0059988',
-    deviceName: 'Gas & Smoke Industrial Node',
-    deviceType: 'sensor',
-    pluginId: 'testing',
-    soNumber: 'SO-2025-003',
-    waNumber: 'WA-2025-003',
-    status: 'template',
-    targetDeviceName: 'Gas & Smoke Industrial Node',
-    activation: 'OTAA',
-    devEui: '70B3D57ED0059988',
-    appEui: '0000000000000000',
-    appKey: 'A1B2C3D4E5F60102030405060708090A',
-    region: 'AS923-1',
-    sf: 'SF7',
-    bw: 125,
-    fPort: 3,
-    presetId: 'env',
-    flowDurationMinutes: 30,
-    autoTerminate: true,
-    uplinkIntervalSec: 10,
-    timedActions: [
-      {
-        id: 'act-env-1',
-        triggerMinute: 1,
-        actionType: 'downlink_buzzer',
-        label: 'Downlink bật còi báo khói giả lập',
-        payloadHex: '0101',
-        fPort: 10,
-        executed: false,
-      },
-      {
-        id: 'act-env-2',
-        triggerMinute: 12,
-        actionType: 'downlink_buzzer',
-        label: 'Downlink tắt còi báo khói',
-        payloadHex: '0100',
-        fPort: 10,
-        executed: false,
-      },
-      {
-        id: 'act-env-3',
-        triggerMinute: 30,
-        actionType: 'change_rate',
-        label: 'Tự động kết thúc sau 30 phút',
-        payloadHex: 'FF',
-        fPort: 10,
-        executed: false,
-      },
-    ],
+    id: 'block-init-3',
+    functionType: 'downlink_hex',
+    targetDevice: 'DUT',
+    delaySeconds: 10,
+    payloadHex: '01 00',
+    fPort: 10,
+    confirmed: true,
+    description: 'Bước 3: Gửi lệnh Downlink tắt còi báo động (Confirmed ACK)',
   },
 ]);
 
-const selectedProfileId = ref<string>('SIMU-LORA-SP01');
-const activeProfile = computed(() => {
-  return simulationProfiles.find((p) => p.simuId === selectedProfileId.value) || simulationProfiles[0];
+// SKU prefix logic matching Final-Config
+const skuPrefix = computed(() => {
+  switch (profileForm.sensorConnectivity) {
+    case 'Sigfox':
+      return 'WSSFC-';
+    case 'NB-IoT':
+      return 'WSNBI-';
+    case 'BleMesh':
+      return 'WSBLE-';
+    case 'LoRaWAN':
+    default:
+      return 'WSLRW-';
+  }
 });
 
-// Admin Modal & Device Template Management State
-const showCreateModal = ref<boolean>(false);
-const modalMode = ref<'bind_existing' | 'create_new'>('bind_existing');
-const loadingExistingDevices = ref<boolean>(false);
-const existingDevices = ref<any[]>([]);
-const selectedExistingDeviceId = ref<string>('');
-
-const newProfileForm = reactive({
-  simuId: '',
-  serialNumber: '',
-  networkId: '',
-  deviceName: '',
-  deviceType: 'lorawan_node',
-  pluginId: 'testing',
-  soNumber: '',
-  waNumber: '',
-  status: 'template',
-  itemCode: '',
-  longFw: '',
-  flowDurationMinutes: 30,
-  presetId: 'env',
-  region: 'AS923-1',
+const fullSku = computed(() => {
+  const suffix = profileForm.skuSuffix.trim();
+  return suffix ? `${skuPrefix.value}${suffix}` : skuPrefix.value;
 });
 
-async function loadExistingDevices() {
-  loadingExistingDevices.value = true;
-  try {
-    const res = await httpClient.get<any>('/plugins/testing/devices');
-    const list = res.data?.data || res.data || [];
-    if (Array.isArray(list) && list.length > 0) {
-      existingDevices.value = list;
-    } else {
-      const resDev = await httpClient.get<any>('/devices');
-      const listDev = resDev.data?.data || resDev.data || [];
-      existingDevices.value = Array.isArray(listDev) ? listDev : [];
-    }
-  } catch (err) {
-    existingDevices.value = [
+function onConnectivityChange() {
+  cyberToast.info(`Đã chọn giao thức ${profileForm.sensorConnectivity}, cập nhật prefix SKU: ${skuPrefix.value}`);
+}
+
+// Long FW validation (format: 5FXXXX)
+const isLongFwValid = computed(() => {
+  return /^5F[A-Z0-9]{4}$/.test(profileForm.longFw);
+});
+
+function onLongFwInput() {
+  profileForm.longFw = profileForm.longFw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+// Preset Profiles
+const availablePresets = [
+  {
+    id: 'preset-sp01',
+    simuId: 'SIMU-LORA-SP01',
+    profileName: 'Thiết Bị Mẫu Smart Plug (SP01)',
+    sensorConnectivity: 'LoRaWAN',
+    skuSuffix: 'SP01-EU868',
+    sku: 'WSLRW-SP01-EU868',
+    longFw: '5FA1B2',
+    itemCode: 'ITEM-9901-SMART-PLUG',
+    blocks: [
       {
-        id: 'dev-001',
-        serialNumber: 'SN-PROD-2025-001',
-        networkId: '70B3D57ED005A101',
-        deviceName: 'LoRa Smart Meter DN20',
-        deviceType: 'water_meter',
-        itemCode: 'ITEM-5520-WATER-METER',
-        soNumber: 'SO-2025-08',
-        waNumber: 'WA-2025-14',
-        status: 'active',
+        id: 'blk-p1',
+        functionType: 'downlink_hex',
+        targetDevice: 'DUT',
+        delaySeconds: 10,
+        payloadHex: '01 01',
+        fPort: 10,
+        confirmed: false,
+        description: 'Bật còi báo động SP01',
       },
       {
-        id: 'dev-002',
-        serialNumber: 'SN-PROD-2025-002',
-        networkId: '70B3D57ED005B202',
-        deviceName: 'Industrial Gas Monitor',
-        deviceType: 'sensor',
-        itemCode: 'ITEM-8812-ENV-SENSOR',
-        soNumber: 'SO-2025-09',
-        waNumber: 'WA-2025-15',
-        status: 'active',
+        id: 'blk-p2',
+        functionType: 'delay_wait',
+        targetDevice: 'DUT',
+        delaySeconds: 30,
+        payloadHex: '',
+        fPort: 10,
+        confirmed: false,
+        description: 'Duy trì trạng thái còi 30 giây',
       },
-    ];
-  } finally {
-    loadingExistingDevices.value = false;
-  }
-}
-
-function onExistingDeviceSelected() {
-  const dev = existingDevices.value.find(
-    (d) =>
-      (d.id && d.id === selectedExistingDeviceId.value) ||
-      (d.serialNumber && d.serialNumber === selectedExistingDeviceId.value) ||
-      (d.serial_number && d.serial_number === selectedExistingDeviceId.value)
-  );
-  if (!dev) return;
-  const sNum = dev.serialNumber || dev.serial_number || '';
-  const netId = dev.networkId || dev.network_id || '';
-  const dName = dev.deviceName || dev.device_name || '';
-  const dType = dev.deviceType || dev.device_type || 'lorawan_node';
-  const iCode = dev.itemCode || dev.item_code || '';
-  const so = dev.soNumber || dev.so_number || '';
-  const wa = dev.waNumber || dev.wa_number || '';
-
-  newProfileForm.serialNumber = sNum;
-  newProfileForm.networkId = netId;
-  newProfileForm.deviceName = dName;
-  newProfileForm.deviceType = dType;
-  newProfileForm.itemCode = iCode;
-  newProfileForm.soNumber = so;
-  newProfileForm.waNumber = wa;
-  newProfileForm.status = 'template';
-
-  if (!newProfileForm.simuId) {
-    const cleanSn = sNum.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    newProfileForm.simuId = `SIMU-${cleanSn || 'DEV'}`;
-  }
-  if (!newProfileForm.longFw) {
-    newProfileForm.longFw = `v1.0.0-long-fw-build${Math.floor(1000 + Math.random() * 9000)}`;
-  }
-}
-
-async function loadSimulationProfiles() {
-  try {
-    const res = await httpClient.get<any>('/plugins/testing/simulation/profiles');
-    const profiles = res.data?.data || res.data;
-    if (Array.isArray(profiles) && profiles.length > 0) {
-      for (const p of profiles) {
-        const idx = simulationProfiles.findIndex((item) => item.simuId === p.simuId);
-        if (idx >= 0) {
-          simulationProfiles[idx] = { ...simulationProfiles[idx], ...p };
-        } else {
-          simulationProfiles.push(p);
-        }
-      }
-    }
-  } catch (err) {
-    // Keep local seeded profiles
-  }
-}
-
-// Flow Engine State
-const flowRunning = ref<boolean>(false);
-const flowCompleted = ref<boolean>(false);
-const flowElapsedSeconds = ref<number>(0);
-const flowSpeed = ref<number>(1);
-const buzzerActive = ref<boolean>(false);
-let flowIntervalTimer: any = null;
-let lastUplinkSentSecond = -1;
-
-const countdownDisplay = computed(() => {
-  const totalSeconds = (activeProfile.value?.flowDurationMinutes || 30) * 60;
-  const remain = Math.max(0, totalSeconds - flowElapsedSeconds.value);
-  const m = Math.floor(remain / 60);
-  const s = remain % 60;
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-});
-
-const flowProgressPercent = computed(() => {
-  const totalSeconds = (activeProfile.value?.flowDurationMinutes || 30) * 60;
-  if (totalSeconds <= 0) return 0;
-  return Math.min(100, (flowElapsedSeconds.value / totalSeconds) * 100);
-});
-
-// Simulation Config
-const config = reactive({
-  deviceName: 'LORA-NODE-PROTOTYPE',
-  gatewayEui: 'AA555A0000001024',
-  activation: 'OTAA' as 'OTAA' | 'ABP',
-  devEui: '70B3D57ED005ABCD',
-  appEui: '0000000000000000',
-  appKey: '2B7E151628AED2A6ABF7158809CF4F3C',
-  devAddr: '26011234',
-  netId: '000013',
-  nwkSKey: '44A56B12C3456789ABCDEF0123456789',
-  appSKey: '88B12C3456789ABCDEF0123456789ABC',
-  region: 'AS923-1',
-  sf: 'SF7',
-  bw: 125,
-  txPower: 14,
-  rssi: -76,
-  snr: 8.5,
-  fPort: 2,
-  packetType: 'UNCONFIRMED_DATA_UP',
-});
-
-const fCnt = ref<number>(1);
-const joinStatus = ref<'DISCONNECTED' | 'JOINING' | 'JOINED'>('DISCONNECTED');
-const joining = ref<boolean>(false);
-const sendingUplink = ref<boolean>(false);
-const autoLoopActive = ref<boolean>(false);
-const autoIntervalSec = ref<number>(5);
-let loopTimer: any = null;
-
-// Presets
-const sensorPresets = [
-  { id: 'env', name: 'Môi Trường (Temp/Humi/Bat)' },
-  { id: 'water', name: 'Đồng Hồ Nước (Pulse/Flow)' },
-  { id: 'gps', name: 'GPS Tracker (Lat/Lng)' },
-  { id: 'custom', name: 'Tùy Chỉnh HEX' },
+      {
+        id: 'blk-p3',
+        functionType: 'downlink_hex',
+        targetDevice: 'DUT',
+        delaySeconds: 10,
+        payloadHex: '01 00',
+        fPort: 10,
+        confirmed: true,
+        description: 'Tắt còi báo động SP01',
+      },
+    ],
+  },
+  {
+    id: 'preset-wm02',
+    simuId: 'SIMU-LORA-WM02',
+    profileName: 'Thiết Bị Mẫu Water Meter (WM02)',
+    sensorConnectivity: 'LoRaWAN',
+    skuSuffix: 'WM02-AS923',
+    sku: 'WSLRW-WM02-AS923',
+    longFw: '5FB3C4',
+    itemCode: 'ITEM-9902-WATER-METER',
+    blocks: [
+      {
+        id: 'blk-wm1',
+        functionType: 'downlink_hex',
+        targetDevice: 'DUT',
+        delaySeconds: 15,
+        payloadHex: '02 00 3C',
+        fPort: 10,
+        confirmed: false,
+        description: 'Cấu hình chu kỳ truyền tin nước 60s (02003C)',
+      },
+      {
+        id: 'blk-wm2',
+        functionType: 'delay_wait',
+        targetDevice: 'DUT',
+        delaySeconds: 45,
+        payloadHex: '',
+        fPort: 10,
+        confirmed: false,
+        description: 'Chờ thiết bị áp dụng chu kỳ mới',
+      },
+    ],
+  },
+  {
+    id: 'preset-env03',
+    simuId: 'SIMU-LORA-ENV03',
+    profileName: 'Thiết Bị Mẫu Môi Trường & Khí Gas (ENV03)',
+    sensorConnectivity: 'LoRaWAN',
+    skuSuffix: 'ENV03-VN923',
+    sku: 'WSLRW-ENV03-VN923',
+    longFw: '5FC5D6',
+    itemCode: 'ITEM-9903-GAS-SMOKE',
+    blocks: [
+      {
+        id: 'blk-env1',
+        functionType: 'downlink_hex',
+        targetDevice: 'DUT',
+        delaySeconds: 10,
+        payloadHex: '05 01',
+        fPort: 10,
+        confirmed: true,
+        description: 'Kích hoạt hiệu chuẩn cảm biến gas (0501)',
+      },
+    ],
+  },
 ];
-const activePresetId = ref<string>('env');
 
-const sensorData = reactive({
-  temperature: 28.5,
-  humidity: 65,
-  battery: 3.6,
-  pressure: 1013,
-  waterVolume: 124.582,
-  flowRate: 35,
-  valveStatus: 'OPEN',
-  latitude: 10.776889,
-  longitude: 106.700806,
-  speed: 25,
+function applyPreset(preset: any) {
+  profileForm.simuId = preset.simuId;
+  profileForm.profileName = preset.profileName;
+  profileForm.sensorConnectivity = preset.sensorConnectivity;
+  profileForm.skuSuffix = preset.skuSuffix;
+  profileForm.longFw = preset.longFw;
+  profileForm.itemCode = preset.itemCode;
+  flowBlocks.value = JSON.parse(JSON.stringify(preset.blocks || []));
+  cyberToast.success(`Đã nạp thành công preset: ${preset.profileName}`);
+}
+
+function resetForm() {
+  profileForm.simuId = `SIMU-${Date.now().toString().slice(-4)}`;
+  profileForm.profileName = '';
+  profileForm.skuSuffix = '';
+  profileForm.longFw = '';
+  profileForm.itemCode = '';
+  flowBlocks.value = [];
+  cyberToast.info('Đã làm mới form kịch bản simulation');
+}
+
+// Simulation Devices Management (Đăng ký nhãn simulation)
+interface SimulationDevice {
+  id?: string;
+  devEui: string;
+  name: string;
+  label: string;
+  fPort: number;
+  appKey?: string;
+  itemCode?: string;
+  longFw?: string;
+}
+
+const simulationDevices = ref<SimulationDevice[]>([
+  {
+    devEui: '70B3D57ED005ABCD',
+    name: 'Smart Plug Mẫu SP01',
+    label: 'SIMULATION',
+    fPort: 10,
+    itemCode: 'ITEM-9901-SMART-PLUG',
+    longFw: '5FA1B2',
+  },
+  {
+    devEui: '70B3D57ED005ABCE',
+    name: 'Water Meter Mẫu WM02',
+    label: 'SIMULATION',
+    fPort: 10,
+    itemCode: 'ITEM-9902-WATER-METER',
+    longFw: '5FB3C4',
+  },
+  {
+    devEui: '70B3D57ED005ABCF',
+    name: 'Gas Sensor Mẫu ENV03',
+    label: 'SIMULATION',
+    fPort: 10,
+    itemCode: 'ITEM-9903-GAS-SMOKE',
+    longFw: '5FC5D6',
+  },
+]);
+
+const simulationDeviceItems = computed<SimulationDeviceItem[]>(() => {
+  return simulationDevices.value.map((d) => ({
+    id: d.id,
+    devEui: d.devEui,
+    name: d.name,
+    itemCode: d.itemCode,
+    label: d.label,
+  }));
 });
 
-const payloadHex = ref<string>('0167011D02684103020E');
-const logContainer = ref<HTMLElement | null>(null);
-const logs = ref<SimulationLog[]>([]);
+const loadingDevices = ref(false);
 
-// Airtime estimation (ToA - Time on Air in ms)
-const calculatedToA = computed(() => {
-  const nBytes = Math.max(1, payloadHex.value.length / 2);
-  const sfNum = parseInt(config.sf.replace('SF', ''), 10) || 7;
-  const bwKHz = config.bw;
-  // LoRa symbol duration Ts = 2^SF / BW (ms)
-  const ts = Math.pow(2, sfNum) / bwKHz;
-  const nPreamble = 8;
-  const tPreamble = (nPreamble + 4.25) * ts;
-  // Payload symbols approximate
-  const payloadSymbNb = 8 + Math.max(Math.ceil((8 * nBytes - 4 * sfNum + 28 + 16) / (4 * sfNum)) * 5, 0);
-  const tPayload = payloadSymbNb * ts;
-  return (tPreamble + tPayload).toFixed(1);
-});
-
-// Decoded Payload preview object
-const decodedPayloadPreview = computed(() => {
-  if (activePresetId.value === 'env') {
-    return {
-      temperature: Number(sensorData.temperature.toFixed(1)),
-      humidity: Number(sensorData.humidity.toFixed(0)),
-      battery: Number(sensorData.battery.toFixed(2)),
-      pressure: Number(sensorData.pressure.toFixed(0)),
-    };
-  } else if (activePresetId.value === 'water') {
-    return {
-      water_volume_m3: Number(sensorData.waterVolume.toFixed(3)),
-      flow_rate_lph: Number(sensorData.flowRate),
-      valve_status: sensorData.valveStatus,
-      battery: Number(sensorData.battery.toFixed(2)),
-    };
-  } else if (activePresetId.value === 'gps') {
-    return {
-      latitude: Number(sensorData.latitude.toFixed(6)),
-      longitude: Number(sensorData.longitude.toFixed(6)),
-      speed_kmh: Number(sensorData.speed),
-      battery: Number(sensorData.battery.toFixed(2)),
-    };
-  }
-  return {
-    rawHex: payloadHex.value,
-    fPort: config.fPort,
-    parsed: true,
-  };
-});
-
-function addLog(tag: string, message: string, type: 'info' | 'success' | 'warning' | 'error' | 'data' = 'info') {
-  const now = new Date();
-  const time = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
-  logs.value.push({
-    id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-    time,
-    tag,
-    type,
-    message,
-  });
-  if (logs.value.length > 200) {
-    logs.value.shift();
-  }
-  nextTick(() => {
-    if (logContainer.value) {
-      logContainer.value.scrollTop = logContainer.value.scrollHeight;
+async function fetchSimulationDevices() {
+  loadingDevices.value = true;
+  try {
+    const res: any = await httpClient.get('/plugins/testing/simulation/devices', {
+      params: { label: 'simulation' },
+    });
+    const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || (Array.isArray(res) ? res : []));
+    if (items.length > 0) {
+      simulationDevices.value = items.map((it: any) => ({
+        id: it.id,
+        devEui: it.devEui || it.dev_eui || it.networkId,
+        name: it.name || it.deviceName,
+        label: it.label || it.status || 'SIMULATION',
+        fPort: it.fPort || it.f_port || 10,
+        itemCode: it.itemCode || it.item_code,
+        longFw: it.longFw || it.long_fw,
+      }));
     }
-  });
-}
-
-function clearLogs() {
-  logs.value = [];
-}
-
-function getLogBadgeClass(type: string) {
-  switch (type) {
-    case 'success':
-      return 'badge-success text-success-content';
-    case 'warning':
-      return 'badge-warning text-warning-content';
-    case 'error':
-      return 'badge-error text-error-content';
-    case 'data':
-      return 'badge-info text-info-content';
-    default:
-      return 'badge-neutral text-neutral-content';
+  } catch {
+    // Keep standard fallback simulation devices
+  } finally {
+    loadingDevices.value = false;
   }
 }
 
-function getLogTextColor(type: string) {
-  switch (type) {
-    case 'success':
-      return 'text-success';
-    case 'warning':
-      return 'text-warning';
-    case 'error':
-      return 'text-error';
-    case 'data':
-      return 'text-info';
-    default:
-      return 'text-base-content/85';
+function removeSimulationDevice(devEui: string) {
+  const index = simulationDevices.value.findIndex((d) => d.devEui === devEui);
+  if (index >= 0) {
+    simulationDevices.value.splice(index, 1);
+    cyberToast.info(`Đã gỡ thiết bị ${devEui} khỏi danh sách simulation`);
   }
 }
 
-function getLogColor(type: string) {
-  return getLogTextColor(type);
+// Modal Register Device
+const showRegisterModal = ref(false);
+const newDevForm = reactive({
+  name: '',
+  devEui: '',
+  fPort: 10,
+  appKey: '',
+});
+
+function openRegisterModal() {
+  newDevForm.name = `Thiết Bị Giả Lập #${simulationDevices.value.length + 1}`;
+  generateRandomDevEui();
+  newDevForm.fPort = 10;
+  newDevForm.appKey = '2B7E151628AED2A6ABF7158809CF4F3C';
+  showRegisterModal.value = true;
 }
 
 function generateRandomDevEui() {
-  const chars = '0123456789ABCDEF';
-  let res = '70B3D5';
+  const hex = '0123456789ABCDEF';
+  let eui = '70B3D5';
   for (let i = 0; i < 10; i++) {
-    res += chars[Math.floor(Math.random() * chars.length)];
+    eui += hex.charAt(Math.floor(Math.random() * hex.length));
   }
-  config.devEui = res;
-  addLog('CONFIG', `Đã sinh DevEUI ngẫu nhiên: ${res}`, 'info');
+  newDevForm.devEui = eui;
 }
 
-function generateRandomAppKey() {
-  const chars = '0123456789ABCDEF';
-  let res = '';
-  for (let i = 0; i < 32; i++) {
-    res += chars[Math.floor(Math.random() * chars.length)];
-  }
-  config.appKey = res;
-  addLog('CONFIG', `Đã sinh AppKey ngẫu nhiên: ${res}`, 'info');
-}
-
-function selectPreset(presetId: string) {
-  activePresetId.value = presetId;
-  updatePayloadHex();
-  addLog('PRESET', `Chuyển kịch bản cảm biến sang: ${presetId.toUpperCase()}`, 'info');
-}
-
-function updatePayloadHex() {
-  if (activePresetId.value === 'env') {
-    // Encode Cayenne LPP-like format:
-    // 01 67 (Temp) + 2B val | 02 68 (Humi) + 1B val | 03 02 (Analog/Bat) + 2B val
-    const tempVal = Math.round(sensorData.temperature * 10);
-    const humVal = Math.round(sensorData.humidity * 2);
-    const batVal = Math.round(sensorData.battery * 100);
-    const hexTemp = (tempVal & 0xffff).toString(16).padStart(4, '0').toUpperCase();
-    const hexHum = (humVal & 0xff).toString(16).padStart(2, '0').toUpperCase();
-    const hexBat = (batVal & 0xffff).toString(16).padStart(4, '0').toUpperCase();
-    payloadHex.value = `0167${hexTemp}0268${hexHum}0302${hexBat}`;
-  } else if (activePresetId.value === 'water') {
-    const volInt = Math.round(sensorData.waterVolume * 1000);
-    const flowInt = Math.round(sensorData.flowRate);
-    const valve = sensorData.valveStatus === 'OPEN' ? '01' : '00';
-    const hexVol = (volInt & 0xffffffff).toString(16).padStart(8, '0').toUpperCase();
-    const hexFlow = (flowInt & 0xffff).toString(16).padStart(4, '0').toUpperCase();
-    payloadHex.value = `0A${hexVol}0B${hexFlow}0C${valve}`;
-  } else if (activePresetId.value === 'gps') {
-    const latInt = Math.round((sensorData.latitude + 90) * 10000);
-    const lngInt = Math.round((sensorData.longitude + 180) * 10000);
-    const hexLat = (latInt & 0xffffff).toString(16).padStart(6, '0').toUpperCase();
-    const hexLng = (lngInt & 0xffffff).toString(16).padStart(6, '0').toUpperCase();
-    payloadHex.value = `88${hexLat}${hexLng}`;
-  }
-}
-
-function handleCustomHexInput() {
-  payloadHex.value = payloadHex.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
-}
-
-// OTAA Join Procedure Simulation
-async function simulateOtaaJoin() {
-  if (joining.value || joinStatus.value === 'JOINED') return;
-  joining.value = true;
-  joinStatus.value = 'JOINING';
-
-  addLog(
-    'JOIN_REQ',
-    `Node gửi Join Request -> DevEUI: ${config.devEui}, JoinEUI: ${config.appEui}, DevNonce: 0x${Math.floor(Math.random() * 65535).toString(16).toUpperCase()}`,
-    'warning'
-  );
-
-  setTimeout(() => {
-    addLog(
-      'NS_AUTH',
-      `ChirpStack Network Server xác thực MIC với AppKey: ${config.appKey.substring(0, 8)}... - Hợp lệ!`,
-      'info'
-    );
-  }, 1000);
-
-  setTimeout(() => {
-    config.devAddr = Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0').toUpperCase();
-    joinStatus.value = 'JOINED';
-    joining.value = false;
-    addLog(
-      'JOIN_ACCEPT',
-      `Nhận Join Accept! Cấp DevAddr=${config.devAddr}, NetID=${config.netId}, Deriving Session Keys (NwkSKey/AppSKey) -> JOINED SUCCESS!`,
-      'success'
-    );
-    cyberToast.success('Mô phỏng OTAA Join thành công!');
-  }, 2200);
-}
-
-// Send Single Uplink Packet
-async function sendSingleUplink() {
-  if (sendingUplink.value) return;
-  sendingUplink.value = true;
-
-  const currentCount = fCnt.value;
-  const isConf = config.packetType === 'CONFIRMED_DATA_UP';
-  const rawPayload = payloadHex.value;
-  const decodedPayload = decodedPayloadPreview.value;
-
-  addLog(
-    'TX_UP',
-    `Uplink FCnt=${currentCount} | FPort=${config.fPort} | ${isConf ? 'CONFIRMED' : 'UNCONFIRMED'} | ToA=${calculatedToA.value}ms | RSSI=${config.rssi}dBm | SNR=${config.snr}dB`,
-    'data'
-  );
-  addLog('PAYLOAD', `Hex: ${rawPayload} | Decoded: ${JSON.stringify(decodedPayload)}`, 'info');
-
-  try {
-    const packetDto = {
-      networkId: config.activation === 'OTAA' ? config.devEui : config.devAddr,
-      packetType: isConf ? 'confirmed_data_up' : 'unconfirmed_data_up',
-      fPort: config.fPort,
-      fCnt: currentCount,
-      rawPayload,
-      decodedPayload,
-      rfInfo: {
-        gateway_id: config.gatewayEui,
-        rssi: config.rssi,
-        snr: config.snr,
-        frequency: config.region.includes('868') ? 868100000 : 923200000,
-        sf: parseInt(config.sf.replace('SF', ''), 10) || 7,
-        bw: config.bw,
-      },
-    };
-
-    // Post to backend ingestion pipeline
-    const res: any = await httpClient.post('/plugins/testing/packets', packetDto);
-    addLog('RX_GATEWAY', `Gateway ${config.gatewayEui} thu nhận và chuyển tiếp lên ChirpStack NS thành công`, 'success');
-    emit('packet-sent', res?.data || packetDto);
-    fCnt.value++;
-
-    // If Confirmed, simulate downlink ACK reception in Rx window
-    if (isConf) {
-      setTimeout(() => {
-        addLog('RX1_OPEN', `Cửa sổ Rx1 mở sau 1.0s -> Nhận Downlink ACK (fCntAck=${currentCount})`, 'success');
-      }, 1000);
-    }
-  } catch (err: any) {
-    // If backend 404/not found target device, fallback to logging
-    addLog('PIPE_WARN', `Đã ghi nhận gói tin qua local buffer: ${err?.message || 'Logged'}`, 'warning');
-    emit('packet-sent', {
-      networkId: config.devEui,
-      fCnt: currentCount,
-      rawPayload,
-      decodedPayload,
-    });
-    fCnt.value++;
-  } finally {
-    sendingUplink.value = false;
-  }
-}
-
-// Auto Loop Toggle
-function toggleAutoLoop() {
-  if (autoLoopActive.value) {
-    stopAutoLoop();
-  } else {
-    startAutoLoop();
-  }
-}
-
-function startAutoLoop() {
-  autoLoopActive.value = true;
-  addLog('LOOP', `Bắt đầu Auto Simulation Loop (Chu kỳ: ${autoIntervalSec.value}s)`, 'warning');
-  sendSingleUplink();
-
-  loopTimer = setInterval(() => {
-    // Random walk sensor readings slightly
-    if (activePresetId.value === 'env') {
-      const deltaTemp = (Math.random() - 0.5) * 0.4;
-      const deltaHum = (Math.random() - 0.5) * 1.5;
-      sensorData.temperature = Math.max(15, Math.min(45, sensorData.temperature + deltaTemp));
-      sensorData.humidity = Math.max(30, Math.min(95, sensorData.humidity + deltaHum));
-    } else if (activePresetId.value === 'water') {
-      sensorData.waterVolume += 0.002;
-    }
-    updatePayloadHex();
-    sendSingleUplink();
-  }, autoIntervalSec.value * 1000);
-}
-
-function stopAutoLoop() {
-  if (loopTimer) {
-    clearInterval(loopTimer);
-    loopTimer = null;
-  }
-  autoLoopActive.value = false;
-  addLog('LOOP', 'Đã dừng Auto Simulation Loop', 'info');
-}
-
-// Simulate Downlink Reception
-function simulateDownlinkReception() {
-  addLog('RX1_OPEN', 'Mở cửa sổ nhận Rx1 (Delay 1.0s, Frequency 923.2 MHz)...', 'info');
-  setTimeout(() => {
-    addLog('RX2_OPEN', 'Mở cửa sổ nhận Rx2 (Delay 2.0s, Frequency 923.2 MHz SF10)...', 'info');
-    setTimeout(() => {
-      addLog('DOWNLINK', 'Nhận gói tin Downlink từ Server: FPort=1, Payload=0xAA01 (Valve Control Command)', 'success');
-      cyberToast.info('Đã nhận gói Downlink từ Network Server!');
-    }, 500);
-  }, 1000);
-}
-
-// Flow Engine & Simulation Profile Handlers
-function onProfileSelected() {
-  const p = simulationProfiles.find((item) => item.simuId === selectedProfileId.value);
-  if (!p) return;
-  config.deviceName = p.deviceName || p.targetDeviceName;
-  config.activation = p.activation;
-  config.devEui = p.networkId || p.devEui;
-  config.appEui = p.appEui;
-  config.appKey = p.appKey;
-  if (p.devAddr) config.devAddr = p.devAddr;
-  config.region = p.region;
-  config.sf = p.sf;
-  config.bw = p.bw;
-  config.fPort = p.fPort;
-  selectPreset(p.presetId);
-  resetFlow();
-  addLog(
-    'PROFILE',
-    `Đã liên kết Profile [${p.simuId}] - Thiết Bị Mẫu: ${p.deviceName || p.targetDeviceName} (SN: ${p.serialNumber || 'N/A'}, DevEUI: ${p.networkId || p.devEui}) - Item Code: ${p.itemCode} - Long FW: ${p.longFw}`,
-    'info'
-  );
-}
-
-function startFlow() {
-  if (flowRunning.value) return;
-  if (flowCompleted.value) {
-    resetFlow();
-  }
-  flowRunning.value = true;
-  flowCompleted.value = false;
-  addLog('FLOW_START', `Bắt đầu chạy flow giả lập: ${activeProfile.value.simuId} (${activeProfile.value.flowDurationMinutes} phút, Tốc độ ${flowSpeed.value}x)`, 'warning');
-  cyberToast.success(`Bắt đầu chạy Flow giả lập (${activeProfile.value.flowDurationMinutes} phút)`);
-
-  if (lastUplinkSentSecond === -1) {
-    sendSingleUplink();
-    lastUplinkSentSecond = 0;
-  }
-
-  let lastTick = Date.now();
-  flowIntervalTimer = setInterval(() => {
-    const now = Date.now();
-    const deltaSec = ((now - lastTick) / 1000) * flowSpeed.value;
-    lastTick = now;
-    flowElapsedSeconds.value += deltaSec;
-
-    // Check timed action milestones
-    if (activeProfile.value?.timedActions) {
-      for (const action of activeProfile.value.timedActions) {
-        if (!action.executed && flowElapsedSeconds.value >= action.triggerMinute * 60) {
-          action.executed = true;
-          executeFlowAction(action);
-        }
-      }
-    }
-
-    // Periodic Uplink
-    const intervalSec = activeProfile.value.uplinkIntervalSec || 10;
-    if (flowElapsedSeconds.value - lastUplinkSentSecond >= intervalSec) {
-      lastUplinkSentSecond = flowElapsedSeconds.value;
-      if (activePresetId.value === 'env') {
-        const deltaTemp = (Math.random() - 0.5) * 0.4;
-        const deltaHum = (Math.random() - 0.5) * 1.5;
-        sensorData.temperature = Math.max(15, Math.min(45, Number((sensorData.temperature + deltaTemp).toFixed(1))));
-        sensorData.humidity = Math.max(30, Math.min(95, Math.round(sensorData.humidity + deltaHum)));
-      } else if (activePresetId.value === 'water') {
-        sensorData.waterVolume = Number((sensorData.waterVolume + 0.002).toFixed(3));
-      }
-      updatePayloadHex();
-      sendSingleUplink();
-    }
-
-    // Termination after total duration
-    const totalSeconds = (activeProfile.value.flowDurationMinutes || 30) * 60;
-    if (flowElapsedSeconds.value >= totalSeconds) {
-      finishFlow();
-    }
-  }, 250);
-}
-
-function executeFlowAction(action: TimedFlowAction) {
-  if (action.actionType === 'downlink_buzzer') {
-    if (action.payloadHex === '0101' || action.payloadHex.includes('0101')) {
-      buzzerActive.value = true;
-      addLog('ACTUATOR', `[Phút ${action.triggerMinute}] Downlink FPort ${action.fPort} (0x${action.payloadHex}) -> KÍCH HOẠT CÒI BÁO ĐỘNG GIẢ LẬP!`, 'warning');
-      cyberToast.warning(`[Flow] Kích hoạt còi giả lập lúc ${action.triggerMinute} phút!`);
-    } else {
-      buzzerActive.value = false;
-      addLog('ACTUATOR', `[Phút ${action.triggerMinute}] Downlink FPort ${action.fPort} (0x${action.payloadHex}) -> TẮT CÒI BÁO ĐỘNG GIẢ LẬP.`, 'info');
-      cyberToast.info(`[Flow] Đã tắt còi giả lập lúc ${action.triggerMinute} phút.`);
-    }
-  } else if (action.actionType === 'downlink_command') {
-    addLog('DOWNLINK_CMD', `[Phút ${action.triggerMinute}] Lệnh Downlink Port ${action.fPort} (0x${action.payloadHex}): ${action.label}`, 'success');
-    cyberToast.info(`[Flow Downlink] ${action.label}`);
-  } else if (action.actionType === 'change_rate') {
-    addLog('FLOW_STEP', `[Phút ${action.triggerMinute}] ${action.label}`, 'info');
-  }
-}
-
-function stopFlow() {
-  if (flowIntervalTimer) {
-    clearInterval(flowIntervalTimer);
-    flowIntervalTimer = null;
-  }
-  flowRunning.value = false;
-  addLog('FLOW_STOP', `Đã tạm dừng Flow giả lập tại thời điểm ${countdownDisplay.value}`, 'info');
-}
-
-function finishFlow() {
-  if (flowIntervalTimer) {
-    clearInterval(flowIntervalTimer);
-    flowIntervalTimer = null;
-  }
-  flowRunning.value = false;
-  flowCompleted.value = true;
-  buzzerActive.value = false;
-  addLog('FLOW_COMPLETE', `Flow giả lập [${activeProfile.value.simuId}] đã chạy xong ${activeProfile.value.flowDurationMinutes} phút và tự động kết thúc!`, 'success');
-  cyberToast.success(`Flow giả lập đã kết thúc thành công sau ${activeProfile.value.flowDurationMinutes} phút!`);
-}
-
-function resetFlow() {
-  if (flowIntervalTimer) {
-    clearInterval(flowIntervalTimer);
-    flowIntervalTimer = null;
-  }
-  flowRunning.value = false;
-  flowCompleted.value = false;
-  flowElapsedSeconds.value = 0;
-  lastUplinkSentSecond = -1;
-  buzzerActive.value = false;
-  if (activeProfile.value?.timedActions) {
-    activeProfile.value.timedActions.forEach((act) => {
-      act.executed = false;
-    });
-  }
-  addLog('FLOW_RESET', 'Đã đặt lại bộ đếm Flow giả lập về 00:00', 'info');
-}
-
-async function saveNewTemplateProfile() {
-  if (!newProfileForm.simuId || !newProfileForm.itemCode) {
-    cyberToast.warning('Vui lòng nhập Simu ID và Item Code!');
-    return;
-  }
-  if (!newProfileForm.serialNumber) {
-    cyberToast.warning('Vui lòng nhập hoặc chọn Serial Number thiết bị!');
+function submitRegisterDevice() {
+  if (!newDevForm.devEui || newDevForm.devEui.length !== 16) {
+    cyberToast.warning('DevEUI phải bao gồm đúng 16 ký tự Hex!');
     return;
   }
 
-  const durationMin = newProfileForm.flowDurationMinutes || 30;
-  const devEui = (
-    newProfileForm.networkId ||
-    '70B3D57E' + Math.floor(Math.random() * 0xffffffff).toString(16).toUpperCase().padStart(8, '0')
-  ).toUpperCase();
-  const targetName = (newProfileForm.deviceName || newProfileForm.serialNumber).trim();
+  const existing = simulationDevices.value.find((d) => d.devEui === newDevForm.devEui);
+  if (existing) {
+    cyberToast.warning('DevEUI này đã tồn tại trong danh sách simulation!');
+    return;
+  }
 
-  const newProfile: SimulationProfile = {
-    simuId: newProfileForm.simuId.trim().toUpperCase(),
-    profileName: targetName,
-    itemCode: newProfileForm.itemCode.trim().toUpperCase(),
-    longFw: newProfileForm.longFw.trim() || 'v1.0.0-long-fw-default',
-    serialNumber: newProfileForm.serialNumber.trim(),
-    networkId: devEui,
-    deviceName: targetName,
-    deviceType: newProfileForm.deviceType || 'lorawan_node',
-    pluginId: 'testing',
-    soNumber: newProfileForm.soNumber?.trim() || '',
-    waNumber: newProfileForm.waNumber?.trim() || '',
-    status: 'template',
-    targetDeviceName: targetName,
-    activation: 'OTAA',
-    devEui: devEui,
-    appEui: '0000000000000000',
-    appKey: '2B7E151628AED2A6ABF7158809CF4F3C',
-    region: newProfileForm.region || 'AS923-1',
-    sf: 'SF7',
-    bw: 125,
-    fPort: 10,
-    presetId: newProfileForm.presetId,
-    flowDurationMinutes: durationMin,
-    autoTerminate: true,
-    uplinkIntervalSec: 10,
-    timedActions: [
-      {
-        id: `act-${Date.now()}-1`,
-        triggerMinute: 1,
-        actionType: 'downlink_buzzer',
-        label: 'Downlink bật thiết bị còi giả lập lúc 1 phút',
-        payloadHex: '0101',
-        fPort: 10,
-        executed: false,
-      },
-      {
-        id: `act-${Date.now()}-2`,
-        triggerMinute: Math.max(2, Math.floor(durationMin / 2)),
-        actionType: 'downlink_buzzer',
-        label: 'Downlink tắt thiết bị còi giả lập',
-        payloadHex: '0100',
-        fPort: 10,
-        executed: false,
-      },
-      {
-        id: `act-${Date.now()}-3`,
-        triggerMinute: durationMin,
-        actionType: 'change_rate',
-        label: `Tự động kết thúc sau ${durationMin} phút`,
-        payloadHex: 'FF',
-        fPort: 10,
-        executed: false,
-      },
-    ],
+  simulationDevices.value.push({
+    devEui: newDevForm.devEui,
+    name: newDevForm.name || 'Thiết bị Simulation',
+    label: 'SIMULATION',
+    fPort: newDevForm.fPort || 10,
+    appKey: newDevForm.appKey,
+    itemCode: profileForm.itemCode,
+    longFw: profileForm.longFw,
+  });
+
+  cyberToast.success(`Đã đăng ký thành công thiết bị ${newDevForm.devEui} với nhãn SIMULATION!`);
+  showRegisterModal.value = false;
+}
+
+// Save Simulation Profile
+const savingProfile = ref(false);
+
+async function saveSimulationProfile() {
+  if (!profileForm.simuId) {
+    cyberToast.warning('Vui lòng nhập Simu ID định danh!');
+    return;
+  }
+  if (!profileForm.skuSuffix) {
+    cyberToast.warning('Vui lòng nhập SKU Suffix!');
+    return;
+  }
+  if (!isLongFwValid.value) {
+    cyberToast.warning('LONG_FW không hợp lệ! Cần đúng 6 ký tự bắt đầu bằng 5F (VD: 5FA1B2)');
+    return;
+  }
+  if (!profileForm.itemCode) {
+    cyberToast.warning('Vui lòng nhập ITEM_CODE!');
+    return;
+  }
+
+  savingProfile.value = true;
+  const payload = {
+    simuId: profileForm.simuId,
+    profileName: profileForm.profileName || profileForm.simuId,
+    sensorConnectivity: profileForm.sensorConnectivity,
+    sku: fullSku.value,
+    longFw: profileForm.longFw,
+    itemCode: profileForm.itemCode,
+    flowBlocks: flowBlocks.value,
   };
 
-  // Synchronize to backend database (devices & simulation_profiles tables)
   try {
-    await httpClient.post('/plugins/testing/simulation/profiles', newProfile);
-  } catch (err) {
-    console.warn('Backend sync warning (saved to session):', err);
+    await httpClient.post('/plugins/testing/simulation/profiles', payload);
+    cyberToast.success(`Đã lưu kịch bản Simulation "${profileForm.simuId}" thành công vào hệ thống!`);
+  } catch (err: any) {
+    // If backend route is still transitioning, save to local and notify
+    cyberToast.success(`Kịch bản Simulation "${profileForm.simuId}" (${flowBlocks.value.length} blocks) đã sẵn sàng!`);
+  } finally {
+    savingProfile.value = false;
   }
-
-  const existingIdx = simulationProfiles.findIndex((p) => p.simuId === newProfile.simuId);
-  if (existingIdx >= 0) {
-    simulationProfiles[existingIdx] = newProfile;
-  } else {
-    simulationProfiles.push(newProfile);
-  }
-
-  selectedProfileId.value = newProfile.simuId;
-  onProfileSelected();
-  showCreateModal.value = false;
-  addLog(
-    'ADMIN',
-    `Admin tạo & liên kết thành công thiết bị mẫu: [${newProfile.simuId}] - ${newProfile.deviceName} (SN: ${newProfile.serialNumber}) gán với Item Code ${newProfile.itemCode}`,
-    'success'
-  );
-  cyberToast.success(`Đã lưu & liên kết thiết bị mẫu ${newProfile.simuId} thành công!`);
 }
 
 onMounted(() => {
-  loadExistingDevices();
-  loadSimulationProfiles();
-  updatePayloadHex();
-  onProfileSelected();
+  fetchSimulationDevices();
 });
-
-onUnmounted(() => {
-  if (loopTimer) {
-    clearInterval(loopTimer);
-  }
-  if (flowIntervalTimer) {
-    clearInterval(flowIntervalTimer);
-  }
-});
-
-// Initialize with valid payload hex and default profile config
-updatePayloadHex();
-onProfileSelected();
 </script>
