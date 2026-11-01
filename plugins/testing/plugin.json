@@ -28,6 +28,16 @@
       "namespace": "testing",
       "resource": "device-auto-check",
       "action": "manage"
+    },
+    {
+      "namespace": "testing",
+      "resource": "create-device-testing",
+      "action": "manage"
+    },
+    {
+      "namespace": "testing",
+      "resource": "device-test",
+      "action": "manage"
     }
   ]
 }
