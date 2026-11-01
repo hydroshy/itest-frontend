@@ -8,16 +8,9 @@
             <Cpu class="w-5 h-5" />
           </div>
           <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-base font-bold tracking-wide uppercase text-base-content">
-                TẠO THIẾT BỊ TEST (CREATE DEVICE TESTING)
-              </h2>
-              <span class="badge badge-primary badge-sm font-mono font-bold">LORAWAN 3-STEP FLOW</span>
-              <span class="badge badge-neutral badge-sm font-mono">ATH TEMPLATE</span>
-            </div>
-            <p class="text-xs text-base-content/60 mt-0.5">
-              Quy trình 3 bước: 1. Khai báo SO/WA &amp; Network Server &bull; 2. Đọc nhanh thanh ghi 0..259 qua Serial Tool &bull; 3. Tự động đăng ký ChirpStack
-            </p>
+            <h2 class="text-base font-bold tracking-wide uppercase text-base-content">
+              TẠO THIẾT BỊ TEST (CREATE DEVICE TESTING)
+            </h2>
           </div>
         </div>
 
@@ -34,29 +27,29 @@
       </div>
     </div>
 
-    <!-- Wizard Steps Indicator -->
+    <!-- Wizard Steps Indicator (Chỉ ghi STEP 1, STEP 2, STEP 3 theo chỉ đạo) -->
     <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-3">
       <ul class="steps steps-horizontal w-full text-xs font-semibold">
         <li
-          class="step cursor-pointer"
+          class="step cursor-pointer font-bold font-mono"
           :class="currentStep >= 1 ? 'step-primary' : ''"
           @click="goToStep(1)"
         >
-          Bước 1: SO / WA &amp; Network Server
+          STEP 1
         </li>
         <li
-          class="step cursor-pointer"
+          class="step cursor-pointer font-bold font-mono"
           :class="currentStep >= 2 ? 'step-primary' : ''"
           @click="goToStep(2)"
         >
-          Bước 2: Serial Tool Đọc Nhanh 0..259
+          STEP 2
         </li>
         <li
-          class="step cursor-pointer"
+          class="step cursor-pointer font-bold font-mono"
           :class="currentStep >= 3 ? 'step-primary' : ''"
           @click="goToStep(3)"
         >
-          Bước 3: Tự Động Đăng Ký ChirpStack
+          STEP 3
         </li>
       </ul>
     </div>
@@ -67,9 +60,9 @@
     <div v-if="currentStep === 1" class="space-y-4">
       <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
-          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary">
+          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary font-mono">
             <FileText class="w-4 h-4" />
-            <span>BƯỚC 1: CHỌN THÔNG TIN CƠ BẢN &amp; LIÊN KẾT TRACEABILITY</span>
+            <span>STEP 1</span>
           </div>
           <span class="badge badge-sm badge-info font-mono">BẮT BUỘC</span>
         </div>
@@ -183,7 +176,7 @@
             :disabled="!step1.soNumber || !step1.waNumber"
             @click="nextToStep2"
           >
-            <span>Tiếp Tục: Bước 2 (Kết Nối Serial Tool)</span>
+            <span>Tiếp Tục: STEP 2</span>
             <ChevronRight class="w-4 h-4" />
           </button>
         </div>
@@ -196,27 +189,26 @@
     <div v-if="currentStep === 2" class="space-y-4">
       <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-5 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-base-content/10 pb-3">
-          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary">
+          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary font-mono">
             <Cable class="w-4 h-4" />
-            <span>BƯỚC 2: TOOL SERIAL &bull; ĐỌC NHANH THANH GHI 0..259 (ATH TEMPLATE)</span>
+            <span>STEP 2</span>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <span
               class="badge badge-sm font-mono font-bold"
               :class="serialConnected ? 'badge-success text-success-content' : 'badge-neutral'"
             >
-              {{ serialConnected ? 'SERIAL CONNECTED' : 'SERIAL DISCONNECTED' }}
+              {{ serialConnected ? 'CONNECTED' : 'DISCONNECTED' }}
             </span>
-            <span class="badge badge-sm badge-outline font-mono">Modbus FC 03 Chunk</span>
           </div>
         </div>
 
         <!-- Serial Controls Toolbar (Flow chuẩn Final Config Tool: Chọn cổng tự động kết nối -> Chờ bấm START) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-base-100 p-4 rounded-lg border border-base-content/10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 bg-base-100 p-4 rounded-lg border border-base-content/10">
           <!-- Chọn cổng COM: Bấm chọn là tự động kết nối ngay -->
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-xs font-semibold">1. Cổng Kết Nối (COM Port)</span>
+              <span class="label-text text-xs font-semibold">Cổng Kết Nối (COM Port)</span>
             </label>
             <div class="flex gap-2">
               <button
@@ -260,70 +252,23 @@
             </select>
           </div>
 
-          <!-- Trạng thái & Hướng dẫn -->
-          <div class="form-control">
-            <label class="label py-0.5">
-              <span class="label-text text-xs font-semibold">Trạng Thái Kết Nối</span>
-            </label>
-            <div class="flex items-center h-8 px-2 rounded bg-base-200 text-xs font-mono">
-              <span
-                class="inline-block w-2.5 h-2.5 rounded-full mr-2"
-                :class="serialConnected ? 'bg-success animate-pulse' : 'bg-base-content/30'"
-              ></span>
-              <span class="font-bold" :class="serialConnected ? 'text-success' : 'text-base-content/60'">
-                {{ serialConnected ? 'ĐÃ KẾT NỐI (READY)' : 'CHƯA KẾT NỐI' }}
-              </span>
-            </div>
-          </div>
-
           <!-- Nút START ĐỌC THANH GHI -->
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-xs font-semibold">2. Nhấn START Để Đọc</span>
+              <span class="label-text text-xs font-semibold">Thao Tác Đọc</span>
             </label>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                class="btn btn-sm btn-primary flex-1 gap-2 font-bold shadow-md"
-                :class="{ 'btn-disabled': !serialConnected || readingRegisters }"
-                :disabled="!serialConnected || readingRegisters"
-                @click="startFastRead0To259"
-              >
-                <span v-if="readingRegisters" class="loading loading-spinner loading-xs"></span>
-                <Play v-else class="w-4 h-4 fill-current" />
-                <span>START ĐỌC</span>
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-sm btn-ghost gap-1"
-                title="Mô phỏng đọc nếu không cắm cảm biến thực"
-                :disabled="readingRegisters"
-                @click="simulateReadTemplateData"
-              >
-                <Sparkles class="w-3.5 h-3.5 text-warning" />
-                <span>Demo</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              class="btn btn-sm btn-primary w-full gap-2 font-bold shadow-md"
+              :class="{ 'btn-disabled': !serialConnected || readingRegisters }"
+              :disabled="!serialConnected || readingRegisters"
+              @click="startFastRead0To259"
+            >
+              <span v-if="readingRegisters" class="loading loading-spinner loading-xs"></span>
+              <Play v-else class="w-4 h-4 fill-current" />
+              <span>START ĐỌC</span>
+            </button>
           </div>
-        </div>
-
-        <!-- Hướng dẫn người dùng theo đúng flow Final Config Tool -->
-        <div
-          v-if="!serialConnected"
-          class="alert alert-info py-2 px-3 text-xs flex items-center justify-between"
-        >
-          <span>
-            👉 <strong>Flow Final Config:</strong> Nhấn <strong>"Chọn Cổng COM"</strong> ở trên, chọn cổng trong hộp thoại trình duyệt &rarr; Cổng sẽ <strong>tự động kết nối</strong>, sau đó bạn chỉ cần nhấn <strong>START ĐỌC</strong>.
-          </span>
-        </div>
-        <div
-          v-else-if="!readCompleted && !readingRegisters"
-          class="alert alert-success py-2 px-3 text-xs flex items-center justify-between text-success-content"
-        >
-          <span>
-            ⚡ Cổng COM đã sẵn sàng! Nhấn nút <strong>START ĐỌC</strong> để bắt đầu đọc 12 tham số theo ATH_TEMPLATE.csv.
-          </span>
         </div>
 
         <!-- Reading Progress Indicator -->
@@ -402,7 +347,7 @@
             @click="currentStep = 1"
           >
             <ChevronLeft class="w-4 h-4" />
-            <span>Quay Lại Bước 1</span>
+            <span>Quay Lại STEP 1</span>
           </button>
 
           <button
@@ -411,7 +356,7 @@
             :disabled="!hasRequiredRegisters"
             @click="nextToStep3"
           >
-            <span>Tiếp Tục: Bước 3 (Tự Động Đăng Ký ChirpStack)</span>
+            <span>Tiếp Tục: STEP 3</span>
             <ChevronRight class="w-4 h-4" />
           </button>
         </div>
@@ -424,11 +369,10 @@
     <div v-if="currentStep === 3" class="space-y-4">
       <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
-          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary">
+          <div class="flex items-center gap-2 text-sm font-bold uppercase text-primary font-mono">
             <Radio class="w-4 h-4" />
-            <span>BƯỚC 3: TỰ ĐỘNG ĐĂNG KÝ LÊN NETWORK SERVER (CHIRPSTACK)</span>
+            <span>STEP 3</span>
           </div>
-          <span class="badge badge-sm badge-primary font-mono">2-STEP CHIRPSTACK PROVISIONING</span>
         </div>
 
         <!-- Status Result Alert -->
@@ -518,7 +462,7 @@
             :disabled="step3Result.status === 'PROCESSING'"
           >
             <ChevronLeft class="w-4 h-4" />
-            <span>Quay Lại Bước 2</span>
+            <span>Quay Lại STEP 2</span>
           </button>
 
           <div class="flex items-center gap-2">
@@ -558,7 +502,6 @@ import {
   Power,
   PowerOff,
   Zap,
-  Sparkles,
   Table,
   CheckCircle2,
   ChevronRight,
@@ -980,7 +923,7 @@ async function startFastRead0To259() {
     }
 
     if (!mcuAwake) {
-      throw new Error('Cảm biến không phản hồi sau 6 lần thử. Vui lòng kiểm tra cáp UART/RS485, baudrate (9600/115200) hoặc bấm "Demo Read" để thử nghiệm tiếp.');
+      throw new Error('Cảm biến không phản hồi sau 6 lần thử. Vui lòng kiểm tra cáp UART/RS485, baudrate (9600/115200) và nguồn cấp cảm biến.');
     }
 
     const rawMemory = new Map<number, [number, number]>();
@@ -1092,37 +1035,6 @@ function decodeRegistersFromMemory(rawMemory: Map<number, [number, number]>) {
   registerData['sensor type'] = stBytes.length >= 2 ? String((stBytes[0] << 8) | stBytes[1]) : '';
   registerData.SERIAL_NUMBER = bytesToString(getBytes(259, 9));
   registerData.ITEM_CODE = bytesToString(getBytes(386, 14));
-}
-
-// Simulation/Demo mode for offline verification
-function simulateReadTemplateData() {
-  readingRegisters.value = true;
-  readProgress.value = 10;
-  readingStatusText.value = 'Mô phỏng đọc Modbus FC 03 Chunk 1..4...';
-
-  setTimeout(() => {
-    readProgress.value = 50;
-    setTimeout(() => {
-      readProgress.value = 100;
-      registerData.FW_CODE = 'ATH';
-      registerData.FW_VERSION = '0601';
-      registerData.HW_VERSION = '0100';
-      registerData.ME_VERSION = '0100';
-      registerData.deviceEUI = '0080E11505012345';
-      registerData['LRW appEUI'] = '0000000000000000';
-      registerData['LRW appKey'] = '2B7E151628AED2A6ABF7158809CF4F3C';
-      registerData['region code'] = 'AS923-1';
-      registerData.class = 'A';
-      registerData['sensor type'] = '1001';
-      registerData.SERIAL_NUMBER = `SN20261101${Math.floor(1000 + Math.random() * 9000)}`;
-      registerData.ITEM_CODE = step1.itemCode || 'WSLRW-ATH-01';
-
-      readingRegisters.value = false;
-      readCompleted.value = true;
-      readingStatusText.value = 'Đã nạp dữ liệu mẫu thành công!';
-      cyberToast.success('Đã nạp dữ liệu thanh ghi mẫu thành công!');
-    }, 300);
-  }, 300);
 }
 
 function nextToStep3() {
