@@ -1012,39 +1012,43 @@ async function startFastRead0To259() {
     }
 
     // Khối 2: Reg 69..85 (17 regs = 34 bytes response -> lấy region code, class)
-    readingStatusText.value = 'Đang đọc Khối 2: LoRaWAN Region & Class (Reg 69..85)...';
+    readingStatusText.value = `Đang đọc Khối 2: LoRaWAN Region & Class (Slave ${activeSlave}, Reg 69..85)...`;
     readProgress.value = 45;
     try {
-      const b2 = await readModbusRaw(1, 3, 69, 17, 1200);
+      const b2 = await readModbusRaw(activeSlave, 3, 69, 17, 1200);
       for (let i = 0; i < 17; i++) {
         rawMemory.set(69 + i, [b2[i * 2], b2[i * 2 + 1]]);
       }
     } catch {
-      const bReg = await readModbusRaw(1, 3, 69, 3, 1000);
+      const bReg = await readModbusRaw(activeSlave, 3, 69, 3, 1000);
       for (let i = 0; i < 3; i++) rawMemory.set(69 + i, [bReg[i * 2], bReg[i * 2 + 1]]);
-      const bCls = await readModbusRaw(1, 3, 85, 1, 1000);
+      const bCls = await readModbusRaw(activeSlave, 3, 85, 1, 1000);
       rawMemory.set(85, [bCls[0], bCls[1]]);
     }
 
     // Khối 3: Reg 103 (1 reg -> sensor type)
-    readingStatusText.value = 'Đang đọc Khối 3: Sensor Type (Reg 103)...';
+    readingStatusText.value = `Đang đọc Khối 3: Sensor Type (Slave ${activeSlave}, Reg 103)...`;
     readProgress.value = 65;
-    const b3 = await readModbusRaw(1, 3, 103, 1, 1000);
-    rawMemory.set(103, [b3[0], b3[1]]);
+    try {
+      const b3 = await readModbusRaw(activeSlave, 3, 103, 1, 1000);
+      rawMemory.set(103, [b3[0], b3[1]]);
+    } catch {}
 
     // Khối 4: Reg 259..267 (9 regs = 18 bytes -> SERIAL_NUMBER)
-    readingStatusText.value = 'Đang đọc Khối 4: Serial Number (Reg 259)...';
+    readingStatusText.value = `Đang đọc Khối 4: Serial Number (Slave ${activeSlave}, Reg 259)...`;
     readProgress.value = 85;
-    const b4 = await readModbusRaw(1, 3, 259, 9, 1000);
-    for (let i = 0; i < 9; i++) {
-      rawMemory.set(259 + i, [b4[i * 2], b4[i * 2 + 1]]);
-    }
+    try {
+      const b4 = await readModbusRaw(activeSlave, 3, 259, 9, 1000);
+      for (let i = 0; i < 9; i++) {
+        rawMemory.set(259 + i, [b4[i * 2], b4[i * 2 + 1]]);
+      }
+    } catch {}
 
     // Khối 5: Reg 386..399 (14 regs = 28 bytes -> ITEM_CODE)
-    readingStatusText.value = 'Đang đọc Khối 5: Item Code (Reg 386)...';
+    readingStatusText.value = `Đang đọc Khối 5: Item Code (Slave ${activeSlave}, Reg 386)...`;
     readProgress.value = 95;
     try {
-      const b5 = await readModbusRaw(1, 3, 386, 14, 1000);
+      const b5 = await readModbusRaw(activeSlave, 3, 386, 14, 1000);
       for (let i = 0; i < 14; i++) {
         rawMemory.set(386 + i, [b5[i * 2], b5[i * 2 + 1]]);
       }
