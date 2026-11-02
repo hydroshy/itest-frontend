@@ -458,6 +458,9 @@
               <div>FW Version: <strong class="text-white">{{ registerData.FW_VERSION }}</strong></div>
               <div>HW Version: <strong class="text-white">{{ registerData.HW_VERSION }}</strong></div>
               <div>Class / Region: <strong class="text-white">{{ registerData.class }} / {{ registerData['region code'] }}</strong></div>
+              <div v-if="matchedDeviceProfile" class="text-primary font-mono text-[11px] col-span-2">
+                ChirpStack Profile: <strong>{{ matchedDeviceProfile.name }}</strong> (ID: {{ matchedDeviceProfile.id }})
+              </div>
             </div>
           </div>
 
@@ -559,6 +562,10 @@ const step1 = reactive({
   itemCode: '',
 });
 
+const loadingProfiles = ref(false);
+const availableDeviceProfiles = ref<any[]>([]);
+const matchedDeviceProfile = ref<any>(null);
+
 function onNetworkServerChange() {
   const ns = networkServers.value.find((s) => s.id === step1.serverId);
   if (ns) {
@@ -568,6 +575,60 @@ function onNetworkServerChange() {
     step1.applicationId = ns.applicationId || ns.application_id || '';
     step1.deviceProfileId = ns.deviceProfileId || ns.device_profile_id || '';
   }
+  loadDeviceProfiles();
+}
+
+async function loadDeviceProfiles() {
+  if (!step1.serverId) return;
+  loadingProfiles.value = true;
+  try {
+    const res: any = await httpClient.get('/plugins/lorawan-chirpstack/device-profiles', {
+      params: {
+        serverId: step1.serverId,
+        tenantId: step1.tenantId,
+      },
+    });
+    const data = res?.data || res;
+    const list = Array.isArray(data) ? data : (Array.isArray(data?.result) ? data.result : (data?.deviceProfiles || []));
+    availableDeviceProfiles.value = list;
+    matchDeviceProfileByRegion();
+  } catch (err) {
+    console.warn('Failed to load device profiles for ChirpStack:', err);
+    availableDeviceProfiles.value = [];
+  } finally {
+    loadingProfiles.value = false;
+  }
+}
+
+function matchDeviceProfileByRegion(): any {
+  const rawRegion = (registerData['region code'] || '').trim().toUpperCase();
+  const rawClass = (registerData.class || 'A').trim().toUpperCase();
+  if (availableDeviceProfiles.value.length === 0) {
+    matchedDeviceProfile.value = null;
+    return null;
+  }
+
+  // 1. Try finding profile matching region from register 69 (e.g. EU868, AS923)
+  let found = availableDeviceProfiles.value.find((p: any) => {
+    const pRegion = (p.region || '').trim().toUpperCase();
+    const pName = (p.name || '').trim().toUpperCase();
+    if (rawRegion) {
+      if (pRegion === rawRegion || rawRegion.startsWith(pRegion) || pRegion.startsWith(rawRegion)) return true;
+      if (pName.includes(rawRegion)) return true;
+    }
+    return false;
+  });
+
+  // 2. Fallback to first profile if not matched
+  if (!found && availableDeviceProfiles.value.length > 0) {
+    found = availableDeviceProfiles.value[0];
+  }
+
+  matchedDeviceProfile.value = found;
+  if (found?.id) {
+    step1.deviceProfileId = found.id;
+  }
+  return found;
 }
 
 async function loadNetworkServers() {
@@ -1101,6 +1162,7 @@ function decodeRegistersFromMemory(rawMemory: Map<number, [number, number]>) {
   registerData['sensor type'] = stBytes.length >= 2 ? String((stBytes[0] << 8) | stBytes[1]) : '';
   registerData.SERIAL_NUMBER = bytesToString(getBytes(259, 9));
   registerData.ITEM_CODE = bytesToString(getBytes(386, 14));
+  matchDeviceProfileByRegion();
 }
 
 function nextToStep3() {
@@ -1121,12 +1183,13 @@ const step3Result = reactive({
 });
 
 const computedChirpstackPayload = computed(() => {
+  const profileId = matchedDeviceProfile.value?.id || step1.deviceProfileId || `profile-${registerData.class || 'A'}-${registerData['region code'] || 'AS923'}`;
   return {
     step1_device: {
       applicationId: step1.applicationId || 'app-iot-monitoring',
       description: 'ITEST 2.0',
       devEui: registerData.deviceEUI,
-      deviceProfileId: step1.deviceProfileId || `profile-${registerData.class || 'A'}-${registerData['region code'] || 'AS923'}`,
+      deviceProfileId: profileId,
       isDisabled: false,
       joinEui: registerData['LRW appEUI'] || '0000000000000000',
       name: registerData.SERIAL_NUMBER || `DEV-${registerData.deviceEUI}`,
@@ -1140,7 +1203,8 @@ const computedChirpstackPayload = computed(() => {
         hwVersion: registerData.HW_VERSION,
         tenantId: step1.tenantId,
         applicationId: step1.applicationId,
-        deviceProfileId: step1.deviceProfileId,
+        deviceProfileId: profileId,
+        deviceProfileName: matchedDeviceProfile.value?.name,
       },
     },
     step2_deviceKeys: {
@@ -1164,7 +1228,7 @@ async function executeChirpstackRegistration() {
     apiToken: step1.apiToken,
     tenantId: step1.tenantId,
     applicationId: step1.applicationId,
-    deviceProfileId: step1.deviceProfileId,
+    deviceProfileId: computedChirpstackPayload.value.step1_device.deviceProfileId,
     // Step 2 Registers
     fwCode: registerData.FW_CODE,
     fwVersion: registerData.FW_VERSION,
