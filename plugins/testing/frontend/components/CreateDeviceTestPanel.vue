@@ -31,22 +31,31 @@
     <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-3">
       <ul class="steps steps-horizontal w-full text-xs font-semibold">
         <li
-          class="step cursor-pointer font-bold font-mono"
-          :class="currentStep >= 1 ? 'step-primary' : ''"
+          class="step font-bold font-mono"
+          :class="[
+            currentStep >= 1 ? 'step-primary' : '',
+            currentStep === 3 ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+          ]"
           @click="goToStep(1)"
         >
           STEP 1
         </li>
         <li
-          class="step cursor-pointer font-bold font-mono"
-          :class="currentStep >= 2 ? 'step-primary' : ''"
+          class="step font-bold font-mono"
+          :class="[
+            currentStep >= 2 ? 'step-primary' : '',
+            currentStep === 3 ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+          ]"
           @click="goToStep(2)"
         >
           STEP 2
         </li>
         <li
-          class="step cursor-pointer font-bold font-mono"
-          :class="currentStep >= 3 ? 'step-primary' : ''"
+          class="step font-bold font-mono"
+          :class="[
+            currentStep >= 3 ? 'step-primary' : '',
+            currentStep === 3 ? 'cursor-default' : 'cursor-pointer'
+          ]"
           @click="goToStep(3)"
         >
           STEP 3
@@ -115,20 +124,6 @@
                 URL: {{ step1.serverUrl }}
               </span>
             </label>
-            <div v-if="step1.applicationId || step1.deviceProfileId" class="mt-1.5 p-2 bg-base-200/60 rounded-lg border border-base-300 text-xs space-y-1 font-mono">
-              <div class="flex items-center justify-between text-base-content/80">
-                <span class="text-base-content/60">Application ID:</span>
-                <span class="badge badge-sm badge-primary/15 text-primary font-bold">{{ step1.applicationId || '—' }}</span>
-              </div>
-              <div class="flex items-center justify-between text-base-content/80">
-                <span class="text-base-content/60">Device Profile:</span>
-                <span class="badge badge-sm badge-secondary/15 text-secondary font-bold">{{ step1.deviceProfileId || '—' }}</span>
-              </div>
-              <div v-if="step1.tenantId" class="flex items-center justify-between text-base-content/80">
-                <span class="text-base-content/60">Tenant ID:</span>
-                <span class="badge badge-sm badge-ghost text-base-content/70">{{ step1.tenantId }}</span>
-              </div>
-            </div>
           </div>
 
           <!-- Chọn SO (Sales Order) -->
@@ -306,17 +301,24 @@
           ></progress>
         </div>
 
-        <!-- 12 Extracted Register Parameters Table (ATH_TEMPLATE.csv) -->
+        <!-- 12 Extracted Register Parameters Table (ATH_TEMPLATE.csv) - Ẩn mặc định, có nút Debug để xem -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold uppercase tracking-wider text-base-content flex items-center gap-2">
               <Table class="w-4 h-4 text-primary" />
-              <span>DỮ LIỆU THANH GHI THIẾT BỊ (THEO ATH_TEMPLATE.CSV)</span>
+              <span>DỮ LIỆU THANH GHI THIẾT BỊ</span>
             </h3>
-            <span class="badge badge-xs badge-neutral font-mono">12 THAM SỐ CHUẨN</span>
+            <button
+              type="button"
+              class="btn btn-xs btn-outline btn-ghost gap-1.5 font-mono text-[11px]"
+              @click="showDebugRegisters = !showDebugRegisters"
+            >
+              <Bug class="w-3.5 h-3.5" />
+              <span>{{ showDebugRegisters ? 'Ẩn Debug' : 'Debug' }}</span>
+            </button>
           </div>
 
-          <div class="overflow-x-auto rounded-lg border border-base-content/10 bg-base-100">
+          <div v-if="showDebugRegisters" class="overflow-x-auto rounded-lg border border-base-content/10 bg-base-100">
             <table class="table table-xs w-full font-mono">
               <thead class="bg-base-200/60 text-[11px] text-base-content/70">
                 <tr>
@@ -389,14 +391,6 @@
               </button>
             </div>
           </div>
-        </div>
-
-        <div v-else-if="matchedDeviceProfile" class="p-3 bg-success/10 border border-success/30 rounded-lg flex items-center justify-between text-xs font-mono">
-          <div class="flex items-center gap-2 text-success">
-            <Cpu class="w-4 h-4 flex-shrink-0" />
-            <span>Profile ChirpStack đã khớp: <strong>{{ matchedDeviceProfile.name }}</strong> (ID: {{ matchedDeviceProfile.id }})</span>
-          </div>
-          <span class="badge badge-success badge-xs font-bold uppercase">Khớp chính xác</span>
         </div>
 
         <!-- Actions -->
@@ -483,51 +477,62 @@
           </div>
         </div>
 
-        <!-- Device & ChirpStack Payload Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Device Info Summary -->
-          <div class="bg-base-100 p-4 rounded-lg border border-base-content/10 space-y-2 text-xs">
-            <div class="font-bold text-primary border-b border-base-content/10 pb-1.5 flex items-center justify-between">
-              <span>Thông Tin Thiết Bị Đăng Ký (DUT)</span>
-              <span class="badge badge-xs badge-neutral font-mono">Decoded Hardware</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 font-mono text-[11px] text-base-content/80">
-              <div>DevEUI: <strong class="text-white">{{ registerData.deviceEUI }}</strong></div>
-              <div>AppEUI (JoinEUI): <strong class="text-white">{{ registerData['LRW appEUI'] }}</strong></div>
-              <div>Serial Number: <strong class="text-white">{{ registerData.SERIAL_NUMBER }}</strong></div>
-              <div>Item Code: <strong class="text-white">{{ registerData.ITEM_CODE || step1.itemCode }}</strong></div>
-              <div>FW Code: <strong class="text-white">{{ registerData.FW_CODE }}</strong></div>
-              <div>FW Version: <strong class="text-white">{{ registerData.FW_VERSION }}</strong></div>
-              <div>HW Version: <strong class="text-white">{{ registerData.HW_VERSION }}</strong></div>
-              <div>Class / Region: <strong class="text-white">{{ registerData.class }} / {{ registerData['region code'] }}</strong></div>
-              <div v-if="matchedDeviceProfile" class="text-primary font-mono text-[11px] col-span-2">
-                ChirpStack Profile: <strong>{{ matchedDeviceProfile.name }}</strong> (ID: {{ matchedDeviceProfile.id }})
-              </div>
-            </div>
+        <!-- Thông Tin Đăng Ký Thiết Bị (DUT) - Từng ô cho từng field giá trị -->
+        <div class="bg-base-200/50 p-4 md:p-5 rounded-lg border border-base-content/10 space-y-3">
+          <div class="font-bold text-primary border-b border-base-content/10 pb-2 flex items-center justify-between text-xs uppercase tracking-wider">
+            <span class="flex items-center gap-2">
+              <Cpu class="w-4 h-4" />
+              <span>Thông Tin Đăng Ký Thiết Bị</span>
+            </span>
+            <span class="badge badge-xs badge-neutral font-mono">10 THAM SỐ SẢN XUẤT</span>
           </div>
 
-          <!-- ChirpStack JSON Payload Preview -->
-          <div class="bg-base-100 p-4 rounded-lg border border-base-content/10 space-y-2 text-xs">
-            <div class="font-bold text-info border-b border-base-content/10 pb-1.5 flex items-center justify-between">
-              <span>Payload ChirpStack 2 Bước</span>
-              <span class="badge badge-xs badge-info font-mono">JSON SPEC</span>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">Serial Number</span>
+              <strong class="font-mono text-xs text-white truncate mt-1" :title="registerData.SERIAL_NUMBER">{{ registerData.SERIAL_NUMBER || '—' }}</strong>
             </div>
-            <pre class="bg-base-300 p-2.5 rounded font-mono text-[10px] text-success overflow-x-auto max-h-48 leading-tight">{{ JSON.stringify(computedChirpstackPayload, null, 2) }}</pre>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">Item Code</span>
+              <strong class="font-mono text-xs text-white truncate mt-1" :title="registerData.ITEM_CODE || step1.itemCode">{{ registerData.ITEM_CODE || step1.itemCode || '—' }}</strong>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">FW Version</span>
+              <strong class="font-mono text-xs text-white truncate mt-1">{{ registerData.FW_VERSION || '—' }}</strong>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">HW Version</span>
+              <strong class="font-mono text-xs text-white truncate mt-1">{{ registerData.HW_VERSION || '—' }}</strong>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">FW Code</span>
+              <strong class="font-mono text-xs text-white truncate mt-1">{{ registerData.FW_CODE || '—' }}</strong>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">DevEUI</span>
+              <strong class="font-mono text-xs text-primary truncate mt-1" :title="registerData.deviceEUI">{{ registerData.deviceEUI || '—' }}</strong>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">AppEUI</span>
+              <strong class="font-mono text-xs text-white truncate mt-1" :title="registerData['LRW appEUI']">{{ registerData['LRW appEUI'] || '—' }}</strong>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">AppKey</span>
+              <strong class="font-mono text-xs text-white truncate mt-1" :title="registerData['LRW appKey']">{{ registerData['LRW appKey'] || '—' }}</strong>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">Class</span>
+              <strong class="font-mono text-xs text-secondary truncate mt-1">{{ registerData.class || 'A' }}</strong>
+            </div>
+            <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
+              <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">Region</span>
+              <strong class="font-mono text-xs text-accent truncate mt-1">{{ registerData['region code'] || '—' }}</strong>
+            </div>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex items-center justify-between pt-2">
-          <button
-            type="button"
-            class="btn btn-sm btn-ghost gap-1.5"
-            @click="currentStep = 2"
-            :disabled="step3Result.status === 'PROCESSING'"
-          >
-            <ChevronLeft class="w-4 h-4" />
-            <span>Quay Lại STEP 2</span>
-          </button>
-
+        <!-- Actions (Khóa quay lại Step 1 và Step 2 khi đã ở Step 3) -->
+        <div class="flex items-center justify-end pt-2">
           <div class="flex items-center gap-2">
             <button
               v-if="step3Result.status === 'ERROR'"
@@ -573,12 +578,14 @@ import {
   BatteryCharging,
   AlertCircle,
   Plus,
+  Bug,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
 
 // Flow Step State (1, 2, 3)
 const currentStep = ref(1);
+const showDebugRegisters = ref(false);
 
 // ============================================================================
 // BƯỚC 1: SO, WA, Network Server
@@ -1271,8 +1278,15 @@ async function startFastRead0To259() {
     // Decode to registerData
     decodeRegistersFromMemory(rawMemory);
     readCompleted.value = true;
-    readingStatusText.value = 'Đã đọc thành công 12 tham số theo ATH_TEMPLATE.csv!';
-    cyberToast.success(`Đã đọc thành công thiết bị: ${registerData.SERIAL_NUMBER || registerData.deviceEUI}`);
+    readingStatusText.value = 'Đọc thành công thông tin';
+    cyberToast.success('Đọc thành công thông tin');
+
+    // Khi start đọc đủ thông tin rồi sẽ tự động chuyển qua step 3
+    if (hasRequiredRegisters.value) {
+      setTimeout(() => {
+        nextToStep3();
+      }, 400);
+    }
   } catch (err: any) {
     readingStatusText.value = `Lỗi đọc: ${err.message}`;
     cyberToast.error(`Lỗi đọc thanh ghi: ${err.message}`);
@@ -1437,6 +1451,9 @@ async function executeChirpstackRegistration() {
 }
 
 function goToStep(step: number) {
+  if (currentStep.value === 3 && step < 3) {
+    return; // Không thể quay lại step 2 hay step 1 khi đã ở step 3
+  }
   if (step === 2 && (!step1.soNumber || !step1.waNumber)) {
     cyberToast.warning('Vui lòng hoàn thành Bước 1 trước!');
     return;
