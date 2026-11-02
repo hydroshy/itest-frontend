@@ -110,9 +110,11 @@
               <td class="font-mono text-xs text-base-content/70">{{ row.apiUrl }}</td>
               <td class="font-mono text-xs text-base-content/80">
                 <span class="badge badge-sm badge-ghost font-mono text-[11px]">{{ row.tenantId || '—' }}</span>
+                <span v-if="row.tenantId" class="badge badge-xs badge-success/20 text-success ml-1 font-mono">Default</span>
               </td>
               <td class="font-mono text-xs text-base-content/80">
                 <span class="badge badge-sm badge-ghost font-mono text-[11px] text-primary">{{ row.applicationId || '—' }}</span>
+                <span v-if="row.applicationId" class="badge badge-xs badge-primary/20 text-primary ml-1 font-mono">Default</span>
               </td>
               <td class="font-mono text-xs text-base-content/80">
                 <span class="badge badge-sm badge-ghost font-mono text-[11px] text-secondary">{{ row.deviceProfileId || '—' }}</span>
@@ -125,6 +127,13 @@
               </td>
               <td class="font-mono text-xs text-base-content/80">{{ row.gatewayCount || 0 }} GW · {{ row.deviceCount || 0 }} Dev</td>
               <td class="text-right space-x-1">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs text-info hover:bg-info/10 font-mono"
+                  @click="openEditServerModal(row)"
+                >
+                  Sửa / Mặc định
+                </button>
                 <button
                   type="button"
                   class="btn btn-ghost btn-xs text-primary"
@@ -177,10 +186,23 @@
                 <td colspan="4" class="text-center py-8 text-base-content/40 font-mono text-sm">Chưa có Tenant hoặc chưa chọn Network Server</td>
               </tr>
               <tr v-for="row in tenants" :key="row.id">
-                <td class="font-medium text-base-content">{{ row.name }}</td>
+                <td class="font-medium text-base-content">
+                  {{ row.name }}
+                  <span v-if="row.id === activeServerTenantId" class="badge badge-success badge-xs font-mono ml-1.5">DEFAULT TENANT</span>
+                </td>
                 <td><code class="text-xs font-mono text-primary bg-base-300/60 px-1.5 py-0.5 rounded">{{ row.id }}</code></td>
                 <td class="text-xs text-base-content/70">{{ row.description || '—' }}</td>
-                <td class="text-right">
+                <td class="text-right space-x-1">
+                  <button
+                    v-if="row.id !== activeServerTenantId"
+                    type="button"
+                    class="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1 font-mono"
+                    :disabled="settingDefaultTenantId === row.id"
+                    @click="setDefaultTenant(row.id)"
+                  >
+                    <span v-if="settingDefaultTenantId === row.id" class="loading loading-spinner loading-xs"></span>
+                    ⭐ Đặt làm Default
+                  </button>
                   <button
                     type="button"
                     class="btn btn-ghost btn-xs text-error hover:bg-error/10"
@@ -369,7 +391,7 @@
       <div class="modal-box bg-base-200 border border-base-content/15 shadow-2xl max-w-lg">
         <h3 class="font-bold text-lg text-base-content mb-4 flex items-center gap-2">
           <Server class="w-5 h-5 text-primary" />
-          Thêm ChirpStack Network Server
+          {{ editingServerId ? 'Chỉnh sửa & Thiết lập Mặc định Network Server' : 'Thêm ChirpStack Network Server' }}
         </h3>
         <div class="space-y-3">
           <div class="form-control">
@@ -385,12 +407,18 @@
             <input v-model="serverForm.apiToken" type="password" placeholder="eyJhbGciOi..." class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
           </div>
           <div class="form-control">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Tenant ID quản lý *</span></label>
-            <input v-model="serverForm.tenantId" type="text" placeholder="UUID Tenant (ví dụ: 52f14fb4-c5a1-4566-9b57-69502b78a9c1)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+            <label class="label py-1">
+              <span class="label-text text-xs font-medium">Default Tenant ID *</span>
+              <span class="label-text-alt text-[10px] text-success font-mono uppercase font-bold">Mặc định</span>
+            </label>
+            <input v-model="serverForm.tenantId" type="text" placeholder="UUID Tenant mặc định (ví dụ: 52f14fb4-c5a1-4566-9b57-69502b78a9c1)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
           </div>
           <div class="form-control">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Application ID quản lý *</span></label>
-            <input v-model="serverForm.applicationId" type="text" placeholder="UUID hoặc ID Application quản lý (ví dụ: app-iot-monitoring)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+            <label class="label py-1">
+              <span class="label-text text-xs font-medium">Default Application ID *</span>
+              <span class="label-text-alt text-[10px] text-primary font-mono uppercase font-bold">Mặc định</span>
+            </label>
+            <input v-model="serverForm.applicationId" type="text" placeholder="UUID hoặc ID Application mặc định (ví dụ: app-iot-monitoring)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
           </div>
           <div class="form-control">
             <label class="label py-1"><span class="label-text text-xs font-medium">Device Profile của Tenant ID *</span></label>
@@ -402,10 +430,10 @@
           </div>
         </div>
         <div class="modal-action mt-6">
-          <button type="button" class="btn btn-sm btn-ghost" @click="serverDialogVisible = false">Hủy</button>
+          <button type="button" class="btn btn-sm btn-ghost" @click="closeServerModal">Hủy</button>
           <button type="button" class="btn btn-sm btn-primary" :disabled="submitting" @click="submitServer">
             <span v-if="submitting" class="loading loading-spinner loading-xs mr-1"></span>
-            Lưu Server
+            {{ editingServerId ? 'Lưu Thiết Lập Mặc Định' : 'Lưu Server' }}
           </button>
         </div>
       </div>
@@ -523,6 +551,7 @@ interface NetworkServer {
   id: string;
   name: string;
   apiUrl: string;
+  apiToken?: string;
   tenantId?: string;
   applicationId?: string;
   deviceProfileId?: string;
@@ -608,6 +637,12 @@ const serverDialogVisible = ref(false);
 const tenantDialogVisible = ref(false);
 const gatewayDialogVisible = ref(false);
 const deviceDialogVisible = ref(false);
+const editingServerId = ref<string | null>(null);
+const settingDefaultTenantId = ref('');
+
+const activeServerTenantId = computed(() => {
+  return servers.value[0]?.tenantId || null;
+});
 
 const serverForm = reactive({
   name: '',
@@ -759,6 +794,47 @@ function resetServerForm() {
   });
 }
 
+function openEditServerModal(row: NetworkServer) {
+  editingServerId.value = row.id;
+  Object.assign(serverForm, {
+    name: row.name || '',
+    apiUrl: row.apiUrl || '',
+    apiToken: row.apiToken || '',
+    tenantId: row.tenantId || '',
+    applicationId: row.applicationId || '',
+    deviceProfileId: row.deviceProfileId || '',
+    description: '',
+  });
+  serverDialogVisible.value = true;
+}
+
+function closeServerModal() {
+  serverDialogVisible.value = false;
+  editingServerId.value = null;
+  resetServerForm();
+}
+
+async function setDefaultTenant(tenantId: string) {
+  const targetServerId = servers.value[0]?.id;
+  if (!targetServerId) {
+    cyberToast.warning('Vui lòng chọn hoặc cấu hình Network Server trước');
+    return;
+  }
+  settingDefaultTenantId.value = tenantId;
+  try {
+    await request(`/servers/${targetServerId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ tenantId }),
+    });
+    cyberToast.success('Đã thiết lập Default Tenant ID thành công!');
+    await refreshAll();
+  } catch (err: any) {
+    cyberToast.error(err instanceof Error ? err.message : 'Không thể thiết lập Default Tenant');
+  } finally {
+    settingDefaultTenantId.value = '';
+  }
+}
+
 async function submitServer() {
   if (
     !serverForm.name.trim() ||
@@ -768,15 +844,22 @@ async function submitServer() {
     !serverForm.applicationId.trim() ||
     !serverForm.deviceProfileId.trim()
   ) {
-    cyberToast.warning('Vui lòng điền đủ Tên, API URL, API Token, Tenant ID, Application ID và Device Profile ID');
+    cyberToast.warning('Vui lòng điền đủ Tên, API URL, API Token, Default Tenant ID, Default Application ID và Device Profile ID');
     return;
   }
   submitting.value = true;
   try {
-    await request('/servers', { method: 'POST', body: JSON.stringify(serverForm) });
-    cyberToast.success('Đã lưu Network Server');
-    serverDialogVisible.value = false;
-    resetServerForm();
+    if (editingServerId.value) {
+      await request(`/servers/${editingServerId.value}`, {
+        method: 'PUT',
+        body: JSON.stringify(serverForm),
+      });
+      cyberToast.success('Đã cập nhật Network Server và thiết lập mặc định!');
+    } else {
+      await request('/servers', { method: 'POST', body: JSON.stringify(serverForm) });
+      cyberToast.success('Đã lưu Network Server');
+    }
+    closeServerModal();
     await refreshAll();
   } catch (error) {
     cyberToast.error(error instanceof Error ? error.message : 'Không thể lưu Server');
