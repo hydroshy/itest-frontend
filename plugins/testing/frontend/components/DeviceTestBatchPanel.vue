@@ -719,11 +719,49 @@ function loadFallbackBatches() {
   ];
 }
 
+async function loadReferenceDevices() {
+  try {
+    const res: any = await httpClient.get('/plugins/testing/test-batches/reference-devices', {
+      params: { itemCode: filterItemCode.value },
+    });
+    const items = res?.data?.items || res?.data || res?.items || [];
+    if (Array.isArray(items) && items.length > 0) {
+      goldenReferenceDevices.value = items.map((r: any) => ({
+        id: r.id || r.serialNumber,
+        name: r.name || `Thiết bị chuẩn ${r.serialNumber}`,
+        serialNumber: r.serialNumber || r.serial_number,
+        devEui: r.devEui || r.dev_eui,
+        calibratedDate: r.calibratedAt || r.calibrated_at || '2026-10-15',
+        baseTemp: r.nominalValues?.temperature ?? 27.5,
+        baseHum: r.nominalValues?.humidity ?? 62.0,
+      }));
+    }
+  } catch (err: any) {
+    console.debug('[DeviceTestBatchPanel] Using fallback reference devices:', err.message);
+  }
+}
+
 async function loadAvailableDevices() {
   loadingDevices.value = true;
   try {
-    const res: any = await httpClient.get('/plugins/testing/device-registrations');
-    let devices = res?.data?.items || res?.data || res?.items || [];
+    let devices: any[] = [];
+    // 1. Try dedicated endpoint first
+    try {
+      const res: any = await httpClient.get('/plugins/testing/test-batches/available-devices', {
+        params: {
+          itemCode: filterItemCode.value,
+          fwVersion: filterFwVersion.value,
+        },
+      });
+      devices = res?.data?.items || res?.data || res?.items || [];
+    } catch {}
+
+    // 2. If empty, query device-registrations
+    if (!Array.isArray(devices) || devices.length === 0) {
+      const res2: any = await httpClient.get('/plugins/testing/device-registrations');
+      devices = res2?.data?.items || res2?.data || res2?.items || [];
+    }
+
     if (!Array.isArray(devices) || devices.length === 0) {
       devices = getMockDevices();
     }
@@ -823,6 +861,25 @@ function startBatchTest() {
     d.status = 'RUNNING';
     d.liveComparison = undefined;
   });
+
+  // Call backend start API if batch is selected
+  if (selectedBatchId.value) {
+    const startPayload = {
+      devices: selectedDevices.value.map((item) => ({
+        serialNumber: item.device.serialNumber || item.device.serial_number,
+        devEui: item.device.devEui || item.device.dev_eui,
+        itemCode: item.device.itemCode || item.device.item_code,
+        fwVersion: item.device.fwVersion || item.device.fw_version,
+        referenceDeviceId: item.referenceDeviceId,
+        referenceSerialNumber: item.referenceDevice?.serialNumber,
+        referenceDevEui: item.referenceDevice?.devEui,
+        referenceDeviceName: item.referenceDevice?.name,
+      })),
+    };
+    httpClient.post(`/plugins/testing/test-batches/${selectedBatchId.value}/start`, startPayload).catch((err: any) => {
+      console.debug('[DeviceTestBatchPanel] Backend start note:', err.message);
+    });
+  }
 
   cyberToast.success(`Bắt đầu chạy Test Batch với ${selectedDevices.value.length} thiết bị song song`);
 
@@ -927,6 +984,7 @@ function getItemStatusClass(status?: string) {
 
 onMounted(() => {
   loadSavedBatches();
+  loadReferenceDevices();
   loadAvailableDevices();
 
   // If passed initialBatchPayload from Create Batch

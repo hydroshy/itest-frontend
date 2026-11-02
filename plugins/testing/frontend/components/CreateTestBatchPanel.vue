@@ -472,8 +472,8 @@ const emit = defineEmits<{
   (e: 'switch-tab', tab: string, payload?: any): void;
 }>();
 
-const itemCodeSuggestions = ['WSSFC-ATH', 'WSLRW-TH', 'WSSFC-ULC', 'WSLRW-AQI', 'WSSFC-CO2'];
-const fwSuggestions = ['1.0.4', '1.0.5', '2.0.0', 'v2.1.0-RC1'];
+const itemCodeSuggestions = ref(['WSSFC-ATH', 'WSLRW-TH', 'WSSFC-ULC', 'WSLRW-AQI', 'WSSFC-CO2']);
+const fwSuggestions = ref(['1.0.4', '1.0.5', '2.0.0', 'v2.1.0-RC1']);
 
 const saving = ref(false);
 const loadingBatches = ref(false);
@@ -488,6 +488,27 @@ const batchForm = reactive({
   simuId: 'SIMU-WSSFC-ATH-1.0.4',
   autoCheckId: 'CRIT-SENSOR-TOLERANCE-2PCT',
 });
+
+async function loadMetadata() {
+  try {
+    const res: any = await httpClient.get('/plugins/testing/test-batches/meta');
+    const data = res?.data || res;
+    if (data) {
+      if (Array.isArray(data.itemCodes) && data.itemCodes.length > 0) {
+        itemCodeSuggestions.value = data.itemCodes;
+        if (!itemCodeSuggestions.value.includes(batchForm.itemCode)) {
+          batchForm.itemCode = data.itemCodes[0];
+          generateBatchCode();
+        }
+      }
+      if (Array.isArray(data.fwVersions) && data.fwVersions.length > 0) {
+        fwSuggestions.value = data.fwVersions;
+      }
+    }
+  } catch (err: any) {
+    console.debug('[CreateTestBatchPanel] Using default meta suggestions:', err.message);
+  }
+}
 
 // Available Simulation Flows
 const availableFlows = ref([
@@ -735,6 +756,7 @@ function getBatchStatusClass(status?: string) {
 }
 
 onMounted(() => {
+  loadMetadata();
   loadBatches();
 });
 </script>
