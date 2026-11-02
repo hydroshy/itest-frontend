@@ -95,11 +95,15 @@
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold">Network Server (ChirpStack) *</span>
-              <span class="label-text-alt text-xs font-mono text-success">API Online</span>
+              <span class="label-text-alt text-xs font-mono text-success">
+                <span v-if="loadingServers" class="loading loading-spinner loading-xs mr-1"></span>
+                API Online
+              </span>
             </label>
             <select
               v-model="step1.serverId"
               class="select select-bordered select-sm w-full text-xs font-mono"
+              :disabled="loadingServers"
               @change="onNetworkServerChange"
             >
               <option v-for="ns in networkServers" :key="ns.id" :value="ns.id">
@@ -111,6 +115,20 @@
                 URL: {{ step1.serverUrl }}
               </span>
             </label>
+            <div v-if="step1.applicationId || step1.deviceProfileId" class="mt-1.5 p-2 bg-base-200/60 rounded-lg border border-base-300 text-xs space-y-1 font-mono">
+              <div class="flex items-center justify-between text-base-content/80">
+                <span class="text-base-content/60">Application ID:</span>
+                <span class="badge badge-sm badge-primary/15 text-primary font-bold">{{ step1.applicationId || '—' }}</span>
+              </div>
+              <div class="flex items-center justify-between text-base-content/80">
+                <span class="text-base-content/60">Device Profile:</span>
+                <span class="badge badge-sm badge-secondary/15 text-secondary font-bold">{{ step1.deviceProfileId || '—' }}</span>
+              </div>
+              <div v-if="step1.tenantId" class="flex items-center justify-between text-base-content/80">
+                <span class="text-base-content/60">Tenant ID:</span>
+                <span class="badge badge-sm badge-ghost text-base-content/70">{{ step1.tenantId }}</span>
+              </div>
+            </div>
           </div>
 
           <!-- Chọn SO (Sales Order) -->
@@ -525,22 +543,17 @@ const loadingWas = ref(false);
 const salesOrders = ref<any[]>([]);
 const workAssignments = ref<any[]>([]);
 
-const networkServers = ref<any[]>([
-  {
-    id: 'srv-globiots-test',
-    name: 'Globiots ChirpStack Test Network Server',
-    apiUrl: 'https://chirpstack-test-api.globiots.com',
-    apiToken: '',
-    applicationId: '00000000-0000-0000-0000-000000000000',
-    deviceProfileId: '00000000-0000-0000-0000-000000000000',
-  },
-]);
+const loadingServers = ref(false);
+const networkServers = ref<any[]>([]);
 
 const step1 = reactive({
   connectivity: 'LoRaWAN',
-  serverId: 'srv-globiots-test',
-  serverUrl: 'https://chirpstack-test-api.globiots.com',
+  serverId: '',
+  serverUrl: '',
   apiToken: '',
+  tenantId: '',
+  applicationId: '',
+  deviceProfileId: '',
   soNumber: '',
   waNumber: '',
   itemCode: '',
@@ -549,8 +562,61 @@ const step1 = reactive({
 function onNetworkServerChange() {
   const ns = networkServers.value.find((s) => s.id === step1.serverId);
   if (ns) {
-    step1.serverUrl = ns.apiUrl;
-    step1.apiToken = ns.apiToken || '';
+    step1.serverUrl = ns.apiUrl || ns.api_url || '';
+    step1.apiToken = ns.apiToken || ns.api_token || '';
+    step1.tenantId = ns.tenantId || ns.tenant_id || '';
+    step1.applicationId = ns.applicationId || ns.application_id || '';
+    step1.deviceProfileId = ns.deviceProfileId || ns.device_profile_id || '';
+  }
+}
+
+async function loadNetworkServers() {
+  loadingServers.value = true;
+  try {
+    let res: any;
+    try {
+      res = await httpClient.get('/plugins/testing/network-servers');
+    } catch {
+      try {
+        res = await httpClient.get('/plugins/lorawan-chirpstack/servers');
+      } catch {
+        res = await httpClient.get('/lorawan-chirpstack/servers').catch(() => []);
+      }
+    }
+    const list = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
+    if (list.length > 0) {
+      networkServers.value = list.map((ns: any) => ({
+        id: ns.id,
+        name: ns.name,
+        apiUrl: ns.apiUrl || ns.api_url || '',
+        apiToken: ns.apiToken || ns.api_token || '',
+        tenantId: ns.tenantId || ns.tenant_id || '',
+        applicationId: ns.applicationId || ns.application_id || '',
+        deviceProfileId: ns.deviceProfileId || ns.device_profile_id || '',
+      }));
+      if (!step1.serverId || !networkServers.value.some((s) => s.id === step1.serverId)) {
+        step1.serverId = networkServers.value[0].id;
+        onNetworkServerChange();
+      }
+    } else {
+      networkServers.value = [
+        {
+          id: 'srv-globiots-test',
+          name: 'Globiots ChirpStack Test Network Server',
+          apiUrl: 'https://chirpstack-test-api.globiots.com',
+          apiToken: '',
+          tenantId: '52f14fb4-c5a1-4566-9b57-69502b78a9c1',
+          applicationId: 'app-iot-monitoring',
+          deviceProfileId: 'dp-as923-otaa',
+        },
+      ];
+      step1.serverId = 'srv-globiots-test';
+      onNetworkServerChange();
+    }
+  } catch (err) {
+    console.warn('Failed to load network servers for testing:', err);
+  } finally {
+    loadingServers.value = false;
   }
 }
 
@@ -1057,10 +1123,10 @@ const step3Result = reactive({
 const computedChirpstackPayload = computed(() => {
   return {
     step1_device: {
-      applicationId: '00000000-0000-0000-0000-000000000000',
+      applicationId: step1.applicationId || 'app-iot-monitoring',
       description: 'ITEST 2.0',
       devEui: registerData.deviceEUI,
-      deviceProfileId: `profile-${registerData.class || 'A'}-${registerData['region code'] || 'AS923'}`,
+      deviceProfileId: step1.deviceProfileId || `profile-${registerData.class || 'A'}-${registerData['region code'] || 'AS923'}`,
       isDisabled: false,
       joinEui: registerData['LRW appEUI'] || '0000000000000000',
       name: registerData.SERIAL_NUMBER || `DEV-${registerData.deviceEUI}`,
@@ -1072,6 +1138,9 @@ const computedChirpstackPayload = computed(() => {
         fwCode: registerData.FW_CODE,
         fwVersion: registerData.FW_VERSION,
         hwVersion: registerData.HW_VERSION,
+        tenantId: step1.tenantId,
+        applicationId: step1.applicationId,
+        deviceProfileId: step1.deviceProfileId,
       },
     },
     step2_deviceKeys: {
@@ -1093,6 +1162,9 @@ async function executeChirpstackRegistration() {
     serverId: step1.serverId,
     serverUrl: step1.serverUrl,
     apiToken: step1.apiToken,
+    tenantId: step1.tenantId,
+    applicationId: step1.applicationId,
+    deviceProfileId: step1.deviceProfileId,
     // Step 2 Registers
     fwCode: registerData.FW_CODE,
     fwVersion: registerData.FW_VERSION,
@@ -1173,6 +1245,7 @@ function resetAll() {
 
 onMounted(() => {
   loadSalesOrders();
+  loadNetworkServers();
 });
 </script>
 
