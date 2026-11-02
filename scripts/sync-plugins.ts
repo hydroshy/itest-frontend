@@ -72,13 +72,7 @@ export function syncExternalPlugins(): PluginSyncResult[] {
   console.log(`[SyncPlugins] Scanning source plugins from: ${sourceDirFound}`);
   const pluginFolders = fs.readdirSync(sourceDirFound, { withFileTypes: true });
 
-  // Clear existing targetPluginsDir to avoid stale backend plugins
-  const existingTargets = fs.readdirSync(targetPluginsDir, { withFileTypes: true });
-  for (const e of existingTargets) {
-    if (e.isDirectory()) {
-      fs.rmSync(path.join(targetPluginsDir, e.name), { recursive: true, force: true });
-    }
-  }
+  // Only sync/overwrite plugins found in source directory without deleting existing local plugins
 
   for (const item of pluginFolders) {
     if (!item.isDirectory()) continue;

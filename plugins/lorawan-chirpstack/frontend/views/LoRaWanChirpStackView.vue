@@ -87,6 +87,9 @@
             <tr>
               <th>Tên Server</th>
               <th>API URL</th>
+              <th>Tenant ID</th>
+              <th>Application ID</th>
+              <th>Device Profile ID</th>
               <th>Phiên bản</th>
               <th>Trạng thái</th>
               <th>Fleet</th>
@@ -95,16 +98,25 @@
           </thead>
           <tbody>
             <tr v-if="loading && servers.length === 0">
-              <td colspan="6" class="text-center py-8 text-base-content/50">
+              <td colspan="9" class="text-center py-8 text-base-content/50">
                 <span class="loading loading-spinner loading-md text-primary mr-2"></span> Đang tải danh sách server...
               </td>
             </tr>
             <tr v-else-if="servers.length === 0">
-              <td colspan="6" class="text-center py-8 text-base-content/40 font-mono text-sm">Chưa có Network Server</td>
+              <td colspan="9" class="text-center py-8 text-base-content/40 font-mono text-sm">Chưa có Network Server</td>
             </tr>
             <tr v-for="row in servers" :key="row.id">
               <td class="font-medium text-base-content">{{ row.name }}</td>
               <td class="font-mono text-xs text-base-content/70">{{ row.apiUrl }}</td>
+              <td class="font-mono text-xs text-base-content/80">
+                <span class="badge badge-sm badge-ghost font-mono text-[11px]">{{ row.tenantId || '—' }}</span>
+              </td>
+              <td class="font-mono text-xs text-base-content/80">
+                <span class="badge badge-sm badge-ghost font-mono text-[11px] text-primary">{{ row.applicationId || '—' }}</span>
+              </td>
+              <td class="font-mono text-xs text-base-content/80">
+                <span class="badge badge-sm badge-ghost font-mono text-[11px] text-secondary">{{ row.deviceProfileId || '—' }}</span>
+              </td>
               <td class="font-mono text-xs">{{ row.version || '—' }}</td>
               <td>
                 <span class="badge badge-sm font-mono text-xs" :class="statusBadgeClass(row.status)">
@@ -373,6 +385,18 @@
             <input v-model="serverForm.apiToken" type="password" placeholder="eyJhbGciOi..." class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
           </div>
           <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Tenant ID quản lý *</span></label>
+            <input v-model="serverForm.tenantId" type="text" placeholder="UUID Tenant (ví dụ: 52f14fb4-c5a1-4566-9b57-69502b78a9c1)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+          </div>
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Application ID quản lý *</span></label>
+            <input v-model="serverForm.applicationId" type="text" placeholder="UUID hoặc ID Application quản lý (ví dụ: app-iot-monitoring)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+          </div>
+          <div class="form-control">
+            <label class="label py-1"><span class="label-text text-xs font-medium">Device Profile của Tenant ID *</span></label>
+            <input v-model="serverForm.deviceProfileId" type="text" placeholder="UUID Device Profile của Tenant ID (ví dụ: dp-as923-otaa)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+          </div>
+          <div class="form-control">
             <label class="label py-1"><span class="label-text text-xs font-medium">Mô tả</span></label>
             <input v-model="serverForm.description" type="text" placeholder="Mô tả server..." class="input input-sm input-bordered bg-base-100 w-full" />
           </div>
@@ -499,6 +523,9 @@ interface NetworkServer {
   id: string;
   name: string;
   apiUrl: string;
+  tenantId?: string;
+  applicationId?: string;
+  deviceProfileId?: string;
   version?: string;
   status: 'online' | 'offline' | 'unknown';
   gatewayCount?: number;
@@ -582,7 +609,15 @@ const tenantDialogVisible = ref(false);
 const gatewayDialogVisible = ref(false);
 const deviceDialogVisible = ref(false);
 
-const serverForm = reactive({ name: '', apiUrl: '', apiToken: '', description: '' });
+const serverForm = reactive({
+  name: '',
+  apiUrl: '',
+  apiToken: '',
+  tenantId: '',
+  applicationId: '',
+  deviceProfileId: '',
+  description: '',
+});
 const tenantForm = reactive({ name: '', description: '' });
 const gatewayForm = reactive({ name: '', gatewayId: '', description: '' });
 const deviceForm = reactive({ name: '', devEui: '', description: '' });
@@ -713,12 +748,27 @@ async function confirmRemoveTenant(id: string) {
 }
 
 function resetServerForm() {
-  Object.assign(serverForm, { name: '', apiUrl: '', apiToken: '', description: '' });
+  Object.assign(serverForm, {
+    name: '',
+    apiUrl: '',
+    apiToken: '',
+    tenantId: '',
+    applicationId: '',
+    deviceProfileId: '',
+    description: '',
+  });
 }
 
 async function submitServer() {
-  if (!serverForm.name.trim() || !serverForm.apiUrl.trim() || !serverForm.apiToken.trim()) {
-    cyberToast.warning('Vui lòng điền đủ tên, API URL và API Token');
+  if (
+    !serverForm.name.trim() ||
+    !serverForm.apiUrl.trim() ||
+    !serverForm.apiToken.trim() ||
+    !serverForm.tenantId.trim() ||
+    !serverForm.applicationId.trim() ||
+    !serverForm.deviceProfileId.trim()
+  ) {
+    cyberToast.warning('Vui lòng điền đủ Tên, API URL, API Token, Tenant ID, Application ID và Device Profile ID');
     return;
   }
   submitting.value = true;
