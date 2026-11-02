@@ -117,7 +117,7 @@
                 <span v-if="row.applicationId" class="badge badge-xs badge-primary/20 text-primary ml-1 font-mono">Default</span>
               </td>
               <td class="font-mono text-xs text-base-content/80">
-                <span class="badge badge-sm badge-ghost font-mono text-[11px] text-secondary">{{ row.deviceProfileId || '—' }}</span>
+                <span class="badge badge-sm badge-ghost font-mono text-[11px] text-info">Động theo Region</span>
               </td>
               <td class="font-mono text-xs">{{ row.version || '—' }}</td>
               <td>
@@ -210,6 +210,58 @@
                   >
                     Xóa
                   </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2.5: Applications -->
+    <div v-if="activeTab === 'applications'" class="space-y-3">
+      <div class="flex justify-between items-center px-1">
+        <span class="text-xs font-mono text-base-content/60">{{ applications.length }} application</span>
+      </div>
+      <div class="card bg-base-200/50 border border-base-content/10 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm w-full">
+            <thead class="bg-base-300/60 font-mono text-xs uppercase text-base-content/70">
+              <tr>
+                <th>Tên Application</th>
+                <th>Application ID</th>
+                <th>Mô tả</th>
+                <th class="text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="applicationsLoading">
+                <td colspan="4" class="text-center py-8 text-base-content/50">
+                  <span class="loading loading-spinner loading-md text-primary mr-2"></span> Đang tải applications...
+                </td>
+              </tr>
+              <tr v-else-if="applications.length === 0">
+                <td colspan="4" class="text-center py-8 text-base-content/40 font-mono text-sm">Chưa có Application hoặc chưa kết nối được</td>
+              </tr>
+              <tr v-for="row in applications" :key="row.id">
+                <td class="font-medium text-base-content">
+                  {{ row.name }}
+                  <span v-if="row.id === activeServerAppId" class="badge badge-primary badge-xs font-mono ml-1.5">DEFAULT APP</span>
+                </td>
+                <td><code class="text-xs font-mono text-primary bg-base-300/60 px-1.5 py-0.5 rounded">{{ row.id }}</code></td>
+                <td class="text-xs text-base-content/70">{{ row.description || '—' }}</td>
+                <td class="text-right space-x-1">
+                  <button
+                    v-if="row.id !== activeServerAppId"
+                    type="button"
+                    class="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1 font-mono"
+                    :disabled="settingDefaultAppId === row.id"
+                    @click="setDefaultApplication(row.id)"
+                  >
+                    <span v-if="settingDefaultAppId === row.id" class="loading loading-spinner loading-xs"></span>
+                    ⭐ Đặt làm Default
+                  </button>
+                  <span v-else class="text-xs font-mono text-primary font-bold">Mặc định</span>
                 </td>
               </tr>
             </tbody>
@@ -420,9 +472,14 @@
             </label>
             <input v-model="serverForm.applicationId" type="text" placeholder="UUID hoặc ID Application mặc định (ví dụ: app-iot-monitoring)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
           </div>
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text text-xs font-medium">Device Profile của Tenant ID *</span></label>
-            <input v-model="serverForm.deviceProfileId" type="text" placeholder="UUID Device Profile của Tenant ID (ví dụ: dp-as923-otaa)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+          <div class="p-3 bg-base-300/40 rounded-lg border border-base-content/10 text-xs text-base-content/70 space-y-1">
+            <div class="flex items-center gap-1.5 font-semibold text-info">
+              <Cpu class="w-3.5 h-3.5" />
+              <span>Device Profile (Tự động tra cứu theo Tenant)</span>
+            </div>
+            <p class="text-[11px] leading-relaxed text-base-content/60">
+              Không gán cố định Device Profile. Hệ thống tự động gọi API <code class="text-primary font-mono text-[10px]">/api/device-profiles</code> theo Default Tenant ID và phân giải Profile tương thích với Region (Thanh ghi 69) và Class (Thanh ghi 85) khi tạo thiết bị test.
+            </p>
           </div>
           <div class="form-control">
             <label class="label py-1"><span class="label-text text-xs font-medium">Mô tả</span></label>
@@ -543,7 +600,8 @@ import {
   Wifi,
   Cpu,
   Radio,
-  Activity
+  Activity,
+  Layers
 } from 'lucide-vue-next';
 import { cyberToast, cyberConfirm } from '@/cyber/hud';
 
@@ -616,12 +674,13 @@ const isIsolatedView = computed(() => route.query.from === 'menu' || route.query
 const activeTab = ref('servers');
 watch(() => route.query.tab, (value) => {
   const tab = value === 'overview' ? 'servers' : value;
-  if (typeof tab === 'string' && ["servers","tenants","gateways","devices","telemetry"].includes(tab)) activeTab.value = tab as typeof activeTab.value;
+  if (typeof tab === 'string' && ["servers","tenants","applications","gateways","devices","telemetry"].includes(tab)) activeTab.value = tab as typeof activeTab.value;
 }, { immediate: true });
 
 const tabList = [
   { name: 'servers', label: 'Network Servers', icon: Server },
   { name: 'tenants', label: 'Tenants', icon: Users },
+  { name: 'applications', label: 'Applications', icon: Layers },
   { name: 'gateways', label: 'Gateways', icon: Wifi },
   { name: 'devices', label: 'Devices', icon: Cpu },
   { name: 'telemetry', label: 'Uplink Telemetry', icon: Activity },
@@ -629,6 +688,7 @@ const tabList = [
 
 const servers = ref<NetworkServer[]>([]);
 const tenants = ref<Tenant[]>([]);
+const applications = ref<any[]>([]);
 const gateways = ref<Gateway[]>([]);
 const devices = ref<Device[]>([]);
 const uplinks = ref<Uplink[]>([]);
@@ -639,9 +699,15 @@ const gatewayDialogVisible = ref(false);
 const deviceDialogVisible = ref(false);
 const editingServerId = ref<string | null>(null);
 const settingDefaultTenantId = ref('');
+const settingDefaultAppId = ref('');
+const applicationsLoading = ref(false);
 
 const activeServerTenantId = computed(() => {
   return servers.value[0]?.tenantId || null;
+});
+
+const activeServerAppId = computed(() => {
+  return servers.value[0]?.applicationId || null;
 });
 
 const serverForm = reactive({
@@ -835,16 +901,36 @@ async function setDefaultTenant(tenantId: string) {
   }
 }
 
+async function setDefaultApplication(applicationId: string) {
+  const targetServerId = servers.value[0]?.id;
+  if (!targetServerId) {
+    cyberToast.warning('Vui lòng chọn hoặc cấu hình Network Server trước');
+    return;
+  }
+  settingDefaultAppId.value = applicationId;
+  try {
+    await request(`/servers/${targetServerId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ applicationId }),
+    });
+    cyberToast.success('Đã thiết lập Default Application ID thành công!');
+    await refreshAll();
+  } catch (err: any) {
+    cyberToast.error(err instanceof Error ? err.message : 'Không thể thiết lập Default Application');
+  } finally {
+    settingDefaultAppId.value = '';
+  }
+}
+
 async function submitServer() {
   if (
     !serverForm.name.trim() ||
     !serverForm.apiUrl.trim() ||
     !serverForm.apiToken.trim() ||
     !serverForm.tenantId.trim() ||
-    !serverForm.applicationId.trim() ||
-    !serverForm.deviceProfileId.trim()
+    !serverForm.applicationId.trim()
   ) {
-    cyberToast.warning('Vui lòng điền đủ Tên, API URL, API Token, Default Tenant ID, Default Application ID và Device Profile ID');
+    cyberToast.warning('Vui lòng điền đủ Tên, API URL, API Token, Default Tenant ID và Default Application ID');
     return;
   }
   submitting.value = true;
