@@ -325,6 +325,16 @@
       <ListDeviceTestPanel ref="listDevicePanelRef" @switch-tab="selectTab" />
     </div>
 
+    <!-- TAB: Device Test Batch (Kiểm Thử Hàng Loạt & Đối Chiếu Chuẩn) -->
+    <div v-if="activeTab === 'test-batch' || activeTab === 'device-test-batch'">
+      <DeviceTestBatchPanel :initial-batch-payload="selectedBatchPayload" @switch-tab="selectTab" />
+    </div>
+
+    <!-- TAB: Create Test Batch (Tạo Cấu Hình Test Batch) -->
+    <div v-if="activeTab === 'create-test-batch'">
+      <CreateTestBatchPanel @switch-tab="onSwitchTabWithPayload" />
+    </div>
+
     <!-- TAB 4: Device Auto Check (Kiểm Tra Tự Động) -->
     <div v-if="activeTab === 'device-auto-check'">
       <DeviceAutoCheckPanel ref="autoCheckPanelRef" />
@@ -428,6 +438,8 @@ import {
   CheckCircle2,
   FlaskConical,
   List,
+  Boxes,
+  FolderPlus,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
@@ -437,18 +449,33 @@ import DeviceAutoCheckPanel from '../components/DeviceAutoCheckPanel.vue';
 import SimulationDevicesPanel from '../components/SimulationDevicesPanel.vue';
 import CreateDeviceTestPanel from '../components/CreateDeviceTestPanel.vue';
 import ListDeviceTestPanel from '../components/ListDeviceTestPanel.vue';
+import CreateTestBatchPanel from '../components/CreateTestBatchPanel.vue';
+import DeviceTestBatchPanel from '../components/DeviceTestBatchPanel.vue';
 
 const route = useRoute();
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const router = useRouter();
 
-const VALID_TABS = ['gateway-sessions', 'packets', 'create-device-testing', 'list-device-testing', 'device-simulation', 'simulation-devices', 'device-auto-check'];
+const VALID_TABS = [
+  'gateway-sessions',
+  'packets',
+  'create-device-testing',
+  'list-device-testing',
+  'test-batch',
+  'device-test-batch',
+  'create-test-batch',
+  'device-simulation',
+  'simulation-devices',
+  'device-auto-check',
+];
 
 const tabList = [
   { name: 'gateway-sessions', label: 'Gateway Test Sessions', icon: Activity },
   { name: 'packets', label: 'Giám Sát Gói Tin (Packets)', icon: Radio },
   { name: 'create-device-testing', label: 'Create Device Testing', icon: FlaskConical },
   { name: 'list-device-testing', label: 'List Device Testing', icon: List },
+  { name: 'test-batch', label: 'Device Test Batch', icon: Boxes },
+  { name: 'create-test-batch', label: 'Create Test Batch', icon: FolderPlus },
   { name: 'device-simulation', label: 'Device Simulation (Tạo Flow)', icon: Cpu },
   { name: 'simulation-devices', label: 'Thiết Bị Simulation', icon: Radio },
   { name: 'device-auto-check', label: 'Device Auto Check (Tự Động)', icon: CheckCircle2 },
@@ -458,12 +485,21 @@ const activeTab = ref('gateway-sessions');
 const loading = ref(false);
 const autoCheckPanelRef = ref<any>(null);
 const listDevicePanelRef = ref<any>(null);
+const selectedBatchPayload = ref<any>(null);
+
+function onSwitchTabWithPayload(tabName: string, payload?: any) {
+  if (payload) {
+    selectedBatchPayload.value = payload;
+  }
+  selectTab(tabName);
+}
 
 function selectTab(tabName: string) {
-  activeTab.value = tabName;
-  handleTabChange(tabName);
+  const normalizedTab = tabName === 'device-test-batch' ? 'test-batch' : tabName;
+  activeTab.value = normalizedTab;
+  handleTabChange(normalizedTab);
   if (!isIsolatedView.value) {
-    router.replace({ query: { ...route.query, tab: tabName } }).catch(() => {});
+    router.replace({ query: { ...route.query, tab: normalizedTab } }).catch(() => {});
   }
 }
 
@@ -643,7 +679,7 @@ function openCreateSessionDialog() {
 
 watch(() => route.query.tab, (tab) => {
   if (typeof tab === 'string' && VALID_TABS.includes(tab)) {
-    activeTab.value = tab;
+    activeTab.value = tab === 'device-test-batch' ? 'test-batch' : tab;
     refreshActiveTab();
   }
 });
@@ -651,7 +687,7 @@ watch(() => route.query.tab, (tab) => {
 onMounted(() => {
   const queryTab = route.query.tab as string;
   if (queryTab && VALID_TABS.includes(queryTab)) {
-    activeTab.value = queryTab;
+    activeTab.value = queryTab === 'device-test-batch' ? 'test-batch' : queryTab;
   }
   if (route.query.networkId) {
     packetFilters.networkId = String(route.query.networkId);
