@@ -357,6 +357,44 @@
           </div>
         </div>
 
+        <!-- Cảnh báo / Danh sách chọn Device Profile nếu không khớp hoặc có nhiều lựa chọn -->
+        <div v-if="profileMatchError" class="alert alert-warning text-xs p-3 rounded-lg border border-warning/30 space-y-2">
+          <div class="flex items-start gap-2">
+            <AlertCircle class="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+            <div class="flex-1">
+              <span class="font-bold uppercase tracking-wider block">Thiết Lập Device Profile:</span>
+              <p class="mt-0.5 font-mono text-[11px]">{{ profileMatchError }}</p>
+            </div>
+          </div>
+          <!-- Khi có nhiều profile cùng region/class để user chủ động bấm chọn -->
+          <div v-if="candidateDeviceProfiles.length > 1" class="mt-2 pt-2 border-t border-warning/20">
+            <div class="text-[11px] font-semibold mb-1.5">Vui lòng chọn 1 Device Profile bên dưới:</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                v-for="cand in candidateDeviceProfiles"
+                :key="cand.id"
+                type="button"
+                class="btn btn-xs justify-start h-auto py-1.5 px-2.5 font-mono text-left border"
+                :class="matchedDeviceProfile?.id === cand.id ? 'btn-primary border-primary' : 'btn-outline border-base-content/20 bg-base-100'"
+                @click="selectCandidateProfile(cand)"
+              >
+                <div>
+                  <div class="font-bold truncate">{{ cand.name }}</div>
+                  <div class="text-[10px] opacity-75">ID: {{ cand.id }} · Region: {{ cand.region }}</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="matchedDeviceProfile" class="p-3 bg-success/10 border border-success/30 rounded-lg flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-2 text-success">
+            <Cpu class="w-4 h-4 flex-shrink-0" />
+            <span>Profile ChirpStack đã khớp: <strong>{{ matchedDeviceProfile.name }}</strong> (ID: {{ matchedDeviceProfile.id }})</span>
+          </div>
+          <span class="badge badge-success badge-xs font-bold uppercase">Khớp chính xác</span>
+        </div>
+
         <!-- Actions -->
         <div class="flex items-center justify-between pt-2">
           <button
@@ -565,6 +603,9 @@ const step1 = reactive({
 const loadingProfiles = ref(false);
 const availableDeviceProfiles = ref<any[]>([]);
 const matchedDeviceProfile = ref<any>(null);
+const candidateDeviceProfiles = ref<any[]>([]);
+const profileMatchError = ref('');
+let profileRequestId = 0;
 
 function onNetworkServerChange() {
   const ns = networkServers.value.find((s) => s.id === step1.serverId);
@@ -573,14 +614,22 @@ function onNetworkServerChange() {
     step1.apiToken = ns.apiToken || ns.api_token || '';
     step1.tenantId = ns.tenantId || ns.tenant_id || '';
     step1.applicationId = ns.applicationId || ns.application_id || '';
-    step1.deviceProfileId = ns.deviceProfileId || ns.device_profile_id || '';
+    step1.deviceProfileId = '';
   }
+  // Reset profiles from previous server immediately
+  availableDeviceProfiles.value = [];
+  matchedDeviceProfile.value = null;
+  candidateDeviceProfiles.value = [];
+  profileMatchError.value = '';
   loadDeviceProfiles();
 }
 
 async function loadDeviceProfiles() {
   if (!step1.serverId) return;
+  const currentReqId = ++profileRequestId;
+  const currentServerId = step1.serverId;
   loadingProfiles.value = true;
+  profileMatchError.value = '';
   try {
     const res: any = await httpClient.get('/plugins/lorawan-chirpstack/device-profiles', {
       params: {
@@ -588,47 +637,92 @@ async function loadDeviceProfiles() {
         tenantId: step1.tenantId,
       },
     });
+    // Discard response if server has changed while request was in-flight
+    if (currentReqId !== profileRequestId || step1.serverId !== currentServerId) {
+      return;
+    }
     const data = res?.data || res;
     const list = Array.isArray(data) ? data : (Array.isArray(data?.result) ? data.result : (data?.deviceProfiles || []));
     availableDeviceProfiles.value = list;
     matchDeviceProfileByRegion();
-  } catch (err) {
+  } catch (err: any) {
+    if (currentReqId !== profileRequestId || step1.serverId !== currentServerId) {
+      return;
+    }
     console.warn('Failed to load device profiles for ChirpStack:', err);
     availableDeviceProfiles.value = [];
+    matchedDeviceProfile.value = null;
+    candidateDeviceProfiles.value = [];
+    profileMatchError.value = err?.message || 'Lỗi kết nối khi tải danh sách Device Profiles từ ChirpStack';
+    step1.deviceProfileId = '';
   } finally {
-    loadingProfiles.value = false;
+    if (currentReqId === profileRequestId) {
+      loadingProfiles.value = false;
+    }
   }
 }
 
 function matchDeviceProfileByRegion(): any {
-  const rawRegion = (registerData['region code'] || '').trim().toUpperCase();
-  const rawClass = (registerData.class || 'A').trim().toUpperCase();
-  if (availableDeviceProfiles.value.length === 0) {
-    matchedDeviceProfile.value = null;
+  const rawRegion = (registerData['region code'] || '').trim();
+  const rawClass = (registerData.class || 'A').trim();
+  matchedDeviceProfile.value = null;
+  candidateDeviceProfiles.value = [];
+  profileMatchError.value = '';
+  step1.deviceProfileId = '';
+
+  if (!rawRegion) {
+    // Registers haven't been read yet or region code missing
     return null;
   }
 
-  // 1. Try finding profile matching region from register 69 (e.g. EU868, AS923)
-  let found = availableDeviceProfiles.value.find((p: any) => {
-    const pRegion = (p.region || '').trim().toUpperCase();
-    const pName = (p.name || '').trim().toUpperCase();
-    if (rawRegion) {
-      if (pRegion === rawRegion || rawRegion.startsWith(pRegion) || pRegion.startsWith(rawRegion)) return true;
-      if (pName.includes(rawRegion)) return true;
-    }
-    return false;
+  if (availableDeviceProfiles.value.length === 0) {
+    profileMatchError.value = 'Chưa tải được danh sách Device Profile nào từ ChirpStack cho Tenant này.';
+    return null;
+  }
+
+  // Exact region match after delimiter normalization ([-_\s]), consistent with backend
+  const normalizeRegion = (val: unknown) => String(val || '').toUpperCase().replace(/[-_\s]/g, '');
+  const region = normalizeRegion(rawRegion);
+  const classCode = rawClass.toUpperCase().replace(/^CLASS[_\s-]?/, '');
+
+  const matches = availableDeviceProfiles.value.filter((p: any) => {
+    const profileRegion = normalizeRegion(p.region);
+    const tenantOk = !p.tenantId || !step1.tenantId || p.tenantId === step1.tenantId;
+    const classOk = (!['B', '1'].includes(classCode) || p.supportsClassB === true) &&
+                    (!['C', '2'].includes(classCode) || p.supportsClassC === true);
+
+    return (
+      typeof p.id === 'string' &&
+      p.id.trim() &&
+      region &&
+      profileRegion === region &&
+      tenantOk &&
+      classOk
+    );
   });
 
-  // 2. Fallback to first profile if not matched
-  if (!found && availableDeviceProfiles.value.length > 0) {
-    found = availableDeviceProfiles.value[0];
+  if (matches.length === 0) {
+    profileMatchError.value = `Không tìm thấy Device Profile nào khớp chính xác với Region "${rawRegion}" (Class ${rawClass}) trên ChirpStack. Vui lòng tạo Profile tương ứng trên ChirpStack trước khi đăng ký.`;
+    return null;
   }
 
-  matchedDeviceProfile.value = found;
-  if (found?.id) {
-    step1.deviceProfileId = found.id;
+  if (matches.length > 1) {
+    candidateDeviceProfiles.value = matches;
+    profileMatchError.value = `Tìm thấy ${matches.length} Device Profile cùng khớp với Region "${rawRegion}". Vui lòng chọn cụ thể 1 profile bên dưới trước khi đăng ký.`;
+    return null;
   }
-  return found;
+
+  // Exactly 1 unambiguous match
+  const selected = matches[0];
+  matchedDeviceProfile.value = selected;
+  step1.deviceProfileId = selected.id;
+  return selected;
+}
+
+function selectCandidateProfile(profile: any) {
+  matchedDeviceProfile.value = profile;
+  step1.deviceProfileId = profile.id;
+  profileMatchError.value = '';
 }
 
 async function loadNetworkServers() {
@@ -653,7 +747,7 @@ async function loadNetworkServers() {
         apiToken: ns.apiToken || ns.api_token || '',
         tenantId: ns.tenantId || ns.tenant_id || '',
         applicationId: ns.applicationId || ns.application_id || '',
-        deviceProfileId: ns.deviceProfileId || ns.device_profile_id || '',
+        deviceProfileId: '',
       }));
       if (!step1.serverId || !networkServers.value.some((s) => s.id === step1.serverId)) {
         step1.serverId = networkServers.value[0].id;
@@ -668,7 +762,7 @@ async function loadNetworkServers() {
           apiToken: '',
           tenantId: '52f14fb4-c5a1-4566-9b57-69502b78a9c1',
           applicationId: 'app-iot-monitoring',
-          deviceProfileId: 'dp-as923-otaa',
+          deviceProfileId: '',
         },
       ];
       step1.serverId = 'srv-globiots-test';
@@ -1170,6 +1264,12 @@ function nextToStep3() {
     cyberToast.warning('Chưa có đủ thông tin DeviceEUI, AppKey, Serial Number!');
     return;
   }
+  // Enforce fail-closed check for Device Profile resolution
+  if (!matchedDeviceProfile.value?.id) {
+    const errorMsg = profileMatchError.value || 'Không có Device Profile ChirpStack hợp lệ khớp với Region này. Chặn đăng ký!';
+    cyberToast.error(errorMsg);
+    return;
+  }
   currentStep.value = 3;
   executeChirpstackRegistration();
 }
@@ -1183,7 +1283,7 @@ const step3Result = reactive({
 });
 
 const computedChirpstackPayload = computed(() => {
-  const profileId = matchedDeviceProfile.value?.id || step1.deviceProfileId || `profile-${registerData.class || 'A'}-${registerData['region code'] || 'AS923'}`;
+  const profileId = matchedDeviceProfile.value?.id || '';
   return {
     step1_device: {
       applicationId: step1.applicationId || 'app-iot-monitoring',
@@ -1216,6 +1316,12 @@ const computedChirpstackPayload = computed(() => {
 });
 
 async function executeChirpstackRegistration() {
+  if (!matchedDeviceProfile.value?.id) {
+    step3Result.status = 'ERROR';
+    step3Result.message = profileMatchError.value || 'Chặn đăng ký: Không tìm thấy Device Profile tương thích trên ChirpStack!';
+    cyberToast.error(step3Result.message);
+    return;
+  }
   step3Result.status = 'PROCESSING';
   step3Result.message = '';
 
@@ -1228,7 +1334,8 @@ async function executeChirpstackRegistration() {
     apiToken: step1.apiToken,
     tenantId: step1.tenantId,
     applicationId: step1.applicationId,
-    deviceProfileId: computedChirpstackPayload.value.step1_device.deviceProfileId,
+    deviceProfileId: matchedDeviceProfile.value.id,
+    deviceProfileName: matchedDeviceProfile.value.name,
     // Step 2 Registers
     fwCode: registerData.FW_CODE,
     fwVersion: registerData.FW_VERSION,
