@@ -635,6 +635,7 @@ async function fetchMenuCards() {
   // Fallback an toàn khi API trả về rỗng hoặc chưa nạp được role
   const userRoles = (authStore.roles || []).map((r: string) => r.toUpperCase());
   const isAdmin =
+    authStore.isAdmin ||
     userRoles.length === 0 ||
     userRoles.includes('ADMIN') ||
     userRoles.includes('SUPER_ADMIN') ||

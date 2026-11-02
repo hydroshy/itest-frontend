@@ -81,11 +81,11 @@ router.beforeEach((to, from) => {
   }
 
   if (to.name === 'Login' && authStore.isAuthenticated) {
-    return { name: authStore.hasPermission('dashboard:view') ? 'Dashboard' : 'MenuLauncher' };
+    return { name: authStore.canAccessDashboard ? 'Dashboard' : 'MenuLauncher' };
   }
 
   // Match the sidebar permission before mounting Dashboard and calling its APIs.
-  if (to.name === 'Dashboard' && !authStore.hasPermission('dashboard:view')) {
+  if (to.name === 'Dashboard' && !authStore.canAccessDashboard) {
     return { name: 'MenuLauncher' };
   }
 

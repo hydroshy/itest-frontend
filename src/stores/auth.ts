@@ -8,6 +8,7 @@ export interface UserProfile {
   email?: string;
   fullName?: string;
   avatar?: string;
+  userType?: string;
   roles: string[];
   permissions: string[];
 }
@@ -29,9 +30,49 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value);
   const roles = computed(() => {
     const raw = user.value?.roles || [];
-    return raw.map((r: any) => (typeof r === 'object' && r !== null ? (r.name || r.code || r.id) : String(r)));
+    return raw.map((r: any) => (typeof r === 'object' && r !== null ? (r.code || r.name || r.id) : String(r)));
   });
   const permissions = computed(() => user.value?.permissions || []);
+
+  const isAdmin = computed(() => {
+    if (!user.value) return false;
+    const username = (user.value.username || '').toLowerCase();
+    if (username === 'admin') return true;
+    const userType = String((user.value as any).userType || '').toUpperCase();
+    if (userType === 'ADMIN' || userType === 'SUPER_ADMIN') return true;
+    return roles.value.some((r: string) => {
+      const upper = String(r).toUpperCase().trim();
+      return (
+        upper === 'ADMIN' ||
+        upper === 'SUPER_ADMIN' ||
+        upper === 'ADMINISTRATOR' ||
+        upper === 'SUPER ADMIN' ||
+        upper === 'QUẢN TRỊ VIÊN' ||
+        upper === 'QUẢN TRỊ TỐI CAO'
+      );
+    });
+  });
+
+  const canAccessDashboard = computed(() => {
+    if (!user.value) return false;
+    if (isAdmin.value) return true;
+    const upperRoles = roles.value.map((r: string) => String(r).toUpperCase().trim());
+    if (
+      upperRoles.includes('ADMIN') ||
+      upperRoles.includes('SUPER_ADMIN') ||
+      upperRoles.includes('ADMINISTRATOR') ||
+      upperRoles.includes('SUB_ADMIN') ||
+      upperRoles.includes('SUB-ADMIN') ||
+      upperRoles.includes('OPERATOR') ||
+      upperRoles.includes('QUẢN TRỊ VIÊN') ||
+      upperRoles.includes('QUẢN TRỊ TỐI CAO') ||
+      upperRoles.includes('KỸ THUẬT VIÊN VẬN HÀNH') ||
+      upperRoles.includes('KỸ THUẬT VIÊN')
+    ) {
+      return true;
+    }
+    return hasPermission('dashboard:view');
+  });
 
   function setAuthData(newToken: string, newUser: UserProfile) {
     token.value = newToken;
@@ -54,9 +95,9 @@ export const useAuthStore = defineStore('auth', () => {
       throw new Error('Máy chủ không trả về access token hợp lệ.');
     }
 
-    const rawRoles = res.user?.roles || res.roles || (res.role ? [res.role] : ['admin']);
+    const rawRoles = res.user?.roles || res.roles || (res.role ? [res.role] : ['ADMIN']);
     const normalizedRoles = Array.isArray(rawRoles)
-      ? rawRoles.map((r: any) => (typeof r === 'object' && r !== null ? (r.name || r.code || r.id) : String(r)))
+      ? rawRoles.map((r: any) => (typeof r === 'object' && r !== null ? (r.code || r.name || r.id) : String(r)))
       : [String(rawRoles)];
 
     const userProfile: UserProfile = res.user
@@ -113,15 +154,25 @@ export const useAuthStore = defineStore('auth', () => {
 
   function hasPermission(permission: string): boolean {
     if (!user.value) return false;
-    if (permissions.value.includes('*') || roles.value.includes('admin')) {
+    if (permissions.value.includes('*') || isAdmin.value) {
       return true;
     }
-    return permissions.value.includes(permission);
+    const perms = permissions.value;
+    if (perms.includes(permission)) return true;
+    if (
+      (permission === 'dashboard:view' || permission === 'menu:dashboard:view') &&
+      (perms.includes('dashboard:view') || perms.includes('menu:dashboard:view'))
+    ) {
+      return true;
+    }
+    return false;
   }
 
   function hasRole(role: string): boolean {
     if (!user.value) return false;
-    return roles.value.includes(role);
+    const target = role.toUpperCase().trim();
+    if (target === 'ADMIN' && isAdmin.value) return true;
+    return roles.value.some((r: string) => String(r).toUpperCase().trim() === target);
   }
 
   return {
@@ -130,6 +181,8 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     roles,
     permissions,
+    isAdmin,
+    canAccessDashboard,
     login,
     logout,
     updateUser,

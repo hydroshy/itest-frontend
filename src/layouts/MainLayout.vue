@@ -345,16 +345,11 @@ const primaryRole = computed(() => {
 });
 
 const canAccessAdmin = computed(() => {
-  const roles = authStore.roles.map((r: string) => r.toUpperCase());
-  return roles.includes('ADMIN') || roles.includes('SUPER_ADMIN') || roles.includes('ADMINISTRATOR');
+  return authStore.isAdmin;
 });
 
 const canAccessDashboard = computed(() => {
-  const roles = authStore.roles.map((r: string) => r.toUpperCase());
-  if (roles.includes('ADMIN') || roles.includes('SUPER_ADMIN') || roles.includes('ADMINISTRATOR') || roles.includes('OPERATOR')) {
-    return true;
-  }
-  return authStore.hasPermission('dashboard:view');
+  return authStore.canAccessDashboard;
 });
 
 const headerRightExtensions = computed(() => {

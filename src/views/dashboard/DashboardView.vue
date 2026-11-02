@@ -407,10 +407,10 @@ const authStore = useAuthStore();
 const refreshing = ref(false);
 
 const currentRoleLabel = computed(() => {
-  const roles = authStore.roles;
-  if (roles.includes('SUPER_ADMIN')) return 'Quản trị tối cao';
-  if (roles.includes('ADMIN')) return 'Quản trị viên';
-  if (roles.includes('OPERATOR')) return 'Kỹ thuật viên';
+  const upperRoles = authStore.roles.map((r: string) => String(r).toUpperCase().trim());
+  if (upperRoles.includes('SUPER_ADMIN') || upperRoles.includes('QUẢN TRỊ TỐI CAO')) return 'Quản trị tối cao';
+  if (upperRoles.includes('ADMIN') || upperRoles.includes('QUẢN TRỊ VIÊN') || authStore.isAdmin) return 'Quản trị viên';
+  if (upperRoles.includes('OPERATOR') || upperRoles.includes('KỸ THUẬT VIÊN VẬN HÀNH') || upperRoles.includes('KỸ THUẬT VIÊN')) return 'Kỹ thuật viên';
   return 'Người dùng thao tác';
 });
 
