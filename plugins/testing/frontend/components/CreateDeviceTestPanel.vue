@@ -582,6 +582,9 @@ import {
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
+import { useAuthStore } from '@/stores/auth';
+
+const authStore = useAuthStore();
 
 // Flow Step State (1, 2, 3)
 const currentStep = ref(1);
@@ -1411,6 +1414,7 @@ async function executeChirpstackRegistration() {
     sensorType: registerData['sensor type'],
     serialNumber: registerData.SERIAL_NUMBER,
     itemCode: registerData.ITEM_CODE || step1.itemCode,
+    createdBy: authStore.user?.username || authStore.user?.email || 'tester',
   };
 
   try {
