@@ -637,18 +637,45 @@ async function loadDeviceProfiles() {
   loadingProfiles.value = true;
   profileMatchError.value = '';
   try {
-    const res: any = await httpClient.get('/plugins/lorawan-chirpstack/device-profiles', {
-      params: {
-        serverId: step1.serverId,
-        tenantId: step1.tenantId,
-      },
-    });
+    let list: any[] = [];
+    try {
+      const res: any = await httpClient.get('/plugins/lorawan-chirpstack/device-profiles', {
+        params: {
+          serverId: step1.serverId,
+          tenantId: step1.tenantId,
+        },
+      });
+      const data = res?.data || res;
+      list = Array.isArray(data) ? data : (Array.isArray(data?.result) ? data.result : (data?.deviceProfiles || []));
+    } catch (apiErr) {
+      console.warn('Backend proxy device-profiles failed, trying direct ChirpStack API...', apiErr);
+    }
+
+    // Direct fetch fallback if backend proxy returned empty and we have server credentials
+    if (list.length === 0 && step1.serverUrl && step1.apiToken) {
+      try {
+        const directUrl = step1.serverUrl.replace(/\/+$/, '') + `/api/device-profiles?limit=100${step1.tenantId ? `&tenantId=${encodeURIComponent(step1.tenantId)}` : ''}`;
+        const directResp = await fetch(directUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${step1.apiToken}`,
+          },
+        });
+        if (directResp.ok) {
+          const directData = await directResp.json();
+          list = Array.isArray(directData?.result) ? directData.result : (directData?.deviceProfiles || []);
+        }
+      } catch (directErr) {
+        console.warn('Direct ChirpStack fetch fallback error:', directErr);
+      }
+    }
+
     // Discard response if server has changed while request was in-flight
     if (currentReqId !== profileRequestId || step1.serverId !== currentServerId) {
       return;
     }
-    const data = res?.data || res;
-    const list = Array.isArray(data) ? data : (Array.isArray(data?.result) ? data.result : (data?.deviceProfiles || []));
     availableDeviceProfiles.value = list;
     matchDeviceProfileByRegion();
   } catch (err: any) {
@@ -686,7 +713,7 @@ function matchDeviceProfileByRegion(): any {
     return null;
   }
 
-  // Exact region match after delimiter normalization ([-_\s]), consistent with backend
+  // Exact region match or base region match (e.g. AU915-1 matches AU915)
   const normalizeRegion = (val: unknown) => String(val || '').toUpperCase().replace(/[-_\s]/g, '');
   const region = normalizeRegion(rawRegion);
   const classCode = rawClass.toUpperCase().replace(/^CLASS[_\s-]?/, '');
@@ -695,20 +722,32 @@ function matchDeviceProfileByRegion(): any {
 
   const regionMatches = availableDeviceProfiles.value.filter((p: any) => {
     const profileRegion = normalizeRegion(p.region);
-    const tenantOk = !p.tenantId || !step1.tenantId || p.tenantId === step1.tenantId;
-    return typeof p.id === 'string' && p.id.trim() && region && profileRegion === region && tenantOk;
+    // ChirpStack v4 API already filters profiles by tenantId on server; do not drop when p.tenantId is omitted
+    const tenantOk = !p.tenantId || !step1.tenantId ||
+      String(p.tenantId).trim().toLowerCase() === String(step1.tenantId).trim().toLowerCase();
+
+    const baseReg = region.replace(/[^A-Z0-9]/g, '');
+    const baseProf = profileRegion.replace(/[^A-Z0-9]/g, '');
+    const isRegionMatch = profileRegion === region ||
+      (baseReg.startsWith('AU915') && baseProf.startsWith('AU915')) ||
+      (baseReg.startsWith('AS923') && baseProf.startsWith('AS923')) ||
+      (baseReg.startsWith('US915') && baseProf.startsWith('US915')) ||
+      (baseReg.startsWith('EU868') && baseProf.startsWith('EU868'));
+
+    return typeof p.id === 'string' && p.id.trim() && region && isRegionMatch && tenantOk;
   });
 
   const matches = regionMatches.filter((p: any) => {
     const pSupportsB = Boolean(p.supportsClassB === true || p.supportsClassB === 'true' || p.supports_class_b === true);
     const pSupportsC = Boolean(p.supportsClassC === true || p.supportsClassC === 'true' || p.supports_class_c === true);
+    // Class A is standard baseline and always supported 100%; Class B and C require capability flags
     return (!isClassB || pSupportsB) && (!isClassC || pSupportsC);
   });
 
   if (matches.length === 0) {
     if (regionMatches.length > 0) {
       candidateDeviceProfiles.value = regionMatches;
-      profileMatchError.value = `Tìm thấy ${regionMatches.length} Profile khớp Region "${rawRegion}", nhưng chưa bật 'Support Class ${rawClass}'. Vui lòng bật hỗ trợ trên ChirpStack hoặc chọn profile bên dưới:`;
+      profileMatchError.value = `Tìm thấy ${regionMatches.length} Profile khớp Region "${rawRegion}", nhưng chưa bật 'Support Class ${rawClass}' trên ChirpStack. Vui lòng bật hỗ trợ trên ChirpStack Console:`;
     } else {
       profileMatchError.value = `Không tìm thấy Device Profile nào khớp chính xác với Region "${rawRegion}" (Class ${rawClass}) trên ChirpStack. Vui lòng tạo Profile tương ứng trên ChirpStack trước khi đăng ký.`;
     }
@@ -717,7 +756,7 @@ function matchDeviceProfileByRegion(): any {
 
   if (matches.length > 1) {
     candidateDeviceProfiles.value = matches;
-    profileMatchError.value = `Tìm thấy ${matches.length} Device Profile cùng khớp với Region "${rawRegion}" và hỗ trợ Class ${rawClass}. Vui lòng chọn cụ thể 1 profile bên dưới trước khi đăng ký.`;
+    profileMatchError.value = `Tìm thấy ${matches.length} Device Profile cùng khớp với Region "${rawRegion}" và hỗ trợ Class ${rawClass}. Vui lòng chọn cụ thể 1 profile bên dưới:`;
     return null;
   }
 
