@@ -320,6 +320,11 @@
       <CreateDeviceTestPanel @select-tab="selectTab" />
     </div>
 
+    <!-- TAB: List Device Testing (Danh Sách Thiết Bị Test) -->
+    <div v-if="activeTab === 'list-device-testing'">
+      <ListDeviceTestPanel ref="listDevicePanelRef" @switch-tab="selectTab" />
+    </div>
+
     <!-- TAB 4: Device Auto Check (Kiểm Tra Tự Động) -->
     <div v-if="activeTab === 'device-auto-check'">
       <DeviceAutoCheckPanel ref="autoCheckPanelRef" />
@@ -422,6 +427,7 @@ import {
   Cpu,
   CheckCircle2,
   FlaskConical,
+  List,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
@@ -430,17 +436,19 @@ import DeviceSimulationPanel from '../components/DeviceSimulationPanel.vue';
 import DeviceAutoCheckPanel from '../components/DeviceAutoCheckPanel.vue';
 import SimulationDevicesPanel from '../components/SimulationDevicesPanel.vue';
 import CreateDeviceTestPanel from '../components/CreateDeviceTestPanel.vue';
+import ListDeviceTestPanel from '../components/ListDeviceTestPanel.vue';
 
 const route = useRoute();
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const router = useRouter();
 
-const VALID_TABS = ['gateway-sessions', 'packets', 'device-simulation', 'simulation-devices', 'device-auto-check', 'create-device-testing'];
+const VALID_TABS = ['gateway-sessions', 'packets', 'create-device-testing', 'list-device-testing', 'device-simulation', 'simulation-devices', 'device-auto-check'];
 
 const tabList = [
   { name: 'gateway-sessions', label: 'Gateway Test Sessions', icon: Activity },
   { name: 'packets', label: 'Giám Sát Gói Tin (Packets)', icon: Radio },
   { name: 'create-device-testing', label: 'Create Device Testing', icon: FlaskConical },
+  { name: 'list-device-testing', label: 'List Device Testing', icon: List },
   { name: 'device-simulation', label: 'Device Simulation (Tạo Flow)', icon: Cpu },
   { name: 'simulation-devices', label: 'Thiết Bị Simulation', icon: Radio },
   { name: 'device-auto-check', label: 'Device Auto Check (Tự Động)', icon: CheckCircle2 },
@@ -449,6 +457,7 @@ const tabList = [
 const activeTab = ref('gateway-sessions');
 const loading = ref(false);
 const autoCheckPanelRef = ref<any>(null);
+const listDevicePanelRef = ref<any>(null);
 
 function selectTab(tabName: string) {
   activeTab.value = tabName;
@@ -551,6 +560,8 @@ function handleTabChange(tab: string | number) {
     loadPackets();
   } else if (tab === 'gateway-sessions') {
     loadGatewaySessions();
+  } else if (tab === 'list-device-testing') {
+    listDevicePanelRef.value?.loadDevices?.();
   }
 }
 
@@ -559,6 +570,8 @@ function refreshActiveTab() {
     loadPackets();
   } else if (activeTab.value === 'gateway-sessions') {
     loadGatewaySessions();
+  } else if (activeTab.value === 'list-device-testing') {
+    listDevicePanelRef.value?.loadDevices?.();
   }
 }
 

@@ -547,6 +547,16 @@
             <button
               v-if="step3Result.status === 'SUCCESS'"
               type="button"
+              class="btn btn-sm btn-outline gap-1.5"
+              @click="$emit('select-tab', 'list-device-testing')"
+            >
+              <List class="w-3.5 h-3.5" />
+              <span>Xem Danh Sách Thiết Bị</span>
+            </button>
+
+            <button
+              v-if="step3Result.status === 'SUCCESS'"
+              type="button"
               class="btn btn-sm btn-primary gap-1.5"
               @click="finishAndReset"
             >
@@ -579,6 +589,7 @@ import {
   AlertCircle,
   Plus,
   Bug,
+  List,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
