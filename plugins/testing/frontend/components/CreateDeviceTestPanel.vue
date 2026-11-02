@@ -366,9 +366,9 @@
               <p class="mt-0.5 font-mono text-[11px]">{{ profileMatchError }}</p>
             </div>
           </div>
-          <!-- Khi có nhiều profile cùng region/class để user chủ động bấm chọn -->
-          <div v-if="candidateDeviceProfiles.length > 1" class="mt-2 pt-2 border-t border-warning/20">
-            <div class="text-[11px] font-semibold mb-1.5">Vui lòng chọn 1 Device Profile bên dưới:</div>
+          <!-- Khi có profile để user chủ động bấm chọn -->
+          <div v-if="candidateDeviceProfiles.length > 0" class="mt-2 pt-2 border-t border-warning/20">
+            <div class="text-[11px] font-semibold mb-1.5">Vui lòng chọn 1 Device Profile bên dưới để tiếp tục:</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 v-for="cand in candidateDeviceProfiles"
@@ -378,9 +378,13 @@
                 :class="matchedDeviceProfile?.id === cand.id ? 'btn-primary border-primary' : 'btn-outline border-base-content/20 bg-base-100'"
                 @click="selectCandidateProfile(cand)"
               >
-                <div>
-                  <div class="font-bold truncate">{{ cand.name }}</div>
-                  <div class="text-[10px] opacity-75">ID: {{ cand.id }} · Region: {{ cand.region }}</div>
+                <div class="w-full">
+                  <div class="font-bold truncate flex items-center justify-between">
+                    <span>{{ cand.name }}</span>
+                    <span v-if="cand.supportsClassC" class="badge badge-xs badge-primary ml-1">Class C</span>
+                    <span v-else class="badge badge-xs badge-ghost ml-1">Class A</span>
+                  </div>
+                  <div class="text-[10px] opacity-75 truncate">ID: {{ cand.id }} · Region: {{ cand.region }}</div>
                 </div>
               </button>
             </div>
@@ -604,6 +608,7 @@ const loadingProfiles = ref(false);
 const availableDeviceProfiles = ref<any[]>([]);
 const matchedDeviceProfile = ref<any>(null);
 const candidateDeviceProfiles = ref<any[]>([]);
+const diagnosticProfiles = ref<any[]>([]);
 const profileMatchError = ref('');
 let profileRequestId = 0;
 
@@ -620,6 +625,7 @@ function onNetworkServerChange() {
   availableDeviceProfiles.value = [];
   matchedDeviceProfile.value = null;
   candidateDeviceProfiles.value = [];
+  diagnosticProfiles.value = [];
   profileMatchError.value = '';
   loadDeviceProfiles();
 }
@@ -684,31 +690,34 @@ function matchDeviceProfileByRegion(): any {
   const normalizeRegion = (val: unknown) => String(val || '').toUpperCase().replace(/[-_\s]/g, '');
   const region = normalizeRegion(rawRegion);
   const classCode = rawClass.toUpperCase().replace(/^CLASS[_\s-]?/, '');
+  const isClassB = ['B', '1'].includes(classCode);
+  const isClassC = ['C', '2'].includes(classCode);
 
-  const matches = availableDeviceProfiles.value.filter((p: any) => {
+  const regionMatches = availableDeviceProfiles.value.filter((p: any) => {
     const profileRegion = normalizeRegion(p.region);
     const tenantOk = !p.tenantId || !step1.tenantId || p.tenantId === step1.tenantId;
-    const classOk = (!['B', '1'].includes(classCode) || p.supportsClassB === true) &&
-                    (!['C', '2'].includes(classCode) || p.supportsClassC === true);
+    return typeof p.id === 'string' && p.id.trim() && region && profileRegion === region && tenantOk;
+  });
 
-    return (
-      typeof p.id === 'string' &&
-      p.id.trim() &&
-      region &&
-      profileRegion === region &&
-      tenantOk &&
-      classOk
-    );
+  const matches = regionMatches.filter((p: any) => {
+    const pSupportsB = Boolean(p.supportsClassB === true || p.supportsClassB === 'true' || p.supports_class_b === true);
+    const pSupportsC = Boolean(p.supportsClassC === true || p.supportsClassC === 'true' || p.supports_class_c === true);
+    return (!isClassB || pSupportsB) && (!isClassC || pSupportsC);
   });
 
   if (matches.length === 0) {
-    profileMatchError.value = `Không tìm thấy Device Profile nào khớp chính xác với Region "${rawRegion}" (Class ${rawClass}) trên ChirpStack. Vui lòng tạo Profile tương ứng trên ChirpStack trước khi đăng ký.`;
+    if (regionMatches.length > 0) {
+      candidateDeviceProfiles.value = regionMatches;
+      profileMatchError.value = `Tìm thấy ${regionMatches.length} Profile khớp Region "${rawRegion}", nhưng chưa bật 'Support Class ${rawClass}'. Vui lòng bật hỗ trợ trên ChirpStack hoặc chọn profile bên dưới:`;
+    } else {
+      profileMatchError.value = `Không tìm thấy Device Profile nào khớp chính xác với Region "${rawRegion}" (Class ${rawClass}) trên ChirpStack. Vui lòng tạo Profile tương ứng trên ChirpStack trước khi đăng ký.`;
+    }
     return null;
   }
 
   if (matches.length > 1) {
     candidateDeviceProfiles.value = matches;
-    profileMatchError.value = `Tìm thấy ${matches.length} Device Profile cùng khớp với Region "${rawRegion}". Vui lòng chọn cụ thể 1 profile bên dưới trước khi đăng ký.`;
+    profileMatchError.value = `Tìm thấy ${matches.length} Device Profile cùng khớp với Region "${rawRegion}" và hỗ trợ Class ${rawClass}. Vui lòng chọn cụ thể 1 profile bên dưới trước khi đăng ký.`;
     return null;
   }
 
@@ -1353,16 +1362,32 @@ async function executeChirpstackRegistration() {
 
   try {
     const res: any = await httpClient.post('/plugins/testing/register-device-flow', payload);
-    const data = res?.data || res;
+    const isSuccess = Boolean(
+      res?.success === true ||
+      res?.data?.success === true ||
+      res?.data?.chirpstackSuccess === true ||
+      res?.status === 'SUCCESS_ATTACH_BATTERY' ||
+      res?.data?.status === 'SUCCESS_ATTACH_BATTERY'
+    );
+    let message =
+      res?.message ||
+      res?.data?.message ||
+      res?.data?.error ||
+      (isSuccess ? 'Đăng ký Thành công vui lòng gắn pin cảm biến' : 'Lỗi không xác định từ Network Server');
 
-    if (data?.success || data?.status === 'SUCCESS_ATTACH_BATTERY' || res?.status === 200) {
+    const warnings: string[] = Array.isArray(res?.warnings) ? res.warnings : (Array.isArray(res?.data?.warnings) ? res.data.warnings : []);
+    if (warnings.length > 0) {
+      message += ` (Lưu ý: ${warnings.join('; ')})`;
+    }
+
+    if (isSuccess) {
       step3Result.status = 'SUCCESS';
-      step3Result.message = data?.message || 'Đăng ký Thành công vui lòng gắn pin cảm biến';
-      cyberToast.success('Đăng ký Thành công vui lòng gắn pin cảm biến');
+      step3Result.message = message;
+      cyberToast.success(message);
     } else {
       step3Result.status = 'ERROR';
-      step3Result.message = data?.message || 'Lỗi không xác định từ Network Server';
-      cyberToast.error(step3Result.message);
+      step3Result.message = message;
+      cyberToast.error(message);
     }
   } catch (err: any) {
     step3Result.status = 'ERROR';
