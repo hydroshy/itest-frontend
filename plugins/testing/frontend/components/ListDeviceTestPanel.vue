@@ -3,34 +3,18 @@
     <!-- Top Filter & Control Banner -->
     <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <!-- Title & Default App Badge -->
-        <div class="flex items-center gap-3 flex-wrap">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-bold">
-              <Layers class="w-4 h-4" />
-            </div>
-            <div>
-              <h3 class="font-bold text-base text-base-content flex items-center gap-2">
-                <span>Danh Sách Thiết Bị Test</span>
-                <span class="badge badge-sm badge-primary font-mono text-[11px]">
-                  {{ totalItems }} thiết bị
-                </span>
-              </h3>
-              <p class="text-xs text-base-content/60">
-                Hiển thị thiết bị được tạo bởi người dùng trong Application ID mặc định
-              </p>
-            </div>
+        <!-- Title & Count -->
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-bold">
+            <Layers class="w-4 h-4" />
           </div>
-
-          <!-- Default Application Badge -->
-          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-base-100/70 border border-base-300 text-xs">
-            <span class="text-base-content/60">Default App:</span>
-            <span class="font-mono font-semibold text-primary">
-              {{ currentAppId || defaultAppId || 'Đang tải...' }}
-            </span>
-            <span v-if="currentAppId && currentAppId === defaultAppId" class="badge badge-xs badge-success text-[10px]">
-              Active
-            </span>
+          <div>
+            <h3 class="font-bold text-base text-base-content flex items-center gap-2">
+              <span>Danh Sách Thiết Bị Test</span>
+              <span class="badge badge-sm badge-primary font-mono text-[11px]">
+                {{ totalItems }} thiết bị
+              </span>
+            </h3>
           </div>
         </div>
 
@@ -105,36 +89,6 @@
       </div>
     </div>
 
-    <!-- Quick Stats Metric Tiles -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3 shadow-xs">
-        <div class="text-[11px] uppercase tracking-wider text-base-content/60 font-medium">Tổng Thiết Bị Test</div>
-        <div class="text-xl font-bold font-mono text-primary mt-1">{{ totalItems }}</div>
-        <div class="text-[10px] text-base-content/50 mt-0.5">Thuộc Application mặc định</div>
-      </div>
-      <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3 shadow-xs">
-        <div class="text-[11px] uppercase tracking-wider text-base-content/60 font-medium">Thiết Bị Của Tôi</div>
-        <div class="text-xl font-bold font-mono text-sky-400 mt-1">{{ myDevicesCount }}</div>
-        <div class="text-[10px] text-base-content/50 mt-0.5">Tạo bởi @{{ currentUsername }}</div>
-      </div>
-      <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3 shadow-xs">
-        <div class="text-[11px] uppercase tracking-wider text-base-content/60 font-medium">Loại Lớp (Class Mode)</div>
-        <div class="flex items-center gap-2 mt-1">
-          <span class="badge badge-sm badge-outline font-mono text-xs">Class A: {{ classACount }}</span>
-          <span class="badge badge-sm badge-secondary font-mono text-xs">Class C: {{ classCCount }}</span>
-        </div>
-        <div class="text-[10px] text-base-content/50 mt-0.5">Tiêu chuẩn LoRaWAN</div>
-      </div>
-      <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3 shadow-xs">
-        <div class="text-[11px] uppercase tracking-wider text-base-content/60 font-medium">Trạng Thái Kích Hoạt</div>
-        <div class="flex items-center gap-1.5 mt-1 font-semibold text-xs text-emerald-400">
-          <CheckCircle2 class="w-4 h-4" />
-          <span>{{ readyCount }} Sẵn sàng gắn pin</span>
-        </div>
-        <div class="text-[10px] text-base-content/50 mt-0.5">Đã đăng ký ChirpStack</div>
-      </div>
-    </div>
-
     <!-- Main Table Card: Concise 11 Core Fields -->
     <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
       <div class="overflow-x-auto relative min-h-[300px]">
@@ -153,7 +107,7 @@
               <th class="w-10 text-center">#</th>
               <th>Serial Number</th>
               <th>Item Code</th>
-              <th>FW Ver / Code</th>
+              <th>FW Ver</th>
               <th>HW Ver</th>
               <th>DevEUI</th>
               <th>AppEUI</th>
@@ -175,8 +129,7 @@
                   </div>
                   <div class="font-semibold text-sm text-base-content">Chưa có thiết bị test nào</div>
                   <p class="text-xs text-base-content/50 text-center">
-                    Không tìm thấy thiết bị nào phù hợp với bộ lọc trong Application ID mặc định
-                    <span class="font-mono text-primary font-bold">({{ currentAppId || defaultAppId }})</span>.
+                    Không tìm thấy thiết bị nào phù hợp với bộ lọc trong hệ thống.
                   </p>
                   <button
                     class="btn btn-sm btn-primary mt-2 gap-1.5 shadow-sm"
@@ -221,22 +174,17 @@
                 </span>
               </td>
 
-              <!-- 3 & 5. FW Version & FW Code -->
+              <!-- 3. FW Version (Single column, no 'v' prefix, FW Code hidden) -->
               <td>
-                <div class="flex flex-col">
-                  <span class="font-mono text-[11px] font-medium text-base-content/90">
-                    {{ dev.fwVersion ? `v${dev.fwVersion}` : '—' }}
-                  </span>
-                  <span v-if="dev.fwCode" class="font-mono text-[10px] text-base-content/50">
-                    {{ dev.fwCode }}
-                  </span>
-                </div>
+                <span class="font-mono text-[11px] font-medium text-base-content/90">
+                  {{ cleanVersion(dev.fwVersion) }}
+                </span>
               </td>
 
-              <!-- 4. HW Version -->
+              <!-- 4. HW Version (no 'v' prefix) -->
               <td>
                 <span class="badge badge-sm badge-outline font-mono text-[11px] border-base-300">
-                  {{ dev.hwVersion ? `v${dev.hwVersion}` : '—' }}
+                  {{ cleanVersion(dev.hwVersion) }}
                 </span>
               </td>
 
@@ -315,27 +263,42 @@
                 </div>
               </td>
 
-              <!-- Status -->
+              <!-- Trạng thái tính toán từ ChirpStack API -->
               <td class="text-center">
                 <span
-                  v-if="dev.status === 'SUCCESS_ATTACH_BATTERY'"
+                  v-if="dev.status === 'ONLINE' || dev.status === 'ACTIVE'"
                   class="badge badge-xs badge-success gap-1 text-[10px] py-1 px-1.5"
-                  title="Đăng ký thành công, vui lòng gắn pin"
+                  :title="dev.lastSeenAt ? 'ChirpStack: Online (Gói tin gần nhất: ' + formatDate(dev.lastSeenAt) + ')' : 'ChirpStack: Online'"
                 >
-                  <Check class="w-2.5 h-2.5" /> Gắn Pin
+                  <Check class="w-2.5 h-2.5" /> Online
                 </span>
                 <span
-                  v-else-if="dev.status === 'FAILED'"
-                  class="badge badge-xs badge-error gap-1 text-[10px] py-1 px-1.5"
-                  :title="dev.message || 'Đăng ký thất bại'"
+                  v-else-if="dev.status === 'NEVER_SEEN'"
+                  class="badge badge-xs badge-warning gap-1 text-[10px] py-1 px-1.5"
+                  title="ChirpStack: Thiết bị đã đăng ký nhưng chưa phát gói tin uplink nào"
                 >
-                  <X class="w-2.5 h-2.5" /> Thất bại
+                  <Radio class="w-2.5 h-2.5" /> Chưa Uplink
+                </span>
+                <span
+                  v-else-if="dev.status === 'REGISTERED' || dev.status === 'SUCCESS_ATTACH_BATTERY'"
+                  class="badge badge-xs badge-info gap-1 text-[10px] py-1 px-1.5"
+                  title="Đã đăng ký ChirpStack Network Server"
+                >
+                  <Check class="w-2.5 h-2.5" /> Đã Đăng Ký
+                </span>
+                <span
+                  v-else-if="dev.status === 'DISABLED'"
+                  class="badge badge-xs badge-neutral gap-1 text-[10px] py-1 px-1.5"
+                  title="ChirpStack: Thiết bị đang bị vô hiệu hóa"
+                >
+                  <X class="w-2.5 h-2.5" /> Vô Hiệu
                 </span>
                 <span
                   v-else
-                  class="badge badge-xs badge-warning gap-1 text-[10px] py-1 px-1.5"
+                  class="badge badge-xs badge-error gap-1 text-[10px] py-1 px-1.5"
+                  :title="dev.message || 'Không tìm thấy trên Network Server'"
                 >
-                  {{ dev.status || 'Pending' }}
+                  <X class="w-2.5 h-2.5" /> {{ dev.status || 'Chưa ĐK' }}
                 </span>
               </td>
 
@@ -351,11 +314,11 @@
                     <Eye class="w-3.5 h-3.5" />
                   </button>
 
-                  <!-- Delete button -->
+                  <!-- Delete button (deletes on ChirpStack + local) -->
                   <button
                     class="btn btn-ghost btn-xs btn-square text-base-content/50 hover:text-error hover:bg-error/10"
                     :disabled="!canDelete(dev)"
-                    :title="canDelete(dev) ? 'Xóa thiết bị' : 'Chỉ người tạo hoặc Admin mới có quyền xóa'"
+                    :title="canDelete(dev) ? 'Xóa thiết bị (xóa cả trên ChirpStack)' : 'Chỉ người tạo hoặc Admin mới có quyền xóa'"
                     @click="promptDelete(dev)"
                   >
                     <Trash2 class="w-3.5 h-3.5" />
@@ -434,11 +397,11 @@
           </div>
           <div class="p-2.5 rounded-lg bg-base-200/60 border border-base-300">
             <div class="text-[10px] text-base-content/50 uppercase font-medium">3. FW Version</div>
-            <div class="font-mono mt-0.5">{{ selectedDev.fwVersion || '—' }}</div>
+            <div class="font-mono mt-0.5">{{ cleanVersion(selectedDev.fwVersion) }}</div>
           </div>
           <div class="p-2.5 rounded-lg bg-base-200/60 border border-base-300">
             <div class="text-[10px] text-base-content/50 uppercase font-medium">4. HW Version</div>
-            <div class="font-mono mt-0.5">{{ selectedDev.hwVersion || '—' }}</div>
+            <div class="font-mono mt-0.5">{{ cleanVersion(selectedDev.hwVersion) }}</div>
           </div>
           <div class="p-2.5 rounded-lg bg-base-200/60 border border-base-300">
             <div class="text-[10px] text-base-content/50 uppercase font-medium">5. FW Code</div>
@@ -483,8 +446,12 @@
             <span>{{ selectedDev.networkServerName || 'Globiots ChirpStack Server' }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-base-content/60">Trạng Thái:</span>
+            <span class="text-base-content/60">Trạng Thái (Network Server):</span>
             <span class="font-bold text-emerald-400">{{ selectedDev.status || '—' }}</span>
+          </div>
+          <div v-if="selectedDev.lastSeenAt" class="flex justify-between">
+            <span class="text-base-content/60">Gói Tin Gần Nhất (Last Seen):</span>
+            <span class="text-sky-400">{{ formatDate(selectedDev.lastSeenAt) }}</span>
           </div>
           <div v-if="selectedDev.message" class="flex justify-between">
             <span class="text-base-content/60">Thông Điệp:</span>
@@ -517,7 +484,7 @@
           <div>
             <h3 class="font-bold text-base text-base-content">Xác Nhận Xóa Thiết Bị</h3>
             <p class="text-xs text-base-content/70 mt-1">
-              Bạn có chắc chắn muốn xóa thiết bị kiểm thử này khỏi hệ thống và ChirpStack Network Server?
+              Bạn có chắc chắn muốn xóa thiết bị kiểm thử này? Thiết bị sẽ bị xóa vĩnh viễn trên cả hệ thống và ChirpStack Network Server.
             </p>
           </div>
         </div>
@@ -541,7 +508,7 @@
         <!-- Warning Callout -->
         <div class="alert alert-warning text-xs p-2.5 rounded-lg border-warning/30 flex items-start gap-2">
           <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5 text-warning" />
-          <span>Hành động này sẽ xóa dữ liệu trên hệ thống và hủy đăng ký DevEUI tương ứng trên ChirpStack.</span>
+          <span>Hành động này sẽ xóa dữ liệu trên hệ thống và đồng thời gửi yêu cầu hủy đăng ký DevEUI tương ứng trên ChirpStack.</span>
         </div>
 
         <div class="modal-action flex justify-end gap-2">
@@ -579,7 +546,6 @@ import {
   Radio,
   X,
   AlertTriangle,
-  CheckCircle2,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
@@ -629,25 +595,6 @@ const deleteModalVisible = ref(false);
 const devToDelete = ref<any>(null);
 const deleting = ref(false);
 
-// Metric Computations
-const myDevicesCount = computed(() => {
-  return devices.value.filter(
-    d => String(d.createdBy || '').toLowerCase() === currentUsername.value.toLowerCase()
-  ).length;
-});
-
-const classACount = computed(() => {
-  return devices.value.filter(d => !String(d.class || '').toUpperCase().includes('C')).length;
-});
-
-const classCCount = computed(() => {
-  return devices.value.filter(d => String(d.class || '').toUpperCase().includes('C')).length;
-});
-
-const readyCount = computed(() => {
-  return devices.value.filter(d => d.status === 'SUCCESS_ATTACH_BATTERY').length;
-});
-
 function setFilterMode(mode: 'mine' | 'all') {
   filterMode.value = mode;
   loadDevices(1);
@@ -672,6 +619,11 @@ function maskKey(key?: string): string {
 function formatHex(str?: string): string {
   if (!str) return '—';
   return str.toUpperCase();
+}
+
+function cleanVersion(val?: string | null): string {
+  if (!val) return '—';
+  return String(val).replace(/^[vV]/, '').trim() || '—';
 }
 
 function getInitials(name?: string): string {
@@ -793,7 +745,7 @@ async function confirmDelete() {
     });
 
     if (res?.success) {
-      cyberToast.success(`Đã xóa thiết bị ${devToDelete.value.serialNumber || devToDelete.value.devEui} thành công`);
+      cyberToast.success(`Đã xóa thiết bị ${devToDelete.value.serialNumber || devToDelete.value.devEui} trên cả hệ thống và ChirpStack`);
       deleteModalVisible.value = false;
       devToDelete.value = null;
       await loadDevices(currentPage.value);
@@ -806,6 +758,10 @@ async function confirmDelete() {
     deleting.value = false;
   }
 }
+
+defineExpose({
+  loadDevices,
+});
 
 onMounted(async () => {
   await fetchDefaultApplication();
