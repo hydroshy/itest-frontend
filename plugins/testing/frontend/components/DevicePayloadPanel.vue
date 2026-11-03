@@ -46,6 +46,15 @@
             </button>
 
             <button
+              class="btn btn-sm btn-outline gap-1.5"
+              title="Quản lý và cấu hình bộ giải mã LoRaWAN theo ITEM_CODE / FW_CODE"
+              @click="goToDecoderPlugin()"
+            >
+              <Cpu class="w-3.5 h-3.5 text-primary" />
+              <span>Bộ Giải Mã Decoder</span>
+            </button>
+
+            <button
               class="btn btn-sm btn-primary gap-1.5 shadow-sm"
               :disabled="configuringIntegration"
               @click="triggerAutoRegisterIntegration"
@@ -350,8 +359,16 @@
                     <span class="font-bold">{{ formatSensorValue(val) }}</span>
                   </span>
                 </div>
-                <div v-else class="text-[11px] text-base-content/40 italic">
-                  Chưa giải mã (Decoder bypass)
+                <div v-else class="text-[11px] text-base-content/40 italic flex items-center gap-1.5 flex-wrap">
+                  <span>Chưa giải mã (Decoder bypass)</span>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs text-primary underline p-0 h-auto min-h-0"
+                    title="Mở Decoder để cấu hình"
+                    @click="goToDecoderPlugin(row.item_code)"
+                  >
+                    Gán Decoder
+                  </button>
                 </div>
               </td>
 
@@ -495,8 +512,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   Radio,
+  Cpu,
   Activity,
   RefreshCw,
   Link2,
@@ -514,6 +533,15 @@ import { httpClient } from '@/api/httpClient';
 import { cyberToast } from '@/services/cyberToast';
 
 const loading = ref(false);
+const router = useRouter();
+
+function goToDecoderPlugin(itemCode?: string) {
+  if (itemCode) {
+    router.push(`/plugins/decoder?tab=list&search=${encodeURIComponent(itemCode)}`);
+  } else {
+    router.push('/plugins/decoder?tab=list');
+  }
+}
 const configuringIntegration = ref(false);
 const sseConnected = ref(false);
 let eventSource: EventSource | null = null;

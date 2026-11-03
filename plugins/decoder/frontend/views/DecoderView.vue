@@ -28,6 +28,16 @@
         <button
           type="button"
           class="btn btn-outline btn-sm gap-2"
+          title="Chuyển tới Device Payload ở plugin Testing"
+          @click="goToDevicePayload()"
+        >
+          <Radio class="w-4 h-4 text-primary" />
+          <span>Device Payload</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-outline btn-sm gap-2"
           :disabled="loading"
           @click="refreshData"
         >
@@ -328,15 +338,52 @@
       <p v-else-if="loadingDevices" role="status">Đang tải thiết bị testing...</p>
       <div v-else class="overflow-x-auto border border-base-300 rounded-xl">
         <table class="table table-sm">
-          <thead><tr><th>Serial Number</th><th>ITEM_CODE</th><th>FW_CODE</th><th>FW_VERSION</th><th>Decoder phù hợp</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Serial Number / DevEUI</th>
+              <th>ITEM_CODE</th>
+              <th>FW_CODE</th>
+              <th>FW_VERSION</th>
+              <th>Decoder phù hợp</th>
+              <th class="text-right">Thao Tác</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr v-if="!testingDevices.length"><td colspan="5">Không có thiết bị testing.</td></tr>
+            <tr v-if="!testingDevices.length"><td colspan="6">Không có thiết bị testing.</td></tr>
             <tr v-for="device in testingDevices" :key="device.id">
-              <td>{{ device.serial_number }}</td><td>{{ device.item_code }}</td><td>{{ device.fw_code }}</td><td>{{ device.long_fw || device.fw_version }}</td>
               <td>
-                <button class="btn min-h-11" type="button" :disabled="device.resolving" @click="resolveDevice(device)">Tìm Decoder</button>
-                <p role="status">{{ device.matchMessage }}</p>
-                <button v-if="device.decoder" class="btn min-h-11" type="button" @click="openEditDialog(device.decoder)">Sửa Decoder</button>
+                <div class="font-mono font-semibold">{{ device.serial_number }}</div>
+                <div v-if="device.dev_eui" class="text-xs font-mono text-base-content/60">{{ device.dev_eui }}</div>
+              </td>
+              <td><span class="badge badge-sm badge-outline font-mono">{{ device.item_code || 'Chưa có' }}</span></td>
+              <td><span class="badge badge-sm badge-ghost font-mono">{{ device.fw_code || 'Chưa có' }}</span></td>
+              <td>{{ device.long_fw || device.fw_version || 'Mặc định' }}</td>
+              <td>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button class="btn btn-xs btn-outline" type="button" :disabled="device.resolving" @click="resolveDevice(device)">
+                    {{ device.resolving ? 'Đang tìm...' : 'Tìm Decoder' }}
+                  </button>
+                  <span v-if="device.matchMessage" class="text-xs" :class="device.decoder ? 'text-success font-semibold' : 'text-base-content/60'">
+                    {{ device.matchMessage }}
+                  </span>
+                  <button v-if="device.decoder" class="btn btn-xs btn-ghost text-primary" type="button" @click="openEditDialog(device.decoder)">
+                    Sửa Decoder
+                  </button>
+                  <button v-else-if="device.matchMessage && !device.decoder" class="btn btn-xs btn-primary" type="button" @click="openCreateDialogForDevice(device)">
+                    Tạo Decoder
+                  </button>
+                </div>
+              </td>
+              <td class="text-right">
+                <button
+                  type="button"
+                  class="btn btn-xs btn-outline btn-info gap-1"
+                  title="Xem luồng gói tin Device Payload của thiết bị này"
+                  @click="goToDevicePayload(device)"
+                >
+                  <Radio class="w-3 h-3" />
+                  <span>Payload</span>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -658,9 +705,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import {
   Cpu,
+  Radio,
   Plus,
   RefreshCw,
   Search,
@@ -748,6 +796,26 @@ async function requestWithFallback(method: 'get' | 'post' | 'put' | 'delete', pa
 
 // State
 const route = useRoute();
+const router = useRouter();
+
+function goToDevicePayload(device?: any) {
+  if (device?.dev_eui || device?.serial_number || device?.item_code) {
+    const term = device.dev_eui || device.serial_number || device.item_code;
+    router.push(`/plugins/testing?tab=device-payload&search=${encodeURIComponent(term)}`);
+  } else {
+    router.push('/plugins/testing?tab=device-payload');
+  }
+}
+
+async function openCreateDialogForDevice(device: any) {
+  await openCreateDialog();
+  form.name = `Decoder - ${device.item_code || device.serial_number || 'Thiết bị testing'}`;
+  form.sku = device.sku || device.item_code || '';
+  form.longFw = device.long_fw || device.fw_version || '';
+  form.itemCode = device.item_code || '';
+  form.fwCode = device.fw_code || '';
+  form.description = `Tự động khởi tạo từ thiết bị testing SN: ${device.serial_number || ''}`;
+}
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
 const activeTab = ref<'list' | 'memmap' | 'sandbox' | 'devices'>('list');
 watch(() => route.query.tab, (value) => {
@@ -1092,14 +1160,14 @@ function openEditDialog(row: any) {
   editingId.value = row.id;
   form.name = row.name;
   form.sku = row.sku;
-  form.longFw = row.longFw || '';
-  form.itemCode = row.itemCode || '';
-  form.fwCode = row.fwCode || '';
+  form.longFw = row.longFw || row.long_fw || '';
+  form.itemCode = row.itemCode || row.item_code || '';
+  form.fwCode = row.fwCode || row.fw_code || '';
   form.description = row.description || '';
   form.script = row.script;
-  form.samplePayload = row.samplePayload || '09C4138805';
-  form.sampleFport = row.sampleFport || 1;
-  form.isActive = row.isActive;
+  form.samplePayload = row.samplePayload || row.sample_payload || '09C4138805';
+  form.sampleFport = row.sampleFport || row.sample_fport || 1;
+  form.isActive = row.isActive !== undefined ? row.isActive : (row.is_active !== undefined ? row.is_active : true);
   editorDialogVisible.value = true;
 }
 
