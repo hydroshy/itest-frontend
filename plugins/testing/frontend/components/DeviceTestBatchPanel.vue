@@ -97,8 +97,14 @@
           ></progress>
         </div>
 
-        <!-- Verdict Summary Badges -->
-        <div class="flex items-center gap-2">
+        <!-- Verdict Summary Badges & Server Timestamps -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div v-if="batchStartedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
+            <span>Bắt đầu: {{ formatTimestamp(batchStartedAt) }}</span>
+          </div>
+          <div v-if="testFinished && batchFinishedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
+            <span>Kết thúc: {{ formatTimestamp(batchFinishedAt) }}</span>
+          </div>
           <div class="badge badge-success gap-1 font-mono text-xs py-2 px-2.5">
             <CheckCircle2 class="w-3.5 h-3.5" />
             PASS: {{ passCount }}/{{ selectedDevices.length }}
@@ -106,6 +112,9 @@
           <div v-if="failCount > 0" class="badge badge-error gap-1 font-mono text-xs py-2 px-2.5">
             <AlertCircle class="w-3.5 h-3.5" />
             FAIL: {{ failCount }}/{{ selectedDevices.length }}
+          </div>
+          <div v-if="testFinished" class="badge badge-primary gap-1 font-mono text-xs py-2 px-2.5">
+            <span>Đã lưu vào Traceability</span>
           </div>
         </div>
       </div>
@@ -575,6 +584,20 @@ const currentFlowName = ref('');
 const flowSteps = ref<string[]>([]);
 const currentStepIndex = ref(0);
 
+const batchStartedAt = ref<string>('');
+const batchFinishedAt = ref<string>('');
+const batchVerdict = ref<string>('');
+
+function formatTimestamp(ts?: string): string {
+  if (!ts) return '';
+  try {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch {
+    return ts;
+  }
+}
+
 const currentStepName = computed(() => {
   return flowSteps.value[currentStepIndex.value] || 'Hoàn tất kiểm thử';
 });
@@ -715,6 +738,136 @@ function onBatchSelectChange() {
 
     loadReferenceDevices();
     loadAvailableDevices();
+    checkAndSyncBatchStatus();
+  }
+}
+
+async function checkAndSyncBatchStatus() {
+  if (!selectedBatchId.value) return;
+  try {
+    const res: any = await httpClient.get(`/plugins/testing/test-batches/${selectedBatchId.value}/status`);
+    const statusData = res?.data || res;
+    if (!statusData) return;
+
+    if (statusData.startedAt) batchStartedAt.value = statusData.startedAt;
+    if (statusData.finishedAt) batchFinishedAt.value = statusData.finishedAt;
+    if (statusData.verdict) batchVerdict.value = statusData.verdict;
+
+    if (statusData.status === 'RUNNING') {
+      isTesting.value = true;
+      testFinished.value = false;
+      if (typeof statusData.flowDurationSeconds === 'number') {
+        totalDurationSeconds.value = statusData.flowDurationSeconds;
+      }
+      if (typeof statusData.elapsedSeconds === 'number') {
+        elapsedSeconds.value = statusData.elapsedSeconds;
+      }
+      if (typeof statusData.remainingSeconds === 'number') {
+        remainingSeconds.value = statusData.remainingSeconds;
+      }
+
+      if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
+        selectedDevices.value = statusData.devices.map((d: any) => ({
+          device: {
+            id: d.id || d.serialNumber,
+            serialNumber: d.serialNumber,
+            devEui: d.devEui,
+            itemCode: filterItemCode.value,
+            fwVersion: filterFwVersion.value,
+          },
+          referenceDeviceId: d.referenceSerialNumber || d.referenceDeviceId || '',
+          referenceDevice: {
+            id: d.referenceSerialNumber || d.referenceDeviceId,
+            serialNumber: d.referenceSerialNumber,
+            name: d.referenceDeviceName || `Thiết bị chuẩn ${d.referenceSerialNumber || ''}`,
+          },
+          status: d.verdict || d.status || 'RUNNING',
+          packetsCount: d.packetsReceived || 0,
+          liveComparison: d.comparisonResult ? {
+            dutTemp: d.comparisonResult.dutTemp ?? d.comparisonResult.dut_temp,
+            refTemp: d.comparisonResult.refTemp ?? d.comparisonResult.ref_temp,
+            tempDelta: d.comparisonResult.tempDelta ?? d.comparisonResult.temp_delta,
+            tempDeltaPass: d.comparisonResult.tempDeltaPass ?? d.comparisonResult.temp_pass ?? (d.comparisonResult.tolerance_pass !== false),
+            dutHum: d.comparisonResult.dutHum ?? d.comparisonResult.dut_hum,
+            refHum: d.comparisonResult.refHum ?? d.comparisonResult.ref_hum,
+            humDelta: d.comparisonResult.humDelta ?? d.comparisonResult.hum_delta,
+            humDeltaPass: d.comparisonResult.humDeltaPass ?? d.comparisonResult.hum_pass ?? true,
+            rssi: d.comparisonResult.rssi,
+            snr: d.comparisonResult.snr,
+          } : undefined,
+        }));
+      }
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        elapsedSeconds.value++;
+        remainingSeconds.value = Math.max(0, totalDurationSeconds.value - elapsedSeconds.value);
+        if (flowSteps.value.length > 0 && totalDurationSeconds.value > 0) {
+          const stepDuration = totalDurationSeconds.value / flowSteps.value.length;
+          currentStepIndex.value = Math.min(
+            flowSteps.value.length - 1,
+            Math.floor(elapsedSeconds.value / Math.max(1, stepDuration))
+          );
+        }
+        if (remainingSeconds.value <= 0) {
+          finishBatchTest();
+        }
+      }, 1000);
+
+      clearInterval(simulationInterval);
+      simulationInterval = setInterval(() => {
+        pollBatchStatus();
+      }, 3000);
+    } else if (
+      statusData.status === 'COMPLETED' ||
+      statusData.status === 'FINISHED' ||
+      statusData.status === 'PASSED' ||
+      statusData.status === 'FAILED'
+    ) {
+      clearInterval(timerInterval);
+      clearInterval(simulationInterval);
+      isTesting.value = false;
+      testFinished.value = true;
+      elapsedSeconds.value = statusData.flowDurationSeconds || totalDurationSeconds.value;
+      remainingSeconds.value = 0;
+
+      if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
+        selectedDevices.value = statusData.devices.map((d: any) => ({
+          device: {
+            id: d.id || d.serialNumber,
+            serialNumber: d.serialNumber,
+            devEui: d.devEui,
+            itemCode: filterItemCode.value,
+            fwVersion: filterFwVersion.value,
+          },
+          referenceDeviceId: d.referenceSerialNumber || d.referenceDeviceId || '',
+          referenceDevice: {
+            id: d.referenceSerialNumber || d.referenceDeviceId,
+            serialNumber: d.referenceSerialNumber,
+            name: d.referenceDeviceName || `Thiết bị chuẩn ${d.referenceSerialNumber || ''}`,
+          },
+          status: d.verdict || d.status || 'PASS',
+          packetsCount: d.packetsReceived || 0,
+          liveComparison: d.comparisonResult ? {
+            dutTemp: d.comparisonResult.dutTemp ?? d.comparisonResult.dut_temp,
+            refTemp: d.comparisonResult.refTemp ?? d.comparisonResult.ref_temp,
+            tempDelta: d.comparisonResult.tempDelta ?? d.comparisonResult.temp_delta,
+            tempDeltaPass: d.comparisonResult.tempDeltaPass ?? d.comparisonResult.temp_pass ?? (d.comparisonResult.tolerance_pass !== false),
+            dutHum: d.comparisonResult.dutHum ?? d.comparisonResult.dut_hum,
+            refHum: d.comparisonResult.refHum ?? d.comparisonResult.ref_hum,
+            humDelta: d.comparisonResult.humDelta ?? d.comparisonResult.hum_delta,
+            humDeltaPass: d.comparisonResult.humDeltaPass ?? d.comparisonResult.hum_pass ?? true,
+            rssi: d.comparisonResult.rssi,
+            snr: d.comparisonResult.snr,
+          } : undefined,
+        }));
+      }
+    } else {
+      isTesting.value = false;
+      testFinished.value = false;
+    }
+  } catch (err: any) {
+    console.debug('[DeviceTestBatchPanel] Error checking batch status:', err.message);
   }
 }
 
@@ -943,14 +1096,62 @@ function stopBatchTest() {
   clearInterval(timerInterval);
   clearInterval(simulationInterval);
   isTesting.value = false;
+  if (selectedBatchId.value) {
+    httpClient.post(`/plugins/testing/test-batches/${selectedBatchId.value}/stop`).catch(() => {});
+  }
   cyberToast.info('Đã dừng kiểm thử Test Batch');
 }
 
-function finishBatchTest() {
+async function finishBatchTest() {
   clearInterval(timerInterval);
   clearInterval(simulationInterval);
   isTesting.value = false;
   testFinished.value = true;
+
+  if (selectedBatchId.value) {
+    try {
+      const res: any = await httpClient.get(`/plugins/testing/test-batches/${selectedBatchId.value}/status`);
+      const statusData = res?.data || res;
+      if (statusData) {
+        if (statusData.startedAt) batchStartedAt.value = statusData.startedAt;
+        if (statusData.finishedAt) batchFinishedAt.value = statusData.finishedAt;
+        if (statusData.verdict) batchVerdict.value = statusData.verdict;
+        if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
+          statusData.devices.forEach((dev: any) => {
+            const item = selectedDevices.value.find(
+              (s) =>
+                (s.device.serialNumber && s.device.serialNumber === dev.serialNumber) ||
+                (s.device.devEui && s.device.devEui === dev.devEui)
+            );
+            if (item) {
+              item.status = dev.verdict || dev.status || item.status;
+              if (dev.packetsReceived != null) {
+                item.packetsCount = dev.packetsReceived;
+              }
+              if (dev.comparisonResult) {
+                const comp = dev.comparisonResult;
+                item.liveComparison = {
+                  dutTemp: comp.dutTemp ?? comp.dut_temp,
+                  refTemp: comp.refTemp ?? comp.ref_temp,
+                  tempDelta: comp.tempDelta ?? comp.temp_delta,
+                  tempDeltaPass: comp.tempDeltaPass ?? comp.temp_pass ?? (comp.tolerance_pass !== false),
+                  dutHum: comp.dutHum ?? comp.dut_hum,
+                  refHum: comp.refHum ?? comp.ref_hum,
+                  humDelta: comp.humDelta ?? comp.hum_delta,
+                  humDeltaPass: comp.humDeltaPass ?? comp.hum_pass ?? true,
+                  rssi: comp.rssi,
+                  snr: comp.snr,
+                };
+              }
+            }
+          });
+        }
+      }
+    } catch (err: any) {
+      console.debug('[DeviceTestBatchPanel] Finish status sync note:', err.message);
+    }
+  }
+
   cyberToast.success(`Hoàn thành Test Batch! Đạt ${passCount.value}/${selectedDevices.value.length} thiết bị.`);
 }
 
