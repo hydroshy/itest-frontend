@@ -1,5 +1,7 @@
 <template>
   <div class="device-auto-check-panel space-y-4">
+    <AutoCheckProfilePanel />
+
     <!-- Top Banner -->
     <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
@@ -361,6 +363,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, nextTick } from 'vue';
+import AutoCheckProfilePanel from './AutoCheckProfilePanel.vue';
 import {
   CheckCircle2,
   AlertTriangle,
