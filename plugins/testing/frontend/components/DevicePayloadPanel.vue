@@ -574,47 +574,18 @@ const filteredPayloads = computed(() => {
 async function loadPayloads() {
   loading.value = true;
   try {
-    let items: any[] = [];
-    // 1. Primary endpoint: GET /plugins/testing/packets (with devEui, rssi, snr, sf, frequency, fCnt, rawPayload, decodedPayload)
-    try {
-      const res: any = await httpClient.get('/plugins/testing/packets', {
-        params: {
-          limit: 100,
-          networkId: filters.devEui || undefined,
-          search: filters.search || undefined,
-        },
-      });
-      const rawPackets = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
-      if (Array.isArray(rawPackets) && rawPackets.length > 0) {
-        items = rawPackets.map(normalizePayloadItem);
-      }
-    } catch (err: any) {
-      console.debug('[DevicePayloadPanel] Query packets fallback:', err?.message);
-    }
-
-    // 2. Secondary fallback: /plugins/testing/device-payloads
-    if (!Array.isArray(items) || items.length === 0) {
-      try {
-        const res2: any = await httpClient.get('/plugins/testing/device-payloads', {
-          params: {
-            dev_eui: filters.devEui || undefined,
-            limit: 100,
-          },
-        });
-        const liveItems = res2?.data?.items || res2?.data || res2?.items || [];
-        if (Array.isArray(liveItems) && liveItems.length > 0) {
-          items = liveItems.map(normalizePayloadItem);
-        }
-      } catch {}
-    }
-
-    if (Array.isArray(items) && items.length > 0) {
-      payloadList.value = items;
-    } else {
-      loadFallbackPayloads();
-    }
-  } catch {
-    loadFallbackPayloads();
+    const res: any = await httpClient.get('/plugins/testing/packets', {
+      params: {
+        limit: 100,
+        networkId: filters.devEui || undefined,
+        search: filters.search || undefined,
+      },
+    });
+    const rawPackets = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
+    payloadList.value = Array.isArray(rawPackets) ? rawPackets.map(normalizePayloadItem) : [];
+  } catch (err: any) {
+    console.debug('[DevicePayloadPanel] Query packets failed:', err?.message);
+    payloadList.value = [];
   } finally {
     loading.value = false;
   }
@@ -640,77 +611,6 @@ function normalizePayloadItem(raw: any): DevicePayloadItem {
     fw_version: raw.fw_version || raw.fwVersion,
     long_fw: raw.long_fw || raw.longFw || '4F0505',
   };
-}
-
-function loadFallbackPayloads() {
-  payloadList.value = [
-    {
-      id: 'pkt-001',
-      dev_eui: '2026A1B2C3D40001',
-      device_name: 'Cảm Biến Khí Tượng ATH 01',
-      application_id: 'itest-default-app',
-      f_cnt: 142,
-      f_port: 2,
-      rssi: -78,
-      snr: 9.8,
-      sf: 7,
-      frequency: 921400000,
-      raw_payload: '01016402011B0302026C04020120',
-      decoded_payload: {
-        temperature: 27.5,
-        humidity: 62.0,
-        battery: 100,
-        battery_voltage: 3.65,
-        pressure_hpa: 1013.2,
-      },
-      received_at: new Date(Date.now() - 5000).toISOString(),
-      item_code: 'WSSFC-ATH',
-      long_fw: '4F0505',
-    },
-    {
-      id: 'pkt-002',
-      dev_eui: '2026A1B2C3D40002',
-      device_name: 'Cảm Biến Khí Tượng ATH 02',
-      application_id: 'itest-default-app',
-      f_cnt: 89,
-      f_port: 2,
-      rssi: -84,
-      snr: 8.2,
-      sf: 7,
-      frequency: 921600000,
-      raw_payload: '01016202011C03020271',
-      decoded_payload: {
-        temperature: 28.4,
-        humidity: 62.5,
-        battery: 98,
-        battery_voltage: 3.61,
-      },
-      received_at: new Date(Date.now() - 25000).toISOString(),
-      item_code: 'WSSFC-ATH',
-      long_fw: '4F0505',
-    },
-    {
-      id: 'pkt-003',
-      dev_eui: '2026B2C3D4E50003',
-      device_name: 'Cảm Biến Chất Lượng Khí CO2',
-      application_id: 'itest-default-app',
-      f_cnt: 231,
-      f_port: 3,
-      rssi: -92,
-      snr: 5.4,
-      sf: 10,
-      frequency: 922200000,
-      raw_payload: '050201D406020032',
-      decoded_payload: {
-        co2_ppm: 468,
-        tvoc_ppb: 50,
-        battery_voltage: 3.58,
-      },
-      received_at: new Date(Date.now() - 60000).toISOString(),
-      item_code: 'WSSFC-CO2',
-      long_fw: '2F0102',
-    },
-  ];
 }
 
 async function triggerAutoRegisterIntegration() {
