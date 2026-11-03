@@ -111,13 +111,13 @@
       </div>
     </div>
 
-    <!-- Step 1: Chọn Batch / ITEM-CODE / FW -->
+    <!-- Step 1: Chọn Cấu Hình Đợt Test (ITEM-CODE & FW_VERSION Tự Động) -->
     <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-300">
         <div class="flex items-center gap-2">
           <Filter class="w-4 h-4 text-primary" />
           <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-            1. Chọn Cấu Hình Đợt Test (ITEM-CODE &amp; FW_VERSION)
+            1. Chọn Cấu Hình Đợt Test (Tự Động Theo Test Batch)
           </h4>
         </div>
         <div v-if="selectedBatchConfig" class="text-xs text-base-content/70 font-mono">
@@ -126,78 +126,61 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <!-- Choose Existing Test Batch (Optional) -->
-        <div class="form-control">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+        <!-- Choose Test Batch (Primary Selector) - 6 cols -->
+        <div class="form-control md:col-span-6">
           <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Chọn Test Batch Cấu Hình</span>
+            <span class="label-text text-xs font-semibold text-primary flex items-center gap-1.5">
+              <FolderPlus class="w-3.5 h-3.5" />
+              Chọn Test Batch <span class="text-error">*</span>
+            </span>
+            <span v-if="selectedBatchConfig" class="badge badge-xs badge-primary font-mono">Đã chọn</span>
           </label>
           <select
             v-model="selectedBatchId"
-            class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
+            class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono font-bold"
             :disabled="isTesting"
             @change="onBatchSelectChange"
           >
-            <option value="">-- Tự chọn ITEM & FW --</option>
+            <option value="">-- Chọn Test Batch để kiểm thử --</option>
             <option v-for="b in savedBatches" :key="b.id" :value="b.id">
-              {{ b.batchCode || b.batch_code }} ({{ b.itemCode }} - {{ b.longFw }})
+              {{ b.batchCode || b.batch_code }} - {{ b.batchName || b.name }} ({{ b.itemCode }} / {{ b.longFw || b.fwVersion }})
             </option>
           </select>
         </div>
 
-        <!-- ITEM-CODE Filter -->
-        <div class="form-control">
+        <!-- Auto-selected ITEM-CODE - 3 cols -->
+        <div class="form-control md:col-span-3">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold flex items-center gap-1">
-              ITEM-CODE <span class="text-error">*</span>
+              ITEM-CODE
             </span>
+            <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Tự động theo batch</span>
           </label>
-          <select
-            v-model="filterItemCode"
-            class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono uppercase"
-            :disabled="isTesting"
-            @change="loadAvailableDevices"
-          >
-            <option value="">-- Tất cả ITEM-CODE --</option>
-            <option v-for="code in availableItemCodes" :key="code" :value="code">
-              {{ code }}
-            </option>
-          </select>
+          <input
+            :value="filterItemCode || 'Chưa chọn batch'"
+            type="text"
+            readonly
+            class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-300/40 border-base-300 font-bold text-base-content cursor-not-allowed select-all"
+            title="ITEM-CODE tự động nhận diện từ Test Batch đã chọn"
+          />
         </div>
 
-        <!-- FW_VERSION Filter -->
-        <div class="form-control">
+        <!-- Auto-selected FW_VERSION - 3 cols -->
+        <div class="form-control md:col-span-3">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold flex items-center gap-1">
-              FW_VERSION (LONG_FW) <span class="text-error">*</span>
+              FW_VERSION
             </span>
+            <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Tự động theo batch</span>
           </label>
-          <select
-            v-model="filterFwVersion"
-            class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono uppercase"
-            :disabled="isTesting"
-            @change="loadAvailableDevices"
-          >
-            <option value="">-- Tất cả phiên bản FW --</option>
-            <option v-for="fw in availableFwVersions" :key="fw" :value="fw">
-              {{ fw }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Actions / Refresh -->
-        <div class="form-control flex justify-end">
-          <label class="label py-1 opacity-0">
-            <span class="label-text text-xs">Thao tác</span>
-          </label>
-          <button
-            class="btn btn-sm btn-outline gap-1.5"
-            :disabled="loadingDevices || isTesting"
-            @click="loadAvailableDevices"
-          >
-            <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loadingDevices }" />
-            <span>Lọc Thiết Bị Khớp</span>
-          </button>
+          <input
+            :value="filterFwVersion || 'Chưa chọn batch'"
+            type="text"
+            readonly
+            class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-300/40 border-base-300 font-bold text-base-content cursor-not-allowed select-all"
+            title="FW_VERSION tự động nhận diện từ Test Batch đã chọn"
+          />
         </div>
       </div>
     </div>
@@ -588,7 +571,7 @@ const passCount = computed(() => selectedDevices.value.filter((d) => d.status ==
 const failCount = computed(() => selectedDevices.value.filter((d) => d.status === 'FAIL').length);
 
 const selectedBatchConfig = computed(() => {
-  return savedBatches.value.find((b) => b.id === selectedBatchId.value);
+  return savedBatches.value.find((b) => b.id === selectedBatchId.value || b.batchCode === selectedBatchId.value);
 });
 
 // Candidate selection helpers
@@ -666,11 +649,13 @@ function autoAssignReferenceDevices() {
 function onBatchSelectChange() {
   if (selectedBatchConfig.value) {
     const b = selectedBatchConfig.value;
-    filterItemCode.value = b.itemCode || b.item_code;
-    filterFwVersion.value = b.longFw || b.long_fw || b.fwVersion || b.fw_version;
+    filterItemCode.value = b.itemCode || b.item_code || '';
+    filterFwVersion.value = b.longFw || b.long_fw || b.fwVersion || b.fw_version || '';
     maxAllowedDevices.value = b.maxDevices || b.max_devices || 5;
     totalDurationSeconds.value = b.flowDurationSeconds || b.flow_duration_seconds || 300;
     remainingSeconds.value = totalDurationSeconds.value;
+    selectedDevices.value = [];
+    loadReferenceDevices();
     loadAvailableDevices();
   }
 }
@@ -687,6 +672,14 @@ async function loadSavedBatches() {
   } catch {
     loadFallbackBatches();
   }
+
+  // Tự động lựa chọn cấu hình FW_VERSION và ITEM_CODE theo Test Batch
+  if (selectedBatchId.value) {
+    onBatchSelectChange();
+  } else if (savedBatches.value.length > 0) {
+    selectedBatchId.value = savedBatches.value[0].id;
+    onBatchSelectChange();
+  }
 }
 
 function loadFallbackBatches() {
@@ -700,21 +693,23 @@ function loadFallbackBatches() {
   savedBatches.value = [
     {
       id: 'batch-001',
-      batchCode: 'TB-WSSFC-ATH-104-01',
+      batchCode: 'TB-WSSFC-ATH-4F0505-01',
       batchName: 'Kiểm thử Lô Cảm Biến Khí Tượng ATH 01',
       itemCode: 'WSSFC-ATH',
-      longFw: '1.0.4',
+      longFw: '4F0505',
+      fwVersion: '4F0505',
       maxDevices: 5,
       flowDurationSeconds: 300,
     },
     {
       id: 'batch-002',
-      batchCode: 'TB-WSLRW-TH-200-02',
+      batchCode: 'TB-WSLRW-TH-1F0001-02',
       batchName: 'Kiểm tra Nhiệt Ẩm LoRaWAN Lô 2',
       itemCode: 'WSLRW-TH',
-      longFw: '2.0.0',
+      longFw: '1F0001',
+      fwVersion: '1F0001',
       maxDevices: 8,
-      flowDurationSeconds: 600,
+      flowDurationSeconds: 180,
     },
   ];
 }
@@ -784,7 +779,9 @@ async function loadAvailableDevices() {
     candidateDevices.value = devices;
   } catch {
     candidateDevices.value = getMockDevices().filter((d) => {
-      return !filterItemCode.value || d.itemCode === filterItemCode.value;
+      const matchItem = !filterItemCode.value || d.itemCode === filterItemCode.value;
+      const matchFw = !filterFwVersion.value || d.fwVersion === filterFwVersion.value || d.fwVersion === '4F0505';
+      return matchItem && matchFw;
     });
   } finally {
     loadingDevices.value = false;
@@ -798,42 +795,42 @@ function getMockDevices() {
       serialNumber: 'ATH-202611-0001',
       devEui: '2026A1B2C3D40001',
       itemCode: 'WSSFC-ATH',
-      fwVersion: '1.0.4',
+      fwVersion: '4F0505',
     },
     {
       id: 'dev-002',
       serialNumber: 'ATH-202611-0002',
       devEui: '2026A1B2C3D40002',
       itemCode: 'WSSFC-ATH',
-      fwVersion: '1.0.4',
+      fwVersion: '4F0505',
     },
     {
       id: 'dev-003',
       serialNumber: 'ATH-202611-0003',
       devEui: '2026A1B2C3D40003',
       itemCode: 'WSSFC-ATH',
-      fwVersion: '1.0.4',
+      fwVersion: '4F0505',
     },
     {
       id: 'dev-004',
       serialNumber: 'ATH-202611-0004',
       devEui: '2026A1B2C3D40004',
       itemCode: 'WSSFC-ATH',
-      fwVersion: '1.0.4',
+      fwVersion: '4F0505',
     },
     {
       id: 'dev-005',
       serialNumber: 'ATH-202611-0005',
       devEui: '2026A1B2C3D40005',
       itemCode: 'WSSFC-ATH',
-      fwVersion: '1.0.4',
+      fwVersion: '4F0505',
     },
     {
       id: 'dev-006',
       serialNumber: 'ATH-202611-0006',
       devEui: '2026A1B2C3D40006',
       itemCode: 'WSSFC-ATH',
-      fwVersion: '1.0.4',
+      fwVersion: '4F0505',
     },
   ];
 }

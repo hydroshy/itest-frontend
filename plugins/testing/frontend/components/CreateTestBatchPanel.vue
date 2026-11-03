@@ -16,7 +16,7 @@
               Tạo Test Batch (Create Test Batch)
             </h3>
             <p class="text-xs text-base-content/70">
-              Khởi tạo cấu hình đợt kiểm thử hàng loạt: định nghĩa ITEM-CODE, LONG_FW, gán Simulation Flow và Device Auto Check cho đa thiết bị
+              Khởi tạo cấu hình đợt kiểm thử hàng loạt: định nghĩa ITEM-CODE, FW_VERSION, số lượng DUTs và gán Simulation Flow tự động
             </p>
           </div>
         </div>
@@ -39,197 +39,157 @@
       </div>
     </div>
 
-    <!-- Main Form Grid -->
+    <!-- Main Form Grid (2 Balanced Columns) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <!-- Left Column: Thông tin cơ bản & Định danh thiết bị (7 cols) -->
-      <div class="lg:col-span-7 space-y-4">
+      <!-- Left Column: 1. Định Danh Sản Phẩm & Thông Tin Batch (6 cols) -->
+      <div class="lg:col-span-6 space-y-4">
         <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3.5">
-          <div class="flex items-center gap-2 pb-2 border-b border-base-300">
-            <Layers class="w-4 h-4 text-primary" />
-            <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-              1. Định Danh Sản Phẩm &amp; Thông Tin Batch
-            </h4>
+          <div class="flex items-center justify-between pb-2 border-b border-base-300">
+            <div class="flex items-center gap-2">
+              <Layers class="w-4 h-4 text-primary" />
+              <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
+                1. Định Danh Sản Phẩm &amp; Thông Tin Batch
+              </h4>
+            </div>
+            <span class="badge badge-xs badge-outline font-mono text-[10px]">CẤU HÌNH BATCH</span>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <!-- ITEM-CODE (Required) -->
+          <!-- Sắp xếp theo thứ tự từ trên xuống -->
+          <div class="space-y-3">
+            <!-- 1. Mã Batch (Batch code: người dùng không thể điền, hiển thị thông tin thôi) -->
             <div class="form-control">
               <label class="label py-1">
-                <span class="label-text text-xs font-semibold flex items-center gap-1">
-                  ITEM-CODE <span class="text-error">*</span>
+                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                  <ScanBarcode class="w-3.5 h-3.5 text-primary" />
+                  Mã Batch (Batch Code)
                 </span>
-                <span class="label-text-alt text-[10px] text-base-content/60">Mã dòng sản phẩm</span>
-              </label>
-              <div class="relative">
-                <input
-                  v-model="batchForm.itemCode"
-                  type="text"
-                  placeholder="VD: WSSFC-ATH, WSLRW-TH..."
-                  class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100"
-                  @input="onItemOrFwChange"
-                />
-              </div>
-              <div class="flex gap-1.5 mt-1 flex-wrap">
-                <button
-                  v-for="code in itemCodeSuggestions"
-                  :key="code"
-                  type="button"
-                  class="badge badge-sm badge-ghost text-[10px] cursor-pointer hover:badge-primary transition-colors"
-                  @click="batchForm.itemCode = code; onItemOrFwChange()"
-                >
-                  {{ code }}
-                </button>
-              </div>
-            </div>
-
-            <!-- LONG_FW (FW_VERSION) (Required) -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs font-semibold flex items-center gap-1">
-                  LONG_FW (FW_VERSION) <span class="text-error">*</span>
-                </span>
-                <span class="label-text-alt text-[10px] text-base-content/60">Phiên bản Firmware</span>
+                <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Tự động sinh mã</span>
               </label>
               <input
-                v-model="batchForm.longFw"
+                :value="batchForm.batchCode"
                 type="text"
-                placeholder="VD: 1.0.4, v2.1.0-RC1..."
-                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100"
-                @input="onItemOrFwChange"
+                readonly
+                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-300/40 border-base-300 text-base-content font-bold cursor-not-allowed select-all focus:outline-none"
+                title="Mã batch tự động tạo theo thông tin dòng máy và ngày tháng (không thể sửa)"
+                tabindex="-1"
               />
-              <div class="flex gap-1.5 mt-1 flex-wrap">
-                <button
-                  v-for="fw in fwSuggestions"
-                  :key="fw"
-                  type="button"
-                  class="badge badge-sm badge-ghost text-[10px] cursor-pointer hover:badge-primary transition-colors"
-                  @click="batchForm.longFw = fw; onItemOrFwChange()"
-                >
-                  {{ fw }}
-                </button>
-              </div>
             </div>
-          </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-            <!-- Batch Name -->
+            <!-- 2. Tên Đợt Test (Batch name: field người dùng điền) -->
             <div class="form-control">
               <label class="label py-1">
-                <span class="label-text text-xs font-semibold">Tên Đợt Test (Batch Name)</span>
+                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                  <FileText class="w-3.5 h-3.5 text-primary" />
+                  Tên Đợt Test (Batch Name) <span class="text-error">*</span>
+                </span>
+                <span class="label-text-alt text-[10px] text-base-content/60">Người dùng nhập</span>
               </label>
               <input
                 v-model="batchForm.batchName"
                 type="text"
-                placeholder="VD: Đợt test cảm biến Lô 01..."
-                class="input input-sm input-bordered w-full text-xs bg-base-100"
+                placeholder="Nhập tên đợt test (VD: Đợt Kiểm Thử Cảm Biến Lô 01...)"
+                class="input input-sm input-bordered w-full text-xs bg-base-100 focus:border-primary"
               />
             </div>
 
-            <!-- Batch Code (Auto or Custom) -->
+            <!-- 3. Mã Sản Phẩm (Item code) -->
             <div class="form-control">
               <label class="label py-1">
-                <span class="label-text text-xs font-semibold">Mã Batch (Batch Code)</span>
-                <button
-                  type="button"
-                  class="label-text-alt text-[10px] text-primary hover:underline"
-                  @click="generateBatchCode"
-                >
-                  Tự sinh mã
-                </button>
+                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                  <Cpu class="w-3.5 h-3.5 text-primary" />
+                  Mã Sản Phẩm (ITEM-CODE) <span class="text-error">*</span>
+                </span>
+                <span class="label-text-alt text-[10px] text-base-content/60">Dòng sản phẩm</span>
               </label>
               <input
-                v-model="batchForm.batchCode"
+                v-model="batchForm.itemCode"
                 type="text"
-                placeholder="VD: TB-ATH-20261103-01"
-                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100"
+                placeholder="VD: WSSFC-ATH, WSLRW-TH..."
+                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
+                @input="onItemCodeInput"
               />
             </div>
-          </div>
 
-          <!-- Max Devices & Duration -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            <!-- 4. Phiên Bản Firmware (FW_VERSION: có cấu trúc như là 4F0505 với XFXXXX , x là số) -->
             <div class="form-control">
               <label class="label py-1">
-                <span class="label-text text-xs font-semibold flex items-center gap-1">
-                  Số thiết bị test cùng lúc (Max Devices)
+                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                  <Terminal class="w-3.5 h-3.5 text-primary" />
+                  Phiên Bản Firmware (FW_VERSION) <span class="text-error">*</span>
                 </span>
-                <span class="badge badge-xs badge-info font-mono text-[10px]">
-                  {{ batchForm.maxDevices }} thiết bị
+                <span
+                  class="label-text-alt text-[10px] font-mono"
+                  :class="isFwVersionValid ? 'text-base-content/60' : 'text-error font-semibold'"
+                >
+                  {{ isFwVersionValid ? 'Cấu trúc: XFXXXX (VD: 4F0505)' : 'Chưa đúng chuẩn XFXXXX' }}
                 </span>
               </label>
-              <div class="flex items-center gap-2">
-                <input
-                  v-model.number="batchForm.maxDevices"
-                  type="range"
-                  min="1"
-                  max="20"
-                  class="range range-primary range-xs flex-1"
-                />
-                <input
-                  v-model.number="batchForm.maxDevices"
-                  type="number"
-                  min="1"
-                  max="50"
-                  class="input input-sm input-bordered w-16 text-center font-mono text-xs bg-base-100"
-                />
-              </div>
-              <div class="flex gap-1.5 mt-1.5">
-                <button
-                  v-for="count in [3, 5, 8, 10]"
-                  :key="count"
-                  type="button"
-                  class="btn btn-xs btn-outline"
-                  :class="batchForm.maxDevices === count ? 'btn-primary' : 'btn-ghost'"
-                  @click="batchForm.maxDevices = count"
-                >
-                  {{ count }} thiết bị
-                </button>
+              <input
+                v-model="batchForm.longFw"
+                type="text"
+                maxlength="6"
+                placeholder="VD: 4F0505"
+                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
+                :class="{ 'input-error': !isFwVersionValid && batchForm.longFw }"
+                @input="onFwVersionInput"
+              />
+              <div v-if="!isFwVersionValid && batchForm.longFw" class="text-[11px] text-error mt-1 flex items-center gap-1">
+                <AlertTriangle class="w-3.5 h-3.5 flex-shrink-0" />
+                <span>FW_VERSION phải có cấu trúc XFXXXX với x là số (VD: 4F0505, x là số)</span>
               </div>
             </div>
 
+            <!-- 5. Số Lượng Thiết Bị (số lượng thiết bị là field người dùng nhập) -->
             <div class="form-control">
               <label class="label py-1">
-                <span class="label-text text-xs font-semibold">Thời lượng đếm giờ (Seconds)</span>
-                <span class="label-text-alt text-[10px] font-mono text-base-content/70">
-                  ≈ {{ Math.round(batchForm.flowDurationSeconds / 60) }} phút
+                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                  <Server class="w-3.5 h-3.5 text-primary" />
+                  Số Lượng Thiết Bị Test Cùng Lúc <span class="text-error">*</span>
                 </span>
+                <span class="label-text-alt text-[10px] text-base-content/60">Người dùng nhập</span>
               </label>
-              <div class="join w-full">
-                <input
-                  v-model.number="batchForm.flowDurationSeconds"
-                  type="number"
-                  min="30"
-                  step="30"
-                  class="input input-sm input-bordered join-item flex-1 font-mono text-xs bg-base-100"
-                />
-                <span class="join-item btn btn-sm btn-neutral no-animation text-xs font-mono px-3">
-                  giây
+              <input
+                v-model.number="batchForm.maxDevices"
+                type="number"
+                min="1"
+                max="50"
+                placeholder="Nhập số lượng thiết bị (VD: 5)"
+                class="input input-sm input-bordered w-full font-mono text-xs bg-base-100 focus:border-primary"
+              />
+            </div>
+
+            <!-- 6. Thời Gian Đếm Sensor (hiển thị theo simulation flow , không cho người dùng điền) -->
+            <div class="form-control">
+              <label class="label py-1">
+                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                  <Clock class="w-3.5 h-3.5 text-primary" />
+                  Thời Gian Đếm Sensor
                 </span>
-              </div>
-              <div class="flex gap-1.5 mt-1.5">
-                <button
-                  v-for="dur in [180, 300, 600, 900]"
-                  :key="dur"
-                  type="button"
-                  class="btn btn-xs btn-outline"
-                  :class="batchForm.flowDurationSeconds === dur ? 'btn-primary' : 'btn-ghost'"
-                  @click="batchForm.flowDurationSeconds = dur"
-                >
-                  {{ dur / 60 }}p ({{ dur }}s)
-                </button>
+                <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Theo Simulation Flow</span>
+              </label>
+              <div class="flex items-center justify-between px-3 py-2 bg-base-300/40 border border-base-300 rounded-lg text-xs">
+                <div class="flex items-center gap-2">
+                  <Timer class="w-4 h-4 text-primary" />
+                  <span class="font-mono font-bold text-base-content">
+                    {{ formatDuration(batchForm.flowDurationSeconds) }}
+                  </span>
+                </div>
+                <span class="text-[11px] text-base-content/60 font-mono">
+                  {{ selectedFlowData ? selectedFlowData.name : 'Khóa tự động theo flow' }}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: Gán Simulation Flow & Auto Check (5 cols) -->
-      <div class="lg:col-span-5 space-y-4">
+      <!-- Right Column: 2. Simulation Flow & 3. Auto Check (6 cols) -->
+      <div class="lg:col-span-6 space-y-4">
         <!-- Section 2: Gán Simulation Flow -->
         <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
           <div class="flex items-center justify-between pb-2 border-b border-base-300">
             <div class="flex items-center gap-2">
-              <Cpu class="w-4 h-4 text-primary" />
+              <PlayCircle class="w-4 h-4 text-primary" />
               <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
                 2. Gán Simulation Flow
               </h4>
@@ -237,23 +197,23 @@
             <button
               type="button"
               class="text-xs text-primary hover:underline flex items-center gap-1"
-              @click="$emit('switch-tab', 'device-simulation')"
+              @click="$emit('switch-tab', 'simulation-flow')"
             >
-              <span>Tạo flow mới</span>
+              <span>Quản lý kịch bản</span>
               <ExternalLink class="w-3 h-3" />
             </button>
           </div>
 
           <div class="form-control">
             <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Chọn Kịch Bản Simulation Flow</span>
+              <span class="label-text text-xs font-semibold">Chọn Kịch Bản Mô Phỏng (Simulation Flow)</span>
             </label>
             <select
               v-model="batchForm.simuId"
               class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
               @change="onSimulationFlowSelected"
             >
-              <option value="">-- Chọn kịch bản kịch bản mô phỏng --</option>
+              <option value="">-- Chọn kịch bản mô phỏng --</option>
               <option v-for="flow in availableFlows" :key="flow.id" :value="flow.id">
                 {{ flow.name }} ({{ flow.duration }}s - {{ flow.blocksCount }} blocks)
               </option>
@@ -312,11 +272,10 @@
             <select
               v-model="batchForm.autoCheckId"
               class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
-              @change="onAutoCheckSelected"
             >
               <option value="">-- Chọn bộ tiêu chí Auto Check --</option>
               <option v-for="crit in availableCriteria" :key="crit.id" :value="crit.id">
-                {{ crit.name }} ({{ crit.rulesCount }} tiêu chí)
+                {{ crit.name }} ({{ crit.rulesCount }} rules)
               </option>
             </select>
           </div>
@@ -356,51 +315,75 @@
         <div class="flex items-center gap-2">
           <ListFilter class="w-4 h-4 text-primary" />
           <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-            Danh Sách Test Batch Đã Lưu ({{ batchList.length }})
+            4. Danh Sách Test Batch Đã Thiết Lập (Batch History)
           </h4>
+          <span class="badge badge-sm badge-ghost font-mono">
+            {{ filteredBatches.length }} đợt
+          </span>
         </div>
-        <button class="btn btn-xs btn-outline gap-1" :disabled="loadingBatches" @click="loadBatches">
-          <span v-if="loadingBatches" class="loading loading-spinner loading-xs"></span>
-          <RefreshCw v-else class="w-3 h-3" />
-          Tải Lại Danh Sách
-        </button>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="relative w-48 sm:w-64">
+            <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Tìm mã batch, tên..."
+              class="input input-xs input-bordered w-full pl-8 font-mono text-xs bg-base-100"
+            />
+          </div>
+          <button class="btn btn-xs btn-ghost gap-1" @click="loadBatches">
+            <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': loadingBatches }" />
+            <span>Làm Mới</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Batches Table -->
       <div class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
+        <table class="table table-xs w-full">
           <thead>
-            <tr class="text-xs uppercase bg-base-200/50">
+            <tr class="text-base-content/70 border-b border-base-300">
               <th>Mã Batch</th>
-              <th>Tên Batch</th>
+              <th>Tên Đợt Test</th>
               <th>ITEM-CODE</th>
-              <th>LONG_FW</th>
-              <th>Số Lượng TB</th>
+              <th>FW_VERSION</th>
+              <th>Số lượng TB</th>
               <th>Simulation Flow</th>
               <th>Auto Check</th>
-              <th>Thời Lượng</th>
+              <th>Thời Gian</th>
               <th>Trạng Thái</th>
-              <th class="text-center">Thao Tác</th>
+              <th class="text-center">Hành Động</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="batchList.length === 0 && !loadingBatches">
-              <td colspan="10" class="text-center py-8 text-base-content/50 italic text-xs">
-                Chưa có Test Batch nào được lưu. Hãy điền form bên trên và nhấn "Lưu Test Batch".
+            <tr v-if="loadingBatches">
+              <td colspan="10" class="text-center py-6">
+                <span class="loading loading-spinner loading-sm text-primary"></span>
+                <span class="text-xs text-base-content/60 ml-2">Đang tải danh sách Test Batch...</span>
               </td>
             </tr>
-            <tr v-for="b in batchList" :key="b.id" class="hover text-xs">
-              <td>
-                <span class="font-mono font-bold text-primary">{{ b.batchCode || b.batch_code }}</span>
+            <tr v-else-if="filteredBatches.length === 0">
+              <td colspan="10" class="text-center py-6 text-xs text-base-content/50 italic">
+                Chưa có Test Batch nào phù hợp với bộ lọc.
               </td>
-              <td class="font-medium max-w-[180px] truncate">
-                {{ b.batchName || b.batch_name }}
+            </tr>
+            <tr
+              v-for="b in filteredBatches"
+              v-else
+              :key="b.id || b.batchCode"
+              class="hover:bg-base-200/50 transition-colors"
+            >
+              <td>
+                <span class="font-mono text-xs font-bold text-primary">{{ b.batchCode || b.batch_code }}</span>
+              </td>
+              <td class="font-semibold text-xs max-w-[180px] truncate">
+                {{ b.batchName || b.batch_name || b.name || 'Không có tên' }}
               </td>
               <td>
                 <span class="badge badge-sm badge-outline font-mono text-[11px]">{{ b.itemCode || b.item_code }}</span>
               </td>
               <td>
-                <span class="font-mono text-xs">{{ b.longFw || b.long_fw || b.fwVersion || b.fw_version }}</span>
+                <span class="font-mono text-xs font-semibold text-accent">{{ b.longFw || b.long_fw || b.fwVersion || b.fw_version }}</span>
               </td>
               <td>
                 <span class="font-mono text-xs">{{ b.maxDevices || b.max_devices || 5 }} TB</span>
@@ -434,7 +417,7 @@
                   </button>
                   <button
                     class="btn btn-xs btn-ghost text-error"
-                    title="Xóa Batch"
+                    title="Xóa cấu hình Batch này"
                     @click="deleteBatch(b)"
                   >
                     <Trash2 class="w-3 h-3" />
@@ -450,20 +433,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import {
   FolderPlus,
   Layers,
   Cpu,
-  CheckCircle2,
-  RotateCcw,
-  Save,
-  Play,
+  Clock,
   PlayCircle,
+  CheckCircle2,
   ExternalLink,
+  Save,
+  RotateCcw,
   ListFilter,
   RefreshCw,
+  Search,
   Trash2,
+  Play,
+  AlertTriangle,
+  Timer,
+  ScanBarcode,
+  FileText,
+  Server,
+  Terminal,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/httpClient';
 import { cyberToast } from '@/services/cyberToast';
@@ -472,42 +463,55 @@ const emit = defineEmits<{
   (e: 'switch-tab', tab: string, payload?: any): void;
 }>();
 
-const itemCodeSuggestions = ref(['WSSFC-ATH', 'WSLRW-TH', 'WSSFC-ULC', 'WSLRW-AQI', 'WSSFC-CO2']);
-const fwSuggestions = ref(['1.0.4', '1.0.5', '2.0.0', 'v2.1.0-RC1']);
-
 const saving = ref(false);
 const loadingBatches = ref(false);
 
 const batchForm = reactive({
   itemCode: 'WSSFC-ATH',
-  longFw: '1.0.4',
-  batchName: 'Đợt Kiểm Thử Cảm Biến WSSFC-ATH',
-  batchCode: 'TB-WSSFC-ATH-1.0.4-01',
+  longFw: '4F0505',
+  batchName: 'Đợt Kiểm Thử Cảm Biến WSSFC-ATH 4F0505',
+  batchCode: 'TB-WSSFC-ATH-4F0505-01',
   maxDevices: 5,
   flowDurationSeconds: 300,
   simuId: 'SIMU-WSSFC-ATH-1.0.4',
   autoCheckId: 'CRIT-SENSOR-TOLERANCE-2PCT',
 });
 
-async function loadMetadata() {
-  try {
-    const res: any = await httpClient.get('/plugins/testing/test-batches/meta');
-    const data = res?.data || res;
-    if (data) {
-      if (Array.isArray(data.itemCodes) && data.itemCodes.length > 0) {
-        itemCodeSuggestions.value = data.itemCodes;
-        if (!itemCodeSuggestions.value.includes(batchForm.itemCode)) {
-          batchForm.itemCode = data.itemCodes[0];
-          generateBatchCode();
-        }
-      }
-      if (Array.isArray(data.fwVersions) && data.fwVersions.length > 0) {
-        fwSuggestions.value = data.fwVersions;
-      }
-    }
-  } catch (err: any) {
-    console.debug('[CreateTestBatchPanel] Using default meta suggestions:', err.message);
+// FW_VERSION format: XFXXXX where x is a number (0-9)
+const isFwVersionValid = computed(() => {
+  if (!batchForm.longFw) return true;
+  return /^[0-9]F[0-9]{4}$/.test(batchForm.longFw.trim());
+});
+
+function onItemCodeInput(e: Event) {
+  const target = e.target as HTMLInputElement;
+  batchForm.itemCode = target.value.toUpperCase();
+  generateBatchCode();
+}
+
+function onFwVersionInput(e: Event) {
+  const target = e.target as HTMLInputElement;
+  batchForm.longFw = target.value.toUpperCase();
+  generateBatchCode();
+}
+
+function generateBatchCode() {
+  const item = batchForm.itemCode.trim().toUpperCase() || 'ITEM';
+  const fw = batchForm.longFw.trim().toUpperCase() || 'FW';
+  const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+  batchForm.batchCode = `TB-${item}-${fw}-${dateStr}`;
+  if (!batchForm.batchName || batchForm.batchName.startsWith('Đợt Kiểm Thử')) {
+    batchForm.batchName = `Đợt Kiểm Thử ${item} ${fw}`;
   }
+}
+
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return '0 giây';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m > 0 && s > 0) return `${seconds}s (${m} phút ${s}s)`;
+  if (m > 0) return `${seconds}s (${m} phút)`;
+  return `${seconds} giây`;
 }
 
 // Available Simulation Flows
@@ -544,9 +548,9 @@ const availableCriteria = ref([
     id: 'CRIT-SENSOR-TOLERANCE-2PCT',
     name: 'Đối chiếu Thiết Bị Chuẩn & Sai Số ≤ 2%',
     rulesCount: 4,
-    description: 'So sánh giá trị đo trực tiếp với Golden Reference Device tương ứng, sai số cho phép ±2%.',
+    description: 'So sánh giá trị đo trực tiếp với Golden Reference Device tương ứng, sai số cho phép ≤ 2%.',
     rules: [
-      { name: 'Nhiệt độ (Temp Delta)', threshold: '≤ ±0.5°C' },
+      { name: 'Nhiệt độ (Temperature Delta)', threshold: '≤ ±0.5 °C' },
       { name: 'Độ ẩm (Humidity Delta)', threshold: '≤ ±2.0% RH' },
       { name: 'RSSI & SNR Quality', threshold: 'RSSI > -115 dBm, SNR > -10 dB' },
       { name: 'FCnt Sequence Integrity', threshold: 'Tăng liên tục không rớt gói' },
@@ -575,38 +579,33 @@ const selectedCriteriaData = computed(() => {
   return availableCriteria.value.find((c) => c.id === batchForm.autoCheckId);
 });
 
-function onItemOrFwChange() {
-  generateBatchCode();
-}
-
-function generateBatchCode() {
-  const item = batchForm.itemCode.trim().toUpperCase() || 'ITEM';
-  const fw = batchForm.longFw.trim().replace(/\./g, '') || 'FW';
-  const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
-  batchForm.batchCode = `TB-${item}-${fw}-${dateStr}`;
-  if (!batchForm.batchName || batchForm.batchName.startsWith('Đợt Kiểm Thử')) {
-    batchForm.batchName = `Đợt Kiểm Thử ${item} FW ${batchForm.longFw}`;
-  }
-}
-
 function onSimulationFlowSelected() {
-  if (selectedFlowData.value) {
-    batchForm.flowDurationSeconds = selectedFlowData.value.duration;
+  const flow = availableFlows.value.find((f) => f.id === batchForm.simuId);
+  if (flow) {
+    batchForm.flowDurationSeconds = flow.duration;
   }
 }
 
-function onAutoCheckSelected() {
-  // Handled automatically via computed property
-}
+watch(
+  () => batchForm.simuId,
+  (newId) => {
+    const flow = availableFlows.value.find((f) => f.id === newId);
+    if (flow) {
+      batchForm.flowDurationSeconds = flow.duration;
+    }
+  },
+  { immediate: true }
+);
 
 function resetForm() {
   batchForm.itemCode = 'WSSFC-ATH';
-  batchForm.longFw = '1.0.4';
-  batchForm.batchName = 'Đợt Kiểm Thử Cảm Biến WSSFC-ATH';
+  batchForm.longFw = '4F0505';
+  batchForm.batchName = 'Đợt Kiểm Thử Cảm Biến WSSFC-ATH 4F0505';
   generateBatchCode();
   batchForm.maxDevices = 5;
-  batchForm.flowDurationSeconds = 300;
   batchForm.simuId = 'SIMU-WSSFC-ATH-1.0.4';
+  const flow = availableFlows.value.find((f) => f.id === batchForm.simuId);
+  batchForm.flowDurationSeconds = flow ? flow.duration : 300;
   batchForm.autoCheckId = 'CRIT-SENSOR-TOLERANCE-2PCT';
   cyberToast.info('Đã làm mới form tạo Test Batch');
 }
@@ -643,10 +642,11 @@ function loadFallbackBatches() {
   batchList.value = [
     {
       id: 'batch-001',
-      batchCode: 'TB-WSSFC-ATH-104-01',
+      batchCode: 'TB-WSSFC-ATH-4F0505-01',
       batchName: 'Kiểm thử Lô Cảm Biến Khí Tượng ATH 01',
       itemCode: 'WSSFC-ATH',
-      longFw: '1.0.4',
+      longFw: '4F0505',
+      fwVersion: '4F0505',
       maxDevices: 5,
       simuId: 'SIMU-WSSFC-ATH-1.0.4',
       autoCheckCriteria: { name: 'Đối chiếu Thiết Bị Chuẩn & Sai Số ≤ 2%' },
@@ -656,16 +656,17 @@ function loadFallbackBatches() {
     },
     {
       id: 'batch-002',
-      batchCode: 'TB-WSLRW-TH-200-02',
-      batchName: 'Kiểm tra Nhiệt Ẩm LoRaWAN Lô 2',
+      batchCode: 'TB-WSLRW-TH-1F0001-02',
+      batchName: 'Kiểm tra Nhiệt Ẩm LoRa Cấp Tốc',
       itemCode: 'WSLRW-TH',
-      longFw: '2.0.0',
+      longFw: '1F0001',
+      fwVersion: '1F0001',
       maxDevices: 8,
-      simuId: 'SIMU-WSLRW-FULL-10M',
+      simuId: 'SIMU-RAPID-BURST-3M',
       autoCheckCriteria: { name: 'Tiêu Chuẩn Công Nghiệp Cấp 1 (Strict QA)' },
-      flowDurationSeconds: 600,
+      flowDurationSeconds: 180,
       status: 'READY',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
     },
   ];
 }
@@ -676,7 +677,15 @@ async function saveTestBatch() {
     return;
   }
   if (!batchForm.longFw.trim()) {
-    cyberToast.warning('Vui lòng nhập LONG_FW (FW_VERSION)!');
+    cyberToast.warning('Vui lòng nhập FW_VERSION!');
+    return;
+  }
+  if (!/^[0-9]F[0-9]{4}$/.test(batchForm.longFw.trim())) {
+    cyberToast.warning('FW_VERSION phải có cấu trúc XFXXXX (VD: 4F0505, x là số)!');
+    return;
+  }
+  if (!batchForm.maxDevices || batchForm.maxDevices < 1) {
+    cyberToast.warning('Số lượng thiết bị phải lớn hơn 0!');
     return;
   }
 
@@ -685,8 +694,8 @@ async function saveTestBatch() {
     batchCode: batchForm.batchCode,
     batchName: batchForm.batchName,
     itemCode: batchForm.itemCode.trim().toUpperCase(),
-    longFw: batchForm.longFw.trim(),
-    fwVersion: batchForm.longFw.trim(),
+    longFw: batchForm.longFw.trim().toUpperCase(),
+    fwVersion: batchForm.longFw.trim().toUpperCase(),
     maxDevices: batchForm.maxDevices,
     flowDurationSeconds: batchForm.flowDurationSeconds,
     simuId: batchForm.simuId,
@@ -717,46 +726,56 @@ function saveBatchesToLocal() {
 }
 
 function deleteBatch(batch: any) {
-  if (confirm(`Bạn có chắc chắn muốn xóa batch ${batch.batchCode || batch.batch_code}?`)) {
-    const id = batch.id;
-    httpClient.delete(`/plugins/testing/test-batches/${id}`).catch(() => {});
-    batchList.value = batchList.value.filter((b) => b.id !== id);
-    saveBatchesToLocal();
-    cyberToast.success('Đã xóa Test Batch');
-  }
+  const id = batch.id || batch.batchCode;
+  batchList.value = batchList.value.filter((b) => (b.id || b.batchCode) !== id);
+  saveBatchesToLocal();
+  httpClient.delete(`/plugins/testing/test-batches/${id}`).catch(() => {});
+  cyberToast.info('Đã xóa Test Batch');
 }
 
 function executeBatch(batch: any) {
   emit('switch-tab', 'test-batch', {
-    batchId: batch.id,
-    itemCode: batch.itemCode || batch.item_code,
-    fwVersion: batch.longFw || batch.long_fw || batch.fwVersion || batch.fw_version,
-    batchCode: batch.batchCode || batch.batch_code,
-    batchName: batch.batchName || batch.batch_name,
-    maxDevices: batch.maxDevices || batch.max_devices || 5,
-    flowDurationSeconds: batch.flowDurationSeconds || batch.flow_duration_seconds || 300,
-    simuId: batch.simuId || batch.simu_id,
-    autoCheckCriteria: batch.autoCheckCriteria || batch.auto_check_criteria,
+    batchId: batch.id || batch.batchCode,
+    batchCode: batch.batchCode,
+    itemCode: batch.itemCode,
+    longFw: batch.longFw || batch.fwVersion,
+    fwVersion: batch.longFw || batch.fwVersion,
+    maxDevices: batch.maxDevices,
+    simuId: batch.simuId,
+    flowDurationSeconds: batch.flowDurationSeconds,
   });
+  cyberToast.success(`Đã chọn Test Batch: ${batch.batchCode || batch.id}`);
 }
+
+const searchQuery = ref('');
+
+const filteredBatches = computed(() => {
+  return batchList.value.filter((b) => {
+    if (!searchQuery.value) return true;
+    const q = searchQuery.value.toLowerCase();
+    const code = (b.batchCode || b.batch_code || '').toLowerCase();
+    const name = (b.batchName || b.batch_name || b.name || '').toLowerCase();
+    const item = (b.itemCode || b.item_code || '').toLowerCase();
+    const fw = (b.longFw || b.long_fw || b.fwVersion || b.fw_version || '').toLowerCase();
+    return code.includes(q) || name.includes(q) || item.includes(q) || fw.includes(q);
+  });
+});
 
 function getBatchStatusClass(status?: string) {
   switch (status) {
-    case 'READY':
-      return 'badge-info text-info-content';
-    case 'RUNNING':
-      return 'badge-warning text-warning-content animate-pulse';
     case 'COMPLETED':
-      return 'badge-success text-success-content';
+      return 'badge-success';
+    case 'RUNNING':
+      return 'badge-warning';
     case 'FAILED':
-      return 'badge-error text-error-content';
+      return 'badge-error';
     default:
-      return 'badge-neutral';
+      return 'badge-info';
   }
 }
 
 onMounted(() => {
-  loadMetadata();
+  generateBatchCode();
   loadBatches();
 });
 </script>
