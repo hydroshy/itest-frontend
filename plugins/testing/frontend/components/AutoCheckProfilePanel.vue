@@ -52,14 +52,14 @@
             <input v-model="side.item_code" required placeholder="VD: WSSFC-ATH" class="input input-xs input-bordered w-full font-mono uppercase" @input="invalidate(side)" />
           </label>
           <label class="block space-y-1">
-            <span class="text-[11px] font-semibold">FW_VERSION</span>
-            <input v-model="side.fw_version" required placeholder="VD: 4F0505" class="input input-xs input-bordered w-full font-mono uppercase" @input="invalidate(side)" />
+            <span class="text-[11px] font-semibold">FW_VERSION (LONG_FW)</span>
+            <input v-model="side.fw_version" required placeholder="VD: 4F0505 hoặc 01.00.00" class="input input-xs input-bordered w-full font-mono uppercase" @input="invalidate(side)" />
           </label>
         </div>
 
-        <button type="button" class="btn btn-xs btn-outline btn-primary w-full gap-1" :disabled="side.loading || !side.item_code.trim() || !side.fw_version.trim()" @click="discover(side)">
+        <button type="button" class="btn btn-xs btn-outline btn-primary w-full gap-1" :disabled="side.loading || (!side.item_code.trim() && !side.fw_version.trim())" @click="discover(side)">
           <span v-if="side.loading" class="loading loading-spinner loading-xs"></span>
-          <span>{{ side.loading ? 'Đang truy vấn decoder…' : 'Tra cứu fields giải mã từ Firmware' }}</span>
+          <span>{{ side.loading ? 'Đang lấy field data từ decoder…' : 'Lấy Field Data từ Decoder' }}</span>
         </button>
 
         <p v-if="side.error" role="alert" class="text-error text-[11px] bg-error/10 p-1.5 rounded">{{ side.error }}</p>
@@ -250,6 +250,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
 import { httpClient } from '@/api/httpClient';
+import { cyberToast } from '@/services/cyberToast';
 
 export type AutoCheckRule = {
   funcName: 'CHECKVALUE' | 'CHECKAVG' | 'CHECKCOUNT' | 'FUNC_AVG' | 'FUNC_OFFSET_AVGZERO' | 'CHECKVALUE_PERIOD' | 'CHECKAVG_PERIOD';
@@ -350,21 +351,40 @@ function message(err: any): string {
 }
 
 async function discover(side: Side) {
+  const itemCode = side.item_code.trim();
+  const fwVersion = side.fw_version.trim();
+  if (!itemCode && !fwVersion) {
+    side.error = 'Vui lòng nhập ITEM_CODE hoặc FW_VERSION (LONG_FW) để lấy field data';
+    return;
+  }
+
   const revision = ++side.revision;
   side.loading = true;
   side.error = '';
   try {
     const res: any = await httpClient.get('/plugins/testing/autocheck/fields', {
-      params: { itemCode: side.item_code.trim(), fwVersion: side.fw_version.trim() },
+      params: {
+        itemCode,
+        fwVersion,
+        longFw: fwVersion,
+      },
     });
-    const data = res?.data || res;
-    const fields = data.fields;
+
+    const payload = res?.data?.fields !== undefined ? res.data : (res?.fields !== undefined ? res : res?.data || {});
+    const fields = payload.fields ?? payload.data?.fields ?? [];
     if (!Array.isArray(fields)) throw new Error('API field discovery trả dữ liệu không hợp lệ');
     if (revision !== side.revision) return;
+
     side.fields = fields
       .map((field: any) => (typeof field === 'string' ? field : field.field || field.name))
-      .filter((field: any) => typeof field === 'string');
+      .filter((field: any) => typeof field === 'string' && field.trim().length > 0);
     side.loaded = true;
+
+    if (side.fields.length === 0) {
+      side.error = payload.message || `Không tìm thấy decoder script hoặc telemetry fields cho ITEM_CODE='${itemCode}' / FW='${fwVersion}'`;
+    } else {
+      cyberToast.success(`Đã lấy thành công ${side.fields.length} field data từ Decoder!`);
+    }
   } catch (err) {
     if (revision === side.revision) side.error = message(err);
   } finally {
