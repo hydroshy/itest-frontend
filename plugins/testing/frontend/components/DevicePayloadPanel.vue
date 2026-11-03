@@ -639,13 +639,44 @@ function handleIncomingPacket(raw: any) {
   }
 }
 
+function getRealtimeStreamUrl(): string {
+  try {
+    const apiBase = httpClient.defaults.baseURL || (import.meta as any).env?.VITE_API_BASE_URL || '/api/v1';
+    const resolved = new URL(apiBase, window.location.origin);
+    return `${resolved.origin}/api/realtime/stream`;
+  } catch {
+    return '/api/realtime/stream';
+  }
+}
+
+let fallbackPollTimer: any = null;
+
+function startFallbackPolling() {
+  if (fallbackPollTimer) return;
+  fallbackPollTimer = setInterval(() => {
+    loadPayloads(true);
+  }, 3000);
+}
+
+function stopFallbackPolling() {
+  if (fallbackPollTimer) {
+    clearInterval(fallbackPollTimer);
+    fallbackPollTimer = null;
+  }
+}
+
 function setupRealtimeStream() {
-  if (typeof EventSource === 'undefined') return;
+  if (typeof EventSource === 'undefined') {
+    startFallbackPolling();
+    return;
+  }
   closeRealtimeStream();
   try {
-    eventSource = new EventSource('/api/realtime/stream');
+    const sseUrl = getRealtimeStreamUrl();
+    eventSource = new EventSource(sseUrl);
     eventSource.onopen = () => {
       sseConnected.value = true;
+      stopFallbackPolling();
     };
     eventSource.onmessage = (event) => {
       try {
@@ -662,9 +693,12 @@ function setupRealtimeStream() {
     };
     eventSource.onerror = () => {
       sseConnected.value = false;
+      // If SSE connection fails across different ports, fall back to silent background polling
+      startFallbackPolling();
     };
   } catch (err) {
     console.debug('[DevicePayloadPanel] SSE init error:', err);
+    startFallbackPolling();
   }
 }
 
@@ -786,5 +820,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   closeRealtimeStream();
+  stopFallbackPolling();
 });
 </script>
