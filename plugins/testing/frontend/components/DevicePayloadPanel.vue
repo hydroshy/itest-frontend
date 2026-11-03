@@ -78,11 +78,11 @@
       </div>
       <div class="card bg-base-200/50 border border-base-300 p-3 rounded-lg text-center">
         <span class="text-[11px] text-base-content/60 uppercase font-mono">RSSI Trung Bình</span>
-        <span class="text-lg font-bold font-mono text-info">{{ avgRssi }} <span class="text-xs">dBm</span></span>
+        <span class="text-lg font-bold font-mono text-info">{{ avgRssi }}</span>
       </div>
       <div class="card bg-base-200/50 border border-base-300 p-3 rounded-lg text-center">
         <span class="text-[11px] text-base-content/60 uppercase font-mono">SNR Trung Bình</span>
-        <span class="text-lg font-bold font-mono text-success">{{ avgSnr }} <span class="text-xs">dB</span></span>
+        <span class="text-lg font-bold font-mono text-success">{{ avgSnr }}</span>
       </div>
       <div class="card bg-base-200/50 border border-base-300 p-3 rounded-lg text-center">
         <span class="text-[11px] text-base-content/60 uppercase font-mono">Dải SF Phổ Biến</span>
@@ -90,7 +90,7 @@
       </div>
       <div class="card bg-base-200/50 border border-base-300 p-3 rounded-lg text-center">
         <span class="text-[11px] text-base-content/60 uppercase font-mono">Đã Giải Mã</span>
-        <span class="text-lg font-bold font-mono text-success">100% OK</span>
+        <span class="text-lg font-bold font-mono" :class="decodedPercent !== '—' ? 'text-success' : 'text-base-content/50'">{{ decodedPercent }}</span>
       </div>
     </div>
 
@@ -247,26 +247,28 @@
               <!-- 1. RSSI (dBm) -->
               <td class="text-center bg-base-300/20">
                 <span
+                  v-if="row.rssi !== null && row.rssi !== undefined"
                   class="badge badge-xs font-bold font-mono"
                   :class="getRssiBadgeClass(row.rssi)"
                 >
                   {{ row.rssi }} dBm
                 </span>
+                <span v-else class="text-base-content/40 text-xs">—</span>
               </td>
 
               <!-- 2. SNR (dB) -->
               <td class="text-center bg-base-300/20 font-bold" :class="getSnrColorClass(row.snr)">
-                {{ row.snr }} dB
+                {{ row.snr !== null && row.snr !== undefined ? `${row.snr} dB` : '—' }}
               </td>
 
               <!-- 3. FCNT -->
               <td class="text-center bg-base-300/20 font-bold text-base-content">
-                #{{ row.f_cnt }}
+                {{ row.f_cnt !== null && row.f_cnt !== undefined ? `#${row.f_cnt}` : '—' }}
               </td>
 
               <!-- 4. SF (Spreading Factor) -->
               <td class="text-center bg-base-300/20 font-bold text-warning">
-                SF{{ row.sf || 7 }}
+                {{ row.sf ? `SF${row.sf}` : '—' }}
               </td>
 
               <!-- 5. FREQUENCY (MHz) -->
@@ -522,25 +524,31 @@ const uniqueDevicesCount = computed(() => {
 });
 
 const avgRssi = computed(() => {
-  if (payloadList.value.length === 0) return -85;
-  const sum = payloadList.value.reduce((acc, p) => acc + (p.rssi || -85), 0);
-  return Math.round(sum / payloadList.value.length);
+  if (payloadList.value.length === 0) return '—';
+  const valid = payloadList.value.filter((p) => typeof p.rssi === 'number');
+  if (valid.length === 0) return '—';
+  const sum = valid.reduce((acc, p) => acc + (p.rssi as number), 0);
+  return `${Math.round(sum / valid.length)} dBm`;
 });
 
 const avgSnr = computed(() => {
-  if (payloadList.value.length === 0) return 8.5;
-  const sum = payloadList.value.reduce((acc, p) => acc + (p.snr || 8.5), 0);
-  return (sum / payloadList.value.length).toFixed(1);
+  if (payloadList.value.length === 0) return '—';
+  const valid = payloadList.value.filter((p) => typeof p.snr === 'number');
+  if (valid.length === 0) return '—';
+  const sum = valid.reduce((acc, p) => acc + (p.snr as number), 0);
+  return `${(sum / valid.length).toFixed(1)} dB`;
 });
 
 const dominantSf = computed(() => {
-  if (payloadList.value.length === 0) return 'SF7';
+  if (payloadList.value.length === 0) return '—';
+  const valid = payloadList.value.filter((p) => typeof p.sf === 'number');
+  if (valid.length === 0) return '—';
   const sfCount: Record<string, number> = {};
-  payloadList.value.forEach((p) => {
-    const key = `SF${p.sf || 7}`;
+  valid.forEach((p) => {
+    const key = `SF${p.sf}`;
     sfCount[key] = (sfCount[key] || 0) + 1;
   });
-  let best = 'SF7';
+  let best = '—';
   let max = 0;
   for (const k in sfCount) {
     if (sfCount[k] > max) {
@@ -549,6 +557,12 @@ const dominantSf = computed(() => {
     }
   }
   return best;
+});
+
+const decodedPercent = computed(() => {
+  if (payloadList.value.length === 0) return '—';
+  const decoded = payloadList.value.filter((p) => hasDecodedData(p.decoded_payload)).length;
+  return `${Math.round((decoded / payloadList.value.length) * 100)}% (${decoded}/${payloadList.value.length})`;
 });
 
 const filteredPayloads = computed(() => {
@@ -594,22 +608,22 @@ async function loadPayloads() {
 function normalizePayloadItem(raw: any): DevicePayloadItem {
   return {
     id: raw.id,
-    dev_eui: raw.dev_eui || raw.devEui || '2026A1B2C3D40001',
-    device_name: raw.device_name || raw.deviceName,
-    application_id: raw.application_id || raw.applicationId || 'itest-default-app',
-    f_cnt: raw.f_cnt ?? raw.fCnt ?? 1,
-    f_port: raw.f_port ?? raw.fPort ?? 1,
-    rssi: raw.rssi ?? -85,
-    snr: raw.snr ?? 9.0,
-    sf: raw.sf ?? 7,
-    frequency: raw.frequency ?? 921400000,
+    dev_eui: raw.dev_eui || raw.devEui || '—',
+    device_name: raw.device_name || raw.deviceName || '',
+    application_id: raw.application_id || raw.applicationId || '',
+    f_cnt: raw.f_cnt ?? raw.fCnt ?? null,
+    f_port: raw.f_port ?? raw.fPort ?? null,
+    rssi: raw.rssi ?? null,
+    snr: raw.snr ?? null,
+    sf: raw.sf ?? null,
+    frequency: raw.frequency ?? null,
     raw_payload: (raw.raw_payload || raw.rawPayload || '').toUpperCase(),
-    raw_payload_base64: raw.raw_payload_base64 || raw.rawPayloadBase64,
+    raw_payload_base64: raw.raw_payload_base64 || raw.rawPayloadBase64 || '',
     decoded_payload: raw.decoded_payload || raw.decodedPayload || {},
-    received_at: raw.received_at || raw.receivedAt || raw.created_at || raw.createdAt || new Date().toISOString(),
-    item_code: raw.item_code || raw.itemCode || 'WSSFC-ATH',
-    fw_version: raw.fw_version || raw.fwVersion,
-    long_fw: raw.long_fw || raw.longFw || '4F0505',
+    received_at: raw.received_at || raw.receivedAt || raw.created_at || raw.createdAt || '',
+    item_code: raw.item_code || raw.itemCode || '—',
+    fw_version: raw.fw_version || raw.fwVersion || '—',
+    long_fw: raw.long_fw || raw.longFw || '—',
   };
 }
 

@@ -633,37 +633,7 @@ function loadFallbackBatches() {
       return;
     } catch {}
   }
-  // Default mock batches
-  batchList.value = [
-    {
-      id: 'batch-001',
-      batchCode: 'TB-WSSFC-ATH-4F0505-01',
-      batchName: 'Kiểm thử Lô Cảm Biến Khí Tượng ATH 01',
-      itemCode: 'WSSFC-ATH',
-      longFw: '4F0505',
-      fwVersion: '4F0505',
-      maxDevices: 5,
-      simuId: 'SIMU-WSSFC-ATH-1.0.4',
-      autoCheckCriteria: { name: 'Đối chiếu Thiết Bị Chuẩn & Sai Số ≤ 2%' },
-      flowDurationSeconds: 300,
-      status: 'READY',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 'batch-002',
-      batchCode: 'TB-WSLRW-TH-1F0001-02',
-      batchName: 'Kiểm tra Nhiệt Ẩm LoRa Cấp Tốc',
-      itemCode: 'WSLRW-TH',
-      longFw: '1F0001',
-      fwVersion: '1F0001',
-      maxDevices: 8,
-      simuId: 'SIMU-RAPID-BURST-3M',
-      autoCheckCriteria: { name: 'Tiêu Chuẩn Công Nghiệp Cấp 1 (Strict QA)' },
-      flowDurationSeconds: 180,
-      status: 'READY',
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-    },
-  ];
+  batchList.value = [];
 }
 
 async function saveTestBatch() {

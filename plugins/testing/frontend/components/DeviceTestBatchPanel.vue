@@ -690,28 +690,7 @@ function loadFallbackBatches() {
       return;
     } catch {}
   }
-  savedBatches.value = [
-    {
-      id: 'batch-001',
-      batchCode: 'TB-WSSFC-ATH-4F0505-01',
-      batchName: 'Kiểm thử Lô Cảm Biến Khí Tượng ATH 01',
-      itemCode: 'WSSFC-ATH',
-      longFw: '4F0505',
-      fwVersion: '4F0505',
-      maxDevices: 5,
-      flowDurationSeconds: 300,
-    },
-    {
-      id: 'batch-002',
-      batchCode: 'TB-WSLRW-TH-1F0001-02',
-      batchName: 'Kiểm tra Nhiệt Ẩm LoRaWAN Lô 2',
-      itemCode: 'WSLRW-TH',
-      longFw: '1F0001',
-      fwVersion: '1F0001',
-      maxDevices: 8,
-      flowDurationSeconds: 180,
-    },
-  ];
+  savedBatches.value = [];
 }
 
 async function loadReferenceDevices() {
@@ -757,10 +736,6 @@ async function loadAvailableDevices() {
       devices = res2?.data?.items || res2?.data || res2?.items || [];
     }
 
-    if (!Array.isArray(devices) || devices.length === 0) {
-      devices = getMockDevices();
-    }
-
     // Filter by itemCode and fwVersion if selected
     if (filterItemCode.value) {
       devices = devices.filter((d: any) => {
@@ -778,61 +753,10 @@ async function loadAvailableDevices() {
 
     candidateDevices.value = devices;
   } catch {
-    candidateDevices.value = getMockDevices().filter((d) => {
-      const matchItem = !filterItemCode.value || d.itemCode === filterItemCode.value;
-      const matchFw = !filterFwVersion.value || d.fwVersion === filterFwVersion.value || d.fwVersion === '4F0505';
-      return matchItem && matchFw;
-    });
+    candidateDevices.value = [];
   } finally {
     loadingDevices.value = false;
   }
-}
-
-function getMockDevices() {
-  return [
-    {
-      id: 'dev-001',
-      serialNumber: 'ATH-202611-0001',
-      devEui: '2026A1B2C3D40001',
-      itemCode: 'WSSFC-ATH',
-      fwVersion: '4F0505',
-    },
-    {
-      id: 'dev-002',
-      serialNumber: 'ATH-202611-0002',
-      devEui: '2026A1B2C3D40002',
-      itemCode: 'WSSFC-ATH',
-      fwVersion: '4F0505',
-    },
-    {
-      id: 'dev-003',
-      serialNumber: 'ATH-202611-0003',
-      devEui: '2026A1B2C3D40003',
-      itemCode: 'WSSFC-ATH',
-      fwVersion: '4F0505',
-    },
-    {
-      id: 'dev-004',
-      serialNumber: 'ATH-202611-0004',
-      devEui: '2026A1B2C3D40004',
-      itemCode: 'WSSFC-ATH',
-      fwVersion: '4F0505',
-    },
-    {
-      id: 'dev-005',
-      serialNumber: 'ATH-202611-0005',
-      devEui: '2026A1B2C3D40005',
-      itemCode: 'WSSFC-ATH',
-      fwVersion: '4F0505',
-    },
-    {
-      id: 'dev-006',
-      serialNumber: 'ATH-202611-0006',
-      devEui: '2026A1B2C3D40006',
-      itemCode: 'WSSFC-ATH',
-      fwVersion: '4F0505',
-    },
-  ];
 }
 
 // Timer & Simulation Execution
