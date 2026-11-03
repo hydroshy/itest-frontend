@@ -381,83 +381,13 @@ async function loadFlowProfiles() {
   try {
     const res: any = await httpClient.get('/plugins/testing/simulation/profiles');
     const items = res?.data?.items || res?.data || (Array.isArray(res) ? res : []);
-    if (Array.isArray(items) && items.length > 0) {
-      flowProfiles.value = items;
-    } else {
-      loadFallbackProfiles();
-    }
+    flowProfiles.value = Array.isArray(items) ? items : [];
   } catch (err: any) {
-    console.debug('[ListFlowSimulationPanel] Error loading profiles, using fallbacks:', err.message);
-    loadFallbackProfiles();
+    console.debug('[ListFlowSimulationPanel] Error loading profiles:', err.message);
+    flowProfiles.value = [];
   } finally {
     loading.value = false;
   }
-}
-
-function loadFallbackProfiles() {
-  const cached = localStorage.getItem('itest_simulation_profiles');
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        flowProfiles.value = parsed;
-        return;
-      }
-    } catch {}
-  }
-
-  // Built-in presets
-  flowProfiles.value = [
-    {
-      id: 'SIMU-WSSFC-ATH-1.0.4',
-      simuId: 'SIMU-WSSFC-ATH-1.0.4',
-      name: 'ATH Standard 5-Min Uplink Flow',
-      profileName: 'ATH Standard 5-Min Uplink Flow',
-      itemCode: 'WSSFC-ATH',
-      longFw: '1.0.4',
-      duration: 300,
-      description: 'Khởi động thiết bị, thực hiện OTAA Join trong 30s và gửi gói tin định kỳ 60s/lần.',
-      flowBlocks: [
-        { id: 'b1', name: 'Khởi tạo RF AU915', type: 'rf_init', estimatedSeconds: 30 },
-        { id: 'b2', name: 'OTAA Join Request', type: 'otaa_join', estimatedSeconds: 30 },
-        { id: 'b3', name: 'Chu kỳ Uplink 60s', type: 'uplink_loop', estimatedSeconds: 180 },
-        { id: 'b4', name: 'Payload Telemetry', type: 'sensor_telemetry', estimatedSeconds: 60, payloadHex: '01017F02' },
-      ],
-    },
-    {
-      id: 'SIMU-WSLRW-FULL-10M',
-      simuId: 'SIMU-WSLRW-FULL-10M',
-      name: 'LoRaWAN Full Stress Test 10 Phút',
-      profileName: 'LoRaWAN Full Stress Test 10 Phút',
-      itemCode: 'WSLRW-STRESS',
-      longFw: '2.0.1',
-      duration: 600,
-      description: 'Mô phỏng đa gói tin với thay đổi giá trị cảm biến biên trên nhiều kênh tần số.',
-      flowBlocks: [
-        { id: 'b1', name: 'Init Class A', type: 'rf_init', estimatedSeconds: 30 },
-        { id: 'b2', name: 'Join OTAA', type: 'otaa_join', estimatedSeconds: 30 },
-        { id: 'b3', name: 'Uplink Burst', type: 'uplink_loop', estimatedSeconds: 240 },
-        { id: 'b4', name: 'Downlink Ack', type: 'downlink_ack', estimatedSeconds: 60, payloadHex: 'FF00' },
-        { id: 'b5', name: 'Sensor Delta Shift', type: 'sensor_telemetry', estimatedSeconds: 180, payloadHex: '0204A1B2' },
-        { id: 'b6', name: 'Final Status', type: 'status_report', estimatedSeconds: 60 },
-      ],
-    },
-    {
-      id: 'SIMU-RAPID-BURST-3M',
-      simuId: 'SIMU-RAPID-BURST-3M',
-      name: 'Rapid Telemetry Check 3 Phút',
-      profileName: 'Rapid Telemetry Check 3 Phút',
-      itemCode: 'RAPID-TEST',
-      longFw: '1.0.0',
-      duration: 180,
-      description: 'Kiểm tra nhanh phản hồi cảm biến và giải mã Dual Payload.',
-      flowBlocks: [
-        { id: 'b1', name: 'Init Device', type: 'rf_init', estimatedSeconds: 20 },
-        { id: 'b2', name: 'Fast Join', type: 'otaa_join', estimatedSeconds: 30 },
-        { id: 'b3', name: 'Continuous 30s Uplink', type: 'uplink_loop', estimatedSeconds: 130, payloadHex: 'AA5501' },
-      ],
-    },
-  ];
 }
 
 function viewFlowDetails(flow: any) {

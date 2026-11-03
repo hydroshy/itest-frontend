@@ -390,6 +390,9 @@
                         @change="onReferenceDeviceChange(item)"
                       >
                         <option value="">-- Chọn thiết bị chuẩn --</option>
+                        <option v-if="goldenReferenceDevices.length === 0" value="" disabled>
+                          (Chưa có thiết bị chuẩn trong hệ thống)
+                        </option>
                         <option
                           v-for="refDev in goldenReferenceDevices"
                           :key="refDev.id"
@@ -497,9 +500,6 @@ const selectedBatchId = ref('');
 const filterItemCode = ref('');
 const filterFwVersion = ref('');
 
-const availableItemCodes = ref(['WSSFC-ATH', 'WSLRW-TH', 'WSSFC-ULC', 'WSLRW-AQI', 'WSSFC-CO2']);
-const availableFwVersions = ref(['1.0.4', '1.0.5', '2.0.0', 'v2.1.0-RC1']);
-
 const loadingDevices = ref(false);
 const savedBatches = ref<any[]>([]);
 const allRawCandidateDevices = ref<any[]>([]);
@@ -541,6 +541,7 @@ interface BatchDeviceItem {
   referenceDeviceId: string;
   referenceDevice?: any;
   status: 'PENDING' | 'RUNNING' | 'PASS' | 'FAIL';
+  packetsCount?: number;
   liveComparison?: {
     dutTemp: number;
     refTemp: number;
@@ -558,57 +559,8 @@ interface BatchDeviceItem {
 const selectedDevices = ref<BatchDeviceItem[]>([]);
 const maxAllowedDevices = ref(5);
 
-// Golden Reference Devices pool
-const goldenReferenceDevices = ref([
-  {
-    id: 'GOLDEN-REF-01',
-    name: 'Thiết Bị Chuẩn Đo Kiểm Lô A-01 (Golden Ref)',
-    serialNumber: 'STD-CAL-2026-001',
-    calibratedDate: '2026-10-15',
-    baseTemp: 27.5,
-    baseHum: 62.0,
-  },
-  {
-    id: 'GOLDEN-REF-02',
-    name: 'Thiết Bị Chuẩn Đo Kiểm Lô A-02 (Golden Ref)',
-    serialNumber: 'STD-CAL-2026-002',
-    calibratedDate: '2026-10-18',
-    baseTemp: 27.4,
-    baseHum: 62.2,
-  },
-  {
-    id: 'GOLDEN-REF-03',
-    name: 'Thiết Bị Chuẩn Đo Kiểm Lô A-03 (Golden Ref)',
-    serialNumber: 'STD-CAL-2026-003',
-    calibratedDate: '2026-10-20',
-    baseTemp: 27.6,
-    baseHum: 61.8,
-  },
-  {
-    id: 'GOLDEN-REF-04',
-    name: 'Thiết Bị Chuẩn Đo Kiểm Lô A-04 (Golden Ref)',
-    serialNumber: 'STD-CAL-2026-004',
-    calibratedDate: '2026-10-22',
-    baseTemp: 27.5,
-    baseHum: 62.1,
-  },
-  {
-    id: 'GOLDEN-REF-05',
-    name: 'Thiết Bị Chuẩn Đo Kiểm Lô A-05 (Golden Ref)',
-    serialNumber: 'STD-CAL-2026-005',
-    calibratedDate: '2026-10-25',
-    baseTemp: 27.3,
-    baseHum: 62.4,
-  },
-  {
-    id: 'GOLDEN-REF-06',
-    name: 'Thiết Bị Chuẩn Đo Kiểm Lô B-01 (Golden Ref)',
-    serialNumber: 'STD-CAL-2026-006',
-    calibratedDate: '2026-10-28',
-    baseTemp: 27.5,
-    baseHum: 62.0,
-  },
-]);
+// Golden Reference Devices pool (loaded dynamically from API)
+const goldenReferenceDevices = ref<any[]>([]);
 
 // Testing Execution & Timer State
 const isTesting = ref(false);
@@ -619,14 +571,8 @@ const elapsedSeconds = ref(0);
 let timerInterval: any = null;
 let simulationInterval: any = null;
 
-const currentFlowName = ref('ATH Standard 5-Min Uplink Flow');
-const flowSteps = ref([
-  'Khởi tạo RF AU915 & Modulation Parameters',
-  'OTAA Join Request & Receive Window RX1/RX2',
-  'Chu kỳ Uplink Telemetry chuỗi 60s',
-  'Đối chiếu giá trị cảm biến với Golden Reference',
-  'Đánh giá tiêu chí Auto Check & Xuất Verdict',
-]);
+const currentFlowName = ref('');
+const flowSteps = ref<string[]>([]);
 const currentStepIndex = ref(0);
 
 const currentStepName = computed(() => {
@@ -714,6 +660,10 @@ function onReferenceDeviceChange(item: BatchDeviceItem) {
 }
 
 function autoAssignReferenceDevices() {
+  if (goldenReferenceDevices.value.length === 0) {
+    cyberToast.warning('Chưa có thiết bị chuẩn nào được thiết lập trong hệ thống!');
+    return;
+  }
   const availableRefs = [...goldenReferenceDevices.value];
   selectedDevices.value.forEach((item, idx) => {
     const refDev = availableRefs[idx % availableRefs.length];
@@ -734,6 +684,35 @@ function onBatchSelectChange() {
     totalDurationSeconds.value = b.flowDurationSeconds || b.flow_duration_seconds || 300;
     remainingSeconds.value = totalDurationSeconds.value;
     selectedDevices.value = [];
+
+    // Dynamically bind flow information
+    const flow = b.simulationFlow || b.simulation_flow;
+    if (flow) {
+      currentFlowName.value = flow.profileName || flow.name || flow.simuId || b.batchName || 'Kịch bản kiểm thử';
+      if (Array.isArray(flow.flowBlocks) && flow.flowBlocks.length > 0) {
+        flowSteps.value = flow.flowBlocks.map((blk: any) => blk.name || blk.type);
+      } else if (Array.isArray(flow.blocks) && flow.blocks.length > 0) {
+        flowSteps.value = flow.blocks.map((blk: any) => blk.name || blk.type);
+      } else if (Array.isArray(flow.steps) && flow.steps.length > 0) {
+        flowSteps.value = flow.steps;
+      } else {
+        flowSteps.value = [
+          'Khởi tạo RF & Modulation Parameters',
+          'OTAA Join Request',
+          'Chu kỳ Uplink Telemetry',
+          'Đối chiếu tiêu chuẩn & Xuất kết quả',
+        ];
+      }
+    } else {
+      currentFlowName.value = b.batchName || 'Kịch bản kiểm thử';
+      flowSteps.value = [
+        'Khởi tạo RF & Modulation Parameters',
+        'OTAA Join Request',
+        'Chu kỳ Uplink Telemetry',
+        'Đối chiếu tiêu chuẩn & Xuất kết quả',
+      ];
+    }
+
     loadReferenceDevices();
     loadAvailableDevices();
   }
@@ -742,55 +721,44 @@ function onBatchSelectChange() {
 async function loadSavedBatches() {
   try {
     const res: any = await httpClient.get('/plugins/testing/test-batches');
-    const items = res?.data?.items || res?.data || res?.items || [];
-    if (Array.isArray(items) && items.length > 0) {
-      savedBatches.value = items;
-    } else {
-      loadFallbackBatches();
-    }
-  } catch {
-    loadFallbackBatches();
+    const items = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
+    savedBatches.value = Array.isArray(items) ? items : [];
+  } catch (err: any) {
+    console.debug('[DeviceTestBatchPanel] Error loading batches from API:', err.message);
+    savedBatches.value = [];
   }
 
   // Tự động lựa chọn cấu hình FW_VERSION và ITEM_CODE theo Test Batch
   if (selectedBatchId.value) {
     onBatchSelectChange();
   } else if (savedBatches.value.length > 0) {
-    selectedBatchId.value = savedBatches.value[0].id;
+    selectedBatchId.value = savedBatches.value[0].id || savedBatches.value[0].batchCode;
     onBatchSelectChange();
   }
-}
-
-function loadFallbackBatches() {
-  const cached = localStorage.getItem('itest_test_batches');
-  if (cached) {
-    try {
-      savedBatches.value = JSON.parse(cached);
-      return;
-    } catch {}
-  }
-  savedBatches.value = [];
 }
 
 async function loadReferenceDevices() {
   try {
     const res: any = await httpClient.get('/plugins/testing/test-batches/reference-devices', {
-      params: { itemCode: filterItemCode.value },
+      params: { itemCode: filterItemCode.value || undefined },
     });
-    const items = res?.data?.items || res?.data || res?.items || [];
+    const items = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
     if (Array.isArray(items) && items.length > 0) {
       goldenReferenceDevices.value = items.map((r: any) => ({
-        id: r.id || r.serialNumber,
-        name: r.name || `Thiết bị chuẩn ${r.serialNumber}`,
-        serialNumber: r.serialNumber || r.serial_number,
-        devEui: r.devEui || r.dev_eui,
-        calibratedDate: r.calibratedAt || r.calibrated_at || '2026-10-15',
-        baseTemp: r.nominalValues?.temperature ?? 27.5,
-        baseHum: r.nominalValues?.humidity ?? 62.0,
+        id: r.id || r.serialNumber || r.serial_number,
+        name: r.name || `Thiết bị chuẩn ${r.serialNumber || r.serial_number || ''}`,
+        serialNumber: r.serialNumber || r.serial_number || '',
+        devEui: r.devEui || r.dev_eui || '',
+        calibratedDate: r.calibratedAt || r.calibrated_at || '',
+        baseTemp: r.nominalValues?.temperature ?? r.baseTemp ?? 25.0,
+        baseHum: r.nominalValues?.humidity ?? r.baseHum ?? 50.0,
       }));
+    } else {
+      goldenReferenceDevices.value = [];
     }
   } catch (err: any) {
-    console.debug('[DeviceTestBatchPanel] Using fallback reference devices:', err.message);
+    console.debug('[DeviceTestBatchPanel] Error loading reference devices from API:', err.message);
+    goldenReferenceDevices.value = [];
   }
 }
 
@@ -884,62 +852,91 @@ function startBatchTest() {
     remainingSeconds.value = Math.max(0, totalDurationSeconds.value - elapsedSeconds.value);
 
     // Update flow steps based on elapsed progress
-    const stepDuration = totalDurationSeconds.value / flowSteps.value.length;
-    currentStepIndex.value = Math.min(
-      flowSteps.value.length - 1,
-      Math.floor(elapsedSeconds.value / stepDuration)
-    );
+    if (flowSteps.value.length > 0 && totalDurationSeconds.value > 0) {
+      const stepDuration = totalDurationSeconds.value / flowSteps.value.length;
+      currentStepIndex.value = Math.min(
+        flowSteps.value.length - 1,
+        Math.floor(elapsedSeconds.value / Math.max(1, stepDuration))
+      );
+    }
 
     if (remainingSeconds.value <= 0) {
       finishBatchTest();
     }
   }, 1000);
 
-  // Periodic telemetry simulation & comparison
+  // Periodic real telemetry polling from backend status
   clearInterval(simulationInterval);
+  pollBatchStatus();
   simulationInterval = setInterval(() => {
-    simulateLiveTelemetry();
+    pollBatchStatus();
   }, 3000);
 }
 
-function simulateLiveTelemetry() {
-  selectedDevices.value.forEach((item, idx) => {
-    const ref = item.referenceDevice || goldenReferenceDevices.value[0];
-    const baseT = ref?.baseTemp || 27.5;
-    const baseH = ref?.baseHum || 62.0;
+async function pollBatchStatus() {
+  if (!selectedBatchId.value) return;
+  try {
+    const res: any = await httpClient.get(`/plugins/testing/test-batches/${selectedBatchId.value}/status`);
+    const statusData = res?.data || res;
+    if (!statusData) return;
 
-    // DUT telemetry with small jitter
-    // Introduce deliberate fault on device 4 if present for realistic testing
-    const isFaultyDevice = idx === 3 && selectedDevices.value.length > 3;
-    const deltaT = isFaultyDevice ? 1.8 : +(Math.random() * 0.6 - 0.3).toFixed(2);
-    const deltaH = isFaultyDevice ? 5.5 : +(Math.random() * 1.5 - 0.75).toFixed(1);
-
-    const dutT = +(baseT + deltaT).toFixed(2);
-    const dutH = +(baseH + deltaH).toFixed(1);
-
-    // Criteria: temp delta <= 0.5, hum delta <= 2.0
-    const tempPass = Math.abs(deltaT) <= 0.5;
-    const humPass = Math.abs(deltaH) <= 2.0;
-
-    item.liveComparison = {
-      dutTemp: dutT,
-      refTemp: baseT,
-      tempDelta: Math.abs(deltaT),
-      tempDeltaPass: tempPass,
-      dutHum: dutH,
-      refHum: baseH,
-      humDelta: Math.abs(deltaH),
-      humDeltaPass: humPass,
-      rssi: -75 - Math.floor(Math.random() * 15),
-      snr: 9 + Math.floor(Math.random() * 4),
-    };
-
-    if (tempPass && humPass) {
-      item.status = 'PASS';
-    } else {
-      item.status = 'FAIL';
+    if (typeof statusData.elapsedSeconds === 'number') {
+      elapsedSeconds.value = statusData.elapsedSeconds;
     }
-  });
+    if (typeof statusData.remainingSeconds === 'number') {
+      remainingSeconds.value = statusData.remainingSeconds;
+    }
+    if (flowSteps.value.length > 0 && totalDurationSeconds.value > 0) {
+      const stepDuration = totalDurationSeconds.value / flowSteps.value.length;
+      currentStepIndex.value = Math.min(
+        flowSteps.value.length - 1,
+        Math.floor(elapsedSeconds.value / Math.max(1, stepDuration))
+      );
+    }
+
+    const devStatuses = statusData.devices || statusData.items || [];
+    selectedDevices.value.forEach((item) => {
+      const serial = item.device.serialNumber || item.device.serial_number;
+      const eui = item.device.devEui || item.device.dev_eui;
+      const matched = devStatuses.find(
+        (d: any) => (d.serialNumber && d.serialNumber === serial) || (d.devEui && d.devEui === eui)
+      );
+      if (matched) {
+        if (matched.status || matched.verdict) {
+          item.status = matched.verdict || matched.status;
+        }
+        if (matched.packetsReceived != null) {
+          item.packetsCount = matched.packetsReceived;
+        }
+        if (matched.comparisonResult) {
+          const comp = matched.comparisonResult;
+          item.liveComparison = {
+            dutTemp: comp.dutTemp ?? comp.dut_temp,
+            refTemp: comp.refTemp ?? comp.ref_temp,
+            tempDelta: comp.tempDelta ?? comp.temp_delta,
+            tempDeltaPass: comp.tempDeltaPass ?? comp.temp_pass ?? (comp.tolerance_pass !== false),
+            dutHum: comp.dutHum ?? comp.dut_hum,
+            refHum: comp.refHum ?? comp.ref_hum,
+            humDelta: comp.humDelta ?? comp.hum_delta,
+            humDeltaPass: comp.humDeltaPass ?? comp.hum_pass ?? true,
+            rssi: comp.rssi,
+            snr: comp.snr,
+          };
+        }
+      }
+    });
+
+    if (
+      statusData.status === 'COMPLETED' ||
+      statusData.status === 'FINISHED' ||
+      statusData.status === 'PASSED' ||
+      statusData.status === 'FAILED'
+    ) {
+      finishBatchTest();
+    }
+  } catch (err: any) {
+    console.debug('[DeviceTestBatchPanel] Poll status error:', err.message);
+  }
 }
 
 function stopBatchTest() {

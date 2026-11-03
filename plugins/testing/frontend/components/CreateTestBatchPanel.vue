@@ -462,14 +462,14 @@ const saving = ref(false);
 const loadingBatches = ref(false);
 
 const batchForm = reactive({
-  itemCode: 'WSSFC-ATH',
-  longFw: '4F0505',
-  batchName: 'Đợt Kiểm Thử Cảm Biến WSSFC-ATH 4F0505',
-  batchCode: 'TB-WSSFC-ATH-4F0505-01',
-  maxDevices: 5,
-  flowDurationSeconds: 300,
-  simuId: 'SIMU-WSSFC-ATH-1.0.4',
-  autoCheckId: 'CRIT-SENSOR-TOLERANCE-2PCT',
+  itemCode: '',
+  longFw: '',
+  batchName: '',
+  batchCode: '',
+  maxDevices: 10,
+  flowDurationSeconds: 0,
+  simuId: '',
+  autoCheckId: '',
 });
 
 // FW_VERSION format: XFXXXX where x is a number (0-9)
@@ -509,62 +509,11 @@ function formatDuration(seconds: number): string {
   return `${seconds} giây`;
 }
 
-// Available Simulation Flows
-const availableFlows = ref([
-  {
-    id: 'SIMU-WSSFC-ATH-1.0.4',
-    name: 'ATH Standard 5-Min Uplink Flow',
-    duration: 300,
-    blocksCount: 4,
-    description: 'Khởi động thiết bị, thực hiện OTAA Join trong 30s và gửi gói tin định kỳ 60s/lần.',
-    steps: ['Khởi tạo RF AU915', 'OTAA Join Request', 'Chu kỳ Uplink 60s', 'Payload Telemetry'],
-  },
-  {
-    id: 'SIMU-WSLRW-FULL-10M',
-    name: 'LoRaWAN Full Stress Test 10 Phút',
-    duration: 600,
-    blocksCount: 6,
-    description: 'Mô phỏng đa gói tin với thay đổi giá trị cảm biến biên trên nhiều kênh tần số.',
-    steps: ['Init Class A', 'Join OTAA', 'Uplink Burst', 'Downlink Ack', 'Sensor Delta Shift', 'Final Status'],
-  },
-  {
-    id: 'SIMU-RAPID-BURST-3M',
-    name: 'Rapid Telemetry Check 3 Phút',
-    duration: 180,
-    blocksCount: 3,
-    description: 'Kiểm tra nhanh phản hồi cảm biến và giải mã Dual Payload.',
-    steps: ['Init Device', 'Fast Join', 'Continuous 30s Uplink'],
-  },
-]);
+// Available Simulation Flows (loaded dynamically from API)
+const availableFlows = ref<any[]>([]);
 
-// Available Auto Check Criteria
-const availableCriteria = ref([
-  {
-    id: 'CRIT-SENSOR-TOLERANCE-2PCT',
-    name: 'Đối chiếu Thiết Bị Chuẩn & Sai Số ≤ 2%',
-    rulesCount: 4,
-    description: 'So sánh giá trị đo trực tiếp với Golden Reference Device tương ứng, sai số cho phép ≤ 2%.',
-    rules: [
-      { name: 'Nhiệt độ (Temperature Delta)', threshold: '≤ ±0.5 °C' },
-      { name: 'Độ ẩm (Humidity Delta)', threshold: '≤ ±2.0% RH' },
-      { name: 'RSSI & SNR Quality', threshold: 'RSSI > -115 dBm, SNR > -10 dB' },
-      { name: 'FCnt Sequence Integrity', threshold: 'Tăng liên tục không rớt gói' },
-    ],
-  },
-  {
-    id: 'CRIT-STRICT-INDUSTRIAL',
-    name: 'Tiêu Chuẩn Công Nghiệp Cấp 1 (Strict QA)',
-    rulesCount: 5,
-    description: 'Quy chuẩn gắt gao cho thiết bị đo áp suất và chất lượng khí, sai số tối đa ±1%.',
-    rules: [
-      { name: 'Sensor Accuracy Delta', threshold: '≤ ±1.0%' },
-      { name: 'Battery Voltage Drift', threshold: 'Delta < 50mV' },
-      { name: 'Frame Loss Rate', threshold: '0% Packet Loss' },
-      { name: 'Payload Decode Match', threshold: '100% Valid Payload' },
-      { name: 'Modbus CRC Integrity', threshold: 'CRC-16 Valid' },
-    ],
-  },
-]);
+// Available Auto Check Criteria (loaded dynamically from API)
+const availableCriteria = ref<any[]>([]);
 
 const selectedFlowData = computed(() => {
   return availableFlows.value.find((f) => f.id === batchForm.simuId);
@@ -577,7 +526,7 @@ const selectedCriteriaData = computed(() => {
 function onSimulationFlowSelected() {
   const flow = availableFlows.value.find((f) => f.id === batchForm.simuId);
   if (flow) {
-    batchForm.flowDurationSeconds = flow.duration;
+    batchForm.flowDurationSeconds = flow.duration || 0;
   }
 }
 
@@ -586,22 +535,21 @@ watch(
   (newId) => {
     const flow = availableFlows.value.find((f) => f.id === newId);
     if (flow) {
-      batchForm.flowDurationSeconds = flow.duration;
+      batchForm.flowDurationSeconds = flow.duration || 0;
     }
   },
   { immediate: true }
 );
 
 function resetForm() {
-  batchForm.itemCode = 'WSSFC-ATH';
-  batchForm.longFw = '4F0505';
-  batchForm.batchName = 'Đợt Kiểm Thử Cảm Biến WSSFC-ATH 4F0505';
+  batchForm.itemCode = '';
+  batchForm.longFw = '';
+  batchForm.batchName = '';
   generateBatchCode();
-  batchForm.maxDevices = 5;
-  batchForm.simuId = 'SIMU-WSSFC-ATH-1.0.4';
-  const flow = availableFlows.value.find((f) => f.id === batchForm.simuId);
-  batchForm.flowDurationSeconds = flow ? flow.duration : 300;
-  batchForm.autoCheckId = 'CRIT-SENSOR-TOLERANCE-2PCT';
+  batchForm.maxDevices = 10;
+  batchForm.simuId = availableFlows.value[0]?.id || '';
+  batchForm.flowDurationSeconds = availableFlows.value[0]?.duration || 0;
+  batchForm.autoCheckId = availableCriteria.value[0]?.id || '';
   cyberToast.info('Đã làm mới form tạo Test Batch');
 }
 
@@ -612,28 +560,14 @@ async function loadBatches() {
   loadingBatches.value = true;
   try {
     const res: any = await httpClient.get('/plugins/testing/test-batches');
-    const items = res?.data?.items || res?.data || res?.items || [];
-    if (Array.isArray(items) && items.length > 0) {
-      batchList.value = items;
-    } else {
-      loadFallbackBatches();
-    }
-  } catch {
-    loadFallbackBatches();
+    const items = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
+    batchList.value = Array.isArray(items) ? items : [];
+  } catch (err: any) {
+    console.debug('[CreateTestBatchPanel] Error loading batches from API:', err.message);
+    batchList.value = [];
   } finally {
     loadingBatches.value = false;
   }
-}
-
-function loadFallbackBatches() {
-  const cached = localStorage.getItem('itest_test_batches');
-  if (cached) {
-    try {
-      batchList.value = JSON.parse(cached);
-      return;
-    } catch {}
-  }
-  batchList.value = [];
 }
 
 async function saveTestBatch() {
@@ -664,38 +598,37 @@ async function saveTestBatch() {
     maxDevices: batchForm.maxDevices,
     flowDurationSeconds: batchForm.flowDurationSeconds,
     simuId: batchForm.simuId,
-    simulationFlow: selectedFlowData.value || { id: batchForm.simuId },
-    autoCheckCriteria: selectedCriteriaData.value || { id: batchForm.autoCheckId },
+    simulationFlow: selectedFlowData.value || (batchForm.simuId ? { id: batchForm.simuId } : undefined),
+    autoCheckCriteria: selectedCriteriaData.value || (batchForm.autoCheckId ? { id: batchForm.autoCheckId } : undefined),
     status: 'READY',
   };
 
   try {
-    const res: any = await httpClient.post('/plugins/testing/test-batches', payload);
+    await httpClient.post('/plugins/testing/test-batches', payload);
     cyberToast.success('Tạo Test Batch thành công!');
-    const newBatch = res?.data || res || { ...payload, id: `tb-${Date.now()}` };
-    batchList.value.unshift(newBatch);
-    saveBatchesToLocal();
+    await loadBatches();
+    resetForm();
   } catch (err: any) {
-    // If backend is still initializing or returned 404, fallback save locally
-    const fallbackItem = { ...payload, id: `tb-${Date.now()}` };
-    batchList.value.unshift(fallbackItem);
-    saveBatchesToLocal();
-    cyberToast.success('Đã lưu cấu hình Test Batch thành công!');
+    cyberToast.error('Không thể tạo Test Batch: ' + (err.response?.data?.message || err.message));
   } finally {
     saving.value = false;
   }
 }
 
-function saveBatchesToLocal() {
-  localStorage.setItem('itest_test_batches', JSON.stringify(batchList.value));
-}
-
-function deleteBatch(batch: any) {
+async function deleteBatch(batch: any) {
   const id = batch.id || batch.batchCode;
-  batchList.value = batchList.value.filter((b) => (b.id || b.batchCode) !== id);
-  saveBatchesToLocal();
-  httpClient.delete(`/plugins/testing/test-batches/${id}`).catch(() => {});
-  cyberToast.info('Đã xóa Test Batch');
+  const name = batch.batchName || batch.batchCode || id;
+  if (!confirm(`Bạn có chắc chắn muốn xóa Test Batch "${name}" không?`)) {
+    return;
+  }
+
+  try {
+    await httpClient.delete(`/plugins/testing/test-batches/${id}`);
+    batchList.value = batchList.value.filter((b) => (b.id || b.batchCode) !== id);
+    cyberToast.info('Đã xóa Test Batch thành công');
+  } catch (err: any) {
+    cyberToast.error('Không thể xóa Test Batch: ' + (err.response?.data?.message || err.message));
+  }
 }
 
 function executeBatch(batch: any) {
@@ -748,14 +681,39 @@ async function loadFlows() {
       availableFlows.value = items.map((f: any) => ({
         id: f.simuId || f.id,
         name: f.name || f.profileName || f.simuId || f.id,
-        duration: f.duration || f.flowDurationSeconds || f.durationSeconds || 300,
-        blocksCount: Array.isArray(f.flowBlocks) ? f.flowBlocks.length : (Array.isArray(f.blocks) ? f.blocks.length : (f.blocksCount || 4)),
+        duration: f.duration || f.flowDurationSeconds || f.durationSeconds || 0,
+        blocksCount: Array.isArray(f.flowBlocks) ? f.flowBlocks.length : (Array.isArray(f.blocks) ? f.blocks.length : (f.blocksCount || 0)),
         description: f.description || `Kịch bản mô phỏng cho ${f.itemCode || 'thiết bị'}`,
-        steps: Array.isArray(f.flowBlocks) ? f.flowBlocks.map((b: any) => b.name || b.type) : ['Init RF', 'OTAA Join', 'Uplink Telemetry'],
+        steps: Array.isArray(f.flowBlocks) ? f.flowBlocks.map((b: any) => b.name || b.type) : [],
       }));
+    } else {
+      availableFlows.value = [];
     }
   } catch (err: any) {
-    console.debug('[CreateTestBatchPanel] Using default simulation flows:', err.message);
+    console.debug('[CreateTestBatchPanel] Error loading simulation flows:', err.message);
+    availableFlows.value = [];
+  }
+}
+
+async function loadCriteria() {
+  try {
+    const res: any = await httpClient.get('/plugins/testing/autocheck/profiles');
+    const raw = res?.data;
+    const items = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []));
+    if (items.length > 0) {
+      availableCriteria.value = items.map((c: any) => ({
+        id: c.autocheck_id || c.autocheckId || c.id,
+        name: c.name || c.autocheck_id || c.id,
+        rulesCount: Array.isArray(c.rules) ? c.rules.length : 0,
+        description: c.description || `Tiêu chuẩn kiểm tra cho ${c.item_code || 'thiết bị'}`,
+        rules: Array.isArray(c.rules) ? c.rules : [],
+      }));
+    } else {
+      availableCriteria.value = [];
+    }
+  } catch (err: any) {
+    console.debug('[CreateTestBatchPanel] Error loading autocheck profiles:', err.message);
+    availableCriteria.value = [];
   }
 }
 
@@ -763,5 +721,6 @@ onMounted(() => {
   generateBatchCode();
   loadBatches();
   loadFlows();
+  loadCriteria();
 });
 </script>
