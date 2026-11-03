@@ -1,81 +1,249 @@
 <template>
   <form class="space-y-4 border border-base-300 rounded-xl bg-base-200 p-4" @submit.prevent="save">
-    <h3 class="font-bold">Cấu hình AutoCheck theo sản phẩm</h3>
-    <p v-if="error" role="alert" class="text-error break-words">{{ error }}</p>
-    <p v-if="notice" role="status">{{ notice }}</p>
-    <label class="block space-y-1">
-      <span>AUTOCHECK_ID</span>
-      <input :value="autocheckId || 'Hệ thống sinh mã khi lưu'" readonly class="input input-bordered w-full font-mono" />
-    </label>
-    <label class="block space-y-1">
-      <span>Tên AutoCheck</span>
-      <input v-model="name" required maxlength="255" class="input input-bordered w-full" />
-    </label>
-    <label class="flex items-center gap-2 min-h-11">
-      <input v-model="useReference" type="checkbox" class="checkbox" />
-      Dùng thiết bị tham chiếu (thiết bị mẫu)
-    </label>
-    <section v-for="side in activeSides" :key="side.key" class="space-y-3 border-t border-base-300 pt-4">
-      <h4 class="font-semibold">{{ side.label }}</h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <label class="block space-y-1">
-          <span>ITEM_CODE</span>
-          <input v-model="side.item_code" required class="input input-bordered w-full font-mono" @input="invalidate(side)" />
-        </label>
-        <label class="block space-y-1">
-          <span>FW_VERSION</span>
-          <input v-model="side.fw_version" required class="input input-bordered w-full font-mono" @input="invalidate(side)" />
-        </label>
+    <div class="flex items-center justify-between border-b border-base-300 pb-2">
+      <div>
+        <h3 class="font-bold text-sm uppercase text-primary">Cấu hình AutoCheck Function Blocks</h3>
+        <p class="text-xs text-base-content/60">
+          Thiết lập tiêu chuẩn kiểm tra tự động theo chuẩn hàm FUNC_AUTOCHECK (CHECKVALUE, CHECKAVG, CHECKCOUNT, PERIOD...)
+        </p>
       </div>
-      <button type="button" class="btn min-h-11" :disabled="side.loading || !side.item_code.trim() || !side.fw_version.trim()" @click="discover(side)">
-        {{ side.loading ? 'Đang lấy field…' : 'Lấy field từ dữ liệu giải mã' }}
-      </button>
-      <p v-if="side.error" role="alert" class="text-error">{{ side.error }}</p>
-      <p v-if="side.loaded && !side.fields.length">Chưa có field giải mã cho sản phẩm và firmware này.</p>
-      <div v-for="(rule, index) in side.rules" :key="index" class="space-y-3 border border-base-300 rounded-lg p-3">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <label class="block space-y-1">
-            <span>Field cần kiểm tra</span>
-            <select v-model="rule.field" required class="select select-bordered w-full">
-              <option value="" disabled>Chọn field</option>
-              <option v-for="field in side.fields" :key="field" :value="field">{{ field }}</option>
-            </select>
-          </label>
-          <label class="block space-y-1">
-            <span>Count: số mẫu đạt tối thiểu</span>
-            <input v-model.number="rule.count" type="number" min="1" step="1" required class="input input-bordered w-full" />
-          </label>
-          <label class="block space-y-1">
-            <span>Điều kiện</span>
-            <select v-model="rule.mode" class="select select-bordered w-full">
-              <option value="present">Field có dữ liệu</option>
-              <option value="range">Khoảng giá trị (min / max)</option>
-              <option value="equals">Bằng giá trị JSON</option>
-            </select>
-          </label>
-          <template v-if="rule.mode === 'range'">
-            <label class="block space-y-1"><span>Min (tùy chọn)</span><input v-model="rule.min" type="number" step="any" class="input input-bordered w-full" /></label>
-            <label class="block space-y-1"><span>Max (tùy chọn)</span><input v-model="rule.max" type="number" step="any" class="input input-bordered w-full" /></label>
-          </template>
-          <label v-else-if="rule.mode === 'equals'" class="block space-y-1"><span>Giá trị JSON: 25, true hoặc "OK"</span><input v-model="rule.equals" required class="input input-bordered w-full font-mono" /></label>
+      <div v-if="autocheckId" class="badge badge-primary font-mono text-xs">
+        {{ autocheckId }}
+      </div>
+    </div>
+
+    <p v-if="error" role="alert" class="text-error text-xs font-semibold bg-error/10 p-2.5 rounded-lg border border-error/20 break-words">{{ error }}</p>
+    <p v-if="notice" role="status" class="text-success text-xs font-semibold bg-success/10 p-2.5 rounded-lg border border-success/20">{{ notice }}</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <label class="block space-y-1">
+        <span class="text-xs font-semibold">Tên AutoCheck</span>
+        <input v-model="name" required maxlength="255" placeholder="VD: Tiêu Chuẩn Đo Kiểm Cảm Biến Khí WSSFC-ATH" class="input input-sm input-bordered w-full text-xs" />
+      </label>
+      <label class="block space-y-1">
+        <span class="text-xs font-semibold">Mã Cấu Hình (AUTOCHECK_ID)</span>
+        <input :value="autocheckId || 'Hệ thống tự sinh mã khi lưu (AC-...)'" readonly class="input input-sm input-bordered w-full font-mono text-xs bg-base-300/40 text-base-content/60 cursor-not-allowed" />
+      </label>
+    </div>
+
+    <label class="flex items-center gap-2 min-h-9 cursor-pointer text-xs font-semibold">
+      <input v-model="useReference" type="checkbox" class="checkbox checkbox-xs checkbox-primary" />
+      <span>Kích hoạt kiểm tra so sánh với Thiết Bị Tham Chiếu (Reference Device)</span>
+    </label>
+
+    <!-- DUT & Reference Specs and Discovery -->
+    <div class="grid grid-cols-1" :class="useReference ? 'lg:grid-cols-2 gap-4' : 'gap-3'">
+      <section v-for="side in activeSides" :key="side.key" class="space-y-3 border border-base-300 rounded-xl bg-base-100/70 p-3.5">
+        <div class="flex items-center justify-between border-b border-base-300 pb-2">
+          <h4 class="font-bold text-xs uppercase tracking-wider text-base-content flex items-center gap-1.5">
+            <span class="badge badge-xs font-mono" :class="side.key === 'dut' ? 'badge-primary' : 'badge-secondary'">
+              {{ side.key.toUpperCase() }}
+            </span>
+            {{ side.label }}
+          </h4>
+          <span class="text-[11px] font-mono text-base-content/60">
+            {{ side.fields.length }} fields giải mã
+          </span>
         </div>
-        <button type="button" class="btn btn-ghost min-h-11" @click="side.rules.splice(index, 1)">Bỏ điều kiện {{ index + 1 }}</button>
+
+        <div class="grid grid-cols-2 gap-2">
+          <label class="block space-y-1">
+            <span class="text-[11px] font-semibold">ITEM_CODE</span>
+            <input v-model="side.item_code" required placeholder="VD: WSSFC-ATH" class="input input-xs input-bordered w-full font-mono uppercase" @input="invalidate(side)" />
+          </label>
+          <label class="block space-y-1">
+            <span class="text-[11px] font-semibold">FW_VERSION</span>
+            <input v-model="side.fw_version" required placeholder="VD: 4F0505" class="input input-xs input-bordered w-full font-mono uppercase" @input="invalidate(side)" />
+          </label>
+        </div>
+
+        <button type="button" class="btn btn-xs btn-outline btn-primary w-full gap-1" :disabled="side.loading || !side.item_code.trim() || !side.fw_version.trim()" @click="discover(side)">
+          <span v-if="side.loading" class="loading loading-spinner loading-xs"></span>
+          <span>{{ side.loading ? 'Đang truy vấn decoder…' : 'Tra cứu fields giải mã từ Firmware' }}</span>
+        </button>
+
+        <p v-if="side.error" role="alert" class="text-error text-[11px] bg-error/10 p-1.5 rounded">{{ side.error }}</p>
+        <p v-if="side.loaded && !side.fields.length" class="text-warning text-[11px] italic">Chưa có field giải mã cho sản phẩm này.</p>
+
+        <!-- Function Blocks per Side -->
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wide">Quy tắc kiểm tra (Function Blocks)</span>
+            <button type="button" class="btn btn-xs btn-ghost text-primary font-bold" :disabled="!side.fields.length" @click="side.rules.push(newRule())">
+              + Thêm Hàm
+            </button>
+          </div>
+
+          <div v-if="!side.rules.length" class="text-center py-4 border border-dashed border-base-300 rounded-lg text-base-content/40 text-xs italic">
+            {{ side.fields.length ? 'Nhấn "+ Thêm Hàm" để gán quy tắc kiểm tra cho thiết bị' : 'Tra cứu field để thiết lập hàm kiểm tra' }}
+          </div>
+
+          <div v-for="(rule, index) in side.rules" :key="index" class="space-y-2 border border-base-300 rounded-lg bg-base-200/50 p-2.5">
+            <div class="flex items-center justify-between border-b border-base-300/60 pb-1.5">
+              <span class="text-[11px] font-mono font-bold text-primary">#{{ index + 1 }} Function Block</span>
+              <button type="button" class="btn btn-ghost btn-xs text-error font-mono" @click="side.rules.splice(index, 1)">
+                ✕ Xóa
+              </button>
+            </div>
+
+            <!-- Row 1: Function Type & Field Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">Loại Hàm (FUNC_AUTOCHECK)</span>
+                <select v-model="rule.funcName" class="select select-xs select-bordered w-full font-mono">
+                  <option value="CHECKVALUE">CHECKVALUE (Ngưỡng giá trị)</option>
+                  <option value="CHECKAVG">CHECKAVG (Trung bình cả đợt)</option>
+                  <option value="CHECKCOUNT">CHECKCOUNT (Đếm số lần thoả)</option>
+                  <option value="CHECKVALUE_PERIOD">CHECKVALUE_PERIOD (Ngưỡng theo chu kỳ)</option>
+                  <option value="CHECKAVG_PERIOD">CHECKAVG_PERIOD (Trung bình theo chu kỳ)</option>
+                  <option value="FUNC_AVG">FUNC_AVG (Tính AVG theo thời gian)</option>
+                  <option value="FUNC_OFFSET_AVGZERO">FUNC_OFFSET_AVGZERO (Hiệu chuẩn Zero)</option>
+                </select>
+              </label>
+
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">Tham số cần đo (Parameter / Field)</span>
+                <select v-model="rule.field" required class="select select-xs select-bordered w-full font-mono">
+                  <option value="" disabled>-- Chọn field giải mã --</option>
+                  <option v-for="field in side.fields" :key="field" :value="field">{{ field }}</option>
+                </select>
+              </label>
+            </div>
+
+            <!-- Row 2: Dynamic Function Input Variables according to FUNC_AUTOCHECK.xlsx -->
+            <!-- 1. CHECKVALUE & CHECKAVG -->
+            <div v-if="rule.funcName === 'CHECKVALUE' || rule.funcName === 'CHECKAVG'" class="grid grid-cols-2 gap-2 pt-1">
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">LOW_THRESHOLD</span>
+                <input v-model.number="rule.lowThreshold" type="number" step="any" placeholder="Ngưỡng dưới (min)" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">HIGH_THRESHOLD</span>
+                <input v-model.number="rule.highThreshold" type="number" step="any" placeholder="Ngưỡng trên (max)" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+            </div>
+
+            <!-- 2. CHECKCOUNT -->
+            <div v-else-if="rule.funcName === 'CHECKCOUNT'" class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">LOW_THRESHOLD</span>
+                <input v-model.number="rule.lowThreshold" type="number" step="any" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">HIGH_THRESHOLD</span>
+                <input v-model.number="rule.highThreshold" type="number" step="any" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">MIN_COUNT</span>
+                <input v-model.number="rule.minCount" type="number" min="0" step="1" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">MAX_COUNT</span>
+                <input v-model.number="rule.maxCount" type="number" min="1" step="1" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+            </div>
+
+            <!-- 3. FUNC_AVG -->
+            <div v-else-if="rule.funcName === 'FUNC_AVG'" class="grid grid-cols-2 gap-2 pt-1">
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">START_TIME (Offset giây)</span>
+                <input v-model.number="rule.startTime" type="number" min="0" step="1" placeholder="Giây bắt đầu" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">DURATION (Thời lượng giây)</span>
+                <input v-model.number="rule.duration" type="number" min="1" step="1" placeholder="Thời lượng" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+            </div>
+
+            <!-- 4. FUNC_OFFSET_AVGZERO -->
+            <div v-else-if="rule.funcName === 'FUNC_OFFSET_AVGZERO'" class="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1">
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">STANDARD ZERO</span>
+                <input v-model.number="rule.standardZero" type="number" step="any" placeholder="Chuẩn Zero (VD: 0)" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">START OFFSET TIME (s)</span>
+                <input v-model.number="rule.startOffsetTime" type="number" min="0" step="1" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">DURATION FOR AVG ZERO (s)</span>
+                <input v-model.number="rule.durationZero" type="number" min="1" step="1" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+            </div>
+
+            <!-- 5. CHECKVALUE_PERIOD & CHECKAVG_PERIOD -->
+            <div v-else-if="rule.funcName === 'CHECKVALUE_PERIOD' || rule.funcName === 'CHECKAVG_PERIOD'" class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">PERIOD START (s)</span>
+                <input v-model.number="rule.periodStartOffsetTime" type="number" min="0" step="1" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">PERIOD DURATION (s)</span>
+                <input v-model.number="rule.periodDurationTime" type="number" min="1" step="1" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">LOW_THRESHOLD</span>
+                <input v-model.number="rule.lowThreshold" type="number" step="any" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+              <label class="block space-y-0.5">
+                <span class="text-[10px] font-semibold uppercase text-base-content/70">HIGH_THRESHOLD</span>
+                <input v-model.number="rule.highThreshold" type="number" step="any" class="input input-xs input-bordered w-full font-mono" />
+              </label>
+            </div>
+
+            <p class="text-[10px] text-base-content/50 italic">
+              {{ getFunctionDescription(rule.funcName) }}
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Reference Comparison Tolerance Section -->
+    <section v-if="useReference" class="space-y-3 border border-base-300 rounded-xl bg-base-100/70 p-3.5">
+      <div class="flex items-center justify-between border-b border-base-300 pb-2">
+        <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
+          Đối chiếu sai số DUT với Thiết Bị Chuẩn Tham Chiếu
+        </h4>
+        <button type="button" class="btn btn-xs btn-outline btn-primary" :disabled="!dut.fields.length || !reference.fields.length" @click="comparisons.push({ dut_field: dut.fields[0] || '', reference_field: reference.fields[0] || '', tolerance: 2 })">
+          + Thêm Cặp Đối Chiếu
+        </button>
       </div>
-      <button type="button" class="btn min-h-11" :disabled="!side.fields.length" @click="side.rules.push(newRule())">Thêm điều kiện</button>
-    </section>
-    <section v-if="useReference" class="space-y-3 border-t border-base-300 pt-4">
-      <h4 class="font-semibold">So sánh DUT với thiết bị mẫu</h4>
-      <p class="text-sm">Dùng mẫu mới nhất mỗi bên. Sai số là chênh lệch tuyệt đối.</p>
-      <div v-for="(comparison, index) in comparisons" :key="index" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <label class="block"><span>Field DUT</span><select v-model="comparison.dut_field" required class="select select-bordered w-full"><option value="" disabled>Chọn field</option><option v-for="field in dut.fields" :key="field">{{ field }}</option></select></label>
-        <label class="block"><span>Field mẫu</span><select v-model="comparison.reference_field" required class="select select-bordered w-full"><option value="" disabled>Chọn field</option><option v-for="field in reference.fields" :key="field">{{ field }}</option></select></label>
-        <label class="block"><span>Sai số cho phép</span><input v-model.number="comparison.tolerance" type="number" min="0" step="any" required class="input input-bordered w-full" /></label>
-        <button type="button" class="btn self-end min-h-11" @click="comparisons.splice(index, 1)">Bỏ so sánh {{ index + 1 }}</button>
+
+      <div v-if="!comparisons.length" class="text-center py-4 border border-dashed border-base-300 rounded-lg text-base-content/40 text-xs italic">
+        Chưa có cặp đối chiếu nào. Nhấn "+ Thêm Cặp Đối Chiếu" để so sánh sai số hai thiết bị.
       </div>
-      <button type="button" class="btn min-h-11" :disabled="!dut.fields.length || !reference.fields.length" @click="comparisons.push({ dut_field: '', reference_field: '', tolerance: 0 })">Thêm so sánh</button>
+
+      <div v-for="(comparison, index) in comparisons" :key="index" class="grid grid-cols-1 md:grid-cols-4 gap-2 items-end border border-base-300 p-2 rounded-lg bg-base-200/50">
+        <label class="block space-y-0.5">
+          <span class="text-[10px] font-semibold uppercase text-base-content/70">Field DUT</span>
+          <select v-model="comparison.dut_field" required class="select select-xs select-bordered w-full font-mono">
+            <option v-for="field in dut.fields" :key="field" :value="field">{{ field }}</option>
+          </select>
+        </label>
+        <label class="block space-y-0.5">
+          <span class="text-[10px] font-semibold uppercase text-base-content/70">Field Thiết Bị Chuẩn</span>
+          <select v-model="comparison.reference_field" required class="select select-xs select-bordered w-full font-mono">
+            <option v-for="field in reference.fields" :key="field" :value="field">{{ field }}</option>
+          </select>
+        </label>
+        <label class="block space-y-0.5">
+          <span class="text-[10px] font-semibold uppercase text-base-content/70">Sai số cho phép (Tolerance: Δ)</span>
+          <input v-model.number="comparison.tolerance" type="number" min="0" step="any" required class="input input-xs input-bordered w-full font-mono" />
+        </label>
+        <button type="button" class="btn btn-xs btn-ghost text-error font-mono h-7" @click="comparisons.splice(index, 1)">
+          ✕ Xóa
+        </button>
+      </div>
     </section>
-    <button type="submit" class="btn btn-primary min-h-11" :disabled="saving">{{ saving ? 'Đang lưu…' : 'Lưu cấu hình AutoCheck' }}</button>
-    <button v-if="profileId" type="button" class="btn min-h-11" :disabled="saving" @click="profileId = ''; autocheckId = ''; name = ''; notice = ''; error = ''">Tạo cấu hình khác</button>
+
+    <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-300">
+      <button v-if="profileId" type="button" class="btn btn-sm btn-ghost" :disabled="saving" @click="resetForm">Tạo cấu hình khác</button>
+      <button type="submit" class="btn btn-sm btn-primary px-6 font-bold" :disabled="saving">
+        <span v-if="saving" class="loading loading-spinner loading-xs"></span>
+        <span>{{ saving ? 'Đang lưu AutoCheck…' : 'Lưu Cấu Hình AutoCheck' }}</span>
+      </button>
+    </div>
   </form>
 </template>
 
@@ -83,13 +251,60 @@
 import { computed, reactive, ref } from 'vue';
 import { httpClient } from '@/api/httpClient';
 
-type Rule = { field: string; count: number; mode: string; min: string; max: string; equals: string };
-type Side = { key: string; label: string; item_code: string; fw_version: string; fields: string[]; rules: Rule[]; loading: boolean; loaded: boolean; error: string; revision: number };
-const newRule = (): Rule => ({ field: '', count: 1, mode: 'range', min: '', max: '', equals: '' });
-const makeSide = (key: string, label: string): Side => ({ key, label, item_code: '', fw_version: '', fields: [], rules: [], loading: false, loaded: false, error: '', revision: 0 });
+export type AutoCheckRule = {
+  funcName: 'CHECKVALUE' | 'CHECKAVG' | 'CHECKCOUNT' | 'FUNC_AVG' | 'FUNC_OFFSET_AVGZERO' | 'CHECKVALUE_PERIOD' | 'CHECKAVG_PERIOD';
+  field: string;
+  count?: number;
+  lowThreshold?: number;
+  highThreshold?: number;
+  minCount?: number;
+  maxCount?: number;
+  startTime?: number;
+  duration?: number;
+  standardZero?: number;
+  startOffsetTime?: number;
+  durationZero?: number;
+  periodStartOffsetTime?: number;
+  periodDurationTime?: number;
+};
+
+type Side = {
+  key: string;
+  label: string;
+  item_code: string;
+  fw_version: string;
+  fields: string[];
+  rules: AutoCheckRule[];
+  loading: boolean;
+  loaded: boolean;
+  error: string;
+  revision: number;
+};
+
+const newRule = (): AutoCheckRule => ({
+  funcName: 'CHECKVALUE',
+  field: '',
+  count: 1,
+  lowThreshold: 0,
+  highThreshold: 100,
+});
+
+const makeSide = (key: string, label: string): Side => ({
+  key,
+  label,
+  item_code: '',
+  fw_version: '',
+  fields: [],
+  rules: [],
+  loading: false,
+  loaded: false,
+  error: '',
+  revision: 0,
+});
+
 const dut = reactive(makeSide('dut', 'Thiết bị cần kiểm tra (DUT)'));
 const reference = reactive(makeSide('reference', 'Thiết bị tham chiếu'));
-const activeSides = computed(() => useReference.value ? [dut, reference] : [dut]);
+const activeSides = computed(() => (useReference.value ? [dut, reference] : [dut]));
 const useReference = ref(false);
 const name = ref('');
 const autocheckId = ref('');
@@ -98,6 +313,28 @@ const saving = ref(false);
 const error = ref('');
 const notice = ref('');
 const comparisons = reactive<{ dut_field: string; reference_field: string; tolerance: number }[]>([]);
+
+function getFunctionDescription(funcName: string): string {
+  switch (funcName) {
+    case 'CHECKVALUE':
+      return 'Kiểm tra LOW_THRESHOLD <= Giá trị <= HIGH_THRESHOLD ở tất cả các gói tin trong suốt thời gian test.';
+    case 'CHECKAVG':
+      return 'Kiểm tra LOW_THRESHOLD <= Giá trị trung bình (AVG) <= HIGH_THRESHOLD trong suốt thời gian test.';
+    case 'CHECKCOUNT':
+      return 'Đếm số gói tin thỏa ngưỡng [LOW, HIGH]. Đạt nếu MIN_COUNT <= số lần đếm <= MAX_COUNT.';
+    case 'FUNC_AVG':
+      return 'Tính giá trị trung bình của field trong khoảng thời lượng DURATION kể từ mốc START_TIME.';
+    case 'FUNC_OFFSET_AVGZERO':
+      return 'Tính hệ số hiệu chuẩn CONSTANT_B = STANDARD_ZERO - AVG_ZERO trong chu kỳ Zero.';
+    case 'CHECKVALUE_PERIOD':
+      return 'Kiểm tra LOW_THRESHOLD <= Giá trị <= HIGH_THRESHOLD trong khoảng thời gian PERIOD [START_OFFSET, START_OFFSET + DURATION].';
+    case 'CHECKAVG_PERIOD':
+      return 'Kiểm tra LOW_THRESHOLD <= AVG(Giá trị) <= HIGH_THRESHOLD trong khoảng thời gian PERIOD.';
+    default:
+      return '';
+  }
+}
+
 function invalidate(side: Side) {
   side.revision++;
   side.fields = [];
@@ -106,21 +343,27 @@ function invalidate(side: Side) {
   side.error = '';
   comparisons.splice(0);
 }
+
 function message(err: any): string {
   const value = err?.response?.data?.message || err?.message || 'Không thể thực hiện yêu cầu';
   return Array.isArray(value) ? value.join('; ') : String(value);
 }
+
 async function discover(side: Side) {
   const revision = ++side.revision;
   side.loading = true;
   side.error = '';
   try {
-    const res: any = await httpClient.get('/plugins/testing/autocheck/fields', { params: { itemCode: side.item_code.trim(), fwVersion: side.fw_version.trim() } });
+    const res: any = await httpClient.get('/plugins/testing/autocheck/fields', {
+      params: { itemCode: side.item_code.trim(), fwVersion: side.fw_version.trim() },
+    });
     const data = res?.data || res;
     const fields = data.fields;
     if (!Array.isArray(fields)) throw new Error('API field discovery trả dữ liệu không hợp lệ');
     if (revision !== side.revision) return;
-    side.fields = fields.map((field: any) => typeof field === 'string' ? field : field.field || field.name).filter((field: any) => typeof field === 'string');
+    side.fields = fields
+      .map((field: any) => (typeof field === 'string' ? field : field.field || field.name))
+      .filter((field: any) => typeof field === 'string');
     side.loaded = true;
   } catch (err) {
     if (revision === side.revision) side.error = message(err);
@@ -128,39 +371,115 @@ async function discover(side: Side) {
     side.loading = false;
   }
 }
-function criteria(side: Side) {
-  if (!side.rules.length) throw new Error(`${side.label}: cần ít nhất một điều kiện`);
+
+function buildCriteria(side: Side) {
+  if (!side.rules.length) throw new Error(`${side.label}: cần ít nhất một Function Block kiểm tra`);
   return {
-    item_code: side.item_code.trim(), fw_version: side.fw_version.trim(),
-    rules: side.rules.map(rule => {
-      if (!side.fields.includes(rule.field) || !Number.isInteger(rule.count) || rule.count < 1) throw new Error(`${side.label}: field hoặc count không hợp lệ`);
-      const result: any = { field: rule.field, count: rule.count };
-      if (rule.mode === 'equals') {
-        result.equals = JSON.parse(rule.equals);
-        if (result.equals !== null && !['string', 'number', 'boolean'].includes(typeof result.equals)) throw new Error('Giá trị bằng phải là số, chuỗi, boolean hoặc null');
-      } else if (rule.mode === 'range') {
-        if (rule.min !== '') result.min = Number(rule.min);
-        if (rule.max !== '') result.max = Number(rule.max);
-        if (result.min === undefined && result.max === undefined) throw new Error('Nhập ít nhất min hoặc max');
-        if ((result.min !== undefined && !Number.isFinite(result.min)) || (result.max !== undefined && !Number.isFinite(result.max)) || result.min > result.max) throw new Error('Khoảng min/max không hợp lệ');
+    item_code: side.item_code.trim(),
+    fw_version: side.fw_version.trim(),
+    rules: side.rules.map((rule) => {
+      if (!side.fields.includes(rule.field)) {
+        throw new Error(`${side.label}: field '${rule.field}' không hợp lệ hoặc chưa được chọn`);
       }
-      return result;
+
+      const item: any = {
+        name: `${rule.funcName}_${rule.field}`,
+        func_name: rule.funcName,
+        funcName: rule.funcName,
+        field: rule.field,
+        parameter: rule.field,
+      };
+
+      if (rule.lowThreshold !== undefined && rule.lowThreshold !== null && rule.lowThreshold !== ('' as any)) {
+        item.low_threshold = Number(rule.lowThreshold);
+        item.lowThreshold = Number(rule.lowThreshold);
+      }
+      if (rule.highThreshold !== undefined && rule.highThreshold !== null && rule.highThreshold !== ('' as any)) {
+        item.high_threshold = Number(rule.highThreshold);
+        item.highThreshold = Number(rule.highThreshold);
+      }
+      if (rule.minCount !== undefined && rule.minCount !== null && rule.minCount !== ('' as any)) {
+        item.min_count = Number(rule.minCount);
+        item.minCount = Number(rule.minCount);
+      }
+      if (rule.maxCount !== undefined && rule.maxCount !== null && rule.maxCount !== ('' as any)) {
+        item.max_count = Number(rule.maxCount);
+        item.maxCount = Number(rule.maxCount);
+      }
+      if (rule.startTime !== undefined && rule.startTime !== null && rule.startTime !== ('' as any)) {
+        item.start_time = Number(rule.startTime);
+        item.startTime = Number(rule.startTime);
+      }
+      if (rule.duration !== undefined && rule.duration !== null && rule.duration !== ('' as any)) {
+        item.duration = Number(rule.duration);
+      }
+      if (rule.standardZero !== undefined && rule.standardZero !== null && rule.standardZero !== ('' as any)) {
+        item.standard_zero = Number(rule.standardZero);
+        item.standardZero = Number(rule.standardZero);
+      }
+      if (rule.startOffsetTime !== undefined && rule.startOffsetTime !== null && rule.startOffsetTime !== ('' as any)) {
+        item.start_offset_time = Number(rule.startOffsetTime);
+        item.startOffsetTime = Number(rule.startOffsetTime);
+      }
+      if (rule.durationZero !== undefined && rule.durationZero !== null && rule.durationZero !== ('' as any)) {
+        item.duration_zero = Number(rule.durationZero);
+        item.durationZero = Number(rule.durationZero);
+      }
+      if (rule.periodStartOffsetTime !== undefined && rule.periodStartOffsetTime !== null && rule.periodStartOffsetTime !== ('' as any)) {
+        item.period_start_offset_time = Number(rule.periodStartOffsetTime);
+        item.periodStartOffsetTime = Number(rule.periodStartOffsetTime);
+      }
+      if (rule.periodDurationTime !== undefined && rule.periodDurationTime !== null && rule.periodDurationTime !== ('' as any)) {
+        item.period_duration_time = Number(rule.periodDurationTime);
+        item.periodDurationTime = Number(rule.periodDurationTime);
+      }
+
+      return item;
     }),
   };
 }
+
+function resetForm() {
+  profileId.value = '';
+  autocheckId.value = '';
+  name.value = '';
+  notice.value = '';
+  error.value = '';
+  dut.rules = [];
+  reference.rules = [];
+  comparisons.splice(0);
+}
+
 async function save() {
-  error.value = ''; notice.value = '';
+  error.value = '';
+  notice.value = '';
   try {
-    if (!name.value.trim()) throw new Error('Nhập tên AutoCheck');
-    const rules: any = { dut: criteria(dut) };
+    if (!name.value.trim()) throw new Error('Vui lòng nhập tên cấu hình AutoCheck');
+    const rules: any = { dut: buildCriteria(dut) };
     if (useReference.value) {
-      rules.reference = criteria(reference);
-      rules.comparisons = comparisons.map(comparison => {
-        if (!dut.fields.includes(comparison.dut_field) || !reference.fields.includes(comparison.reference_field) || !Number.isFinite(comparison.tolerance) || comparison.tolerance < 0) throw new Error('Mapping so sánh hoặc sai số không hợp lệ');
+      rules.reference = buildCriteria(reference);
+      rules.comparisons = comparisons.map((comparison) => {
+        if (
+          !dut.fields.includes(comparison.dut_field) ||
+          !reference.fields.includes(comparison.reference_field) ||
+          !Number.isFinite(comparison.tolerance) ||
+          comparison.tolerance < 0
+        ) {
+          throw new Error('Mapping so sánh hoặc sai số không hợp lệ');
+        }
         return { ...comparison };
       });
     }
-    const payload = { name: name.value.trim(), itemCode: dut.item_code.trim(), fwVersion: dut.fw_version.trim(), referenceItemCode: useReference.value ? reference.item_code.trim() : null, referenceFwVersion: useReference.value ? reference.fw_version.trim() : null, criteria: rules };
+
+    const payload = {
+      name: name.value.trim(),
+      itemCode: dut.item_code.trim(),
+      fwVersion: dut.fw_version.trim(),
+      referenceItemCode: useReference.value ? reference.item_code.trim() : null,
+      referenceFwVersion: useReference.value ? reference.fw_version.trim() : null,
+      criteria: rules,
+    };
+
     saving.value = true;
     const res: any = profileId.value
       ? await httpClient.put(`/plugins/testing/autocheck/profiles/${encodeURIComponent(profileId.value)}`, payload)
@@ -169,8 +488,11 @@ async function save() {
     if (!data.id || !data.autocheckId) throw new Error('API chưa trả mã AutoCheck đã lưu');
     profileId.value = data.id;
     autocheckId.value = data.autocheckId;
-    notice.value = 'Đã lưu cấu hình AutoCheck.';
-  } catch (err) { error.value = message(err); }
-  finally { saving.value = false; }
+    notice.value = 'Đã lưu cấu hình AutoCheck Function Blocks thành công.';
+  } catch (err) {
+    error.value = message(err);
+  } finally {
+    saving.value = false;
+  }
 }
 </script>
