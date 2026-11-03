@@ -197,13 +197,46 @@
                 2. Thiết Bị Sẵn Sàng Thêm Vào Batch
               </h4>
             </div>
-            <span class="badge badge-sm badge-neutral font-mono text-[11px]">
-              {{ candidateDevices.length }} khả dụng
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-sm badge-neutral font-mono text-[11px]">
+                {{ candidateDevices.length }} khả dụng
+              </span>
+              <button
+                class="btn btn-ghost btn-xs btn-circle"
+                title="Tải lại danh sách thiết bị testing"
+                :disabled="loadingDevices"
+                @click="loadAvailableDevices"
+              >
+                <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': loadingDevices }" />
+              </button>
+            </div>
           </div>
 
-          <div class="text-[11px] text-base-content/70">
-            Chọn các thiết bị có ITEM-CODE <span class="font-mono font-bold text-primary">{{ filterItemCode || 'bất kỳ' }}</span> để đưa vào kiểm thử song song:
+          <!-- Search and filter toggle bar -->
+          <div class="space-y-2">
+            <div class="relative w-full">
+              <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/50" />
+              <input
+                v-model="searchCandidateText"
+                type="text"
+                class="input input-xs input-bordered w-full pl-8 font-mono text-[11px]"
+                placeholder="Tìm theo Serial, DevEUI, ITEM-CODE..."
+              />
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-base-content/70">
+              <label class="cursor-pointer label py-0 px-0 gap-1.5">
+                <input
+                  v-model="filterOnlyBatchMatches"
+                  type="checkbox"
+                  class="checkbox checkbox-xs checkbox-primary"
+                />
+                <span class="label-text text-[11px]">Chỉ khớp ITEM-CODE của batch (<strong class="font-mono text-primary">{{ filterItemCode || 'Tất cả' }}</strong>)</span>
+              </label>
+              <span class="font-mono text-[10px] text-base-content/50">
+                Hiển thị {{ candidateDevices.length }} / {{ allRawCandidateDevices.length }}
+              </span>
+            </div>
           </div>
 
           <!-- Candidates Table -->
@@ -227,12 +260,18 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="candidateDevices.length === 0 && !loadingDevices">
-                  <td colspan="5" class="text-center py-6 text-base-content/50 italic text-xs">
-                    Không tìm thấy thiết bị nào khớp bộ lọc ITEM-CODE &amp; FW.
+                <tr v-if="loadingDevices">
+                  <td colspan="5" class="text-center py-6 text-primary text-xs">
+                    <span class="loading loading-spinner loading-xs mr-2"></span>
+                    Đang tải danh sách thiết bị testing...
                   </td>
                 </tr>
-                <tr v-for="dev in candidateDevices" :key="dev.id" class="hover">
+                <tr v-else-if="candidateDevices.length === 0">
+                  <td colspan="5" class="text-center py-6 text-base-content/50 italic text-xs">
+                    {{ allRawCandidateDevices.length === 0 ? 'Chưa có thiết bị nào trong danh sách Testing Device.' : 'Không tìm thấy thiết bị nào khớp bộ lọc tìm kiếm.' }}
+                  </td>
+                </tr>
+                <tr v-for="dev in candidateDevices" :key="dev.id || dev.devEui || dev.serialNumber" class="hover">
                   <td>
                     <input
                       type="checkbox"
@@ -243,14 +282,14 @@
                     />
                   </td>
                   <td>
-                    <div class="font-mono font-bold text-xs text-primary">{{ dev.serialNumber || dev.serial_number }}</div>
-                    <div class="font-mono text-[10px] text-base-content/60">{{ dev.devEui || dev.dev_eui }}</div>
+                    <div class="font-mono font-bold text-xs text-primary">{{ dev.serialNumber || dev.serial_number || dev.registrationCode || dev.registration_code || dev.id }}</div>
+                    <div class="font-mono text-[10px] text-base-content/60">{{ dev.devEui || dev.dev_eui || '—' }}</div>
                   </td>
                   <td>
-                    <span class="badge badge-xs badge-outline font-mono">{{ dev.itemCode || dev.item_code }}</span>
+                    <span class="badge badge-xs badge-outline font-mono">{{ dev.itemCode || dev.item_code || '—' }}</span>
                   </td>
                   <td>
-                    <span class="font-mono text-xs">{{ dev.fwVersion || dev.fw_version }}</span>
+                    <span class="font-mono text-xs">{{ dev.longFw || dev.long_fw || dev.fwVersion || dev.fw_version || '—' }}</span>
                   </td>
                   <td class="text-right">
                     <button
@@ -440,6 +479,7 @@ import {
   Info,
   CheckCircle,
   Trash2,
+  Search,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/httpClient';
 import { cyberToast } from '@/services/cyberToast';
@@ -454,15 +494,46 @@ const props = defineProps<{
 
 // State filters
 const selectedBatchId = ref('');
-const filterItemCode = ref('WSSFC-ATH');
-const filterFwVersion = ref('1.0.4');
+const filterItemCode = ref('');
+const filterFwVersion = ref('');
 
 const availableItemCodes = ref(['WSSFC-ATH', 'WSLRW-TH', 'WSSFC-ULC', 'WSLRW-AQI', 'WSSFC-CO2']);
 const availableFwVersions = ref(['1.0.4', '1.0.5', '2.0.0', 'v2.1.0-RC1']);
 
 const loadingDevices = ref(false);
 const savedBatches = ref<any[]>([]);
-const candidateDevices = ref<any[]>([]);
+const allRawCandidateDevices = ref<any[]>([]);
+const searchCandidateText = ref('');
+const filterOnlyBatchMatches = ref(false);
+
+const candidateDevices = computed(() => {
+  let list = allRawCandidateDevices.value;
+  if (filterOnlyBatchMatches.value) {
+    if (filterItemCode.value) {
+      list = list.filter((d: any) => {
+        const item = (d.itemCode || d.item_code || '').toUpperCase();
+        return item.includes(filterItemCode.value.toUpperCase());
+      });
+    }
+    if (filterFwVersion.value) {
+      list = list.filter((d: any) => {
+        const fw = (d.longFw || d.long_fw || d.fwVersion || d.fw_version || '').replace(/^v/i, '');
+        const targetFw = filterFwVersion.value.replace(/^v/i, '');
+        return fw.includes(targetFw);
+      });
+    }
+  }
+  if (searchCandidateText.value.trim()) {
+    const q = searchCandidateText.value.trim().toLowerCase();
+    list = list.filter((d: any) => {
+      const s = (d.serialNumber || d.serial_number || d.registrationCode || d.registration_code || d.id || '').toLowerCase();
+      const eui = (d.devEui || d.dev_eui || '').toLowerCase();
+      const itm = (d.itemCode || d.item_code || '').toLowerCase();
+      return s.includes(q) || eui.includes(q) || itm.includes(q);
+    });
+  }
+  return list;
+});
 
 // Selected DUTs & Mappings
 interface BatchDeviceItem {
@@ -580,8 +651,14 @@ const isAllCandidatesSelected = computed(() => {
   return candidateDevices.value.every((d) => isDeviceSelected(d));
 });
 
+function getDeviceIdentifier(dev: any): string {
+  if (!dev) return '';
+  return dev.id || dev.devEui || dev.dev_eui || dev.serialNumber || dev.serial_number || dev.registrationCode || dev.registration_code || '';
+}
+
 function isDeviceSelected(device: any): boolean {
-  return selectedDevices.value.some((item) => item.device.id === device.id);
+  const targetId = getDeviceIdentifier(device);
+  return selectedDevices.value.some((item) => getDeviceIdentifier(item.device) === targetId);
 }
 
 function toggleSelectAllCandidates(e: Event) {
@@ -599,7 +676,7 @@ function toggleSelectAllCandidates(e: Event) {
 
 function toggleDeviceSelection(device: any) {
   if (isDeviceSelected(device)) {
-    removeDeviceFromBatch(device.id);
+    removeDeviceFromBatch(getDeviceIdentifier(device));
   } else {
     addDeviceToBatch(device);
   }
@@ -620,10 +697,12 @@ function addDeviceToBatch(device: any) {
     referenceDevice: availableRef,
     status: 'PENDING',
   });
+  const devLabel = device.serialNumber || device.serial_number || device.devEui || device.dev_eui || 'thiết bị';
+  cyberToast.success(`Đã thêm ${devLabel} vào batch`);
 }
 
 function removeDeviceFromBatch(deviceId: string) {
-  selectedDevices.value = selectedDevices.value.filter((item) => item.device.id !== deviceId);
+  selectedDevices.value = selectedDevices.value.filter((item) => getDeviceIdentifier(item.device) !== deviceId);
 }
 
 function clearSelectedDevices() {
@@ -719,41 +798,35 @@ async function loadAvailableDevices() {
   loadingDevices.value = true;
   try {
     let devices: any[] = [];
-    // 1. Try dedicated endpoint first
+    // 1. Try dedicated endpoint first (queries v_list_device_testing / device_test_registrations)
     try {
       const res: any = await httpClient.get('/plugins/testing/test-batches/available-devices', {
         params: {
-          itemCode: filterItemCode.value,
-          fwVersion: filterFwVersion.value,
+          itemCode: filterItemCode.value || undefined,
+          fwVersion: filterFwVersion.value || undefined,
+          isAdmin: true,
+          limit: 100,
         },
       });
-      devices = res?.data?.items || res?.data || res?.items || [];
+      const raw1 = res?.data;
+      devices = Array.isArray(raw1?.items) ? raw1.items : (Array.isArray(raw1?.data) ? raw1.data : (Array.isArray(raw1) ? raw1 : []));
     } catch {}
 
-    // 2. If empty, query device-registrations
+    // 2. Query device-registrations with isAdmin=true to get full list if empty
     if (!Array.isArray(devices) || devices.length === 0) {
-      const res2: any = await httpClient.get('/plugins/testing/device-registrations');
-      devices = res2?.data?.items || res2?.data || res2?.items || [];
+      try {
+        const res2: any = await httpClient.get('/plugins/testing/device-registrations', {
+          params: { isAdmin: true, limit: 100 },
+        });
+        const raw2 = res2?.data;
+        devices = Array.isArray(raw2?.items) ? raw2.items : (Array.isArray(raw2?.data) ? raw2.data : (Array.isArray(raw2) ? raw2 : []));
+      } catch {}
     }
 
-    // Filter by itemCode and fwVersion if selected
-    if (filterItemCode.value) {
-      devices = devices.filter((d: any) => {
-        const item = (d.itemCode || d.item_code || '').toUpperCase();
-        return item.includes(filterItemCode.value.toUpperCase());
-      });
-    }
-    if (filterFwVersion.value) {
-      devices = devices.filter((d: any) => {
-        const fw = (d.fwVersion || d.fw_version || '').replace(/^v/i, '');
-        const targetFw = filterFwVersion.value.replace(/^v/i, '');
-        return fw.includes(targetFw);
-      });
-    }
-
-    candidateDevices.value = devices;
-  } catch {
-    candidateDevices.value = [];
+    allRawCandidateDevices.value = devices;
+  } catch (err: any) {
+    console.debug('[DeviceTestBatchPanel] Error loading available devices:', err.message);
+    allRawCandidateDevices.value = [];
   } finally {
     loadingDevices.value = false;
   }

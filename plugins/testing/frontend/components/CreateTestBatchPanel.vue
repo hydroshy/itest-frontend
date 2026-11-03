@@ -193,7 +193,7 @@
           <button
             type="button"
             class="text-xs text-primary hover:underline flex items-center gap-1"
-            @click="$emit('switch-tab', 'simulation-flow')"
+            @click="$emit('switch-tab', 'list-flow-simulation')"
           >
             <span>Quản lý kịch bản</span>
             <ExternalLink class="w-3 h-3" />
@@ -739,8 +739,29 @@ function getBatchStatusClass(status?: string) {
   }
 }
 
+async function loadFlows() {
+  try {
+    const res: any = await httpClient.get('/plugins/testing/simulation/profiles');
+    const raw = res?.data;
+    const items = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []));
+    if (items.length > 0) {
+      availableFlows.value = items.map((f: any) => ({
+        id: f.simuId || f.id,
+        name: f.name || f.profileName || f.simuId || f.id,
+        duration: f.duration || f.flowDurationSeconds || f.durationSeconds || 300,
+        blocksCount: Array.isArray(f.flowBlocks) ? f.flowBlocks.length : (Array.isArray(f.blocks) ? f.blocks.length : (f.blocksCount || 4)),
+        description: f.description || `Kịch bản mô phỏng cho ${f.itemCode || 'thiết bị'}`,
+        steps: Array.isArray(f.flowBlocks) ? f.flowBlocks.map((b: any) => b.name || b.type) : ['Init RF', 'OTAA Join', 'Uplink Telemetry'],
+      }));
+    }
+  } catch (err: any) {
+    console.debug('[CreateTestBatchPanel] Using default simulation flows:', err.message);
+  }
+}
+
 onMounted(() => {
   generateBatchCode();
   loadBatches();
+  loadFlows();
 });
 </script>

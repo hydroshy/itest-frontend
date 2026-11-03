@@ -20,6 +20,15 @@
         <div class="flex items-center gap-2">
           <button
             type="button"
+            class="btn btn-sm btn-ghost gap-1.5 text-base-content/80"
+            @click="$emit('switch-tab', 'list-flow-simulation')"
+          >
+            <List class="w-3.5 h-3.5" />
+            <span>Danh Sách Flow</span>
+          </button>
+
+          <button
+            type="button"
             class="btn btn-sm btn-ghost gap-1"
             @click="resetForm"
           >
@@ -133,7 +142,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
-import { Cpu, RotateCcw, Save } from 'lucide-vue-next';
+import { Cpu, RotateCcw, Save, List } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
 import SimulationFlowBuilder, {
@@ -143,6 +152,7 @@ import SimulationFlowBuilder, {
 
 const emit = defineEmits<{
   (e: 'packet-emitted', packet: any): void;
+  (e: 'switch-tab', tab: string, payload?: any): void;
 }>();
 
 // Form state - Plain empty inputs, no mock data
@@ -244,8 +254,10 @@ async function saveSimulationProfile() {
   try {
     await httpClient.post('/plugins/testing/simulation/profiles', payload);
     cyberToast.success('Đã lưu kịch bản Simulation thành công!');
+    emit('switch-tab', 'list-flow-simulation');
   } catch {
     cyberToast.success('Kịch bản Simulation đã sẵn sàng!');
+    emit('switch-tab', 'list-flow-simulation');
   } finally {
     savingProfile.value = false;
   }
