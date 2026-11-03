@@ -113,9 +113,14 @@
             <AlertCircle class="w-3.5 h-3.5" />
             FAIL: {{ failCount }}/{{ selectedDevices.length }}
           </div>
-          <div v-if="testFinished" class="badge badge-primary gap-1 font-mono text-xs py-2 px-2.5">
-            <span>Đã lưu vào Traceability</span>
-          </div>
+          <a
+            v-if="testFinished"
+            class="badge badge-primary gap-1 font-mono text-xs py-2 px-2.5 cursor-pointer hover:badge-secondary transition-colors shadow-sm"
+            href="/plugins/device-traceability?tab=devices"
+            title="Mở xem dữ liệu đã test trong Device Traceability"
+          >
+            <span>Đã lưu vào Traceability (Xem ngay)</span>
+          </a>
         </div>
       </div>
     </div>
