@@ -113,41 +113,4 @@ export function ensureTabulatorPatched(): void {
   } catch (e) {
     console.warn('Tabulator registerModule error:', e);
   }
-
-  if (typeof document === 'undefined') return;
-
-  try {
-    const div = document.createElement('div');
-    div.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:100px;height:100px;visibility:hidden;pointer-events:none;';
-    document.body.appendChild(div);
-
-    const dummy = new Tabulator(div, {
-      data: [{ _id: 1 }],
-      columns: [{ field: '_id', width: 50 }],
-    });
-
-    try {
-      (dummy as any)._create();
-    } catch {
-      // _create might run or fail if styles uncomputed, SafePatchModule will still catch on normal table init
-    }
-
-    // Direct check if objects were created
-    const col = (dummy as any).columnManager?.columns?.[0];
-    const row = (dummy as any).rowManager?.rows?.[0];
-    const cell = col?.cells?.[0] || row?.cells?.[0];
-
-    if (col) patchColumn(col);
-    if (row) patchRow(row);
-    if (cell) patchCell(cell);
-
-    try {
-      dummy.destroy();
-    } catch {
-      // ignore
-    }
-    div.remove();
-  } catch (e) {
-    console.warn('Tabulator initial bootstrap patch attempt error:', e);
-  }
 }

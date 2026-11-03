@@ -27,41 +27,34 @@
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
-          <!-- Auto Refresh Controls -->
-          <div class="join">
-            <button
-              class="btn btn-sm join-item"
-              :class="isLivePolling ? 'btn-success text-success-content' : 'btn-outline'"
-              @click="toggleLivePolling"
+          <!-- SSE Realtime Status & Actions -->
+          <div class="flex items-center gap-2">
+            <div
+              class="badge badge-sm gap-1.5 font-mono text-xs border-base-300 bg-base-100"
+              :class="sseConnected ? 'text-success font-semibold' : 'text-base-content/60'"
             >
-              <Activity class="w-3.5 h-3.5" :class="{ 'animate-spin': isLivePolling }" />
-              <span>{{ isLivePolling ? 'Live Streaming' : 'Tạm Dừng' }}</span>
+              <span
+                class="w-2 h-2 rounded-full"
+                :class="sseConnected ? 'bg-success animate-pulse' : 'bg-base-content/40'"
+              ></span>
+              <span>{{ sseConnected ? 'SSE Realtime Active' : 'Connecting Stream...' }}</span>
+            </div>
+
+            <button class="btn btn-sm btn-outline gap-1.5" :disabled="loading" @click="loadPayloads(false)">
+              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
+              <span>Làm Mới</span>
             </button>
-            <select
-              v-model="pollIntervalMs"
-              class="select select-sm select-bordered join-item font-mono text-xs"
-              :disabled="!isLivePolling"
+
+            <button
+              class="btn btn-sm btn-primary gap-1.5 shadow-sm"
+              :disabled="configuringIntegration"
+              @click="triggerAutoRegisterIntegration"
             >
-              <option :value="1000">1s</option>
-              <option :value="2000">2s</option>
-              <option :value="5000">5s</option>
-            </select>
+              <span v-if="configuringIntegration" class="loading loading-spinner loading-xs"></span>
+              <Link2 v-else class="w-3.5 h-3.5" />
+              <span>Đồng Bộ ChirpStack</span>
+            </button>
           </div>
-
-          <button class="btn btn-sm btn-outline gap-1.5" :disabled="loading" @click="loadPayloads">
-            <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
-            <span>Làm Mới</span>
-          </button>
-
-          <button
-            class="btn btn-sm btn-primary gap-1.5 shadow-sm"
-            :disabled="configuringIntegration"
-            @click="triggerAutoRegisterIntegration"
-          >
-            <span v-if="configuringIntegration" class="loading loading-spinner loading-xs"></span>
-            <Link2 v-else class="w-3.5 h-3.5" />
-            <span>Đồng Bộ ChirpStack</span>
-          </button>
         </div>
       </div>
     </div>
@@ -109,7 +102,7 @@
               type="text"
               placeholder="VD: 2026A1B2C3D4..."
               class="input input-sm input-bordered w-full pl-8 font-mono text-xs uppercase bg-base-100"
-              @keyup.enter="loadPayloads"
+              @keyup.enter="refreshPayloads"
             />
           </div>
         </div>
@@ -122,7 +115,7 @@
           <select
             v-model="filters.itemCode"
             class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
-            @change="loadPayloads"
+            @change="refreshPayloads"
           >
             <option value="">-- Tất cả loại cảm biến --</option>
             <option v-for="code in availableItemCodes" :key="code" :value="code">
@@ -141,13 +134,13 @@
             type="text"
             placeholder="Tìm theo chuỗi Hex hoặc JSON..."
             class="input input-sm input-bordered w-full text-xs font-mono bg-base-100"
-            @keyup.enter="loadPayloads"
+            @keyup.enter="refreshPayloads"
           />
         </div>
 
         <!-- Filter Actions -->
         <div class="flex items-center gap-2">
-          <button class="btn btn-sm btn-primary flex-1 gap-1 text-xs" @click="loadPayloads">
+          <button class="btn btn-sm btn-primary flex-1 gap-1 text-xs" @click="refreshPayloads">
             <Filter class="w-3.5 h-3.5" />
             <span>Áp Dụng Lọc</span>
           </button>
@@ -197,7 +190,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-if="loading">
+            <tr v-if="loading && payloadList.length === 0">
               <td colspan="11" class="text-center py-8">
                 <span class="loading loading-spinner loading-md text-primary"></span>
                 <p class="text-xs text-base-content/60 mt-2">Đang tải luồng bản tin Payload...</p>
@@ -211,7 +204,7 @@
             <tr
               v-for="(row, idx) in filteredPayloads"
               v-else
-              :key="row.id || `${row.dev_eui}-${row.f_cnt}-${idx}`"
+              :key="row.id || `${row.dev_eui}-${row.f_cnt}`"
               class="hover:bg-base-200/60 transition-colors font-mono"
             >
               <!-- STT -->
@@ -472,9 +465,8 @@ import { cyberToast } from '@/services/cyberToast';
 
 const loading = ref(false);
 const configuringIntegration = ref(false);
-const isLivePolling = ref(true);
-const pollIntervalMs = ref(2000);
-let pollTimer: any = null;
+const sseConnected = ref(false);
+let eventSource: EventSource | null = null;
 
 const integrationStatus = reactive({
   active: true,
@@ -585,8 +577,14 @@ const filteredPayloads = computed(() => {
   });
 });
 
-async function loadPayloads() {
-  loading.value = true;
+function refreshPayloads() {
+  loadPayloads(false);
+}
+
+async function loadPayloads(isSilent = false) {
+  if (!isSilent && payloadList.value.length === 0) {
+    loading.value = true;
+  }
   try {
     const res: any = await httpClient.get('/plugins/testing/packets', {
       params: {
@@ -599,7 +597,6 @@ async function loadPayloads() {
     payloadList.value = Array.isArray(rawPackets) ? rawPackets.map(normalizePayloadItem) : [];
   } catch (err: any) {
     console.debug('[DevicePayloadPanel] Query packets failed:', err?.message);
-    payloadList.value = [];
   } finally {
     loading.value = false;
   }
@@ -627,10 +624,61 @@ function normalizePayloadItem(raw: any): DevicePayloadItem {
   };
 }
 
+function handleIncomingPacket(raw: any) {
+  const item = normalizePayloadItem(raw);
+  if (!item.dev_eui || item.dev_eui === '—') return;
+  // Deduplicate by id if present
+  const existingIdx = payloadList.value.findIndex((p) => p.id && p.id === item.id);
+  if (existingIdx >= 0) {
+    payloadList.value[existingIdx] = item;
+  } else {
+    payloadList.value.unshift(item);
+    if (payloadList.value.length > 200) {
+      payloadList.value.pop();
+    }
+  }
+}
+
+function setupRealtimeStream() {
+  if (typeof EventSource === 'undefined') return;
+  closeRealtimeStream();
+  try {
+    eventSource = new EventSource('/api/realtime/stream');
+    eventSource.onopen = () => {
+      sseConnected.value = true;
+    };
+    eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.type === 'plugin' && payload.data?.event === 'testing:packet:received') {
+          const raw = payload.data.packet || payload.data.data || payload.data;
+          if (raw) handleIncomingPacket(raw);
+        } else if (payload?.type === 'telemetry' || payload?.type === 'unified_telemetry') {
+          if (payload.data) handleIncomingPacket(payload.data);
+        }
+      } catch (err) {
+        console.debug('[DevicePayloadPanel] SSE parse error:', err);
+      }
+    };
+    eventSource.onerror = () => {
+      sseConnected.value = false;
+    };
+  } catch (err) {
+    console.debug('[DevicePayloadPanel] SSE init error:', err);
+  }
+}
+
+function closeRealtimeStream() {
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
+  sseConnected.value = false;
+}
+
 async function triggerAutoRegisterIntegration() {
   configuringIntegration.value = true;
   try {
-    // Backend endpoint does not take client URL/token; it resolves on active server
     const res: any = await httpClient.post('/plugins/testing/integrations/chirpstack/register', {});
     integrationStatus.active = true;
     if (res?.data?.applicationId) {
@@ -640,35 +688,9 @@ async function triggerAutoRegisterIntegration() {
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || 'Chưa hoàn tất đồng bộ ChirpStack';
     console.debug('[DevicePayloadPanel] ChirpStack integration auto-register:', msg);
-    // Don't show scary toast on initial mount if server env vars aren't set yet
     integrationStatus.active = false;
   } finally {
     configuringIntegration.value = false;
-  }
-}
-
-function toggleLivePolling() {
-  isLivePolling.value = !isLivePolling.value;
-  if (isLivePolling.value) {
-    startPolling();
-    cyberToast.info('Đã bật Live Streaming Payload');
-  } else {
-    stopPolling();
-    cyberToast.info('Đã tạm dừng Live Streaming');
-  }
-}
-
-function startPolling() {
-  stopPolling();
-  pollTimer = setInterval(() => {
-    loadPayloads();
-  }, pollIntervalMs.value);
-}
-
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
   }
 }
 
@@ -676,7 +698,7 @@ function resetFilters() {
   filters.devEui = '';
   filters.itemCode = '';
   filters.search = '';
-  loadPayloads();
+  loadPayloads(false);
 }
 
 function openDualPayloadModal(pkt: DevicePayloadItem) {
@@ -701,11 +723,11 @@ function formatTimestamp(isoStr?: string | Date): string {
 }
 
 function formatFrequency(freq?: number): string {
-  if (!freq) return '921.4';
+  if (!freq) return '—';
   if (freq > 1000000) {
-    return (freq / 1000000).toFixed(1);
+    return `${(freq / 1000000).toFixed(1)} MHz`;
   }
-  return String(freq);
+  return `${freq} MHz`;
 }
 
 function getRssiBadgeClass(rssi?: number): string {
@@ -729,7 +751,6 @@ function hasDecodedData(obj?: Record<string, any>): boolean {
 function getSensorTelemetryItems(obj?: Record<string, any>): Record<string, any> {
   if (!obj) return {};
   const allowed = { ...obj };
-  // Hide internal or metadata fields
   delete allowed.raw;
   delete allowed.raw_payload;
   delete allowed.f_cnt;
@@ -758,12 +779,12 @@ function getSensorMetricBadgeTheme(key: string): string {
 }
 
 onMounted(() => {
-  loadPayloads();
-  startPolling();
+  loadPayloads(false);
+  setupRealtimeStream();
   triggerAutoRegisterIntegration();
 });
 
 onUnmounted(() => {
-  stopPolling();
+  closeRealtimeStream();
 });
 </script>
