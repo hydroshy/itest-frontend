@@ -34,25 +34,6 @@
             <FolderPlus class="w-3.5 h-3.5" />
             Tạo Batch Mới
           </button>
-
-          <!-- Start / Stop Button -->
-          <button
-            v-if="!isTesting"
-            class="btn btn-sm btn-primary gap-1.5 shadow-sm"
-            :disabled="selectedDevices.length === 0"
-            @click="startBatchTest"
-          >
-            <Play class="w-4 h-4" />
-            Bắt Đầu Test Batch ({{ selectedDevices.length }} TB)
-          </button>
-          <button
-            v-else
-            class="btn btn-sm btn-error gap-1.5 shadow-sm"
-            @click="stopBatchTest"
-          >
-            <Square class="w-4 h-4" />
-            Dừng Test Batch
-          </button>
         </div>
       </div>
     </div>
@@ -199,11 +180,8 @@
       </div>
     </div>
 
-    <!-- Step 2: Danh Sách Thiết Bị Cần Test & Ghép Cặp Thiết Bị Chuẩn (Golden Reference) -->
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-      <!-- Left: Device Selection Pool from Testing List (5 cols) -->
-      <div class="xl:col-span-5 space-y-3">
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
+    <!-- Step 2: Danh Sách Thiết Bị Cần Test (Full-width) -->
+    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
           <div class="flex items-center justify-between pb-2 border-b border-base-300">
             <div class="flex items-center gap-2">
               <Layers class="w-4 h-4 text-primary" />
@@ -326,20 +304,25 @@
             <span>Đã chọn: <strong class="text-primary">{{ selectedDevices.length }}</strong> thiết bị</span>
           </div>
         </div>
-      </div>
 
-      <!-- Right: Batch Composition & 1-to-1 Reference Device Mapping (7 cols) -->
-      <div class="xl:col-span-7 space-y-3">
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-300">
-            <div class="flex items-center gap-2">
-              <GitCompare class="w-4 h-4 text-success" />
-              <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-                3. Ghép Cặp Thiết Bị Chuẩn (Golden Reference) Cho Từng Thiết Bị Test
-              </h4>
-            </div>
+    <!-- Step 3: BATCH TESTING (Full-width Stacked Below) -->
+    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-300">
+        <div class="flex items-center gap-2">
+          <Play class="w-4 h-4 text-primary" />
+          <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
+            3. BATCH TESTING
+          </h4>
+          <span v-if="selectedBatchConfig" class="badge badge-sm badge-primary font-mono text-[11px]">
+            {{ selectedBatchConfig.batchCode || selectedBatchConfig.batch_code }}
+          </span>
+          <span v-else class="badge badge-sm badge-warning font-mono text-[11px]">
+            Chưa chọn Test Batch
+          </span>
+        </div>
             <div class="flex items-center gap-1.5">
               <button
+                v-if="requiresReferenceDevice"
                 class="btn btn-xs btn-outline btn-success gap-1"
                 :disabled="selectedDevices.length === 0 || isTesting"
                 @click="autoAssignReferenceDevices"
@@ -357,7 +340,7 @@
             </div>
           </div>
 
-          <div class="p-2.5 bg-base-100/60 border border-base-300 rounded-lg text-xs text-base-content/80 flex items-start gap-2">
+          <div v-if="requiresReferenceDevice" class="p-2.5 bg-base-100/60 border border-base-300 rounded-lg text-xs text-base-content/80 flex items-start gap-2">
             <Info class="w-4 h-4 text-info shrink-0 mt-0.5" />
             <div>
               <strong>Quy tắc ghép đôi chuẩn:</strong> Khi test cùng lúc nhiều thiết bị (VD: 5 thiết bị), hệ thống yêu cầu gán riêng biệt từng thiết bị chuẩn tương ứng để thu thập và đối chiếu giá trị đo độc lập theo thời gian thực.
@@ -371,7 +354,7 @@
                 <tr>
                   <th>#</th>
                   <th>Thiết Bị Cần Test (DUT)</th>
-                  <th>Thiết Bị Chuẩn Đối Chiếu (Reference Device)</th>
+                  <th v-if="requiresReferenceDevice">Thiết Bị Chuẩn Đối Chiếu (Reference Device)</th>
                   <th>Kết Quả Đối Chiếu</th>
                   <th>Trạng Thái</th>
                   <th class="text-center">Bỏ</th>
@@ -379,8 +362,8 @@
               </thead>
               <tbody>
                 <tr v-if="selectedDevices.length === 0">
-                  <td colspan="6" class="text-center py-8 text-base-content/50 italic text-xs">
-                    Chưa có thiết bị nào trong Test Batch. Hãy chọn từ danh sách bên trái hoặc nhấn "+ Thêm".
+                  <td :colspan="requiresReferenceDevice ? 6 : 5" class="text-center py-8 text-base-content/50 italic text-xs">
+                    Chưa có thiết bị nào trong Test Batch. Hãy chọn từ danh sách bên trên hoặc nhấn "+ Thêm".
                   </td>
                 </tr>
                 <tr v-for="(item, idx) in selectedDevices" :key="item.device.id" class="hover text-xs">
@@ -395,7 +378,7 @@
                   </td>
 
                   <!-- Reference Device Picker -->
-                  <td class="min-w-[210px]">
+                  <td v-if="requiresReferenceDevice" class="min-w-[210px]">
                     <div class="space-y-1">
                       <select
                         v-model="item.referenceDeviceId"
@@ -471,9 +454,37 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Section 3 Footer Action Bar: Start Test Batch & Summary -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-base-300">
+            <div class="flex items-center gap-2 text-xs text-base-content/70">
+              <span>Đã chọn: <strong class="text-primary">{{ selectedDevices.length }}</strong> thiết bị</span>
+              <span v-if="selectedBatchConfig">| Giới hạn tối đa: <strong class="text-base-content">{{ maxAllowedDevices }}</strong></span>
+              <span v-if="!selectedBatchId" class="badge badge-warning badge-xs font-semibold">Chưa chọn Test Batch</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                v-if="isTesting"
+                class="btn btn-sm btn-error gap-1.5 shadow-sm font-semibold"
+                @click="finishBatchTest"
+              >
+                <Square class="w-4 h-4" />
+                Dừng Kiểm Thử
+              </button>
+              <button
+                v-else
+                class="btn btn-sm btn-primary gap-1.5 shadow-md px-6 font-bold"
+                :disabled="!selectedBatchId || selectedDevices.length === 0"
+                :title="!selectedBatchId ? 'Vui lòng chọn Test Batch trước khi bấm bắt đầu' : (selectedDevices.length === 0 ? 'Vui lòng thêm ít nhất 1 thiết bị test' : 'Bắt đầu kiểm thử')"
+                @click="startBatchTest"
+              >
+                <Play class="w-4 h-4" />
+                Bắt Đầu Test Batch
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -500,10 +511,13 @@ import {
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/httpClient';
 import { cyberToast } from '@/services/cyberToast';
+import { useAuthStore } from '@/stores/auth';
 
 const emit = defineEmits<{
   (e: 'switch-tab', tab: string): void;
 }>();
+
+const authStore = useAuthStore();
 
 const props = defineProps<{
   initialBatchPayload?: any;
@@ -617,6 +631,26 @@ const failCount = computed(() => selectedDevices.value.filter((d) => d.status ==
 
 const selectedBatchConfig = computed(() => {
   return savedBatches.value.find((b) => b.id === selectedBatchId.value || b.batchCode === selectedBatchId.value);
+});
+
+const requiresReferenceDevice = computed(() => {
+  const cfg = selectedBatchConfig.value;
+  if (!cfg) return true;
+  if (cfg.requires_reference_device === false || cfg.requiresReferenceDevice === false) {
+    return false;
+  }
+  const flow = cfg.simulation_flow || cfg.simulationFlow;
+  if (flow) {
+    const blocks = Array.isArray(flow.blocks) ? flow.blocks : (Array.isArray(flow) ? flow : []);
+    if (blocks.length > 0 && !blocks.some((b: any) =>
+      b.type?.includes('ref') || b.type?.includes('compare') ||
+      b.name?.toLowerCase().includes('chuẩn') || b.name?.toLowerCase().includes('đối chiếu')
+    )) {
+      const criteria = cfg.auto_check_criteria || cfg.autoCheckCriteria || {};
+      if (criteria.compareWithReference === false) return false;
+    }
+  }
+  return true;
 });
 
 // Candidate selection helpers
@@ -960,15 +994,21 @@ async function loadAvailableDevices() {
 
 // Timer & Simulation Execution
 function startBatchTest() {
+  if (!selectedBatchId.value) {
+    cyberToast.warning('Vui lòng chọn Test Batch trước khi bấm bắt đầu!');
+    return;
+  }
   if (selectedDevices.value.length === 0) {
     cyberToast.warning('Vui lòng chọn ít nhất 1 thiết bị để test!');
     return;
   }
 
-  // Check if reference devices are mapped
-  const unmapped = selectedDevices.value.filter((d) => !d.referenceDeviceId);
-  if (unmapped.length > 0) {
-    autoAssignReferenceDevices();
+  // Check if reference devices are mapped only if flow requires it
+  if (requiresReferenceDevice.value) {
+    const unmapped = selectedDevices.value.filter((d) => !d.referenceDeviceId);
+    if (unmapped.length > 0 && goldenReferenceDevices.value.length > 0) {
+      autoAssignReferenceDevices();
+    }
   }
 
   isTesting.value = true;
@@ -984,16 +1024,25 @@ function startBatchTest() {
 
   // Call backend start API if batch is selected
   if (selectedBatchId.value) {
+    const testerName = authStore.user?.fullName || authStore.user?.username || 'Tester';
     const startPayload = {
+      testerName,
+      testPerson: testerName,
+      testedBy: testerName,
+      soNumber: selectedBatchConfig.value?.soNumber || selectedBatchConfig.value?.so_number,
+      waNumber: selectedBatchConfig.value?.waNumber || selectedBatchConfig.value?.wa_number,
+      requiresReferenceDevice: requiresReferenceDevice.value,
       devices: selectedDevices.value.map((item) => ({
         serialNumber: item.device.serialNumber || item.device.serial_number,
         devEui: item.device.devEui || item.device.dev_eui,
         itemCode: item.device.itemCode || item.device.item_code,
         fwVersion: item.device.fwVersion || item.device.fw_version,
-        referenceDeviceId: item.referenceDeviceId,
-        referenceSerialNumber: item.referenceDevice?.serialNumber,
-        referenceDevEui: item.referenceDevice?.devEui,
-        referenceDeviceName: item.referenceDevice?.name,
+        soNumber: item.device.soNumber || item.device.so_number || selectedBatchConfig.value?.soNumber || selectedBatchConfig.value?.so_number,
+        waNumber: item.device.waNumber || item.device.wa_number || selectedBatchConfig.value?.waNumber || selectedBatchConfig.value?.wa_number,
+        referenceDeviceId: item.referenceDeviceId || null,
+        referenceSerialNumber: item.referenceDevice?.serialNumber || null,
+        referenceDevEui: item.referenceDevice?.devEui || null,
+        referenceDeviceName: item.referenceDevice?.name || null,
       })),
     };
     httpClient.post(`/plugins/testing/test-batches/${selectedBatchId.value}/start`, startPayload).catch((err: any) => {
