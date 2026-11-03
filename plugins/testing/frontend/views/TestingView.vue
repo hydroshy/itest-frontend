@@ -148,6 +148,11 @@
       </div>
     </div>
 
+    <!-- TAB: Device Payload (ChirpStack Ingestion & Dynamic Sensor Telemetry) -->
+    <div v-if="activeTab === 'device-payload'">
+      <DevicePayloadPanel />
+    </div>
+
     <!-- TAB 2: Giám sát gói tin (Packets) -->
     <div v-if="activeTab === 'packets'" class="space-y-4">
       <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
@@ -451,6 +456,7 @@ import CreateDeviceTestPanel from '../components/CreateDeviceTestPanel.vue';
 import ListDeviceTestPanel from '../components/ListDeviceTestPanel.vue';
 import CreateTestBatchPanel from '../components/CreateTestBatchPanel.vue';
 import DeviceTestBatchPanel from '../components/DeviceTestBatchPanel.vue';
+import DevicePayloadPanel from '../components/DevicePayloadPanel.vue';
 
 const route = useRoute();
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
@@ -458,6 +464,7 @@ const router = useRouter();
 
 const VALID_TABS = [
   'gateway-sessions',
+  'device-payload',
   'packets',
   'create-device-testing',
   'list-device-testing',
@@ -471,6 +478,7 @@ const VALID_TABS = [
 
 const tabList = [
   { name: 'gateway-sessions', label: 'Gateway Test Sessions', icon: Activity },
+  { name: 'device-payload', label: 'Device Payload (ChirpStack)', icon: Radio },
   { name: 'packets', label: 'Giám Sát Gói Tin (Packets)', icon: Radio },
   { name: 'create-device-testing', label: 'Create Device Testing', icon: FlaskConical },
   { name: 'list-device-testing', label: 'List Device Testing', icon: List },

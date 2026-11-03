@@ -59,6 +59,7 @@
         <Link2 class="w-4 h-4" />
         Khớp Nối Với MemMap
       </button>
+      <button role="tab" type="button" class="tab min-h-11" :class="{ 'tab-active': activeTab === 'devices' }" :aria-selected="activeTab === 'devices'" @click="activeTab = 'devices'">Thiết bị testing</button>
       <button
         role="tab"
         type="button"
@@ -138,6 +139,7 @@
                 <th class="w-16 text-center">ID</th>
                 <th>Tên &amp; Mô Tả Bộ Giải Mã</th>
                 <th>SKU &amp; LONG_FW</th>
+                <th>ITEM_CODE / FW_CODE</th>
                 <th>Code Preview / Version</th>
                 <th class="text-center w-28">Trạng Thái</th>
                 <th class="text-right w-44">Thao Tác</th>
@@ -145,12 +147,12 @@
             </thead>
             <tbody>
               <tr v-if="loading && scriptList.length === 0">
-                <td colspan="6" class="text-center py-8 text-base-content/50">
+                <td colspan="7" class="text-center py-8 text-base-content/50">
                   <span class="loading loading-spinner loading-md text-primary mr-2"></span> Đang tải bộ giải mã...
                 </td>
               </tr>
               <tr v-else-if="scriptList.length === 0">
-                <td colspan="6" class="text-center py-8 text-base-content/40 font-mono text-sm">
+                <td colspan="7" class="text-center py-8 text-base-content/40 font-mono text-sm">
                   Chưa có script giải mã nào. Hãy nhấn "Tạo Decoder Mới"!
                 </td>
               </tr>
@@ -168,6 +170,10 @@
                     <span class="badge badge-primary badge-sm font-mono font-semibold">{{ row.sku }}</span>
                     <span class="badge badge-ghost badge-sm font-mono text-base-content/70">{{ row.longFw || 'Mặc định' }}</span>
                   </div>
+                </td>
+                <td>
+                  <div class="font-mono text-xs">ITEM: {{ row.itemCode || 'Chưa đặt' }}</div>
+                  <div class="font-mono text-xs">FW: {{ row.fwCode || 'Chưa đặt' }}</div>
                 </td>
                 <td>
                   <code class="bg-base-300/80 px-2 py-1 rounded text-xs font-mono text-cyan-400 block max-w-xs truncate">
@@ -254,12 +260,12 @@
             </thead>
             <tbody>
               <tr v-if="loadingMemmaps && memmapList.length === 0">
-                <td colspan="6" class="text-center py-8 text-base-content/50">
+                <td colspan="7" class="text-center py-8 text-base-content/50">
                   <span class="loading loading-spinner loading-md text-primary mr-2"></span> Đang tải dữ liệu MemMap...
                 </td>
               </tr>
               <tr v-else-if="filteredMemmaps.length === 0">
-                <td colspan="6" class="text-center py-8 text-base-content/40 font-mono text-sm">
+                <td colspan="7" class="text-center py-8 text-base-content/40 font-mono text-sm">
                   Không tìm thấy cấu hình MemMap phù hợp
                 </td>
               </tr>
@@ -311,6 +317,33 @@
         </div>
       </div>
     </div>
+
+    <section v-else-if="activeTab === 'devices'" class="space-y-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <label for="decoder-device-search">Tìm Serial Number / ITEM_CODE</label>
+        <input id="decoder-device-search" v-model.trim="deviceSearch" class="input input-bordered" @keyup.enter="loadTestingDevices" />
+        <button type="button" class="btn min-h-11" :disabled="loadingDevices" @click="loadTestingDevices">Tải thiết bị</button>
+      </div>
+      <p v-if="deviceError" role="alert">{{ deviceError }}</p>
+      <p v-else-if="loadingDevices" role="status">Đang tải thiết bị testing...</p>
+      <div v-else class="overflow-x-auto border border-base-300 rounded-xl">
+        <table class="table table-sm">
+          <thead><tr><th>Serial Number</th><th>ITEM_CODE</th><th>FW_CODE</th><th>FW_VERSION</th><th>Decoder phù hợp</th></tr></thead>
+          <tbody>
+            <tr v-if="!testingDevices.length"><td colspan="5">Không có thiết bị testing.</td></tr>
+            <tr v-for="device in testingDevices" :key="device.id">
+              <td>{{ device.serial_number }}</td><td>{{ device.item_code }}</td><td>{{ device.fw_code }}</td><td>{{ device.long_fw || device.fw_version }}</td>
+              <td>
+                <button class="btn min-h-11" type="button" :disabled="device.resolving" @click="resolveDevice(device)">Tìm Decoder</button>
+                <p role="status">{{ device.matchMessage }}</p>
+                <button v-if="device.decoder" class="btn min-h-11" type="button" @click="openEditDialog(device.decoder)">Sửa Decoder</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs">Hiển thị tối đa 100 thiết bị theo bộ lọc hiện tại. Phân giải dùng API backend, không tự chọn decoder phía trình duyệt.</p>
+    </section>
 
     <!-- TAB 3: Interactive Sandbox (Test Trực Tiếp) -->
     <div v-else-if="activeTab === 'sandbox'" class="space-y-4">
@@ -472,6 +505,18 @@
               </datalist>
             </div>
           </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="form-control text-xs font-semibold" for="decoder-item-code">
+              ITEM_CODE
+              <input id="decoder-item-code" v-model.trim="form.itemCode" maxlength="100" class="input input-bordered font-mono w-full" placeholder="Mã sản phẩm thiết bị testing" />
+            </label>
+            <label class="form-control text-xs font-semibold" for="decoder-fw-code">
+              FW_CODE
+              <input id="decoder-fw-code" v-model.trim="form.fwCode" maxlength="50" class="input input-bordered font-mono w-full" placeholder="Mã firmware thiết bị testing" />
+            </label>
+          </div>
+          <p class="text-xs">LONG_FW dùng để khớp phiên bản firmware thiết bị. Để trống ITEM_CODE/FW_CODE khi chỉ ánh xạ theo SKU.</p>
 
           <!-- Mô tả -->
           <div class="form-control">
@@ -635,6 +680,8 @@ import {
 import httpClient from '@/api/httpClient';
 import { cyberToast, cyberConfirm } from '@/cyber/hud';
 
+let daviteqSample = '';
+
 // Mẫu script chuẩn ChirpStack v4
 const CHIRPSTACK_V4_SAMPLE = `// Decode uplink function for ChirpStack v4
 // Input: bytes (array of numbers), fPort (number)
@@ -701,10 +748,10 @@ async function requestWithFallback(method: 'get' | 'post' | 'put' | 'delete', pa
 // State
 const route = useRoute();
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
-const activeTab = ref<'list' | 'memmap' | 'sandbox'>('list');
+const activeTab = ref<'list' | 'memmap' | 'sandbox' | 'devices'>('list');
 watch(() => route.query.tab, (value) => {
   const tab = value === 'memmaps' ? 'memmap' : value;
-  if (typeof tab === 'string' && ["list","memmap","sandbox"].includes(tab)) activeTab.value = tab as typeof activeTab.value;
+  if (typeof tab === 'string' && ["list","memmap","sandbox","devices"].includes(tab)) activeTab.value = tab as typeof activeTab.value;
 }, { immediate: true });
 const loading = ref(false);
 const scriptList = ref<any[]>([]);
@@ -720,6 +767,42 @@ const filters = reactive({
 const loadingMemmaps = ref(false);
 const memmapList = ref<any[]>([]);
 const memmapSearch = ref('');
+
+const testingDevices = ref<any[]>([]);
+const loadingDevices = ref(false);
+const deviceSearch = ref('');
+const deviceError = ref('');
+watch(activeTab, (tab) => { if (tab === 'devices') loadTestingDevices(); }, { immediate: true });
+
+async function loadTestingDevices() {
+  loadingDevices.value = true;
+  deviceError.value = '';
+  try {
+    const res: any = await httpClient.get('/plugins/testing/device-registrations', { params: { search: deviceSearch.value || undefined, limit: 100 } });
+    testingDevices.value = res.data || [];
+  } catch (err: any) {
+    deviceError.value = err?.response?.data?.message || err.message || 'Không thể tải thiết bị testing';
+  } finally {
+    loadingDevices.value = false;
+  }
+}
+
+async function resolveDevice(device: any) {
+  device.resolving = true;
+  device.decoder = null;
+  try {
+    const res: any = await requestWithFallback('post', '/resolve', {
+      itemCode: device.item_code, fwCode: device.fw_code,
+      longFw: device.long_fw || device.fw_version, sku: device.sku,
+    });
+    device.matchMessage = res.success ? `${res.data.name} (tầng ${res.matchTier})` : 'Không có decoder đang kích hoạt phù hợp';
+    if (res.success) device.decoder = { ...res.data, longFw: res.data.long_fw, itemCode: res.data.item_code, fwCode: res.data.fw_code, isActive: res.data.is_active, samplePayload: res.data.sample_payload, sampleFport: res.data.sample_fport };
+  } catch (err: any) {
+    device.matchMessage = err?.response?.data?.message || err.message || 'Không thể phân giải decoder';
+  } finally {
+    device.resolving = false;
+  }
+}
 
 // Sandbox State
 const runningTest = ref(false);
@@ -746,6 +829,8 @@ const form = reactive({
   name: '',
   sku: '',
   longFw: '',
+  itemCode: '',
+  fwCode: '',
   description: '',
   script: CHIRPSTACK_V4_SAMPLE,
   samplePayload: '09C4138805',
@@ -820,7 +905,16 @@ async function loadScripts() {
         isActive: filters.isActive !== '' ? filters.isActive === 'true' : undefined,
       },
     });
-    scriptList.value = res?.data || (Array.isArray(res) ? res : []);
+    const rows = res?.data || (Array.isArray(res) ? res : []);
+    scriptList.value = rows.map((row: any) => ({
+      ...row,
+      longFw: row.longFw ?? row.long_fw,
+      itemCode: row.itemCode ?? row.item_code,
+      fwCode: row.fwCode ?? row.fw_code,
+      samplePayload: row.samplePayload ?? row.sample_payload,
+      sampleFport: row.sampleFport ?? row.sample_fport,
+      isActive: row.isActive ?? row.is_active,
+    }));
   } catch (err: any) {
     console.error('Error loading decoder scripts:', err);
     cyberToast.error(err?.message || 'Không thể tải danh sách decoder scripts');
@@ -897,7 +991,24 @@ function testInSandbox(row: any) {
   runSandboxDecode();
 }
 
-function loadSampleScript(type: 'chirpstack_v4' | 'ttn_v3') {
+async function loadDaviteqSample() {
+  try {
+    const res: any = await requestWithFallback('get', '/template');
+    daviteqSample = res.defaultTemplate;
+    if (!daviteqSample) throw new Error('API chưa cung cấp template Daviteq');
+    return daviteqSample;
+  } catch (err: any) {
+    cyberToast.error(err.message || 'Không thể tải mẫu Daviteq');
+    return '';
+  }
+}
+
+async function loadSampleScript(type: 'chirpstack_v4' | 'ttn_v3' | 'daviteq') {
+  if (type === 'daviteq') {
+    const sample = daviteqSample || await loadDaviteqSample();
+    if (sample) { sandboxForm.script = sample; sandboxForm.payload = '00030000000000000000'; }
+    return;
+  }
   if (type === 'chirpstack_v4') {
     sandboxForm.script = CHIRPSTACK_V4_SAMPLE;
   } else {
@@ -916,7 +1027,7 @@ async function runSandboxDecode() {
   testError.value = '';
 
   try {
-    const res: any = await requestWithFallback('post', '/test-run', {
+    const res: any = await requestWithFallback('post', '/test', {
       script: sandboxForm.script,
       payload: sandboxForm.payload,
       fPort: sandboxForm.fPort,
@@ -938,6 +1049,8 @@ function assignDecoderFromMemmap(row: any) {
   form.name = `Decoder cho ${row.modelName || row.name || row.sku}`;
   form.sku = row.sku || '';
   form.longFw = row.longFw || row.firmwareVersion || '';
+  form.itemCode = row.itemCode || '';
+  form.fwCode = row.fwCode || '';
   form.description = `Tự động tạo từ cấu hình MemMap: ${row.modelName || row.name || ''}`;
   form.script = CHIRPSTACK_V4_SAMPLE;
   form.samplePayload = '09C4138805';
@@ -961,6 +1074,8 @@ function openCreateDialog() {
   form.name = '';
   form.sku = '';
   form.longFw = '';
+  form.itemCode = '';
+  form.fwCode = '';
   form.description = '';
   form.script = CHIRPSTACK_V4_SAMPLE;
   form.samplePayload = '09C4138805';
@@ -975,6 +1090,8 @@ function openEditDialog(row: any) {
   form.name = row.name;
   form.sku = row.sku;
   form.longFw = row.longFw || '';
+  form.itemCode = row.itemCode || '';
+  form.fwCode = row.fwCode || '';
   form.description = row.description || '';
   form.script = row.script;
   form.samplePayload = row.samplePayload || '09C4138805';
@@ -1025,7 +1142,7 @@ async function testCurrentFormScript() {
   }
   testingFormScript.value = true;
   try {
-    const res: any = await requestWithFallback('post', '/test-run', {
+    const res: any = await requestWithFallback('post', '/test', {
       script: form.script,
       payload: form.samplePayload || '09C4138805',
       fPort: form.sampleFport || 1,
