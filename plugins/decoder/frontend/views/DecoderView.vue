@@ -355,7 +355,8 @@
               <FileCode class="w-4 h-4 text-primary" />
               LoRaWAN JavaScript Script
             </span>
-            <div class="flex items-center gap-1.5">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button type="button" class="btn min-h-11" @click="loadSampleScript('daviteq')">WSLRW-DI FW 3</button>
               <button
                 type="button"
                 class="btn btn-xs btn-outline"
@@ -447,7 +448,7 @@
     </div>
 
     <!-- DIALOG / MODAL: Thêm / Sửa Decoder Script -->
-    <dialog class="modal" :class="{ 'modal-open': editorDialogVisible }">
+    <dialog class="modal" :class="{ 'modal-open': editorDialogVisible }" @keydown.esc="editorDialogVisible = false">
       <div class="modal-box max-w-4xl bg-base-100 border border-base-content/15 shadow-2xl p-6 space-y-5">
         <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
           <div class="flex items-center gap-2 text-lg font-bold text-base-content">
@@ -1052,8 +1053,8 @@ function assignDecoderFromMemmap(row: any) {
   form.itemCode = row.itemCode || '';
   form.fwCode = row.fwCode || '';
   form.description = `Tự động tạo từ cấu hình MemMap: ${row.modelName || row.name || ''}`;
-  form.script = CHIRPSTACK_V4_SAMPLE;
-  form.samplePayload = '09C4138805';
+  form.script = daviteqSample || CHIRPSTACK_V4_SAMPLE;
+  form.samplePayload = daviteqSample ? '00030000000000000000' : '09C4138805';
   form.sampleFport = 1;
   form.isActive = true;
   editorDialogVisible.value = true;
@@ -1068,7 +1069,9 @@ function goToDecoderOfMemmap(row: any) {
 }
 
 // Editor Dialog
-function openCreateDialog() {
+async function openCreateDialog() {
+  const sample = daviteqSample || await loadDaviteqSample();
+  if (!sample) return;
   isEditing.value = false;
   editingId.value = null;
   form.name = '';
@@ -1077,8 +1080,8 @@ function openCreateDialog() {
   form.itemCode = '';
   form.fwCode = '';
   form.description = '';
-  form.script = CHIRPSTACK_V4_SAMPLE;
-  form.samplePayload = '09C4138805';
+  form.script = daviteqSample || CHIRPSTACK_V4_SAMPLE;
+  form.samplePayload = daviteqSample ? '00030000000000000000' : '09C4138805';
   form.sampleFport = 1;
   form.isActive = true;
   editorDialogVisible.value = true;
