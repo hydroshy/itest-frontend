@@ -39,270 +39,265 @@
       </div>
     </div>
 
-    <!-- Main Form Grid (2 Balanced Columns) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <!-- Left Column: 1. Định Danh Sản Phẩm & Thông Tin Batch (6 cols) -->
-      <div class="lg:col-span-6 space-y-4">
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3.5">
-          <div class="flex items-center justify-between pb-2 border-b border-base-300">
-            <div class="flex items-center gap-2">
-              <Layers class="w-4 h-4 text-primary" />
-              <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-                1. Định Danh Sản Phẩm &amp; Thông Tin Batch
-              </h4>
-            </div>
-            <span class="badge badge-xs badge-outline font-mono text-[10px]">CẤU HÌNH BATCH</span>
+    <!-- Stacked Full-Width Sections 1 -> 2 -> 3 -->
+    <div class="space-y-4">
+      <!-- Section 1: Định Danh Sản Phẩm & Thông Tin Batch (Full Width) -->
+      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3.5">
+        <div class="flex items-center justify-between pb-2 border-b border-base-300">
+          <div class="flex items-center gap-2">
+            <Layers class="w-4 h-4 text-primary" />
+            <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
+              1. Định Danh Sản Phẩm &amp; Thông Tin Batch
+            </h4>
+          </div>
+          <span class="badge badge-xs badge-outline font-mono text-[10px]">CẤU HÌNH BATCH</span>
+        </div>
+
+        <!-- Sắp xếp theo thứ tự từ trên xuống ngang qua hết -->
+        <div class="space-y-3">
+          <!-- 1. Mã Batch (Batch code: người dùng không thể điền, hiển thị thông tin thôi) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                <ScanBarcode class="w-3.5 h-3.5 text-primary" />
+                Mã Batch (Batch Code)
+              </span>
+              <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Tự động sinh mã</span>
+            </label>
+            <input
+              :value="batchForm.batchCode"
+              type="text"
+              readonly
+              class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-300/40 border-base-300 text-base-content font-bold cursor-not-allowed select-all focus:outline-none"
+              title="Mã batch tự động tạo theo thông tin dòng máy và ngày tháng (không thể sửa)"
+              tabindex="-1"
+            />
           </div>
 
-          <!-- Sắp xếp theo thứ tự từ trên xuống -->
-          <div class="space-y-3">
-            <!-- 1. Mã Batch (Batch code: người dùng không thể điền, hiển thị thông tin thôi) -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
-                  <ScanBarcode class="w-3.5 h-3.5 text-primary" />
-                  Mã Batch (Batch Code)
-                </span>
-                <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Tự động sinh mã</span>
-              </label>
-              <input
-                :value="batchForm.batchCode"
-                type="text"
-                readonly
-                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-300/40 border-base-300 text-base-content font-bold cursor-not-allowed select-all focus:outline-none"
-                title="Mã batch tự động tạo theo thông tin dòng máy và ngày tháng (không thể sửa)"
-                tabindex="-1"
-              />
-            </div>
+          <!-- 2. Tên Đợt Test (Batch name: field người dùng điền) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                <FileText class="w-3.5 h-3.5 text-primary" />
+                Tên Đợt Test (Batch Name) <span class="text-error">*</span>
+              </span>
+              <span class="label-text-alt text-[10px] text-base-content/60">Người dùng nhập</span>
+            </label>
+            <input
+              v-model="batchForm.batchName"
+              type="text"
+              placeholder="Nhập tên đợt test (VD: Đợt Kiểm Thử Cảm Biến Lô 01...)"
+              class="input input-sm input-bordered w-full text-xs bg-base-100 focus:border-primary"
+            />
+          </div>
 
-            <!-- 2. Tên Đợt Test (Batch name: field người dùng điền) -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
-                  <FileText class="w-3.5 h-3.5 text-primary" />
-                  Tên Đợt Test (Batch Name) <span class="text-error">*</span>
-                </span>
-                <span class="label-text-alt text-[10px] text-base-content/60">Người dùng nhập</span>
-              </label>
-              <input
-                v-model="batchForm.batchName"
-                type="text"
-                placeholder="Nhập tên đợt test (VD: Đợt Kiểm Thử Cảm Biến Lô 01...)"
-                class="input input-sm input-bordered w-full text-xs bg-base-100 focus:border-primary"
-              />
-            </div>
+          <!-- 3. Mã Sản Phẩm (Item code) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                <Cpu class="w-3.5 h-3.5 text-primary" />
+                Mã Sản Phẩm (ITEM-CODE) <span class="text-error">*</span>
+              </span>
+              <span class="label-text-alt text-[10px] text-base-content/60">Dòng sản phẩm</span>
+            </label>
+            <input
+              v-model="batchForm.itemCode"
+              type="text"
+              placeholder="VD: WSSFC-ATH, WSLRW-TH..."
+              class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
+              @input="onItemCodeInput"
+            />
+          </div>
 
-            <!-- 3. Mã Sản Phẩm (Item code) -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
-                  <Cpu class="w-3.5 h-3.5 text-primary" />
-                  Mã Sản Phẩm (ITEM-CODE) <span class="text-error">*</span>
-                </span>
-                <span class="label-text-alt text-[10px] text-base-content/60">Dòng sản phẩm</span>
-              </label>
-              <input
-                v-model="batchForm.itemCode"
-                type="text"
-                placeholder="VD: WSSFC-ATH, WSLRW-TH..."
-                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
-                @input="onItemCodeInput"
-              />
+          <!-- 4. Phiên Bản Firmware (FW_VERSION: có cấu trúc như là 4F0505 với XFXXXX , x là số) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                <Terminal class="w-3.5 h-3.5 text-primary" />
+                Phiên Bản Firmware (FW_VERSION) <span class="text-error">*</span>
+              </span>
+              <span
+                class="label-text-alt text-[10px] font-mono"
+                :class="isFwVersionValid ? 'text-base-content/60' : 'text-error font-semibold'"
+              >
+                {{ isFwVersionValid ? 'Cấu trúc: XFXXXX (VD: 4F0505)' : 'Chưa đúng chuẩn XFXXXX' }}
+              </span>
+            </label>
+            <input
+              v-model="batchForm.longFw"
+              type="text"
+              maxlength="6"
+              placeholder="VD: 4F0505"
+              class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
+              :class="{ 'input-error': !isFwVersionValid && batchForm.longFw }"
+              @input="onFwVersionInput"
+            />
+            <div v-if="!isFwVersionValid && batchForm.longFw" class="text-[11px] text-error mt-1 flex items-center gap-1">
+              <AlertTriangle class="w-3.5 h-3.5 flex-shrink-0" />
+              <span>FW_VERSION phải có cấu trúc XFXXXX với x là số (VD: 4F0505, x là số)</span>
             </div>
+          </div>
 
-            <!-- 4. Phiên Bản Firmware (FW_VERSION: có cấu trúc như là 4F0505 với XFXXXX , x là số) -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
-                  <Terminal class="w-3.5 h-3.5 text-primary" />
-                  Phiên Bản Firmware (FW_VERSION) <span class="text-error">*</span>
-                </span>
-                <span
-                  class="label-text-alt text-[10px] font-mono"
-                  :class="isFwVersionValid ? 'text-base-content/60' : 'text-error font-semibold'"
-                >
-                  {{ isFwVersionValid ? 'Cấu trúc: XFXXXX (VD: 4F0505)' : 'Chưa đúng chuẩn XFXXXX' }}
-                </span>
-              </label>
-              <input
-                v-model="batchForm.longFw"
-                type="text"
-                maxlength="6"
-                placeholder="VD: 4F0505"
-                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
-                :class="{ 'input-error': !isFwVersionValid && batchForm.longFw }"
-                @input="onFwVersionInput"
-              />
-              <div v-if="!isFwVersionValid && batchForm.longFw" class="text-[11px] text-error mt-1 flex items-center gap-1">
-                <AlertTriangle class="w-3.5 h-3.5 flex-shrink-0" />
-                <span>FW_VERSION phải có cấu trúc XFXXXX với x là số (VD: 4F0505, x là số)</span>
-              </div>
-            </div>
+          <!-- 5. Số Lượng Thiết Bị (số lượng thiết bị là field người dùng nhập) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                <Server class="w-3.5 h-3.5 text-primary" />
+                Số Lượng Thiết Bị Test Cùng Lúc <span class="text-error">*</span>
+              </span>
+              <span class="label-text-alt text-[10px] text-base-content/60">Người dùng nhập</span>
+            </label>
+            <input
+              v-model.number="batchForm.maxDevices"
+              type="number"
+              min="1"
+              max="50"
+              placeholder="Nhập số lượng thiết bị (VD: 5)"
+              class="input input-sm input-bordered w-full font-mono text-xs bg-base-100 focus:border-primary"
+            />
+          </div>
 
-            <!-- 5. Số Lượng Thiết Bị (số lượng thiết bị là field người dùng nhập) -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
-                  <Server class="w-3.5 h-3.5 text-primary" />
-                  Số Lượng Thiết Bị Test Cùng Lúc <span class="text-error">*</span>
-                </span>
-                <span class="label-text-alt text-[10px] text-base-content/60">Người dùng nhập</span>
-              </label>
-              <input
-                v-model.number="batchForm.maxDevices"
-                type="number"
-                min="1"
-                max="50"
-                placeholder="Nhập số lượng thiết bị (VD: 5)"
-                class="input input-sm input-bordered w-full font-mono text-xs bg-base-100 focus:border-primary"
-              />
-            </div>
-
-            <!-- 6. Thời Gian Đếm Sensor (hiển thị theo simulation flow , không cho người dùng điền) -->
-            <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
-                  <Clock class="w-3.5 h-3.5 text-primary" />
-                  Thời Gian Đếm Sensor
-                </span>
-                <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Theo Simulation Flow</span>
-              </label>
-              <div class="flex items-center justify-between px-3 py-2 bg-base-300/40 border border-base-300 rounded-lg text-xs">
-                <div class="flex items-center gap-2">
-                  <Timer class="w-4 h-4 text-primary" />
-                  <span class="font-mono font-bold text-base-content">
-                    {{ formatDuration(batchForm.flowDurationSeconds) }}
-                  </span>
-                </div>
-                <span class="text-[11px] text-base-content/60 font-mono">
-                  {{ selectedFlowData ? selectedFlowData.name : 'Khóa tự động theo flow' }}
+          <!-- 6. Thời Gian Đếm Sensor (hiển thị theo simulation flow , không cho người dùng điền) -->
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
+                <Clock class="w-3.5 h-3.5 text-primary" />
+                Thời Gian Đếm Sensor
+              </span>
+              <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Theo Simulation Flow</span>
+            </label>
+            <div class="flex items-center justify-between px-3 py-2 bg-base-300/40 border border-base-300 rounded-lg text-xs">
+              <div class="flex items-center gap-2">
+                <Timer class="w-4 h-4 text-primary" />
+                <span class="font-mono font-bold text-base-content">
+                  {{ formatDuration(batchForm.flowDurationSeconds) }}
                 </span>
               </div>
+              <span class="text-[11px] text-base-content/60 font-mono">
+                {{ selectedFlowData ? selectedFlowData.name : 'Khóa tự động theo flow' }}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: 2. Simulation Flow & 3. Auto Check (6 cols) -->
-      <div class="lg:col-span-6 space-y-4">
-        <!-- Section 2: Gán Simulation Flow -->
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-          <div class="flex items-center justify-between pb-2 border-b border-base-300">
-            <div class="flex items-center gap-2">
-              <PlayCircle class="w-4 h-4 text-primary" />
-              <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-                2. Gán Simulation Flow
-              </h4>
-            </div>
-            <button
-              type="button"
-              class="text-xs text-primary hover:underline flex items-center gap-1"
-              @click="$emit('switch-tab', 'simulation-flow')"
-            >
-              <span>Quản lý kịch bản</span>
-              <ExternalLink class="w-3 h-3" />
-            </button>
+      <!-- Section 2: Gán Simulation Flow (Full Width) -->
+      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-base-300">
+          <div class="flex items-center gap-2">
+            <PlayCircle class="w-4 h-4 text-primary" />
+            <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
+              2. Gán Simulation Flow
+            </h4>
           </div>
-
-          <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Chọn Kịch Bản Mô Phỏng (Simulation Flow)</span>
-            </label>
-            <select
-              v-model="batchForm.simuId"
-              class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
-              @change="onSimulationFlowSelected"
-            >
-              <option value="">-- Chọn kịch bản mô phỏng --</option>
-              <option v-for="flow in availableFlows" :key="flow.id" :value="flow.id">
-                {{ flow.name }} ({{ flow.duration }}s - {{ flow.blocksCount }} blocks)
-              </option>
-            </select>
-          </div>
-
-          <!-- Flow Summary Card -->
-          <div v-if="selectedFlowData" class="p-3 bg-base-100/80 border border-base-300 rounded-lg space-y-2">
-            <div class="flex items-center justify-between text-xs font-semibold">
-              <span class="text-primary flex items-center gap-1.5">
-                <PlayCircle class="w-3.5 h-3.5" />
-                {{ selectedFlowData.name }}
-              </span>
-              <span class="badge badge-xs badge-neutral font-mono">
-                {{ selectedFlowData.duration }} giây
-              </span>
-            </div>
-            <p class="text-[11px] text-base-content/70">
-              {{ selectedFlowData.description }}
-            </p>
-            <div class="flex flex-wrap gap-1 pt-1">
-              <span
-                v-for="(step, idx) in selectedFlowData.steps"
-                :key="idx"
-                class="badge badge-xs badge-outline font-mono text-[10px]"
-              >
-                {{ idx + 1 }}. {{ step }}
-              </span>
-            </div>
-          </div>
+          <button
+            type="button"
+            class="text-xs text-primary hover:underline flex items-center gap-1"
+            @click="$emit('switch-tab', 'simulation-flow')"
+          >
+            <span>Quản lý kịch bản</span>
+            <ExternalLink class="w-3 h-3" />
+          </button>
         </div>
 
-        <!-- Section 3: Gán Device Auto Check -->
-        <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-          <div class="flex items-center justify-between pb-2 border-b border-base-300">
-            <div class="flex items-center gap-2">
-              <CheckCircle2 class="w-4 h-4 text-success" />
-              <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-                3. Gán Device Auto Check
-              </h4>
-            </div>
-            <button
-              type="button"
-              class="text-xs text-success hover:underline flex items-center gap-1"
-              @click="$emit('switch-tab', 'device-auto-check')"
-            >
-              <span>Quy tắc check</span>
-              <ExternalLink class="w-3 h-3" />
-            </button>
-          </div>
+        <div class="form-control">
+          <label class="label py-1">
+            <span class="label-text text-xs font-semibold">Chọn Kịch Bản Mô Phỏng (Simulation Flow)</span>
+          </label>
+          <select
+            v-model="batchForm.simuId"
+            class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
+            @change="onSimulationFlowSelected"
+          >
+            <option value="">-- Chọn kịch bản mô phỏng --</option>
+            <option v-for="flow in availableFlows" :key="flow.id" :value="flow.id">
+              {{ flow.name }} ({{ flow.duration }}s - {{ flow.blocksCount }} blocks)
+            </option>
+          </select>
+        </div>
 
-          <div class="form-control">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Chọn Bộ Tiêu Chí Auto Check</span>
-            </label>
-            <select
-              v-model="batchForm.autoCheckId"
-              class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
-            >
-              <option value="">-- Chọn bộ tiêu chí Auto Check --</option>
-              <option v-for="crit in availableCriteria" :key="crit.id" :value="crit.id">
-                {{ crit.name }} ({{ crit.rulesCount }} rules)
-              </option>
-            </select>
+        <!-- Flow Summary Card -->
+        <div v-if="selectedFlowData" class="p-3 bg-base-100/80 border border-base-300 rounded-lg space-y-2">
+          <div class="flex items-center justify-between text-xs font-semibold">
+            <span class="text-primary flex items-center gap-1.5">
+              <PlayCircle class="w-3.5 h-3.5" />
+              {{ selectedFlowData.name }}
+            </span>
+            <span class="badge badge-xs badge-neutral font-mono">
+              {{ selectedFlowData.duration }} giây
+            </span>
           </div>
+          <p class="text-[11px] text-base-content/70">
+            {{ selectedFlowData.description }}
+          </p>
+          <div class="flex flex-wrap gap-1 pt-1">
+            <span
+              v-for="(step, idx) in selectedFlowData.steps"
+              :key="idx"
+              class="badge badge-xs badge-outline font-mono text-[10px]"
+            >
+              {{ idx + 1 }}. {{ step }}
+            </span>
+          </div>
+        </div>
+      </div>
 
-          <!-- Auto Check Summary Card -->
-          <div v-if="selectedCriteriaData" class="p-3 bg-base-100/80 border border-base-300 rounded-lg space-y-2">
-            <div class="flex items-center justify-between text-xs font-semibold">
-              <span class="text-success flex items-center gap-1.5">
-                <CheckCircle2 class="w-3.5 h-3.5" />
-                {{ selectedCriteriaData.name }}
-              </span>
-              <span class="badge badge-xs badge-success badge-outline font-mono">
-                {{ selectedCriteriaData.rulesCount }} rules
-              </span>
-            </div>
-            <p class="text-[11px] text-base-content/70">
-              {{ selectedCriteriaData.description }}
-            </p>
-            <div class="space-y-1 pt-1">
-              <div
-                v-for="(rule, idx) in selectedCriteriaData.rules"
-                :key="idx"
-                class="flex items-center justify-between text-[11px] font-mono text-base-content/80 bg-base-200/50 px-2 py-0.5 rounded"
-              >
-                <span>{{ rule.name }}</span>
-                <span class="text-primary text-[10px]">{{ rule.threshold }}</span>
-              </div>
+      <!-- Section 3: Gán Device Auto Check (Full Width) -->
+      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-base-300">
+          <div class="flex items-center gap-2">
+            <CheckCircle2 class="w-4 h-4 text-success" />
+            <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
+              3. Gán Device Auto Check
+            </h4>
+          </div>
+          <button
+            type="button"
+            class="text-xs text-success hover:underline flex items-center gap-1"
+            @click="$emit('switch-tab', 'device-auto-check')"
+          >
+            <span>Quy tắc check</span>
+            <ExternalLink class="w-3 h-3" />
+          </button>
+        </div>
+
+        <div class="form-control">
+          <label class="label py-1">
+            <span class="label-text text-xs font-semibold">Chọn Bộ Tiêu Chí Auto Check</span>
+          </label>
+          <select
+            v-model="batchForm.autoCheckId"
+            class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
+          >
+            <option value="">-- Chọn bộ tiêu chí Auto Check --</option>
+            <option v-for="crit in availableCriteria" :key="crit.id" :value="crit.id">
+              {{ crit.name }} ({{ crit.rulesCount }} rules)
+            </option>
+          </select>
+        </div>
+
+        <!-- Auto Check Summary Card -->
+        <div v-if="selectedCriteriaData" class="p-3 bg-base-100/80 border border-base-300 rounded-lg space-y-2">
+          <div class="flex items-center justify-between text-xs font-semibold">
+            <span class="text-success flex items-center gap-1.5">
+              <CheckCircle2 class="w-3.5 h-3.5" />
+              {{ selectedCriteriaData.name }}
+            </span>
+            <span class="badge badge-xs badge-success badge-outline font-mono">
+              {{ selectedCriteriaData.rulesCount }} rules
+            </span>
+          </div>
+          <p class="text-[11px] text-base-content/70">
+            {{ selectedCriteriaData.description }}
+          </p>
+          <div class="space-y-1 pt-1">
+            <div
+              v-for="(rule, idx) in selectedCriteriaData.rules"
+              :key="idx"
+              class="flex items-center justify-between text-[11px] font-mono text-base-content/80 bg-base-200/50 px-2 py-0.5 rounded"
+            >
+              <span>{{ rule.name }}</span>
+              <span class="text-primary text-[10px]">{{ rule.threshold }}</span>
             </div>
           </div>
         </div>
