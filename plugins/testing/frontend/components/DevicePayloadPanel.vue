@@ -59,6 +59,55 @@
       </div>
     </div>
 
+    <!-- Backend Connection & Webhook Inspector Bar -->
+    <div class="card bg-base-200/50 border border-base-300 p-3 rounded-xl backdrop-blur-md text-xs space-y-2">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <!-- Backend Server Port / Host Setting -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <Server class="w-4 h-4 text-primary" />
+          <span class="font-bold text-base-content">Backend Server URL:</span>
+          <div class="join">
+            <input
+              v-model="backendServerUrl"
+              type="text"
+              placeholder="VD: http://lanu.myvc.com:3000"
+              class="input input-xs input-bordered join-item font-mono w-56 sm:w-64 bg-base-100"
+              @keyup.enter="saveAndTestBackendConnection"
+            />
+            <button
+              class="btn btn-xs btn-primary join-item gap-1"
+              :disabled="testingBackend"
+              @click="saveAndTestBackendConnection"
+            >
+              <span v-if="testingBackend" class="loading loading-spinner loading-xs"></span>
+              <span v-else>Kết Nối</span>
+            </button>
+          </div>
+          <span
+            class="badge badge-xs font-mono font-bold"
+            :class="backendConnected ? 'badge-success text-success-content' : 'badge-ghost'"
+          >
+            {{ backendConnected ? 'ĐÃ KẾT NỐI :3000' : 'CHƯA TEST KẾT NỐI' }}
+          </span>
+        </div>
+
+        <!-- ChirpStack Webhook Guide -->
+        <div class="flex items-center gap-2 flex-wrap font-mono text-[11px]">
+          <span class="text-base-content/60">Webhook URL ChirpStack:</span>
+          <code class="bg-base-300/80 px-2 py-0.5 rounded text-primary font-bold select-all">
+            {{ activeWebhookUrl }}
+          </code>
+          <button
+            class="btn btn-ghost btn-xs p-1 text-base-content/60 hover:text-primary"
+            title="Sao chép Webhook URL"
+            @click="copyText(activeWebhookUrl, 'Đã copy Webhook URL')"
+          >
+            <Copy class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick Stats Summary -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       <div class="card bg-base-200/50 border border-base-300 p-3 rounded-lg text-center">
@@ -459,6 +508,7 @@ import {
   Binary,
   CheckCircle2,
   X,
+  Server,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/httpClient';
 import { cyberToast } from '@/services/cyberToast';
@@ -467,6 +517,53 @@ const loading = ref(false);
 const configuringIntegration = ref(false);
 const sseConnected = ref(false);
 let eventSource: EventSource | null = null;
+
+const backendServerUrl = ref(
+  (typeof window !== 'undefined' && localStorage.getItem('itest_backend_url')) ||
+  (typeof window !== 'undefined' && window.location.port !== '3000'
+    ? `${window.location.protocol}//${window.location.hostname}:3000`
+    : '')
+);
+const testingBackend = ref(false);
+const backendConnected = ref(false);
+
+const activeWebhookUrl = computed(() => {
+  const base = backendServerUrl.value.trim() || `${window.location.protocol}//${window.location.hostname}:3000`;
+  return `${base.replace(/\/+$/, '')}/lorawan/chirpstack/uplink`;
+});
+
+async function saveAndTestBackendConnection() {
+  testingBackend.value = true;
+  const rawUrl = backendServerUrl.value.trim();
+  if (!rawUrl) {
+    localStorage.removeItem('itest_backend_url');
+    cyberToast.info('Đã xóa cấu hình backend URL tuỳ chỉnh');
+    testingBackend.value = false;
+    return;
+  }
+
+  const cleanOrigin = rawUrl.replace(/\/+$/, '').replace(/\/api(\/v1)?\/?$/, '');
+  const apiUrl = `${cleanOrigin}/api/v1`;
+
+  try {
+    const res = await fetch(`${cleanOrigin}/api/realtime/status`, { signal: AbortSignal.timeout(4000) });
+    backendConnected.value = res.ok;
+    localStorage.setItem('itest_backend_url', apiUrl);
+    httpClient.defaults.baseURL = apiUrl;
+    cyberToast.success(`Đã kết nối thành công tới Backend ${cleanOrigin}!`);
+    setupRealtimeStream();
+    loadPayloads(false);
+  } catch {
+    backendConnected.value = false;
+    localStorage.setItem('itest_backend_url', apiUrl);
+    httpClient.defaults.baseURL = apiUrl;
+    cyberToast.warning(`Đã lưu URL: ${cleanOrigin}. Đang thử kết nối...`);
+    setupRealtimeStream();
+    loadPayloads(false);
+  } finally {
+    testingBackend.value = false;
+  }
+}
 
 const integrationStatus = reactive({
   active: true,
@@ -813,6 +910,10 @@ function getSensorMetricBadgeTheme(key: string): string {
 }
 
 onMounted(() => {
+  if (backendServerUrl.value) {
+    const cleanOrigin = backendServerUrl.value.trim().replace(/\/+$/, '').replace(/\/api(\/v1)?\/?$/, '');
+    httpClient.defaults.baseURL = `${cleanOrigin}/api/v1`;
+  }
   loadPayloads(false);
   setupRealtimeStream();
   triggerAutoRegisterIntegration();
