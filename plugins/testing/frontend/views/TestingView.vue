@@ -153,163 +153,6 @@
       <DevicePayloadPanel />
     </div>
 
-    <!-- TAB 2: Giám sát gói tin (Packets) -->
-    <div v-if="activeTab === 'packets'" class="space-y-4">
-      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
-          <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-xs">DevEUI / Gateway ID</span></label>
-            <div class="relative">
-              <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
-              <input
-                v-model="packetFilters.networkId"
-                type="text"
-                placeholder="DevEUI / Network ID..."
-                class="input input-bordered input-sm pl-9 w-full font-mono"
-                @keyup.enter="loadPackets"
-              />
-            </div>
-          </div>
-
-          <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-xs">Loại Gói Tin</span></label>
-            <select v-model="packetFilters.packetType" class="select select-bordered select-sm w-full" @change="loadPackets">
-              <option value="">Tất cả loại</option>
-              <option value="uplink">UPLINK</option>
-              <option value="downlink">DOWNLINK</option>
-              <option value="join_request">JOIN REQUEST</option>
-              <option value="ack">ACK</option>
-              <option value="status">STATUS</option>
-            </select>
-          </div>
-
-          <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-xs">Tìm Trong Payload</span></label>
-            <input
-              v-model="packetFilters.search"
-              type="text"
-              placeholder="Tìm trong Payload..."
-              class="input input-bordered input-sm w-full"
-              @keyup.enter="loadPackets"
-            />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button class="btn btn-primary btn-sm flex-1 gap-1" @click="loadPackets">
-              <Search class="w-4 h-4" />
-              Lọc
-            </button>
-            <button class="btn btn-outline btn-sm gap-1" @click="resetPacketFilters">
-              <RefreshCw class="w-4 h-4" />
-              Đặt Lại
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
-        <div class="overflow-x-auto relative">
-          <div v-if="loadingPackets" class="absolute inset-0 bg-base-100/60 backdrop-blur-xs flex items-center justify-center z-10">
-            <span class="loading loading-spinner loading-md text-primary"></span>
-          </div>
-
-          <table class="table table-zebra table-sm w-full">
-            <thead>
-              <tr class="text-xs uppercase bg-base-200/50">
-                <th>ID</th>
-                <th>Device / Gateway</th>
-                <th>Loại Gói</th>
-                <th>Port / F-Cnt</th>
-                <th>Payload Tóm Tắt</th>
-                <th>SNR / RSSI / Freq</th>
-                <th>Thời Gian Nhận</th>
-                <th class="text-center">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="packetList.length === 0 && !loadingPackets">
-                <td colspan="8" class="text-center py-8 text-base-content/50 italic">
-                  Không tìm thấy gói tin nào phù hợp với bộ lọc.
-                </td>
-              </tr>
-              <tr v-for="row in packetList" :key="row.id" class="hover">
-                <td><span class="font-mono text-xs">{{ row.id }}</span></td>
-                <td>
-                  <div v-if="row.devEui || row.dev_eui" class="font-mono text-xs font-semibold text-primary">
-                    DevEUI: {{ row.devEui || row.dev_eui }}
-                  </div>
-                  <div v-if="row.gatewayId || row.gateway_id" class="font-mono text-[11px] text-base-content/60">
-                    GW: {{ row.gatewayId || row.gateway_id }}
-                  </div>
-                </td>
-                <td>
-                  <span class="badge badge-sm font-mono font-semibold" :class="getPacketTypeBadgeClass(row.packetType || row.packet_type)">
-                    {{ (row.packetType || row.packet_type || 'UNKNOWN').toUpperCase() }}
-                  </span>
-                </td>
-                <td>
-                  <div class="font-mono text-xs">Port: {{ row.fPort ?? row.f_port ?? '—' }}</div>
-                  <div class="font-mono text-[11px] text-base-content/60">FCnt: {{ row.fCnt ?? row.f_cnt ?? '—' }}</div>
-                </td>
-                <td>
-                  <div v-if="row.rawPayload || row.raw_payload" class="font-mono text-[11px] truncate max-w-xs text-base-content/80">
-                    RAW: {{ (row.rawPayload || row.raw_payload || '').substring(0, 32) }}...
-                  </div>
-                  <div v-if="row.decodedPayload || row.decoded_payload" class="text-[11px] text-success truncate max-w-xs font-mono">
-                    JSON: {{ Object.keys(row.decodedPayload || row.decoded_payload || {}).length }} fields
-                  </div>
-                </td>
-                <td>
-                  <div class="text-xs font-mono">
-                    <span>RSSI: {{ row.rssi ?? '—' }} dBm</span>
-                    <span class="ml-2">SNR: {{ row.snr ?? '—' }} dB</span>
-                  </div>
-                  <div v-if="row.frequency" class="text-[11px] text-base-content/60 font-mono">
-                    {{ (row.frequency / 1000000).toFixed(2) }} MHz
-                  </div>
-                </td>
-                <td class="text-xs text-base-content/70">
-                  {{ formatDateTime(row.receivedAt || row.received_at) }}
-                </td>
-                <td class="text-center">
-                  <button class="btn btn-ghost btn-xs text-primary gap-1" @click="inspectPacket(row)">
-                    <Eye class="w-3.5 h-3.5" />
-                    Chi Tiết
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div v-if="packetPagination.total > 0" class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-base-content/10 mt-3">
-          <div class="text-xs text-base-content/60">
-            Tổng cộng: <strong>{{ packetPagination.total }}</strong> gói tin
-          </div>
-          <div class="join">
-            <button
-              class="join-item btn btn-xs"
-              :disabled="packetPagination.page <= 1"
-              @click="packetPagination.page--; loadPackets()"
-            >
-              « Trước
-            </button>
-            <button class="join-item btn btn-xs btn-active no-animation font-mono">
-              Trang {{ packetPagination.page }} / {{ Math.ceil(packetPagination.total / packetPagination.limit) || 1 }}
-            </button>
-            <button
-              class="join-item btn btn-xs"
-              :disabled="packetPagination.page >= Math.ceil(packetPagination.total / packetPagination.limit)"
-              @click="packetPagination.page++; loadPackets()"
-            >
-              Sau »
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- TAB 3: Device Simulation (Giả Lập Thiết Bị) -->
     <div v-if="activeTab === 'device-simulation'">
       <DeviceSimulationPanel @packet-emitted="onDevicePacketEmitted" />
@@ -465,7 +308,6 @@ const router = useRouter();
 const VALID_TABS = [
   'gateway-sessions',
   'device-payload',
-  'packets',
   'create-device-testing',
   'list-device-testing',
   'test-batch',
@@ -479,7 +321,6 @@ const VALID_TABS = [
 const tabList = [
   { name: 'gateway-sessions', label: 'Gateway Test Sessions', icon: Activity },
   { name: 'device-payload', label: 'Device Payload (ChirpStack)', icon: Radio },
-  { name: 'packets', label: 'Giám Sát Gói Tin (Packets)', icon: Radio },
   { name: 'create-device-testing', label: 'Create Device Testing', icon: FlaskConical },
   { name: 'list-device-testing', label: 'List Device Testing', icon: List },
   { name: 'test-batch', label: 'Device Test Batch', icon: Boxes },
@@ -600,9 +441,7 @@ function getPacketTypeBadgeClass(type?: string) {
 }
 
 function handleTabChange(tab: string | number) {
-  if (tab === 'packets') {
-    loadPackets();
-  } else if (tab === 'gateway-sessions') {
+  if (tab === 'gateway-sessions') {
     loadGatewaySessions();
   } else if (tab === 'list-device-testing') {
     listDevicePanelRef.value?.loadDevices?.();
@@ -610,9 +449,7 @@ function handleTabChange(tab: string | number) {
 }
 
 function refreshActiveTab() {
-  if (activeTab.value === 'packets') {
-    loadPackets();
-  } else if (activeTab.value === 'gateway-sessions') {
+  if (activeTab.value === 'gateway-sessions') {
     loadGatewaySessions();
   } else if (activeTab.value === 'list-device-testing') {
     listDevicePanelRef.value?.loadDevices?.();
