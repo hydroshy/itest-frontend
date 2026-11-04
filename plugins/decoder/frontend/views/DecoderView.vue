@@ -148,8 +148,8 @@
               <tr>
                 <th class="w-16 text-center">ID</th>
                 <th>Tên &amp; Mô Tả Bộ Giải Mã</th>
-                <th>SKU &amp; LONG_FW</th>
-                <th>ITEM_CODE / FW_CODE</th>
+                <th>Mã SKU</th>
+                <th>ITEM_CODE / FW_VERSION</th>
                 <th>Code Preview / Version</th>
                 <th class="text-center w-28">Trạng Thái</th>
                 <th class="text-right w-44">Thao Tác</th>
@@ -176,14 +176,11 @@
                   <div class="text-xs text-base-content/60 mt-0.5 line-clamp-1">{{ row.description || 'Chưa có mô tả' }}</div>
                 </td>
                 <td>
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="badge badge-primary badge-sm font-mono font-semibold">{{ row.sku }}</span>
-                    <span class="badge badge-ghost badge-sm font-mono text-base-content/70">{{ row.longFw || 'Mặc định' }}</span>
-                  </div>
+                  <span class="badge badge-primary badge-sm font-mono font-semibold">{{ row.sku }}</span>
                 </td>
                 <td>
-                  <div class="font-mono text-xs">ITEM: {{ row.itemCode || 'Chưa đặt' }}</div>
-                  <div class="font-mono text-xs">FW: {{ row.fwCode || 'Chưa đặt' }}</div>
+                  <div class="font-mono text-xs font-semibold text-primary">ITEM: {{ row.itemCode || row.sku || 'Chưa đặt' }}</div>
+                  <div class="font-mono text-xs text-base-content/70">FW_VER: {{ row.longFw || row.fwCode || 'Mặc định' }}</div>
                 </td>
                 <td>
                   <code class="bg-base-300/80 px-2 py-1 rounded text-xs font-mono text-cyan-400 block max-w-xs truncate">
@@ -520,7 +517,7 @@
             />
           </div>
 
-          <!-- SKU & LONG_FW Grid -->
+          <!-- SKU & ITEM_CODE Grid -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="form-control">
               <label class="label py-1"><span class="label-text text-xs font-semibold">SKU Thiết Bị <span class="text-error">*</span></span></label>
@@ -528,7 +525,7 @@
                 v-model="form.sku"
                 type="text"
                 list="sku-datalist"
-                placeholder="Chọn hoặc nhập SKU..."
+                placeholder="Chọn hoặc nhập SKU (VD: WSLRW-ATH)..."
                 class="input input-sm input-bordered bg-base-100 text-xs font-mono w-full"
                 required
                 @input="handleFormSkuChange"
@@ -539,32 +536,47 @@
             </div>
 
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">LONG_FW <span class="text-error">*</span></span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">ITEM_CODE</span></label>
+              <input
+                id="decoder-item-code"
+                v-model.trim="form.itemCode"
+                maxlength="100"
+                class="input input-sm input-bordered bg-base-100 text-xs font-mono w-full"
+                placeholder="VD: WSLRW-ATH-06 (để trống tự lấy theo SKU)"
+              />
+            </div>
+          </div>
+
+          <!-- FW_VERSION & FW_CODE Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">FW_VERSION (Phiên bản Firmware) <span class="text-error">*</span></span></label>
               <input
                 v-model="form.longFw"
                 type="text"
                 list="longfw-datalist"
-                placeholder="Chọn hoặc nhập LONG_FW..."
+                placeholder="VD: 6F0627 hoặc 01.00.00"
                 class="input input-sm input-bordered bg-base-100 text-xs font-mono w-full"
                 required
+                @input="handleFormFwChange"
               />
               <datalist id="longfw-datalist">
                 <option v-for="fw in availableFwOptions" :key="fw" :value="fw" />
               </datalist>
             </div>
-          </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label class="form-control text-xs font-semibold" for="decoder-item-code">
-              ITEM_CODE
-              <input id="decoder-item-code" v-model.trim="form.itemCode" maxlength="100" class="input input-bordered font-mono w-full" placeholder="Mã sản phẩm thiết bị testing" />
-            </label>
-            <label class="form-control text-xs font-semibold" for="decoder-fw-code">
-              FW_CODE
-              <input id="decoder-fw-code" v-model.trim="form.fwCode" maxlength="50" class="input input-bordered font-mono w-full" placeholder="Mã firmware thiết bị testing" />
-            </label>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">FW_CODE (Tùy chọn)</span></label>
+              <input
+                id="decoder-fw-code"
+                v-model.trim="form.fwCode"
+                maxlength="50"
+                class="input input-sm input-bordered bg-base-100 text-xs font-mono w-full"
+                placeholder="Tự động đồng bộ theo FW_VERSION nếu để trống"
+              />
+            </div>
           </div>
-          <p class="text-xs">LONG_FW dùng để khớp phiên bản firmware thiết bị. Để trống ITEM_CODE/FW_CODE khi chỉ ánh xạ theo SKU.</p>
+          <p class="text-xs text-base-content/60">ITEM_CODE và FW_VERSION dùng để tự động liên kết trích xuất Field Data cho Testing &amp; AutoCheck.</p>
 
           <!-- Mô tả -->
           <div class="form-control">
@@ -1172,8 +1184,18 @@ function openEditDialog(row: any) {
 }
 
 function handleFormSkuChange() {
+  if (!form.itemCode) {
+    form.itemCode = form.sku;
+  }
   if (availableFwOptions.value.length > 0 && !form.longFw) {
     form.longFw = availableFwOptions.value[0];
+    if (!form.fwCode) form.fwCode = form.longFw;
+  }
+}
+
+function handleFormFwChange() {
+  if (!form.fwCode) {
+    form.fwCode = form.longFw;
   }
 }
 
@@ -1235,6 +1257,10 @@ async function submitForm() {
     return;
   }
 
+  // Auto-sync ITEM_CODE and FW_CODE if omitted to keep testing resolution unified
+  const finalItemCode = form.itemCode?.trim() || form.sku.trim();
+  const finalFwCode = form.fwCode?.trim() || form.longFw.trim();
+
   submittingForm.value = true;
   try {
     if (isEditing.value && editingId.value) {
@@ -1242,8 +1268,8 @@ async function submitForm() {
         name: form.name,
         sku: form.sku,
         longFw: form.longFw,
-        itemCode: form.itemCode,
-        fwCode: form.fwCode,
+        itemCode: finalItemCode,
+        fwCode: finalFwCode,
         description: form.description,
         script: form.script,
         samplePayload: form.samplePayload,
@@ -1256,8 +1282,8 @@ async function submitForm() {
         name: form.name,
         sku: form.sku,
         longFw: form.longFw,
-        itemCode: form.itemCode,
-        fwCode: form.fwCode,
+        itemCode: finalItemCode,
+        fwCode: finalFwCode,
         description: form.description,
         script: form.script,
         samplePayload: form.samplePayload,
