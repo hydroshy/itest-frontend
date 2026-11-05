@@ -26,40 +26,8 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 flex-wrap">
-          <button
-            class="btn btn-sm btn-outline gap-1.5"
-            @click="$emit('switch-tab', 'create-test-batch')"
-          >
-            <FolderPlus class="w-3.5 h-3.5" />
-            Tạo Batch Mới
-          </button>
-        </div>
       </div>
     </div>
-
-    <!-- Running batch selector stays separate from the new-batch configuration. -->
-    <section class="card bg-base-200 border border-base-300 rounded-xl p-4 space-y-3" aria-labelledby="running-batches-title">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h3 id="running-batches-title" class="font-semibold">Test batch đang chạy của bạn ({{ runningBatches.length }})</h3>
-        <button class="btn btn-sm min-h-11" :disabled="loadingRunningBatches" @click="loadRunningBatches">Làm mới danh sách</button>
-      </div>
-      <p v-if="runningBatchesError" role="alert" class="text-error">{{ runningBatchesError }}</p>
-      <p v-else-if="loadingRunningBatches && !runningBatches.length" role="status">Đang tải test batch...</p>
-      <p v-else-if="!runningBatches.length">Bạn chưa có test batch nào đang chạy.</p>
-      <div v-else class="flex flex-wrap items-end gap-3">
-        <label class="flex flex-col gap-1 flex-1 min-w-0">
-          <span class="text-sm">Chọn batch để xem thiết bị và đồng hồ</span>
-          <select class="select select-bordered min-h-11 w-full" :value="isTesting ? selectedBatchId : ''" @change="selectRunningBatch(($event.target as HTMLSelectElement).value)">
-            <option value="" disabled>Chọn test batch đang chạy</option>
-            <option v-for="batch in runningBatches" :key="batch.id" :value="batch.id">{{ batch.batch_code || batch.batchCode }} · {{ batch.batch_name || batch.batchName || batch.id }}</option>
-          </select>
-        </label>
-        <button v-if="isTesting" class="btn btn-error min-h-11" :disabled="cancellingBatch" @click="cancelSelectedBatch">{{ cancellingBatch ? 'Đang hủy...' : 'Hủy batch đang xem' }}</button>
-      </div>
-      <button v-if="isTesting || testFinished" class="btn min-h-11 self-start" @click="prepareNewBatch">Chuẩn bị batch khác</button>
-
-    </section>
 
     <!-- Step 1: Chọn Cấu Hình Đợt Test (ITEM-CODE & FW_VERSION Tự Động) -->
     <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
@@ -294,6 +262,27 @@
               </button>
             </div>
           </div>
+
+      <section class="space-y-3" aria-labelledby="running-batches-title">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h3 id="running-batches-title" class="font-semibold">Test batch đang chạy của bạn ({{ runningBatches.length }})</h3>
+          <button class="btn btn-sm min-h-11" :disabled="loadingRunningBatches" @click="loadRunningBatches">Làm mới danh sách</button>
+        </div>
+        <p v-if="runningBatchesError" role="alert" class="text-error">{{ runningBatchesError }}</p>
+        <p v-else-if="!hasLoadedRunningBatches" role="status">Đang tải test batch...</p>
+        <p v-else-if="!runningBatches.length">Bạn chưa có test batch nào đang chạy.</p>
+        <div v-if="runningBatches.length" class="flex flex-wrap items-end gap-3">
+          <label class="flex flex-col gap-1 flex-1 min-w-0">
+            <span class="text-sm">Chọn batch để xem thiết bị và đồng hồ</span>
+            <select class="select select-bordered min-h-11 w-full" :value="isTesting ? selectedBatchId : ''" @change="selectRunningBatch(($event.target as HTMLSelectElement).value)">
+              <option value="" disabled>Chọn test batch đang chạy</option>
+              <option v-for="batch in runningBatches" :key="batch.id" :value="batch.id">{{ batch.batch_code || batch.batchCode }} · {{ batch.batch_name || batch.batchName || batch.id }}</option>
+            </select>
+          </label>
+          <button v-if="isTesting" class="btn btn-error min-h-11" :disabled="cancellingBatch" @click="cancelSelectedBatch">{{ cancellingBatch ? 'Đang hủy...' : 'Hủy batch đang xem' }}</button>
+        </div>
+        <button v-if="isTesting || testFinished" class="btn min-h-11" @click="prepareNewBatch">Chuẩn bị batch khác</button>
+      </section>
 
           <div v-if="requiresReferenceDevice" class="p-2.5 bg-base-100/60 border border-base-300 rounded-lg text-xs text-base-content/80 flex items-start gap-2">
             <Info class="w-4 h-4 text-info shrink-0 mt-0.5" />
@@ -615,16 +604,19 @@ const goldenReferenceDevices = ref<any[]>([]);
 
 const runningBatches = ref<any[]>([]);
 const loadingRunningBatches = ref(false);
+const hasLoadedRunningBatches = ref(false);
 const runningBatchesError = ref('');
 const cancellingBatch = ref(false);
 let runningBatchesInterval: ReturnType<typeof setInterval>;
 
 async function loadRunningBatches() {
+  if (loadingRunningBatches.value) return;
   loadingRunningBatches.value = true;
   try {
     const res: any = await httpClient.get('/plugins/testing/test-batches/running');
     const data = res?.data ?? res;
     runningBatches.value = Array.isArray(data) ? data : [];
+    hasLoadedRunningBatches.value = true;
     runningBatchesError.value = '';
   } catch {
     runningBatchesError.value = 'Không tải được batch đang chạy. Bấm Làm mới danh sách để thử lại.';
