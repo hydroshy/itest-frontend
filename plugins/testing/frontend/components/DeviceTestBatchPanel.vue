@@ -38,73 +38,28 @@
       </div>
     </div>
 
-    <!-- Active Timer & Simulation Progress HUD (Visible when testing or finished) -->
-    <div v-if="isTesting || testFinished" class="card bg-base-200/80 border border-primary/40 rounded-xl shadow-md p-4 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <!-- Timer Countdown -->
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 bg-base-100/90 px-3 py-1.5 rounded-lg border border-base-300">
-            <Timer class="w-5 h-5 text-warning animate-spin-slow" />
-            <div>
-              <div class="text-[10px] font-mono uppercase text-base-content/60">Đếm giờ Simulation Flow</div>
-              <div class="text-lg font-mono font-bold tracking-wider text-warning">
-                {{ formatCountdown(remainingSeconds) }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Duration & Elapsed -->
-          <div class="hidden sm:block text-xs font-mono text-base-content/70">
-            <div>Tổng thời lượng: <span class="font-bold text-white">{{ totalDurationSeconds }}s</span></div>
-            <div>Đã chạy: <span class="font-bold text-primary">{{ elapsedSeconds }}s</span></div>
-          </div>
-        </div>
-
-        <!-- Simulation Flow Steps Progress -->
-        <div class="flex-1 max-w-xl">
-          <div class="flex items-center justify-between text-xs font-mono mb-1">
-            <span class="text-primary font-bold flex items-center gap-1.5">
-              <Cpu class="w-3.5 h-3.5" />
-              Flow: {{ currentFlowName }}
-            </span>
-            <span class="text-base-content/80 font-bold">
-              Bước {{ currentStepIndex + 1 }}/{{ flowSteps.length }}: {{ currentStepName }}
-            </span>
-          </div>
-          <progress
-            class="progress progress-primary w-full h-2.5 bg-base-300"
-            :value="progressPercent"
-            max="100"
-          ></progress>
-        </div>
-
-        <!-- Verdict Summary Badges & Server Timestamps -->
-        <div class="flex flex-wrap items-center gap-2">
-          <div v-if="batchStartedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
-            <span>Bắt đầu: {{ formatTimestamp(batchStartedAt) }}</span>
-          </div>
-          <div v-if="testFinished && batchFinishedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
-            <span>Kết thúc: {{ formatTimestamp(batchFinishedAt) }}</span>
-          </div>
-          <div class="badge badge-success gap-1 font-mono text-xs py-2 px-2.5">
-            <CheckCircle2 class="w-3.5 h-3.5" />
-            PASS: {{ passCount }}/{{ selectedDevices.length }}
-          </div>
-          <div v-if="failCount > 0" class="badge badge-error gap-1 font-mono text-xs py-2 px-2.5">
-            <AlertCircle class="w-3.5 h-3.5" />
-            FAIL: {{ failCount }}/{{ selectedDevices.length }}
-          </div>
-          <a
-            v-if="testFinished"
-            class="badge badge-primary gap-1 font-mono text-xs py-2 px-2.5 cursor-pointer hover:badge-secondary transition-colors shadow-sm"
-            href="/plugins/device-traceability?tab=devices"
-            title="Mở xem dữ liệu đã test trong Device Traceability"
-          >
-            <span>Đã lưu vào Traceability (Xem ngay)</span>
-          </a>
-        </div>
+    <!-- Running batch selector stays separate from the new-batch configuration. -->
+    <section class="card bg-base-200 border border-base-300 rounded-xl p-4 space-y-3" aria-labelledby="running-batches-title">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h3 id="running-batches-title" class="font-semibold">Test batch đang chạy của bạn ({{ runningBatches.length }})</h3>
+        <button class="btn btn-sm min-h-11" :disabled="loadingRunningBatches" @click="loadRunningBatches">Làm mới danh sách</button>
       </div>
-    </div>
+      <p v-if="runningBatchesError" role="alert" class="text-error">{{ runningBatchesError }}</p>
+      <p v-else-if="loadingRunningBatches && !runningBatches.length" role="status">Đang tải test batch...</p>
+      <p v-else-if="!runningBatches.length">Bạn chưa có test batch nào đang chạy.</p>
+      <div v-else class="flex flex-wrap items-end gap-3">
+        <label class="flex flex-col gap-1 flex-1 min-w-0">
+          <span class="text-sm">Chọn batch để xem thiết bị và đồng hồ</span>
+          <select class="select select-bordered min-h-11 w-full" :value="isTesting ? selectedBatchId : ''" @change="selectRunningBatch(($event.target as HTMLSelectElement).value)">
+            <option value="" disabled>Chọn test batch đang chạy</option>
+            <option v-for="batch in runningBatches" :key="batch.id" :value="batch.id">{{ batch.batch_code || batch.batchCode }} · {{ batch.batch_name || batch.batchName || batch.id }}</option>
+          </select>
+        </label>
+        <button v-if="isTesting" class="btn btn-error min-h-11" :disabled="cancellingBatch" @click="cancelSelectedBatch">{{ cancellingBatch ? 'Đang hủy...' : 'Hủy batch đang xem' }}</button>
+      </div>
+      <button v-if="isTesting || testFinished" class="btn min-h-11 self-start" @click="prepareNewBatch">Chuẩn bị batch khác</button>
+
+    </section>
 
     <!-- Step 1: Chọn Cấu Hình Đợt Test (ITEM-CODE & FW_VERSION Tự Động) -->
     <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
@@ -347,6 +302,74 @@
             </div>
           </div>
 
+    <!-- Timer belongs to the selected batch monitor. -->
+    <div v-if="isTesting || testFinished" class="card bg-base-200/80 border border-primary/40 rounded-xl shadow-md p-4 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <!-- Timer Countdown -->
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 bg-base-100/90 px-3 py-1.5 rounded-lg border border-base-300">
+            <Timer class="w-5 h-5 text-warning animate-spin-slow" />
+            <div>
+              <div class="text-[10px] font-mono uppercase text-base-content/60">Đếm giờ Simulation Flow</div>
+              <div class="text-lg font-mono font-bold tracking-wider text-warning">
+                {{ formatCountdown(remainingSeconds) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Duration & Elapsed -->
+          <div class="hidden sm:block text-xs font-mono text-base-content/70">
+            <div>Tổng thời lượng: <span class="font-bold text-white">{{ totalDurationSeconds }}s</span></div>
+            <div>Đã chạy: <span class="font-bold text-primary">{{ elapsedSeconds }}s</span></div>
+          </div>
+        </div>
+
+        <!-- Simulation Flow Steps Progress -->
+        <div class="flex-1 max-w-xl">
+          <div class="flex items-center justify-between text-xs font-mono mb-1">
+            <span class="text-primary font-bold flex items-center gap-1.5">
+              <Cpu class="w-3.5 h-3.5" />
+              Flow: {{ currentFlowName }}
+            </span>
+            <span class="text-base-content/80 font-bold">
+              Bước {{ currentStepIndex + 1 }}/{{ flowSteps.length }}: {{ currentStepName }}
+            </span>
+          </div>
+          <progress
+            class="progress progress-primary w-full h-2.5 bg-base-300"
+            :value="progressPercent"
+            max="100"
+          ></progress>
+        </div>
+
+        <!-- Verdict Summary Badges & Server Timestamps -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div v-if="batchStartedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
+            <span>Bắt đầu: {{ formatTimestamp(batchStartedAt) }}</span>
+          </div>
+          <div v-if="testFinished && batchFinishedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
+            <span>Kết thúc: {{ formatTimestamp(batchFinishedAt) }}</span>
+          </div>
+          <div class="badge badge-success gap-1 font-mono text-xs py-2 px-2.5">
+            <CheckCircle2 class="w-3.5 h-3.5" />
+            PASS: {{ passCount }}/{{ selectedDevices.length }}
+          </div>
+          <div v-if="failCount > 0" class="badge badge-error gap-1 font-mono text-xs py-2 px-2.5">
+            <AlertCircle class="w-3.5 h-3.5" />
+            FAIL: {{ failCount }}/{{ selectedDevices.length }}
+          </div>
+          <a
+            v-if="testFinished"
+            class="badge badge-primary gap-1 font-mono text-xs py-2 px-2.5 cursor-pointer hover:badge-secondary transition-colors shadow-sm"
+            href="/plugins/device-traceability?tab=devices"
+            title="Mở xem dữ liệu đã test trong Device Traceability"
+          >
+            <span>Đã lưu vào Traceability (Xem ngay)</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
           <!-- Mapped Devices Table -->
           <div class="overflow-x-auto border border-base-300 rounded-lg">
             <table class="table table-zebra table-xs w-full">
@@ -467,7 +490,7 @@
               <button
                 v-if="isTesting"
                 class="btn btn-sm btn-error gap-1.5 shadow-sm font-semibold"
-                @click="finishBatchTest"
+                @click="cancelSelectedBatch"
               >
                 <Square class="w-4 h-4" />
                 Dừng Kiểm Thử
@@ -589,6 +612,66 @@ const maxAllowedDevices = ref(5);
 
 // Golden Reference Devices pool (loaded dynamically from API)
 const goldenReferenceDevices = ref<any[]>([]);
+
+const runningBatches = ref<any[]>([]);
+const loadingRunningBatches = ref(false);
+const runningBatchesError = ref('');
+const cancellingBatch = ref(false);
+let runningBatchesInterval: ReturnType<typeof setInterval>;
+
+async function loadRunningBatches() {
+  loadingRunningBatches.value = true;
+  try {
+    const res: any = await httpClient.get('/plugins/testing/test-batches/running');
+    const data = res?.data ?? res;
+    runningBatches.value = Array.isArray(data) ? data : [];
+    runningBatchesError.value = '';
+  } catch {
+    runningBatchesError.value = 'Không tải được batch đang chạy. Bấm Làm mới danh sách để thử lại.';
+  } finally {
+    loadingRunningBatches.value = false;
+  }
+}
+
+function prepareNewBatch() {
+  clearInterval(timerInterval);
+  clearInterval(simulationInterval);
+  timerInterval = null;
+  simulationInterval = null;
+  selectedBatchId.value = '';
+  selectedDevices.value = [];
+  isTesting.value = false;
+  testFinished.value = false;
+  batchStartedAt.value = '';
+  batchFinishedAt.value = '';
+  batchVerdict.value = '';
+  elapsedSeconds.value = 0;
+  currentStepIndex.value = 0;
+}
+
+function selectRunningBatch(id: string) {
+  if (!id) return;
+  prepareNewBatch();
+  selectedBatchId.value = id;
+  if (selectedBatchConfig.value) onBatchSelectChange();
+  else checkAndSyncBatchStatus();
+}
+
+async function cancelSelectedBatch() {
+  const id = selectedBatchId.value;
+  if (!id || !window.confirm('Hủy batch đang xem? Các batch khác vẫn tiếp tục chạy.')) return;
+  cancellingBatch.value = true;
+  try {
+    await httpClient.post(`/plugins/testing/test-batches/${id}/cancel`);
+    if (selectedBatchId.value === id) prepareNewBatch();
+    await loadRunningBatches();
+    cyberToast.success('Đã hủy test batch.');
+  } catch (err: any) {
+    cyberToast.error(err?.response?.data?.message || 'Không thể hủy test batch.');
+  } finally {
+    cancellingBatch.value = false;
+  }
+}
 
 // Testing Execution & Timer State
 const isTesting = ref(false);
@@ -782,9 +865,11 @@ function onBatchSelectChange() {
 }
 
 async function checkAndSyncBatchStatus() {
-  if (!selectedBatchId.value) return;
+  const id = selectedBatchId.value;
+  if (!id) return;
   try {
-    const res: any = await httpClient.get(`/plugins/testing/test-batches/${selectedBatchId.value}/status`);
+    const res: any = await httpClient.get(`/plugins/testing/test-batches/${id}/status`);
+    if (selectedBatchId.value !== id) return;
     const statusData = res?.data || res;
     if (!statusData) return;
 
@@ -848,9 +933,7 @@ async function checkAndSyncBatchStatus() {
             Math.floor(elapsedSeconds.value / Math.max(1, stepDuration))
           );
         }
-        if (remainingSeconds.value <= 0) {
-          finishBatchTest();
-        }
+        if (remainingSeconds.value <= 0) pollBatchStatus();
       }, 1000);
 
       clearInterval(simulationInterval);
@@ -861,7 +944,8 @@ async function checkAndSyncBatchStatus() {
       statusData.status === 'COMPLETED' ||
       statusData.status === 'FINISHED' ||
       statusData.status === 'PASSED' ||
-      statusData.status === 'FAILED'
+      statusData.status === 'FAILED' ||
+      statusData.status === 'STOPPED'
     ) {
       clearInterval(timerInterval);
       clearInterval(simulationInterval);
@@ -993,7 +1077,8 @@ async function loadAvailableDevices() {
 }
 
 // Timer & Simulation Execution
-function startBatchTest() {
+async function startBatchTest() {
+  const id = selectedBatchId.value;
   if (!selectedBatchId.value) {
     cyberToast.warning('Vui lòng chọn Test Batch trước khi bấm bắt đầu!');
     return;
@@ -1045,9 +1130,19 @@ function startBatchTest() {
         referenceDeviceName: item.referenceDevice?.name || null,
       })),
     };
-    httpClient.post(`/plugins/testing/test-batches/${selectedBatchId.value}/start`, startPayload).catch((err: any) => {
-      console.debug('[DeviceTestBatchPanel] Backend start note:', err.message);
-    });
+    try {
+      const res: any = await httpClient.post(`/plugins/testing/test-batches/${id}/start`, startPayload);
+      await loadRunningBatches();
+      if (selectedBatchId.value !== id) return;
+      const data = res?.data || res;
+      batchStartedAt.value = data.startedAt || '';
+    } catch (err: any) {
+      if (selectedBatchId.value !== id) return;
+      cyberToast.error(err?.response?.data?.message || 'Không thể bắt đầu Test Batch');
+      isTesting.value = false;
+      selectedDevices.value.forEach((d) => { d.status = 'PENDING'; });
+      return;
+    }
   }
 
   cyberToast.success(`Bắt đầu chạy Test Batch với ${selectedDevices.value.length} thiết bị song song`);
@@ -1067,9 +1162,7 @@ function startBatchTest() {
       );
     }
 
-    if (remainingSeconds.value <= 0) {
-      finishBatchTest();
-    }
+    if (remainingSeconds.value <= 0) pollBatchStatus();
   }, 1000);
 
   // Periodic real telemetry polling from backend status
@@ -1081,9 +1174,11 @@ function startBatchTest() {
 }
 
 async function pollBatchStatus() {
-  if (!selectedBatchId.value) return;
+  const id = selectedBatchId.value;
+  if (!id) return;
   try {
-    const res: any = await httpClient.get(`/plugins/testing/test-batches/${selectedBatchId.value}/status`);
+    const res: any = await httpClient.get(`/plugins/testing/test-batches/${id}/status`);
+    if (selectedBatchId.value !== id) return;
     const statusData = res?.data || res;
     if (!statusData) return;
 
@@ -1137,7 +1232,8 @@ async function pollBatchStatus() {
       statusData.status === 'COMPLETED' ||
       statusData.status === 'FINISHED' ||
       statusData.status === 'PASSED' ||
-      statusData.status === 'FAILED'
+      statusData.status === 'FAILED' ||
+      statusData.status === 'STOPPED'
     ) {
       finishBatchTest();
     }
@@ -1146,17 +1242,8 @@ async function pollBatchStatus() {
   }
 }
 
-function stopBatchTest() {
-  clearInterval(timerInterval);
-  clearInterval(simulationInterval);
-  isTesting.value = false;
-  if (selectedBatchId.value) {
-    httpClient.post(`/plugins/testing/test-batches/${selectedBatchId.value}/stop`).catch(() => {});
-  }
-  cyberToast.info('Đã dừng kiểm thử Test Batch');
-}
-
 async function finishBatchTest() {
+  const id = selectedBatchId.value;
   clearInterval(timerInterval);
   clearInterval(simulationInterval);
   isTesting.value = false;
@@ -1164,7 +1251,8 @@ async function finishBatchTest() {
 
   if (selectedBatchId.value) {
     try {
-      const res: any = await httpClient.get(`/plugins/testing/test-batches/${selectedBatchId.value}/status`);
+      const res: any = await httpClient.get(`/plugins/testing/test-batches/${id}/status`);
+      if (selectedBatchId.value !== id) return;
       const statusData = res?.data || res;
       if (statusData) {
         if (statusData.startedAt) batchStartedAt.value = statusData.startedAt;
@@ -1230,6 +1318,8 @@ function getItemStatusClass(status?: string) {
 
 onMounted(() => {
   loadSavedBatches();
+  loadRunningBatches();
+  runningBatchesInterval = setInterval(loadRunningBatches, 5000);
   loadReferenceDevices();
   loadAvailableDevices();
 
@@ -1248,6 +1338,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  clearInterval(runningBatchesInterval);
   clearInterval(timerInterval);
   clearInterval(simulationInterval);
 });
