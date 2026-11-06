@@ -615,7 +615,7 @@ async function saveTestBatch() {
     maxDevices: batchForm.maxDevices,
     flowDurationSeconds: batchForm.flowDurationSeconds,
     simuId: batchForm.simuId,
-    simulationFlow: selectedFlowData.value || (batchForm.simuId ? { id: batchForm.simuId } : undefined),
+    simulationFlow: selectedFlowData.value?.flowBlocks || selectedFlowData.value || (batchForm.simuId ? { id: batchForm.simuId } : undefined),
     autoCheckCriteria: selectedCriteriaData.value || (batchForm.autoCheckId ? { id: batchForm.autoCheckId } : undefined),
     status: 'READY',
   };
@@ -689,20 +689,60 @@ function getBatchStatusClass(status?: string) {
   }
 }
 
+function getFlowBlocks(f: any): any[] {
+  if (Array.isArray(f.flowBlocks)) return f.flowBlocks;
+  if (Array.isArray(f.blocks)) return f.blocks;
+  if (Array.isArray(f.timedActions)) return f.timedActions;
+  return [];
+}
+
+function getFlowDuration(blocks: any[], fallbackDuration?: number): number {
+  if (Array.isArray(blocks) && blocks.length > 0) {
+    return blocks.reduce((acc: number, b: any) => {
+      const type = b.functionType || b.type;
+      if (type === 'delay') {
+        return acc + (Number(b.delaySeconds || b.duration_seconds || b.duration) || 0);
+      }
+      return acc;
+    }, 0);
+  }
+  return fallbackDuration || 0;
+}
+
+function getBlockStepLabel(b: any): string {
+  const type = b.functionType || b.type;
+  const target = (b.targetDevice || b.target || 'DUT').toUpperCase();
+  switch (type) {
+    case 'downlink':
+      return `Downlink (${target}, fport ${b.fPort || b.fport || 1})`;
+    case 'clear_downlink':
+      return `Clear Downlink (${target})`;
+    case 'delay':
+      return `Delay (${b.delaySeconds || b.duration_seconds || b.duration || 0}s)`;
+    default:
+      return b.name || b.label || type || 'Step';
+  }
+}
+
 async function loadFlows() {
   try {
     const res: any = await httpClient.get('/plugins/testing/simulation/profiles');
     const raw = res?.data;
     const items = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []));
     if (items.length > 0) {
-      availableFlows.value = items.map((f: any) => ({
-        id: f.simuId || f.id,
-        name: f.name || f.profileName || f.simuId || f.id,
-        duration: f.duration || f.flowDurationSeconds || f.durationSeconds || 0,
-        blocksCount: Array.isArray(f.flowBlocks) ? f.flowBlocks.length : (Array.isArray(f.blocks) ? f.blocks.length : (f.blocksCount || 0)),
-        description: f.description || `Kịch bản mô phỏng cho ${f.itemCode || 'thiết bị'}`,
-        steps: Array.isArray(f.flowBlocks) ? f.flowBlocks.map((b: any) => b.name || b.type) : [],
-      }));
+      availableFlows.value = items.map((f: any) => {
+        const blocks = getFlowBlocks(f);
+        const duration = getFlowDuration(blocks, f.duration || f.flowDurationSeconds || f.durationSeconds);
+        return {
+          id: f.simuId || f.id,
+          name: f.name || f.profileName || f.simuId || f.id,
+          duration,
+          blocksCount: blocks.length,
+          flowBlocks: blocks,
+          description: f.description || `Kịch bản mô phỏng cho ${f.itemCode || 'thiết bị'}`,
+          steps: blocks.map((b: any) => getBlockStepLabel(b)),
+        };
+      });
     } else {
       availableFlows.value = [];
     }
