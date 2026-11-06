@@ -567,9 +567,14 @@ async function submitEditFlow() {
     let updated: any;
     try {
       updated = await httpClient.put(`/plugins/testing/simulation/profiles/${targetId}`, payload);
-    } catch {
-      // Fallback post if put is not enabled yet
-      updated = await httpClient.post('/plugins/testing/simulation/profiles', payload);
+    } catch (putErr: any) {
+      const status = putErr?.response?.status || putErr?.status;
+      if (status === 404 || putErr?.message?.includes('404') || putErr?.message?.includes('Cannot PUT')) {
+        // Fallback post if put is not enabled or backend not redeployed yet
+        updated = await httpClient.post('/plugins/testing/simulation/profiles', payload);
+      } else {
+        throw putErr;
+      }
     }
     cyberToast.success('Cập nhật kịch bản Simulation thành công!');
     showEditModal.value = false;
