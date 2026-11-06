@@ -313,24 +313,6 @@
           </div>
         </div>
 
-        <!-- Simulation Flow Steps Progress -->
-        <div class="flex-1 max-w-xl">
-          <div class="flex items-center justify-between text-xs font-mono mb-1">
-            <span class="text-primary font-bold flex items-center gap-1.5">
-              <Cpu class="w-3.5 h-3.5" />
-              Flow: {{ currentFlowName }}
-            </span>
-            <span class="text-base-content/80 font-bold">
-              Bước {{ currentStepIndex + 1 }}/{{ flowSteps.length }}: {{ currentStepName }}
-            </span>
-          </div>
-          <progress
-            class="progress progress-primary w-full h-2.5 bg-base-300"
-            :value="progressPercent"
-            max="100"
-          ></progress>
-        </div>
-
         <!-- Verdict Summary Badges & Server Timestamps -->
         <div class="flex flex-wrap items-center gap-2">
           <div v-if="batchStartedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
