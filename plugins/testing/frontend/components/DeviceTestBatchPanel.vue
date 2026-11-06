@@ -420,21 +420,31 @@
                   <!-- Comparison Live Result -->
                   <td class="min-w-[170px]">
                     <div v-if="item.liveComparison" class="space-y-0.5 text-[11px] font-mono">
-                      <div class="flex justify-between">
+                      <div v-if="item.liveComparison.dutTemp !== undefined || item.liveComparison.refTemp !== undefined" class="flex justify-between">
                         <span class="text-base-content/60">Nhiệt độ (DUT / Ref):</span>
                         <span :class="item.liveComparison.tempDeltaPass ? 'text-success' : 'text-error font-bold'">
-                          {{ item.liveComparison.dutTemp }}°C / {{ item.liveComparison.refTemp }}°C (Δ {{ item.liveComparison.tempDelta }}°C)
+                          <template v-if="item.liveComparison.dutTemp !== undefined">{{ item.liveComparison.dutTemp }}°C</template>
+                          <template v-else>--</template>
+                          /
+                          <template v-if="item.liveComparison.refTemp !== undefined">{{ item.liveComparison.refTemp }}°C</template>
+                          <template v-else>--</template>
+                          <template v-if="item.liveComparison.tempDelta !== undefined"> (Δ {{ item.liveComparison.tempDelta }}°C)</template>
                         </span>
                       </div>
-                      <div class="flex justify-between">
+                      <div v-if="item.liveComparison.dutHum !== undefined || item.liveComparison.refHum !== undefined" class="flex justify-between">
                         <span class="text-base-content/60">Độ ẩm (DUT / Ref):</span>
                         <span :class="item.liveComparison.humDeltaPass ? 'text-success' : 'text-error font-bold'">
-                          {{ item.liveComparison.dutHum }}% / {{ item.liveComparison.refHum }}% (Δ {{ item.liveComparison.humDelta }}%)
+                          <template v-if="item.liveComparison.dutHum !== undefined">{{ item.liveComparison.dutHum }}%</template>
+                          <template v-else>--</template>
+                          /
+                          <template v-if="item.liveComparison.refHum !== undefined">{{ item.liveComparison.refHum }}%</template>
+                          <template v-else>--</template>
+                          <template v-if="item.liveComparison.humDelta !== undefined"> (Δ {{ item.liveComparison.humDelta }}%)</template>
                         </span>
                       </div>
-                      <div class="flex justify-between text-[10px] text-base-content/50">
+                      <div v-if="item.liveComparison.rssi !== undefined || item.liveComparison.snr !== undefined" class="flex justify-between text-[10px] text-base-content/50">
                         <span>Chất lượng RF:</span>
-                        <span>{{ item.liveComparison.rssi }} dBm | {{ item.liveComparison.snr }} dB</span>
+                        <span>{{ item.liveComparison.rssi !== undefined ? `${item.liveComparison.rssi} dBm` : '--' }} | {{ item.liveComparison.snr !== undefined ? `${item.liveComparison.snr} dB` : '--' }}</span>
                       </div>
                     </div>
                     <div v-else class="text-[11px] text-base-content/40 italic">
@@ -583,16 +593,16 @@ interface BatchDeviceItem {
   status: 'PENDING' | 'RUNNING' | 'PASS' | 'FAIL';
   packetsCount?: number;
   liveComparison?: {
-    dutTemp: number;
-    refTemp: number;
-    tempDelta: number;
-    tempDeltaPass: boolean;
-    dutHum: number;
-    refHum: number;
-    humDelta: number;
-    humDeltaPass: boolean;
-    rssi: number;
-    snr: number;
+    dutTemp?: number;
+    refTemp?: number;
+    tempDelta?: number;
+    tempDeltaPass?: boolean;
+    dutHum?: number;
+    refHum?: number;
+    humDelta?: number;
+    humDeltaPass?: boolean;
+    rssi?: number;
+    snr?: number;
   };
 }
 
@@ -601,6 +611,47 @@ const maxAllowedDevices = ref(5);
 
 // Golden Reference Devices pool (loaded dynamically from API)
 const goldenReferenceDevices = ref<any[]>([]);
+
+function parseNumericField(val: any): number | undefined {
+  if (val === null || val === undefined || val === '') return undefined;
+  const n = Number(val);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function buildLiveComparison(comp: any) {
+  if (!comp || typeof comp !== 'object') return undefined;
+  const dutTemp = parseNumericField(comp.dutTemp ?? comp.dut_temp);
+  const refTemp = parseNumericField(comp.refTemp ?? comp.ref_temp);
+  const tempDelta = parseNumericField(comp.tempDelta ?? comp.temp_delta);
+  const dutHum = parseNumericField(comp.dutHum ?? comp.dut_hum);
+  const refHum = parseNumericField(comp.refHum ?? comp.ref_hum);
+  const humDelta = parseNumericField(comp.humDelta ?? comp.hum_delta);
+  const rssi = parseNumericField(comp.rssi);
+  const snr = parseNumericField(comp.snr);
+
+  const hasAnyData =
+    dutTemp !== undefined ||
+    refTemp !== undefined ||
+    dutHum !== undefined ||
+    refHum !== undefined ||
+    rssi !== undefined ||
+    snr !== undefined;
+
+  if (!hasAnyData) return undefined;
+
+  return {
+    dutTemp,
+    refTemp,
+    tempDelta,
+    tempDeltaPass: comp.tempDeltaPass ?? comp.temp_pass ?? (comp.tolerance_pass !== false),
+    dutHum,
+    refHum,
+    humDelta,
+    humDeltaPass: comp.humDeltaPass ?? comp.hum_pass ?? true,
+    rssi,
+    snr,
+  };
+}
 
 const runningBatches = ref<any[]>([]);
 const loadingRunningBatches = ref(false);
@@ -899,18 +950,7 @@ async function checkAndSyncBatchStatus() {
           },
           status: d.verdict || d.status || 'RUNNING',
           packetsCount: d.packetsReceived || 0,
-          liveComparison: d.comparisonResult ? {
-            dutTemp: d.comparisonResult.dutTemp ?? d.comparisonResult.dut_temp,
-            refTemp: d.comparisonResult.refTemp ?? d.comparisonResult.ref_temp,
-            tempDelta: d.comparisonResult.tempDelta ?? d.comparisonResult.temp_delta,
-            tempDeltaPass: d.comparisonResult.tempDeltaPass ?? d.comparisonResult.temp_pass ?? (d.comparisonResult.tolerance_pass !== false),
-            dutHum: d.comparisonResult.dutHum ?? d.comparisonResult.dut_hum,
-            refHum: d.comparisonResult.refHum ?? d.comparisonResult.ref_hum,
-            humDelta: d.comparisonResult.humDelta ?? d.comparisonResult.hum_delta,
-            humDeltaPass: d.comparisonResult.humDeltaPass ?? d.comparisonResult.hum_pass ?? true,
-            rssi: d.comparisonResult.rssi,
-            snr: d.comparisonResult.snr,
-          } : undefined,
+          liveComparison: buildLiveComparison(d.comparisonResult),
         }));
       }
 
@@ -963,18 +1003,7 @@ async function checkAndSyncBatchStatus() {
           },
           status: d.verdict || d.status || 'PASS',
           packetsCount: d.packetsReceived || 0,
-          liveComparison: d.comparisonResult ? {
-            dutTemp: d.comparisonResult.dutTemp ?? d.comparisonResult.dut_temp,
-            refTemp: d.comparisonResult.refTemp ?? d.comparisonResult.ref_temp,
-            tempDelta: d.comparisonResult.tempDelta ?? d.comparisonResult.temp_delta,
-            tempDeltaPass: d.comparisonResult.tempDeltaPass ?? d.comparisonResult.temp_pass ?? (d.comparisonResult.tolerance_pass !== false),
-            dutHum: d.comparisonResult.dutHum ?? d.comparisonResult.dut_hum,
-            refHum: d.comparisonResult.refHum ?? d.comparisonResult.ref_hum,
-            humDelta: d.comparisonResult.humDelta ?? d.comparisonResult.hum_delta,
-            humDeltaPass: d.comparisonResult.humDeltaPass ?? d.comparisonResult.hum_pass ?? true,
-            rssi: d.comparisonResult.rssi,
-            snr: d.comparisonResult.snr,
-          } : undefined,
+          liveComparison: buildLiveComparison(d.comparisonResult),
         }));
       }
     } else {
@@ -1203,19 +1232,7 @@ async function pollBatchStatus() {
           item.packetsCount = matched.packetsReceived;
         }
         if (matched.comparisonResult) {
-          const comp = matched.comparisonResult;
-          item.liveComparison = {
-            dutTemp: comp.dutTemp ?? comp.dut_temp,
-            refTemp: comp.refTemp ?? comp.ref_temp,
-            tempDelta: comp.tempDelta ?? comp.temp_delta,
-            tempDeltaPass: comp.tempDeltaPass ?? comp.temp_pass ?? (comp.tolerance_pass !== false),
-            dutHum: comp.dutHum ?? comp.dut_hum,
-            refHum: comp.refHum ?? comp.ref_hum,
-            humDelta: comp.humDelta ?? comp.hum_delta,
-            humDeltaPass: comp.humDeltaPass ?? comp.hum_pass ?? true,
-            rssi: comp.rssi,
-            snr: comp.snr,
-          };
+          item.liveComparison = buildLiveComparison(matched.comparisonResult);
         }
       }
     });
@@ -1263,19 +1280,7 @@ async function finishBatchTest() {
                 item.packetsCount = dev.packetsReceived;
               }
               if (dev.comparisonResult) {
-                const comp = dev.comparisonResult;
-                item.liveComparison = {
-                  dutTemp: comp.dutTemp ?? comp.dut_temp,
-                  refTemp: comp.refTemp ?? comp.ref_temp,
-                  tempDelta: comp.tempDelta ?? comp.temp_delta,
-                  tempDeltaPass: comp.tempDeltaPass ?? comp.temp_pass ?? (comp.tolerance_pass !== false),
-                  dutHum: comp.dutHum ?? comp.dut_hum,
-                  refHum: comp.refHum ?? comp.ref_hum,
-                  humDelta: comp.humDelta ?? comp.hum_delta,
-                  humDeltaPass: comp.humDeltaPass ?? comp.hum_pass ?? true,
-                  rssi: comp.rssi,
-                  snr: comp.snr,
-                };
+                item.liveComparison = buildLiveComparison(dev.comparisonResult);
               }
             }
           });
