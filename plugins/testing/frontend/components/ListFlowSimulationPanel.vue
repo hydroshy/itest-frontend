@@ -1,6 +1,6 @@
 <template>
   <div class="list-flow-simulation-panel space-y-4">
-    <!-- Header Banner -->
+    <!-- Top Header Banner -->
     <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
@@ -9,14 +9,14 @@
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-xs font-mono font-bold text-primary tracking-wider uppercase">LoRaWAN Flow Simulation</span>
-              <span class="badge badge-xs badge-neutral font-mono font-bold">{{ flowProfiles.length }} KỊCH BẢN</span>
+              <span class="text-xs font-mono font-bold text-primary tracking-wider uppercase">Testing Automation</span>
+              <span class="badge badge-primary badge-xs font-mono font-bold">{{ flowProfiles.length }} KỊCH BẢN</span>
             </div>
             <h3 class="font-bold text-lg text-base-content mt-0.5">
-              List Flow Simulation (Danh Sách Kịch Bản Mô Phỏng)
+              Danh Sách Kịch Bản Simulation (Flow Profiles)
             </h3>
             <p class="text-xs text-base-content/70">
-              Quản lý các kịch bản kiểm thử mô phỏng chuỗi hàm (Function Blocks), thời lượng chạy và cấu hình RF/Payload cho Test Batch
+              Quản lý các quy trình function blocks tự động (Downlink, Clear Downlink FlushQueue, Delay) cho thiết bị thử nghiệm và liên kết Test Batch
             </p>
           </div>
         </div>
@@ -27,46 +27,42 @@
             :disabled="loading"
             @click="loadFlowProfiles"
           >
-            <span v-if="loading" class="loading loading-spinner loading-xs"></span>
-            <RefreshCw v-else class="w-3.5 h-3.5" />
+            <RotateCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
             Làm Mới
           </button>
+
           <button
-            class="btn btn-sm btn-primary gap-1.5 shadow-sm"
+            class="btn btn-sm btn-primary gap-1.5"
             @click="$emit('switch-tab', 'device-simulation')"
           >
-            <Plus class="w-4 h-4" />
+            <Plus class="w-3.5 h-3.5" />
             Tạo Flow Mới
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Search & Filter Controls -->
-    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-3">
+    <!-- Search & Filters -->
+    <div class="card bg-base-200 border border-base-300 rounded-xl p-3 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="relative flex-1 min-w-[260px] max-w-md">
-          <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
+        <div class="join w-full max-w-sm">
+          <span class="join-item btn btn-sm btn-ghost pointer-events-none text-base-content/50">
+            <Search class="w-4 h-4" />
+          </span>
           <input
             v-model="searchQuery"
             type="text"
-            class="input input-bordered input-sm w-full pl-9 text-xs bg-base-100 font-mono"
-            placeholder="Tìm theo Mã Flow, Tên kịch bản, ITEM_CODE, SKU..."
+            placeholder="Tìm theo Simu ID, tên, ITEM_CODE, FW..."
+            class="input input-sm input-bordered join-item w-full font-mono text-xs"
           />
-        </div>
-
-        <div class="flex items-center gap-2 text-xs text-base-content/70 font-mono">
-          <span>Tổng số: <strong class="text-base-content">{{ flowProfiles.length }}</strong></span>
-          <span>|</span>
-          <span>Khớp bộ lọc: <strong class="text-primary">{{ filteredFlows.length }}</strong></span>
         </div>
       </div>
     </div>
 
-    <!-- Flow Profiles Table -->
-    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-      <div class="overflow-x-auto rounded-lg border border-base-300 bg-base-100">
-        <table class="table table-sm table-zebra w-full">
+    <!-- Flows Table -->
+    <div class="card bg-base-200 border border-base-300 rounded-xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="table table-sm w-full">
           <thead class="bg-base-200/80 font-mono text-xs uppercase text-base-content/70">
             <tr>
               <th class="w-10 text-center">#</th>
@@ -102,71 +98,70 @@
                     @click="$emit('switch-tab', 'device-simulation')"
                   >
                     <Plus class="w-3.5 h-3.5" />
-                    Tạo Kịch Bản Mới
+                    Tạo Flow Mới
                   </button>
                 </div>
               </td>
             </tr>
 
-            <!-- Flow Row Items -->
+            <!-- Rows -->
             <tr
               v-for="(flow, idx) in filteredFlows"
               :key="flow.id || flow.simuId || idx"
-              class="hover group"
+              class="hover transition-colors"
             >
-              <!-- Index -->
-              <td class="text-center text-base-content/40">{{ idx + 1 }}</td>
+              <td class="text-center font-bold text-base-content/50">{{ idx + 1 }}</td>
 
               <!-- Simu ID -->
               <td>
-                <div class="font-bold text-primary flex items-center gap-1.5">
-                  <span>{{ flow.simuId || flow.id || '—' }}</span>
-                </div>
+                <div class="font-bold text-primary">{{ flow.simuId || flow.id }}</div>
+                <div class="text-[10px] text-base-content/50">{{ flow.createdAt || 'Mới tạo' }}</div>
               </td>
 
               <!-- Profile Name -->
               <td>
-                <div class="font-semibold text-base-content max-w-xs truncate" :title="flow.profileName || flow.name">
-                  {{ flow.profileName || flow.name || 'Kịch bản chưa đặt tên' }}
+                <div class="font-semibold text-base-content flex items-center gap-1.5">
+                  <span>{{ flow.profileName || flow.name || 'Kịch bản không tên' }}</span>
+                  <span v-if="hasRefDeviceInFlow(flow)" class="badge badge-warning badge-xs font-mono">
+                    CẦN REF
+                  </span>
                 </div>
-                <div v-if="flow.description" class="text-[11px] text-base-content/60 truncate max-w-xs">
-                  {{ flow.description }}
+                <div class="text-[10px] text-base-content/60 line-clamp-1">
+                  {{ flow.description || 'Quy trình kiểm tra tự động function blocks' }}
                 </div>
               </td>
 
-              <!-- ITEM_CODE & SKU -->
+              <!-- Item Code / SKU -->
               <td>
-                <div class="flex items-center gap-1">
-                  <span class="badge badge-sm badge-neutral font-bold border-base-300">
-                    {{ flow.itemCode || flow.item_code || '—' }}
-                  </span>
+                <div class="badge badge-sm badge-outline font-bold">
+                  {{ flow.itemCode || flow.item_code || '--' }}
                 </div>
-                <div v-if="flow.sku" class="text-[10px] text-base-content/50 truncate max-w-[130px]" :title="flow.sku">
-                  {{ flow.sku }}
+                <div v-if="flow.sku" class="text-[10px] text-base-content/60 font-mono mt-0.5">
+                  SKU: {{ flow.sku }}
                 </div>
               </td>
 
               <!-- FW Version -->
               <td>
-                <span class="text-base-content/80">
-                  {{ flow.longFw || flow.long_fw || flow.fwVersion || '—' }}
+                <span class="badge badge-sm font-mono" :class="flow.longFw ? 'badge-neutral' : 'badge-ghost'">
+                  {{ flow.longFw || flow.long_fw || flow.fwVersion || '--' }}
                 </span>
               </td>
 
               <!-- Blocks & Duration -->
               <td>
                 <div class="flex items-center gap-2">
-                  <span class="badge badge-xs badge-primary font-bold">
-                    {{ (flow.flowBlocks || flow.blocks || []).length || (flow.blocksCount ?? 0) }} BLOCKS
+                  <span class="badge badge-sm badge-primary font-bold">
+                    {{ getBlocksList(flow).length }} blocks
                   </span>
-                  <span class="text-base-content/70 flex items-center gap-1">
-                    <Clock class="w-3 h-3 text-base-content/40" />
+                  <span class="text-[11px] text-base-content/70 flex items-center gap-1 font-semibold">
+                    <Clock class="w-3 h-3 text-warning" />
                     {{ getDurationDisplay(flow) }}
                   </span>
                 </div>
               </td>
 
-              <!-- Sensor Connectivity / Protocol -->
+              <!-- Connectivity -->
               <td>
                 <span class="badge badge-xs badge-outline">
                   {{ flow.sensorConnectivity || flow.protocol || 'LoRaWAN' }}
@@ -176,6 +171,14 @@
               <!-- Actions -->
               <td class="text-right">
                 <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    class="btn btn-ghost btn-xs text-info gap-1"
+                    title="Chỉnh Sửa Kịch Bản"
+                    @click="openEditFlowModal(flow)"
+                  >
+                    <Edit3 class="w-3.5 h-3.5" />
+                    Sửa
+                  </button>
                   <button
                     class="btn btn-ghost btn-xs text-primary gap-1"
                     title="Xem Chi Tiết Blocks"
@@ -220,38 +223,32 @@
               </p>
             </div>
           </div>
-          <button type="button" class="btn btn-xs btn-circle btn-ghost" @click="showDetailModal = false">
-            <X class="w-4 h-4" />
-          </button>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="showDetailModal = false">✕</button>
         </div>
 
         <div v-if="selectedFlow" class="space-y-4">
-          <!-- Overview Cards -->
-          <div class="grid grid-cols-3 gap-2">
-            <div class="p-2.5 rounded-lg bg-base-200 border border-base-300 text-xs">
-              <span class="text-base-content/60 block text-[10px] uppercase font-bold">ITEM-CODE</span>
-              <strong class="font-mono text-primary">{{ selectedFlow.itemCode || selectedFlow.item_code || '—' }}</strong>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-mono">
+            <div class="p-2.5 bg-base-200 rounded-lg">
+              <span class="text-base-content/60 block text-[10px]">ITEM-CODE</span>
+              <span class="font-bold text-primary">{{ selectedFlow.itemCode || selectedFlow.item_code || '--' }}</span>
             </div>
-            <div class="p-2.5 rounded-lg bg-base-200 border border-base-300 text-xs">
-              <span class="text-base-content/60 block text-[10px] uppercase font-bold">Tổng Thời Lượng</span>
-              <strong class="font-mono text-base-content">{{ getDurationDisplay(selectedFlow) }}</strong>
+            <div class="p-2.5 bg-base-200 rounded-lg">
+              <span class="text-base-content/60 block text-[10px]">FW VERSION</span>
+              <span class="font-bold">{{ selectedFlow.longFw || selectedFlow.long_fw || selectedFlow.fwVersion || '--' }}</span>
             </div>
-            <div class="p-2.5 rounded-lg bg-base-200 border border-base-300 text-xs">
-              <span class="text-base-content/60 block text-[10px] uppercase font-bold">FW Version</span>
-              <strong class="font-mono text-base-content">{{ selectedFlow.longFw || selectedFlow.fwVersion || '—' }}</strong>
+            <div class="p-2.5 bg-base-200 rounded-lg">
+              <span class="text-base-content/60 block text-[10px]">TỔNG THỜI LƯỢNG</span>
+              <span class="font-bold text-warning">{{ getDurationDisplay(selectedFlow) }}</span>
+            </div>
+            <div class="p-2.5 bg-base-200 rounded-lg">
+              <span class="text-base-content/60 block text-[10px]">SỐ BLOCKS</span>
+              <span class="font-bold">{{ getBlocksList(selectedFlow).length }}</span>
             </div>
           </div>
 
-          <!-- Function Blocks List -->
           <div>
-            <div class="text-xs font-bold uppercase tracking-wider text-base-content/80 mb-2 flex items-center justify-between">
-              <span>Danh Sách Blocks Trong Quy Trình</span>
-              <span class="badge badge-xs badge-neutral font-mono">
-                {{ getBlocksList(selectedFlow).length }} blocks
-              </span>
-            </div>
-
-            <div v-if="getBlocksList(selectedFlow).length === 0" class="text-center py-6 text-xs text-base-content/50 border border-dashed border-base-300 rounded-lg">
+            <h4 class="text-xs font-bold uppercase text-base-content/80 mb-2">Danh Sách Các Khối Hàm Tuần Tự:</h4>
+            <div v-if="getBlocksList(selectedFlow).length === 0" class="text-xs text-base-content/50 italic py-4 text-center">
               Kịch bản chưa cấu hình chi tiết các khối function block.
             </div>
 
@@ -266,20 +263,20 @@
                     {{ bIdx + 1 }}
                   </span>
                   <div>
-                    <div class="font-semibold text-base-content">{{ block.name || block.type || `Block ${bIdx + 1}` }}</div>
+                    <div class="font-semibold text-base-content">{{ getFunctionLabel(block.functionType || block.type) }}</div>
                     <div class="text-[10px] text-base-content/60 font-mono">
-                      Type: <span class="badge badge-xs badge-ghost">{{ block.type }}</span>
-                      <span v-if="block.targetDevice"> &bull; Target: {{ block.targetDevice }}</span>
+                      Target: <span class="badge badge-xs font-bold" :class="block.targetDevice === 'REF' ? 'badge-warning' : 'badge-ghost'">{{ block.targetDevice || 'DUT' }}</span>
+                      <span v-if="block.fPort || block.fport"> &bull; FPort: {{ block.fPort || block.fport }}</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-3 text-[11px] font-mono">
-                  <div v-if="block.payloadHex" class="text-base-content/70">
-                    Payload: <code class="text-primary">{{ block.payloadHex }}</code>
+                  <div v-if="block.payloadHex || block.payload" class="text-base-content/70">
+                    Payload: <code class="text-primary font-bold">{{ block.payloadHex || block.payload }}</code>
                   </div>
-                  <div class="badge badge-sm badge-outline">
-                    {{ block.estimatedSeconds || block.duration || 10 }}s
+                  <div v-if="block.functionType === 'delay' || block.type === 'delay'" class="badge badge-sm badge-accent">
+                    Chờ {{ block.delaySeconds || block.duration_seconds || block.duration || 0 }}s
                   </div>
                 </div>
               </div>
@@ -287,50 +284,167 @@
           </div>
         </div>
 
-        <div class="modal-action pt-3 mt-4 border-t border-base-300 flex justify-between">
+        <div class="modal-action">
+          <button class="btn btn-sm btn-ghost" @click="showDetailModal = false">Đóng</button>
           <button
-            class="btn btn-sm btn-primary gap-1.5"
-            @click="useInBatch(selectedFlow); showDetailModal = false"
+            class="btn btn-sm btn-info gap-1"
+            @click="showDetailModal = false; openEditFlowModal(selectedFlow)"
+          >
+            <Edit3 class="w-3.5 h-3.5" />
+            Chỉnh Sửa
+          </button>
+          <button
+            class="btn btn-sm btn-success gap-1.5"
+            @click="useInBatch(selectedFlow); showDetailModal = false;"
           >
             <FolderPlus class="w-3.5 h-3.5" />
-            Sử Dụng Cho Test Batch Này
-          </button>
-          <button type="button" class="btn btn-sm btn-ghost" @click="showDetailModal = false">
-            Đóng
+            Chọn Cho Test Batch
           </button>
         </div>
       </div>
+      <form method="dialog" class="modal-backdrop">
+        <button @click="showDetailModal = false">close</button>
+      </form>
+    </dialog>
+
+    <!-- Modal: Chỉnh Sửa Flow Simulation -->
+    <dialog class="modal" :class="{ 'modal-open': showEditModal }">
+      <div class="modal-box bg-base-100 border border-base-300 max-w-4xl p-5">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-base-300">
+          <div class="flex items-center gap-2">
+            <Edit3 class="w-5 h-5 text-info" />
+            <div>
+              <h3 class="font-bold text-sm uppercase">Chỉnh Sửa Kịch Bản Flow Simulation</h3>
+              <p class="text-xs text-base-content/60 font-mono">
+                {{ editFlowForm.simuId }} &bull; Cập nhật quy trình 3 hàm chuẩn
+              </p>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="showEditModal = false">✕</button>
+        </div>
+
+        <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <!-- Thông tin cơ bản -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div class="form-control">
+              <label class="label py-0.5">
+                <span class="label-text text-xs font-semibold">Tên Kịch Bản</span>
+              </label>
+              <input
+                v-model="editFlowForm.profileName"
+                type="text"
+                class="input input-sm input-bordered w-full text-xs"
+                placeholder="Nhập tên kịch bản..."
+              />
+            </div>
+
+            <div class="form-control">
+              <label class="label py-0.5">
+                <span class="label-text text-xs font-semibold">ITEM-CODE</span>
+              </label>
+              <input
+                v-model="editFlowForm.itemCode"
+                type="text"
+                class="input input-sm input-bordered w-full font-mono text-xs uppercase"
+                placeholder="VD: WSLRW-01"
+              />
+            </div>
+
+            <div class="form-control">
+              <label class="label py-0.5">
+                <span class="label-text text-xs font-semibold">FW Version</span>
+              </label>
+              <input
+                v-model="editFlowForm.longFw"
+                type="text"
+                class="input input-sm input-bordered w-full font-mono text-xs uppercase"
+                placeholder="VD: 1F0001"
+              />
+            </div>
+
+            <div class="form-control">
+              <label class="label py-0.5">
+                <span class="label-text text-xs font-semibold">Loại Kết Nối</span>
+              </label>
+              <select
+                v-model="editFlowForm.sensorConnectivity"
+                class="select select-sm select-bordered w-full text-xs font-mono"
+              >
+                <option value="LoRaWAN">LoRaWAN</option>
+                <option value="Sigfox">Sigfox</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Function Blocks Builder -->
+          <div class="pt-2">
+            <SimulationFlowBuilder
+              v-model="editFlowBlocks"
+            />
+          </div>
+        </div>
+
+        <div class="modal-action pt-3 border-t border-base-300">
+          <button class="btn btn-sm btn-ghost" :disabled="savingEdit" @click="showEditModal = false">Hủy</button>
+          <button
+            class="btn btn-sm btn-primary gap-1.5"
+            :disabled="savingEdit"
+            @click="submitEditFlow"
+          >
+            <span v-if="savingEdit" class="loading loading-spinner loading-xs"></span>
+            Lưu Thay Đổi Kịch Bản
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button @click="showEditModal = false">close</button>
+      </form>
     </dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import {
   Layers,
   Plus,
-  RefreshCw,
+  RotateCcw,
   Search,
-  Clock,
   Eye,
   Trash2,
   FolderPlus,
-  X,
+  Clock,
+  Edit3,
 } from 'lucide-vue-next';
-import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
+import { httpClient } from '@/api/client';
+import SimulationFlowBuilder, { type FlowBlock } from './SimulationFlowBuilder.vue';
 
 const emit = defineEmits<{
-  (e: 'switch-tab', tabName: string, payload?: any): void;
+  (e: 'switch-tab', tab: string, payload?: any): void;
 }>();
 
 const loading = ref(false);
 const flowProfiles = ref<any[]>([]);
 const searchQuery = ref('');
 
-// Modal state
+// Modal detail state
 const showDetailModal = ref(false);
 const selectedFlow = ref<any>(null);
+
+// Modal edit state
+const showEditModal = ref(false);
+const savingEdit = ref(false);
+const editFlowBlocks = ref<FlowBlock[]>([]);
+const editFlowForm = reactive({
+  id: '',
+  simuId: '',
+  profileName: '',
+  itemCode: '',
+  longFw: '',
+  sku: '',
+  sensorConnectivity: 'LoRaWAN',
+});
 
 const filteredFlows = computed(() => {
   if (!searchQuery.value.trim()) return flowProfiles.value;
@@ -345,19 +459,40 @@ const filteredFlows = computed(() => {
   });
 });
 
+function hasRefDeviceInFlow(flow: any): boolean {
+  const blocks = getBlocksList(flow);
+  return blocks.some((b: any) => (b.targetDevice || b.target) === 'REF');
+}
+
 function getDurationDisplay(flow: any): string {
+  const blocks = getBlocksList(flow);
+  if (blocks.length > 0) {
+    const total = blocks.reduce((acc: number, b: any) => {
+      const type = b.functionType || b.type;
+      if (type === 'delay') {
+        return acc + (Number(b.delaySeconds || b.duration_seconds || b.duration) || 0);
+      }
+      return acc;
+    }, 0);
+    return `${total}s`;
+  }
   if (flow.durationSeconds) return `${flow.durationSeconds}s`;
   if (flow.flowDurationMinutes) return `${flow.flowDurationMinutes * 60}s`;
   if (flow.flowDurationSeconds) return `${flow.flowDurationSeconds}s`;
-  if (flow.duration) return `${flow.duration}s`;
+  return '0s';
+}
 
-  // Calculate from blocks if available
-  const blocks = getBlocksList(flow);
-  if (blocks.length > 0) {
-    const total = blocks.reduce((acc: number, b: any) => acc + (Number(b.estimatedSeconds || b.duration) || 10), 0);
-    return `${total}s`;
+function getFunctionLabel(type: string): string {
+  switch (type) {
+    case 'downlink':
+      return 'GỬI DOWNLINK';
+    case 'clear_downlink':
+      return 'CLEAR DOWNLINK (FLUSH)';
+    case 'delay':
+      return 'DELAY (CHỜ)';
+    default:
+      return type?.toUpperCase() || 'FUNCTION';
   }
-  return '300s';
 }
 
 function getBlocksList(flow: any): any[] {
@@ -368,9 +503,9 @@ function getBlocksList(flow: any): any[] {
     return flow.timedActions.map((a: any) => ({
       id: a.id,
       name: a.label || a.actionType,
-      type: a.actionType || 'downlink',
+      functionType: a.actionType || 'downlink',
       payloadHex: a.payloadHex,
-      estimatedSeconds: (a.triggerMinute || 1) * 60,
+      delaySeconds: (a.triggerMinute || 1) * 60,
     }));
   }
   return [];
@@ -395,6 +530,58 @@ function viewFlowDetails(flow: any) {
   showDetailModal.value = true;
 }
 
+function openEditFlowModal(flow: any) {
+  editFlowForm.id = flow.id || flow.simuId;
+  editFlowForm.simuId = flow.simuId || flow.id;
+  editFlowForm.profileName = flow.profileName || flow.name || '';
+  editFlowForm.itemCode = flow.itemCode || flow.item_code || '';
+  editFlowForm.longFw = flow.longFw || flow.long_fw || flow.fwVersion || '';
+  editFlowForm.sku = flow.sku || '';
+  editFlowForm.sensorConnectivity = flow.sensorConnectivity || 'LoRaWAN';
+
+  const rawBlocks = getBlocksList(flow);
+  editFlowBlocks.value = JSON.parse(JSON.stringify(rawBlocks));
+  showEditModal.value = true;
+}
+
+async function submitEditFlow() {
+  if (!editFlowForm.profileName.trim() && !editFlowForm.itemCode.trim()) {
+    cyberToast.warning('Vui lòng nhập Tên kịch bản hoặc ITEM_CODE!');
+    return;
+  }
+
+  savingEdit.value = true;
+  const payload = {
+    simuId: editFlowForm.simuId,
+    name: editFlowForm.profileName,
+    profileName: editFlowForm.profileName,
+    itemCode: editFlowForm.itemCode,
+    longFw: editFlowForm.longFw,
+    sku: editFlowForm.sku,
+    sensorConnectivity: editFlowForm.sensorConnectivity,
+    flowBlocks: editFlowBlocks.value,
+  };
+
+  try {
+    const targetId = encodeURIComponent(editFlowForm.id || editFlowForm.simuId);
+    let updated: any;
+    try {
+      updated = await httpClient.put(`/plugins/testing/simulation/profiles/${targetId}`, payload);
+    } catch {
+      // Fallback post if put is not enabled yet
+      updated = await httpClient.post('/plugins/testing/simulation/profiles', payload);
+    }
+    cyberToast.success('Cập nhật kịch bản Simulation thành công!');
+    showEditModal.value = false;
+    await loadFlowProfiles();
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || 'Lỗi khi cập nhật kịch bản';
+    cyberToast.error(msg);
+  } finally {
+    savingEdit.value = false;
+  }
+}
+
 function useInBatch(flow: any) {
   emit('switch-tab', 'create-test-batch', {
     selectedFlowId: flow.simuId || flow.id,
@@ -412,13 +599,14 @@ async function confirmDeleteFlow(flow: any) {
 
   const id = flow.id || flow.simuId;
   try {
-    await httpClient.delete(`/plugins/testing/simulation/profiles/${id}`);
+    const targetId = encodeURIComponent(id);
+    await httpClient.delete(`/plugins/testing/simulation/profiles/${targetId}`);
+    cyberToast.success(`Đã xóa kịch bản ${name}`);
+    await loadFlowProfiles();
   } catch (err: any) {
-    console.debug('[ListFlowSimulationPanel] Backend delete failed or fallback:', err.message);
+    const msg = err?.response?.data?.message || err?.message || 'Không thể xóa kịch bản (có thể đang được liên kết với Test Batch)';
+    cyberToast.error(msg);
   }
-
-  flowProfiles.value = flowProfiles.value.filter((f) => (f.id || f.simuId) !== id);
-  cyberToast.success(`Đã xóa kịch bản ${name}`);
 }
 
 onMounted(() => {

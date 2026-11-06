@@ -255,9 +255,9 @@ async function saveSimulationProfile() {
     await httpClient.post('/plugins/testing/simulation/profiles', payload);
     cyberToast.success('Đã lưu kịch bản Simulation thành công!');
     emit('switch-tab', 'list-flow-simulation');
-  } catch {
-    cyberToast.success('Kịch bản Simulation đã sẵn sàng!');
-    emit('switch-tab', 'list-flow-simulation');
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || 'Lỗi khi lưu kịch bản Simulation';
+    cyberToast.error(msg);
   } finally {
     savingProfile.value = false;
   }

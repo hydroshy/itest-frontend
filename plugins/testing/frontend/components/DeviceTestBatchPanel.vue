@@ -840,13 +840,15 @@ const requiresReferenceDevice = computed(() => {
   }
   const flow = cfg.simulation_flow || cfg.simulationFlow;
   if (flow) {
-    const blocks = Array.isArray(flow.blocks) ? flow.blocks : (Array.isArray(flow) ? flow : []);
-    if (blocks.length > 0 && !blocks.some((b: any) =>
-      b.type?.includes('ref') || b.type?.includes('compare') ||
-      b.name?.toLowerCase().includes('chuẩn') || b.name?.toLowerCase().includes('đối chiếu')
-    )) {
-      const criteria = cfg.auto_check_criteria || cfg.autoCheckCriteria || {};
-      if (criteria.compareWithReference === false) return false;
+    const blocks = Array.isArray(flow.flowBlocks)
+      ? flow.flowBlocks
+      : (Array.isArray(flow.blocks) ? flow.blocks : (Array.isArray(flow) ? flow : []));
+    if (blocks.length > 0) {
+      return blocks.some((b: any) =>
+        (b.targetDevice || b.target) === 'REF' ||
+        b.type?.includes('ref') || b.type?.includes('compare') ||
+        b.name?.toLowerCase().includes('chuẩn') || b.name?.toLowerCase().includes('đối chiếu')
+      );
     }
   }
   return true;
