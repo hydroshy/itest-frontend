@@ -119,7 +119,7 @@
                   <button
                     type="button"
                     class="btn btn-ghost btn-xs text-error hover:bg-error/10"
-                    @click="removeDevice(dev.devEui)"
+                    @click="removeDevice(dev)"
                     title="Xóa thiết bị"
                   >
                     <Trash2 class="w-3.5 h-3.5" />
@@ -370,18 +370,31 @@ async function submitRegisterModal() {
       status: 'simulation',
       pluginId: 'testing',
     });
-  } catch {
-    // Local fallback
+    simulationDevices.value.unshift(newDevice);
+    cyberToast.success(`Đã đăng ký thành công thiết bị ${eui} với nhãn SIMULATION!`);
+    showRegisterModal.value = false;
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || 'Không thể đăng ký thiết bị simulation';
+    cyberToast.error(msg);
   }
-
-  simulationDevices.value.unshift(newDevice);
-  cyberToast.success(`Đã đăng ký thành công thiết bị ${eui} với nhãn SIMULATION!`);
-  showRegisterModal.value = false;
 }
 
-function removeDevice(devEui: string) {
-  simulationDevices.value = simulationDevices.value.filter((d) => d.devEui !== devEui);
-  cyberToast.info(`Đã gỡ thiết bị ${devEui} khỏi danh sách simulation`);
+async function removeDevice(device: SimulationDevice) {
+  const id = device.id || device.devEui;
+  const name = device.name || device.devEui;
+  if (!confirm(`Bạn có chắc chắn muốn xóa thiết bị simulation "${name}" không?`)) {
+    return;
+  }
+
+  try {
+    const targetId = encodeURIComponent(id);
+    await httpClient.delete(`/plugins/testing/devices/${targetId}`);
+    simulationDevices.value = simulationDevices.value.filter((d) => (d.id || d.devEui) !== id);
+    cyberToast.info(`Đã xóa thiết bị ${name} khỏi danh sách simulation`);
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || 'Không thể xóa thiết bị simulation';
+    cyberToast.error(msg);
+  }
 }
 
 onMounted(() => {
