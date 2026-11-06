@@ -491,8 +491,12 @@ function onFwVersionInput(e: Event) {
 }
 
 function generateBatchCode() {
-  const item = batchForm.itemCode.trim().toUpperCase() || 'ITEM';
-  const fw = batchForm.longFw.trim().toUpperCase() || 'FW';
+  const item = batchForm.itemCode.trim().toUpperCase();
+  const fw = batchForm.longFw.trim().toUpperCase();
+  if (!item || !fw) {
+    batchForm.batchCode = '';
+    return;
+  }
   const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
   batchForm.batchCode = `TB-${item}-${fw}-${dateStr}`;
   if (!batchForm.batchName || batchForm.batchName.startsWith('Đợt Kiểm Thử')) {
@@ -545,11 +549,11 @@ function resetForm() {
   batchForm.itemCode = '';
   batchForm.longFw = '';
   batchForm.batchName = '';
-  generateBatchCode();
+  batchForm.batchCode = '';
   batchForm.maxDevices = 10;
-  batchForm.simuId = availableFlows.value[0]?.id || '';
-  batchForm.flowDurationSeconds = availableFlows.value[0]?.duration || 0;
-  batchForm.autoCheckId = availableCriteria.value[0]?.id || '';
+  batchForm.simuId = '';
+  batchForm.flowDurationSeconds = 0;
+  batchForm.autoCheckId = '';
   cyberToast.info('Đã làm mới form tạo Test Batch');
 }
 
@@ -585,6 +589,19 @@ async function saveTestBatch() {
   }
   if (!batchForm.maxDevices || batchForm.maxDevices < 1) {
     cyberToast.warning('Số lượng thiết bị phải lớn hơn 0!');
+    return;
+  }
+
+  if (!batchForm.batchName.trim()) {
+    cyberToast.warning('Vui lòng nhập Tên Đợt Test!');
+    return;
+  }
+  if (!batchForm.simuId) {
+    cyberToast.warning('Vui lòng chọn Kịch Bản Mô Phỏng (Simulation Flow)!');
+    return;
+  }
+  if (!batchForm.autoCheckId) {
+    cyberToast.warning('Vui lòng chọn Bộ Tiêu Chí Auto Check!');
     return;
   }
 
@@ -718,7 +735,6 @@ async function loadCriteria() {
 }
 
 onMounted(() => {
-  generateBatchCode();
   loadBatches();
   loadFlows();
   loadCriteria();
