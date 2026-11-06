@@ -26,10 +26,31 @@
       </label>
     </div>
 
-    <label class="flex items-center gap-2 min-h-9 cursor-pointer text-xs font-semibold">
-      <input v-model="useReference" type="checkbox" class="checkbox checkbox-xs checkbox-primary" />
-      <span>Kích hoạt kiểm tra so sánh với Thiết Bị Tham Chiếu (Reference Device)</span>
-    </label>
+    <div class="p-3 bg-base-100/80 border border-base-300 rounded-xl flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <input
+          id="toggle-use-reference"
+          v-model="useReference"
+          type="checkbox"
+          class="checkbox checkbox-sm checkbox-primary border-primary bg-base-100"
+        />
+        <label for="toggle-use-reference" class="cursor-pointer select-none text-xs font-semibold text-base-content flex items-center gap-1.5">
+          <span>Kích hoạt kiểm tra so sánh với Thiết Bị Tham Chiếu (Reference Device)</span>
+          <span class="badge badge-xs font-mono font-bold" :class="useReference ? 'badge-primary' : 'badge-ghost'">
+            {{ useReference ? 'ĐÃ BẬT' : 'CHƯA BẬT' }}
+          </span>
+        </label>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-xs gap-1.5 font-bold transition-all"
+        :class="useReference ? 'btn-error btn-outline' : 'btn-primary'"
+        @click="useReference = !useReference"
+      >
+        <span>{{ useReference ? '✕ Bỏ Thiết Bị Tham Chiếu' : '+ Thêm Thiết Bị Tham Chiếu' }}</span>
+      </button>
+    </div>
 
     <!-- DUT & Reference Specs and Discovery -->
     <div class="grid grid-cols-1" :class="useReference ? 'lg:grid-cols-2 gap-4' : 'gap-3'">
