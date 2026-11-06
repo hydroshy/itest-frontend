@@ -368,13 +368,17 @@
                   <th>Thiết Bị Cần Test (DUT)</th>
                   <th v-if="requiresReferenceDevice">Thiết Bị Chuẩn Đối Chiếu (Reference Device)</th>
                   <th>Kết Quả Đối Chiếu</th>
+                  <th class="text-center">Số Gói</th>
+                  <th class="text-right">AVG_CYCLE</th>
+                  <th class="text-right">AVG_RSSI</th>
+                  <th class="text-right">AVG_SNR</th>
                   <th>Trạng Thái</th>
                   <th class="text-center">Bỏ</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="selectedDevices.length === 0">
-                  <td :colspan="requiresReferenceDevice ? 6 : 5" class="text-center py-8 text-base-content/50 italic text-xs">
+                  <td :colspan="requiresReferenceDevice ? 10 : 9" class="text-center py-8 text-base-content/50 italic text-xs">
                     Chưa có thiết bị nào trong Test Batch. Hãy chọn từ danh sách bên trên hoặc nhấn "+ Thêm".
                   </td>
                 </tr>
@@ -420,6 +424,10 @@
                   <!-- Comparison Live Result -->
                   <td class="min-w-[170px]">
                     <div v-if="item.liveComparison" class="space-y-0.5 text-[11px] font-mono">
+                      <div class="flex justify-between text-[10px] text-base-content/70 pb-0.5 border-b border-base-300/40">
+                        <span>Gói tin:</span>
+                        <span class="font-bold text-primary">{{ item.packetsCount ?? 0 }} gói</span>
+                      </div>
                       <div v-if="item.liveComparison.dutTemp !== undefined || item.liveComparison.refTemp !== undefined" class="flex justify-between">
                         <span class="text-base-content/60">Nhiệt độ (DUT / Ref):</span>
                         <span :class="item.liveComparison.tempDeltaPass ? 'text-success' : 'text-error font-bold'">
@@ -447,9 +455,45 @@
                         <span>{{ item.liveComparison.rssi !== undefined ? `${item.liveComparison.rssi} dBm` : '--' }} | {{ item.liveComparison.snr !== undefined ? `${item.liveComparison.snr} dB` : '--' }}</span>
                       </div>
                     </div>
-                    <div v-else class="text-[11px] text-base-content/40 italic">
-                      {{ isTesting ? 'Đang đọc dữ liệu...' : 'Chờ bắt đầu test' }}
+                    <div v-else class="space-y-0.5 text-[11px]">
+                      <div class="text-base-content/40 italic">
+                        {{ isTesting ? 'Đang đọc dữ liệu...' : 'Chờ bắt đầu test' }}
+                      </div>
+                      <div v-if="item.packetsCount !== undefined && item.packetsCount > 0" class="text-[10px] font-mono text-base-content/60">
+                        Đã nhận: <span class="font-bold text-primary">{{ item.packetsCount }} gói</span>
+                      </div>
                     </div>
+                  </td>
+
+                  <!-- Số Gói Nhận Được -->
+                  <td class="text-center font-mono">
+                    <span class="badge badge-sm font-bold" :class="(item.packetsCount ?? 0) > 0 ? 'badge-primary' : 'badge-ghost text-base-content/50'">
+                      {{ item.packetsCount ?? 0 }}
+                    </span>
+                  </td>
+
+                  <!-- AVG_CYCLE -->
+                  <td class="text-right font-mono">
+                    <span v-if="item.avgCycle !== undefined" class="font-semibold text-primary">
+                      {{ item.avgCycle.toFixed(1) }} <span class="text-[10px] text-base-content/60 font-normal">phút</span>
+                    </span>
+                    <span v-else class="text-base-content/40">--</span>
+                  </td>
+
+                  <!-- AVG_RSSI -->
+                  <td class="text-right font-mono">
+                    <span v-if="item.avgRssi !== undefined" class="font-semibold text-base-content">
+                      {{ item.avgRssi.toFixed(1) }} <span class="text-[10px] text-base-content/60 font-normal">dBm</span>
+                    </span>
+                    <span v-else class="text-base-content/40">--</span>
+                  </td>
+
+                  <!-- AVG_SNR -->
+                  <td class="text-right font-mono">
+                    <span v-if="item.avgSnr !== undefined" class="font-semibold text-base-content">
+                      {{ item.avgSnr.toFixed(1) }} <span class="text-[10px] text-base-content/60 font-normal">dB</span>
+                    </span>
+                    <span v-else class="text-base-content/40">--</span>
                   </td>
 
                   <!-- Status -->
@@ -592,6 +636,9 @@ interface BatchDeviceItem {
   referenceDevice?: any;
   status: 'PENDING' | 'RUNNING' | 'PASS' | 'FAIL';
   packetsCount?: number;
+  avgCycle?: number;
+  avgRssi?: number;
+  avgSnr?: number;
   liveComparison?: {
     dutTemp?: number;
     refTemp?: number;
@@ -611,6 +658,32 @@ const maxAllowedDevices = ref(5);
 
 // Golden Reference Devices pool (loaded dynamically from API)
 const goldenReferenceDevices = ref<any[]>([]);
+
+function computeMetricsFromPackets(packets: any[]) {
+  if (!Array.isArray(packets) || packets.length === 0) return {};
+  const validPackets = [...packets].filter((p) => p && p.created_at);
+  validPackets.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+  let avgCycle: number | undefined = undefined;
+  if (validPackets.length >= 2) {
+    let totalDiffMs = 0;
+    for (let i = 1; i < validPackets.length; i++) {
+      const prev = new Date(validPackets[i - 1].created_at).getTime();
+      const curr = new Date(validPackets[i].created_at).getTime();
+      totalDiffMs += Math.max(0, curr - prev);
+    }
+    const avgMs = totalDiffMs / (validPackets.length - 1);
+    avgCycle = Number((avgMs / 60000).toFixed(1));
+  }
+
+  const rssiVals = packets.map((p) => parseNumericField(p.rssi)).filter((v): v is number => v !== undefined);
+  const avgRssi = rssiVals.length > 0 ? Number((rssiVals.reduce((a, b) => a + b, 0) / rssiVals.length).toFixed(1)) : undefined;
+
+  const snrVals = packets.map((p) => parseNumericField(p.snr)).filter((v): v is number => v !== undefined);
+  const avgSnr = snrVals.length > 0 ? Number((snrVals.reduce((a, b) => a + b, 0) / snrVals.length).toFixed(1)) : undefined;
+
+  return { avgCycle, avgRssi, avgSnr };
+}
 
 function parseNumericField(val: any): number | undefined {
   if (val === null || val === undefined || val === '') return undefined;
@@ -934,24 +1007,30 @@ async function checkAndSyncBatchStatus() {
       }
 
       if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
-        selectedDevices.value = statusData.devices.map((d: any) => ({
-          device: {
-            id: d.id || d.serialNumber,
-            serialNumber: d.serialNumber,
-            devEui: d.devEui,
-            itemCode: filterItemCode.value,
-            fwVersion: filterFwVersion.value,
-          },
-          referenceDeviceId: d.referenceSerialNumber || d.referenceDeviceId || '',
-          referenceDevice: {
-            id: d.referenceSerialNumber || d.referenceDeviceId,
-            serialNumber: d.referenceSerialNumber,
-            name: d.referenceDeviceName || `Thiết bị chuẩn ${d.referenceSerialNumber || ''}`,
-          },
-          status: d.verdict || d.status || 'RUNNING',
-          packetsCount: d.packetsReceived || 0,
-          liveComparison: buildLiveComparison(d.comparisonResult),
-        }));
+        selectedDevices.value = statusData.devices.map((d: any) => {
+          const metrics = computeMetricsFromPackets(d.dutPackets || d.dut_packets || d.comparisonResult?.dut_packets || []);
+          return {
+            device: {
+              id: d.id || d.serialNumber,
+              serialNumber: d.serialNumber,
+              devEui: d.devEui,
+              itemCode: filterItemCode.value,
+              fwVersion: filterFwVersion.value,
+            },
+            referenceDeviceId: d.referenceSerialNumber || d.referenceDeviceId || '',
+            referenceDevice: {
+              id: d.referenceSerialNumber || d.referenceDeviceId,
+              serialNumber: d.referenceSerialNumber,
+              name: d.referenceDeviceName || `Thiết bị chuẩn ${d.referenceSerialNumber || ''}`,
+            },
+            status: d.verdict || d.status || 'RUNNING',
+            packetsCount: d.packetsReceived != null ? d.packetsReceived : (d.packets_received ?? d.dutPackets?.length ?? 0),
+            avgCycle: parseNumericField(d.avgCycle ?? d.avg_cycle ?? d.comparisonResult?.avgCycle ?? d.comparisonResult?.avg_cycle ?? metrics.avgCycle),
+            avgRssi: parseNumericField(d.avgRssi ?? d.avg_rssi ?? d.comparisonResult?.avgRssi ?? d.comparisonResult?.avg_rssi ?? metrics.avgRssi),
+            avgSnr: parseNumericField(d.avgSnr ?? d.avg_snr ?? d.comparisonResult?.avgSnr ?? d.comparisonResult?.avg_snr ?? metrics.avgSnr),
+            liveComparison: buildLiveComparison(d.comparisonResult),
+          };
+        });
       }
 
       clearInterval(timerInterval);
@@ -987,24 +1066,30 @@ async function checkAndSyncBatchStatus() {
       remainingSeconds.value = 0;
 
       if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
-        selectedDevices.value = statusData.devices.map((d: any) => ({
-          device: {
-            id: d.id || d.serialNumber,
-            serialNumber: d.serialNumber,
-            devEui: d.devEui,
-            itemCode: filterItemCode.value,
-            fwVersion: filterFwVersion.value,
-          },
-          referenceDeviceId: d.referenceSerialNumber || d.referenceDeviceId || '',
-          referenceDevice: {
-            id: d.referenceSerialNumber || d.referenceDeviceId,
-            serialNumber: d.referenceSerialNumber,
-            name: d.referenceDeviceName || `Thiết bị chuẩn ${d.referenceSerialNumber || ''}`,
-          },
-          status: d.verdict || d.status || 'PASS',
-          packetsCount: d.packetsReceived || 0,
-          liveComparison: buildLiveComparison(d.comparisonResult),
-        }));
+        selectedDevices.value = statusData.devices.map((d: any) => {
+          const metrics = computeMetricsFromPackets(d.dutPackets || d.dut_packets || d.comparisonResult?.dut_packets || []);
+          return {
+            device: {
+              id: d.id || d.serialNumber,
+              serialNumber: d.serialNumber,
+              devEui: d.devEui,
+              itemCode: filterItemCode.value,
+              fwVersion: filterFwVersion.value,
+            },
+            referenceDeviceId: d.referenceSerialNumber || d.referenceDeviceId || '',
+            referenceDevice: {
+              id: d.referenceSerialNumber || d.referenceDeviceId,
+              serialNumber: d.referenceSerialNumber,
+              name: d.referenceDeviceName || `Thiết bị chuẩn ${d.referenceSerialNumber || ''}`,
+            },
+            status: d.verdict || d.status || 'PASS',
+            packetsCount: d.packetsReceived != null ? d.packetsReceived : (d.packets_received ?? d.dutPackets?.length ?? 0),
+            avgCycle: parseNumericField(d.avgCycle ?? d.avg_cycle ?? d.comparisonResult?.avgCycle ?? d.comparisonResult?.avg_cycle ?? metrics.avgCycle),
+            avgRssi: parseNumericField(d.avgRssi ?? d.avg_rssi ?? d.comparisonResult?.avgRssi ?? d.comparisonResult?.avg_rssi ?? metrics.avgRssi),
+            avgSnr: parseNumericField(d.avgSnr ?? d.avg_snr ?? d.comparisonResult?.avgSnr ?? d.comparisonResult?.avg_snr ?? metrics.avgSnr),
+            liveComparison: buildLiveComparison(d.comparisonResult),
+          };
+        });
       }
     } else {
       isTesting.value = false;
@@ -1230,7 +1315,15 @@ async function pollBatchStatus() {
         }
         if (matched.packetsReceived != null) {
           item.packetsCount = matched.packetsReceived;
+        } else if (matched.packets_received != null) {
+          item.packetsCount = matched.packets_received;
+        } else if (Array.isArray(matched.dutPackets)) {
+          item.packetsCount = matched.dutPackets.length;
         }
+        const metrics = computeMetricsFromPackets(matched.dutPackets || matched.dut_packets || matched.comparisonResult?.dut_packets || []);
+        item.avgCycle = parseNumericField(matched.avgCycle ?? matched.avg_cycle ?? matched.comparisonResult?.avgCycle ?? matched.comparisonResult?.avg_cycle ?? metrics.avgCycle);
+        item.avgRssi = parseNumericField(matched.avgRssi ?? matched.avg_rssi ?? matched.comparisonResult?.avgRssi ?? matched.comparisonResult?.avg_rssi ?? metrics.avgRssi);
+        item.avgSnr = parseNumericField(matched.avgSnr ?? matched.avg_snr ?? matched.comparisonResult?.avgSnr ?? matched.comparisonResult?.avg_snr ?? metrics.avgSnr);
         if (matched.comparisonResult) {
           item.liveComparison = buildLiveComparison(matched.comparisonResult);
         }
@@ -1278,7 +1371,15 @@ async function finishBatchTest() {
               item.status = dev.verdict || dev.status || item.status;
               if (dev.packetsReceived != null) {
                 item.packetsCount = dev.packetsReceived;
+              } else if (dev.packets_received != null) {
+                item.packetsCount = dev.packets_received;
+              } else if (Array.isArray(dev.dutPackets)) {
+                item.packetsCount = dev.dutPackets.length;
               }
+              const metrics = computeMetricsFromPackets(dev.dutPackets || dev.dut_packets || dev.comparisonResult?.dut_packets || []);
+              item.avgCycle = parseNumericField(dev.avgCycle ?? dev.avg_cycle ?? dev.comparisonResult?.avgCycle ?? dev.comparisonResult?.avg_cycle ?? metrics.avgCycle);
+              item.avgRssi = parseNumericField(dev.avgRssi ?? dev.avg_rssi ?? dev.comparisonResult?.avgRssi ?? dev.comparisonResult?.avg_rssi ?? metrics.avgRssi);
+              item.avgSnr = parseNumericField(dev.avgSnr ?? dev.avg_snr ?? dev.comparisonResult?.avgSnr ?? dev.comparisonResult?.avg_snr ?? metrics.avgSnr);
               if (dev.comparisonResult) {
                 item.liveComparison = buildLiveComparison(dev.comparisonResult);
               }
