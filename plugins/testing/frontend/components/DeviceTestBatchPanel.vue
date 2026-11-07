@@ -164,7 +164,7 @@
                       type="checkbox"
                       class="checkbox checkbox-xs checkbox-primary"
                       :checked="isAllCandidatesSelected"
-                      :disabled="candidateDevices.length === 0 || isTesting || testFinished || selectedBatchConfig?.status === 'COMPLETED'"
+                      :disabled="candidateDevices.length === 0 || isTesting"
                       @change="toggleSelectAllCandidates"
                     />
                   </th>
@@ -192,7 +192,7 @@
                       type="checkbox"
                       class="checkbox checkbox-xs checkbox-primary"
                       :checked="isDeviceSelected(dev)"
-                      :disabled="isTesting || testFinished || selectedBatchConfig?.status === 'COMPLETED' || (!isDeviceSelected(dev) && selectedDevices.length >= maxAllowedDevices)"
+                      :disabled="isTesting || (!isDeviceSelected(dev) && selectedDevices.length >= maxAllowedDevices)"
                       @change="toggleDeviceSelection(dev)"
                     />
                   </td>
@@ -210,7 +210,7 @@
                     <button
                       v-if="!isDeviceSelected(dev)"
                       class="btn btn-xs btn-ghost text-primary"
-                      :disabled="selectedDevices.length >= maxAllowedDevices || isTesting || testFinished || selectedBatchConfig?.status === 'COMPLETED'"
+                      :disabled="selectedDevices.length >= maxAllowedDevices || isTesting"
                       @click="addDeviceToBatch(dev)"
                     >
                       + Thêm
@@ -247,7 +247,7 @@
               <button
                 v-if="requiresReferenceDevice"
                 class="btn btn-xs btn-outline btn-success gap-1"
-                :disabled="selectedDevices.length === 0 || isTesting || testFinished || selectedBatchConfig?.status === 'COMPLETED'"
+                :disabled="selectedDevices.length === 0 || isTesting"
                 @click="autoAssignReferenceDevices"
               >
                 <Sparkles class="w-3 h-3" />
@@ -255,7 +255,7 @@
               </button>
               <button
                 class="btn btn-xs btn-ghost text-error"
-                :disabled="selectedDevices.length === 0 || isTesting || testFinished || selectedBatchConfig?.status === 'COMPLETED'"
+                :disabled="selectedDevices.length === 0 || isTesting"
                 @click="clearSelectedDevices"
               >
                 Xóa Hết
@@ -281,7 +281,10 @@
           </label>
           <button v-if="isTesting" class="btn btn-error min-h-11" :disabled="cancellingBatch" @click="cancelSelectedBatch">{{ cancellingBatch ? 'Đang hủy...' : 'Hủy batch đang xem' }}</button>
         </div>
-        <button v-if="isTesting || testFinished" class="btn min-h-11" @click="prepareNewBatch">Chuẩn bị batch khác</button>
+        <div class="flex items-center gap-2">
+          <button v-if="testFinished" class="btn btn-sm btn-primary min-h-11" @click="onBatchSelectChange">Bắt đầu lượt test mới</button>
+          <button v-if="isTesting || testFinished" class="btn btn-sm min-h-11" @click="prepareNewBatch">Chuẩn bị batch khác</button>
+        </div>
       </section>
 
           <div v-if="requiresReferenceDevice" class="p-2.5 bg-base-100/60 border border-base-300 rounded-lg text-xs text-base-content/80 flex items-start gap-2">
@@ -339,8 +342,9 @@
           </a>
         </div>
       </div>
-      <div v-if="testFinished || selectedBatchConfig?.status === 'COMPLETED'" class="w-full text-xs text-info bg-info/10 border border-info/30 rounded-lg p-2.5 flex items-center justify-between gap-2">
-        <span>Test batch này đã hoàn tất. Các thiết bị đã được tự động chuyển sang Device Traceability. Để test tiếp, vui lòng tạo thiết bị mới và thực hiện test batch khác.</span>
+      <div v-if="testFinished" class="w-full text-xs text-info bg-info/10 border border-info/30 rounded-lg p-2.5 flex items-center justify-between gap-2">
+        <span>Lượt test đã hoàn tất và kết quả đã lưu vào Device Traceability. Bạn có thể chọn lại batch để bắt đầu kiểm thử lượt mới cho các thiết bị khác.</span>
+        <button class="btn btn-xs btn-primary font-semibold" @click="onBatchSelectChange">Bắt đầu lượt mới</button>
       </div>
     </div>
 
@@ -526,8 +530,8 @@
               <button
                 v-else
                 class="btn btn-sm btn-primary gap-1.5 shadow-md px-6 font-bold"
-                :disabled="!selectedBatchId || selectedDevices.length === 0 || isTesting || testFinished || selectedBatchConfig?.status === 'COMPLETED'"
-                :title="!selectedBatchId ? 'Vui lòng chọn Test Batch trước khi bấm bắt đầu' : (selectedDevices.length === 0 ? 'Vui lòng thêm ít nhất 1 thiết bị test' : ((testFinished || selectedBatchConfig?.status === 'COMPLETED') ? 'Test batch này đã hoàn tất. Muốn test lại, vui lòng tạo thiết bị mới và thực hiện test batch khác.' : 'Bắt đầu kiểm thử'))"
+                :disabled="!selectedBatchId || selectedDevices.length === 0 || isTesting"
+                :title="!selectedBatchId ? 'Vui lòng chọn Test Batch trước khi bấm bắt đầu' : (selectedDevices.length === 0 ? 'Vui lòng thêm ít nhất 1 thiết bị test' : 'Bắt đầu kiểm thử')"
                 @click="startBatchTest"
               >
                 <Play class="w-4 h-4" />
@@ -866,8 +870,8 @@ function isDeviceSelected(device: any): boolean {
 function toggleSelectAllCandidates(e: Event) {
   const checked = (e.target as HTMLInputElement).checked;
   if (checked) {
-    if (testFinished.value || selectedBatchConfig.value?.status === 'COMPLETED') {
-      cyberToast.warning('Test batch này đã hoàn tất. Muốn test lại, vui lòng tạo thiết bị mới và thực hiện test batch khác.');
+    if (isTesting.value) {
+      cyberToast.warning('Batch đang chạy kiểm thử!');
       (e.target as HTMLInputElement).checked = false;
       return;
     }
@@ -890,8 +894,8 @@ function toggleDeviceSelection(device: any) {
 }
 
 function addDeviceToBatch(device: any) {
-  if (testFinished.value || selectedBatchConfig.value?.status === 'COMPLETED') {
-    cyberToast.warning('Test batch này đã hoàn tất. Muốn test lại, vui lòng tạo thiết bị mới và thực hiện test batch khác.');
+  if (isTesting.value) {
+    cyberToast.warning('Batch đang chạy kiểm thử!');
     return;
   }
   if (selectedDevices.value.length >= maxAllowedDevices.value) {
@@ -1055,49 +1059,21 @@ async function checkAndSyncBatchStatus() {
       simulationInterval = setInterval(() => {
         pollBatchStatus();
       }, 3000);
-    } else if (
-      statusData.status === 'COMPLETED' ||
-      statusData.status === 'FINISHED' ||
-      statusData.status === 'PASSED' ||
-      statusData.status === 'FAILED' ||
-      statusData.status === 'STOPPED'
-    ) {
+    } else {
+      // Completed, ready, or stopped batch: start fresh and do NOT restore old tested devices
       clearInterval(timerInterval);
       clearInterval(simulationInterval);
-      isTesting.value = false;
-      testFinished.value = true;
-      elapsedSeconds.value = statusData.flowDurationSeconds || totalDurationSeconds.value;
-      remainingSeconds.value = 0;
-
-      if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
-        selectedDevices.value = statusData.devices.map((d: any) => {
-          const metrics = computeMetricsFromPackets(d.dutPackets || d.dut_packets || d.comparisonResult?.dut_packets || []);
-          return {
-            device: {
-              id: d.id || d.serialNumber,
-              serialNumber: d.serialNumber,
-              devEui: d.devEui,
-              itemCode: filterItemCode.value,
-              fwVersion: filterFwVersion.value,
-            },
-            referenceDeviceId: d.referenceSerialNumber || d.referenceDeviceId || '',
-            referenceDevice: {
-              id: d.referenceSerialNumber || d.referenceDeviceId,
-              serialNumber: d.referenceSerialNumber,
-              name: d.referenceDeviceName || `Thiết bị chuẩn ${d.referenceSerialNumber || ''}`,
-            },
-            status: d.verdict || d.status || 'PASS',
-            packetsCount: d.packetsReceived != null ? d.packetsReceived : (d.packets_received ?? d.dutPackets?.length ?? 0),
-            avgCycle: parseNumericField(d.avgCycle ?? d.avg_cycle ?? d.comparisonResult?.avgCycle ?? d.comparisonResult?.avg_cycle ?? metrics.avgCycle),
-            avgRssi: parseNumericField(d.avgRssi ?? d.avg_rssi ?? d.comparisonResult?.avgRssi ?? d.comparisonResult?.avg_rssi ?? metrics.avgRssi),
-            avgSnr: parseNumericField(d.avgSnr ?? d.avg_snr ?? d.comparisonResult?.avgSnr ?? d.comparisonResult?.avg_snr ?? metrics.avgSnr),
-            liveComparison: buildLiveComparison(d.comparisonResult),
-          };
-        });
-      }
-    } else {
+      timerInterval = null;
+      simulationInterval = null;
       isTesting.value = false;
       testFinished.value = false;
+      selectedDevices.value = [];
+      elapsedSeconds.value = 0;
+      remainingSeconds.value = totalDurationSeconds.value;
+      batchStartedAt.value = '';
+      batchFinishedAt.value = '';
+      batchVerdict.value = '';
+      currentStepIndex.value = 0;
     }
   } catch (err: any) {
     console.debug('[DeviceTestBatchPanel] Error checking batch status:', err.message);
@@ -1201,8 +1177,8 @@ async function startBatchTest() {
     cyberToast.warning('Vui lòng chọn Test Batch trước khi bấm bắt đầu!');
     return;
   }
-  if (testFinished.value || selectedBatchConfig.value?.status === 'COMPLETED') {
-    cyberToast.warning('Test batch này đã hoàn tất. Muốn test lại, vui lòng tạo thiết bị mới và thực hiện test batch khác.');
+  if (isTesting.value) {
+    cyberToast.warning('Batch đang chạy kiểm thử!');
     return;
   }
   if (selectedDevices.value.length === 0) {
