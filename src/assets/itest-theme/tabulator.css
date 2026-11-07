@@ -210,8 +210,8 @@ div.tabulator .tabulator-footer .tabulator-page:hover:not([disabled]) {
 .tabulator .tabulator-footer .tabulator-page.active,
 div.tabulator .tabulator-footer .tabulator-page.active {
   background-color: rgba(124, 58, 237, 0.18) !important;
-  border-color: var(--owl-primary, #7c3aed) !important;
-  color: var(--owl-primary, #7c3aed) !important;
+  border-color: var(--owl-primary, #2563eb) !important;
+  color: var(--owl-primary, #2563eb) !important;
   font-weight: 600 !important;
   box-shadow: none !important;
 }

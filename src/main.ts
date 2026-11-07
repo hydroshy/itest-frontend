@@ -5,16 +5,31 @@ import './assets/tailwind.css';
 import './assets/itest-theme.css';
 import { cyberToast } from './services/cyberToast';
 import { ensureTabulatorPatched } from './utils/patchTabulator';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { fas } from '@fortawesome/free-solid-svg-icons';
+import { far } from '@fortawesome/free-regular-svg-icons';
+import { useTheme } from './composables/useTheme';
 
 import App from './App.vue';
 import { router } from './router';
 import { usePluginStore } from './stores/plugin';
 import CModuleBoundary from './components/shared/CModuleBoundary.vue';
 
+// Initialize Font Awesome library
+library.add(fas, far);
+
 async function bootstrap(): Promise<void> {
+  // Initialize theme mode (dark / light)
+  useTheme().initTheme();
+
   ensureTabulatorPatched();
   const app = createApp(App);
   const pinia = createPinia();
+
+  // Register Font Awesome components globally
+  app.component('font-awesome-icon', FontAwesomeIcon);
+  app.component('FaIcon', FontAwesomeIcon);
 
   // Register the defensive boundary before any view can render.
   app.component('CModuleBoundary', CModuleBoundary);

@@ -1,52 +1,150 @@
 /* ==========================================================================
    iTest Theme - Design Variables & Color Tokens
-   Corporate Memphis Hero Theme
+   Theme: High-Tech Blue & Deep Black (Xanh dương & Đen)
+   Support: Dark Mode & Light Mode (Dynamic switching)
+   Typography: system-ui, -apple-system, "Segoe UI", sans-serif in đậm sắc nét
    ========================================================================== */
 
-:root {
+:root,
+html.dark,
+[data-theme="itest-dark"] {
   /* ==========================================================================
-     1. CORPORATE MEMPHIS HERO COLOR TOKENS
-     base-100: #151d2c | base-200: #1a2436 | base-300: #0f172a
-     base-content: #94a3b8 | neutral: #0b1120 | neutral-content: #f8fafc
-     primary: #7c3aed | secondary: #38bdf8 | accent: #34d399
-     info: #38bdf8 | success: #34d399 | warning: #fbbf24 | error: #fb7185
+     1. DARK MODE COLOR TOKENS (Deep Black & Tech Blue)
      ========================================================================== */
-  --owl-bg-canvas: #0f172a;          /* Corporate Memphis Canvas: Slate 900 */
-  --owl-bg-aside: #0b1120;           /* Memphis Deep Aside / Sidebar */
-  --owl-bg-surface: #151d2c;         /* Memphis Surface: Panels, Headers & Cards */
-  --owl-bg-card: #1a2436;            /* Memphis Inner Slots, Inputs & Widgets */
-  --owl-bg-card-hover: #202c42;      /* Memphis Hover tint */
-  --owl-border: rgba(255, 255, 255, 0.08); /* Crisp flat hairline border */
-  --owl-border-light: rgba(255, 255, 255, 0.05);
-  --owl-border-focus: #7c3aed;       /* Memphis Primary Violet focus */
-  --owl-primary: #7c3aed;
+  --owl-bg-canvas: #070b14;          /* Đen sâu công nghệ canvas */
+  --owl-bg-aside: #04070f;           /* Đen tuyền sidebar */
+  --owl-bg-surface: #0b1120;         /* Mặt thẻ, header */
+  --owl-bg-card: #0f172a;            /* Ô nhập liệu, slot con, bảng */
+  --owl-bg-card-hover: #162238;      /* Hover xanh đen */
+  --owl-border: rgba(59, 130, 246, 0.18); /* Viền ánh xanh dương tinh tế */
+  --owl-border-light: rgba(255, 255, 255, 0.07);
+  --owl-border-focus: #3b82f6;       /* Blue 500 focus */
+  --owl-primary: #2563eb;            /* Xanh dương chủ đạo */
+  --owl-primary-hover: #1d4ed8;
+  --owl-primary-soft: rgba(37, 99, 235, 0.16);
 
   /* Text & Typography Colors */
-  --owl-text-primary: #f8fafc;       /* Slate 50 - Crisp Clean White */
-  --owl-text-secondary: #94a3b8;     /* Slate 400 - Smooth Secondary */
-  --owl-text-muted: #64748b;         /* Slate 500 - Soft Muted */
+  --owl-text-primary: #f8fafc;       /* Slate 50 - Sắc nét */
+  --owl-text-secondary: #94a3b8;     /* Slate 400 - Dịu mắt */
+  --owl-text-muted: #64748b;         /* Slate 500 */
   --owl-text-bright: #ffffff;        /* Pure White */
 
-  /* Corporate Memphis Accents & Semantic Statuses */
-  --owl-teal: #38bdf8;               /* Sky Blue (Secondary) */
-  --owl-teal-dim: rgba(56, 189, 248, 0.12);
-  --owl-amber: #fbbf24;              /* Warning Amber */
-  --owl-amber-dim: rgba(251, 191, 36, 0.12);
-  --owl-mint: #34d399;               /* Success Mint Emerald */
-  --owl-mint-dim: rgba(52, 211, 153, 0.12);
-  --owl-coral: #fb7185;              /* Error Coral Rose */
-  --owl-coral-dim: rgba(251, 113, 133, 0.12);
-  --owl-lavender: #a78bfa;           /* Lavender / Violet Light */
-  --owl-lavender-dim: rgba(167, 139, 250, 0.12);
-  --owl-blue: #38bdf8;
-  --owl-blue-dim: rgba(56, 189, 248, 0.12);
-  --owl-cyan: #38bdf8;
-  --owl-yellow: #fbbf24;
-  --owl-orange: #fb923c;
-  --owl-green: #34d399;
-  --owl-red: #fb7185;
-  --owl-purple: #7c3aed;
+  /* Accents & Statuses */
+  --owl-teal: #38bdf8;               /* Sky Blue 400 */
+  --owl-teal-dim: rgba(56, 189, 248, 0.15);
+  --owl-amber: #f59e0b;
+  --owl-amber-dim: rgba(245, 158, 11, 0.15);
+  --owl-coral: #ef4444;
+  --owl-coral-dim: rgba(239, 68, 68, 0.15);
+  --owl-mint: #10b981;
+  --owl-mint-dim: rgba(16, 185, 129, 0.15);
+  --owl-blue: #2563eb;
+  --owl-blue-soft: rgba(37, 99, 235, 0.15);
+  --owl-orange: #f97316;
+  --owl-green: #10b981;
+  --owl-red: #ef4444;
+  --owl-purple: #3b82f6;             /* Replaced purple with tech blue */
 
+  /* Element Plus Theme Variables Override */
+  --el-color-primary: #2563eb;
+  --el-color-primary-light-3: #60a5fa;
+  --el-color-primary-light-5: #93c5fd;
+  --el-color-primary-light-7: #bfdbfe;
+  --el-color-primary-light-8: #dbeafe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #1d4ed8;
+  --el-color-success: #10b981;
+  --el-color-warning: #f59e0b;
+  --el-color-danger: #ef4444;
+  --el-color-info: #38bdf8;
+
+  --el-bg-color: #070b14;
+  --el-bg-color-overlay: #0b1120;
+  --el-bg-color-page: #070b14;
+  --el-text-color-primary: #f8fafc;
+  --el-text-color-regular: #cbd5e1;
+  --el-text-color-secondary: #94a3b8;
+  --el-text-color-placeholder: #64748b;
+  --el-border-color: rgba(59, 130, 246, 0.18);
+  --el-border-color-light: rgba(255, 255, 255, 0.08);
+  --el-border-color-lighter: rgba(255, 255, 255, 0.04);
+  --el-fill-color-blank: #0f172a;
+  --el-fill-color: #0b1120;
+  --el-fill-color-light: #070b14;
+
+  --color-scheme: dark;
+}
+
+html.light,
+[data-theme="itest-light"] {
+  /* ==========================================================================
+     1b. LIGHT MODE COLOR TOKENS (Clean Tech White, Slate & Rich Blue)
+     ========================================================================== */
+  --owl-bg-canvas: #f0f4f9;          /* Nền sáng xanh nhạt êm mắt */
+  --owl-bg-aside: #ffffff;           /* Sidebar trắng thanh lịch */
+  --owl-bg-surface: #ffffff;         /* Card, panel trắng */
+  --owl-bg-card: #f8fafc;            /* Ô nhập liệu Slate 50 */
+  --owl-bg-card-hover: #e2e8f0;      /* Hover xám nhạt */
+  --owl-border: #cbd5e1;             /* Viền Slate 300 rõ nét */
+  --owl-border-light: #e2e8f0;
+  --owl-border-focus: #2563eb;       /* Blue 600 focus */
+  --owl-primary: #2563eb;            /* Xanh dương đậm sắc */
+  --owl-primary-hover: #1d4ed8;
+  --owl-primary-soft: rgba(37, 99, 235, 0.1);
+
+  /* Typography Colors */
+  --owl-text-primary: #090d16;       /* Đen đậm sắc nét trên nền sáng */
+  --owl-text-secondary: #334155;     /* Slate 700 */
+  --owl-text-muted: #64748b;         /* Slate 500 */
+  --owl-text-bright: #020617;        /* Almost black */
+
+  /* Accents */
+  --owl-teal: #0284c7;               /* Sky Blue 600 */
+  --owl-teal-dim: rgba(2, 132, 199, 0.12);
+  --owl-amber: #d97706;
+  --owl-amber-dim: rgba(217, 119, 6, 0.12);
+  --owl-coral: #dc2626;
+  --owl-coral-dim: rgba(220, 38, 38, 0.12);
+  --owl-mint: #059669;
+  --owl-mint-dim: rgba(5, 150, 105, 0.12);
+  --owl-blue: #2563eb;
+  --owl-blue-soft: rgba(37, 99, 235, 0.1);
+  --owl-orange: #ea580c;
+  --owl-green: #059669;
+  --owl-red: #dc2626;
+  --owl-purple: #2563eb;
+
+  /* Element Plus Theme Variables Override */
+  --el-color-primary: #2563eb;
+  --el-color-primary-light-3: #60a5fa;
+  --el-color-primary-light-5: #93c5fd;
+  --el-color-primary-light-7: #bfdbfe;
+  --el-color-primary-light-8: #dbeafe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #1d4ed8;
+  --el-color-success: #059669;
+  --el-color-warning: #d97706;
+  --el-color-danger: #dc2626;
+  --el-color-info: #0284c7;
+
+  --el-bg-color: #f0f4f9;
+  --el-bg-color-overlay: #ffffff;
+  --el-bg-color-page: #f0f4f9;
+  --el-text-color-primary: #090d16;
+  --el-text-color-regular: #334155;
+  --el-text-color-secondary: #64748b;
+  --el-text-color-placeholder: #94a3b8;
+  --el-border-color: #cbd5e1;
+  --el-border-color-light: #e2e8f0;
+  --el-border-color-lighter: #f1f5f9;
+  --el-fill-color-blank: #ffffff;
+  --el-fill-color: #f8fafc;
+  --el-fill-color-light: #f1f5f9;
+
+  --color-scheme: light;
+}
+
+:root {
   /* Explicitly disable Depth Effect globally across all daisyui and custom elements */
   --depth: 0 !important;
 
@@ -75,30 +173,32 @@
   --cyber-text-secondary: var(--owl-text-secondary);
   --cyber-text-muted: var(--owl-text-muted);
 
-  /* Refined Typography Tokens */
-  --cyber-font-display: 'Poppins', 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --cyber-font-body: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* ==========================================================================
+     3. HIGH-CONTRAST BOLD TYPOGRAPHY TOKENS
+     "system-ui, -apple-system, 'Segoe UI', sans-serif in đậm giúp nịnh mắt hơn"
+     ========================================================================== */
+  --cyber-font-display: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --cyber-font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --cyber-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   --font-family-mono: var(--cyber-font-mono);
 
-  /* Memphis UI Specific Tokens */
-  --memphis-font-display: 'Poppins', 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --memphis-font-body: 'DM Sans', 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --memphis-font-display: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --memphis-font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --memphis-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  --memphis-radius-box: 1.5rem;
-  --memphis-radius-card: 1.25rem;
-  --memphis-radius-field: 0.75rem;
+  --memphis-radius-box: 1.25rem;
+  --memphis-radius-card: 1rem;
+  --memphis-radius-field: 0.625rem;
   --memphis-radius-pill: 9999px;
-  --memphis-primary: #7c3aed;
-  --memphis-primary-soft: rgba(124, 58, 237, 0.12);
-  --memphis-secondary: #38bdf8;
-  --memphis-secondary-soft: rgba(56, 189, 248, 0.12);
-  --memphis-accent: #34d399;
-  --memphis-accent-soft: rgba(52, 211, 153, 0.12);
-  --memphis-warning: #fbbf24;
-  --memphis-warning-soft: rgba(251, 191, 36, 0.12);
-  --memphis-coral: #fb7185;
-  --memphis-coral-soft: rgba(251, 113, 133, 0.12);
+  --memphis-primary: var(--owl-primary);
+  --memphis-primary-soft: var(--owl-primary-soft);
+  --memphis-secondary: var(--owl-teal);
+  --memphis-secondary-soft: var(--owl-teal-dim);
+  --memphis-accent: var(--owl-mint);
+  --memphis-accent-soft: var(--owl-mint-dim);
+  --memphis-warning: var(--owl-amber);
+  --memphis-warning-soft: var(--owl-amber-dim);
+  --memphis-coral: var(--owl-coral);
+  --memphis-coral-soft: var(--owl-coral-dim);
 
   /* Form & Component Metrics */
   --cyber-control-height: 38px;
@@ -107,33 +207,4 @@
   --cyber-radius: 12px;
   --cyber-radius-lg: 16px;
   --cyber-transition-fast: 0.15s ease;
-
-  /* ==========================================================================
-     3. ELEMENT PLUS THEME VARIABLES OVERRIDE (Corporate Memphis Palette)
-     ========================================================================== */
-  --el-color-primary: #7c3aed;
-  --el-color-primary-light-3: #9055ee;
-  --el-color-primary-light-5: #a778f2;
-  --el-color-primary-light-7: #c4a5f7;
-  --el-color-primary-light-8: #dccafb;
-  --el-color-primary-light-9: #f0eafd;
-  --el-color-primary-dark-2: #632ec2;
-  --el-color-success: #34d399;
-  --el-color-warning: #fbbf24;
-  --el-color-danger: #fb7185;
-  --el-color-info: #38bdf8;
-
-  --el-bg-color: #0f172a;
-  --el-bg-color-overlay: #151d2c;
-  --el-bg-color-page: #0f172a;
-  --el-text-color-primary: #f8fafc;
-  --el-text-color-regular: #94a3b8;
-  --el-text-color-secondary: #64748b;
-  --el-text-color-placeholder: #475569;
-  --el-border-color: rgba(255, 255, 255, 0.08);
-  --el-border-color-light: rgba(255, 255, 255, 0.05);
-  --el-border-color-lighter: rgba(255, 255, 255, 0.03);
-  --el-fill-color-blank: #1a2436;
-  --el-fill-color: #151d2c;
-  --el-fill-color-light: #0f172a;
 }

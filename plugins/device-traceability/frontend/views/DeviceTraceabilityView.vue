@@ -319,251 +319,47 @@
 
 
 
-    <!-- DIALOG 1: RAW TEST DATA VIEWER -->
-    <dialog class="modal" :class="{ 'modal-open': rawTestDialogVisible }">
-      <div class="modal-box max-w-2xl bg-base-100 border border-base-300">
-        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
-          <h3 class="font-bold text-lg flex items-center gap-2">
-            <Info class="w-5 h-5 text-primary" />
-            Chi Tiết Dữ Liệu Kiểm Thử Gốc
-          </h3>
-          <button class="btn btn-sm btn-circle btn-ghost" @click="rawTestDialogVisible = false">✕</button>
-        </div>
-        <div v-if="selectedRawDevice" class="space-y-3">
-          <div class="text-sm">
-            <span class="font-semibold">Thiết bị:</span> {{ selectedRawDevice.serialNumber || selectedRawDevice.code }}
-            <span class="mx-2 text-base-content/40">|</span>
-            <span class="font-semibold">DevEUI:</span> {{ selectedRawDevice.devEui || 'N/A' }}
-          </div>
-          <div class="text-sm">
-            <span class="font-semibold">Trạm kiểm thử:</span> {{ selectedRawDevice.testStation || 'N/A' }}
-            <span class="mx-2 text-base-content/40">|</span>
-            <span class="font-semibold">Người kiểm thử:</span> {{ selectedRawDevice.testPerson || 'N/A' }}
-          </div>
-          <div class="bg-base-300/50 p-3 rounded-lg border border-base-300 font-mono text-xs overflow-auto max-h-96">
-            <pre>{{ JSON.stringify(selectedRawDevice.testRawData || selectedRawDevice, null, 2) }}</pre>
-          </div>
-        </div>
-        <div v-else-if="viewingRawData" class="space-y-3">
-          <div class="bg-base-300/50 p-3 rounded-lg border border-base-300 font-mono text-xs overflow-auto max-h-96">
-            <pre>{{ JSON.stringify(viewingRawData, null, 2) }}</pre>
-          </div>
-        </div>
-        <div v-else class="text-center py-6 text-base-content/60">
-          Không có dữ liệu mở rộng.
-        </div>
-        <div class="modal-action">
-          <button class="btn btn-sm" @click="rawTestDialogVisible = false">Đóng</button>
-        </div>
-      </div>
-      <div class="modal-backdrop bg-black/60" @click="rawTestDialogVisible = false"></div>
-    </dialog>
+    <!-- DIALOG 1: RAW TEST DATA VIEWER (MODULARIZED) -->
+    <RawTestDataModal
+      :visible="rawTestDialogVisible"
+      :device="selectedRawDevice"
+      :raw-data="viewingRawData"
+      @close="rawTestDialogVisible = false"
+    />
 
-    <!-- DIALOG 2: SESSION AUDIT VIEWER -->
-    <dialog class="modal" :class="{ 'modal-open': sessionAuditDialogVisible }">
-      <div class="modal-box max-w-2xl bg-base-100 border border-base-300">
-        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
-          <h3 class="font-bold text-lg flex items-center gap-2">
-            <CheckCircle2 class="w-5 h-5 text-primary" />
-            Chi Tiết Final Config Session &amp; Audit
-          </h3>
-          <button class="btn btn-sm btn-circle btn-ghost" @click="sessionAuditDialogVisible = false">✕</button>
-        </div>
-        <div v-if="selectedSessionDevice" class="space-y-3">
-          <div class="text-sm">
-            <span class="font-semibold">S/N:</span> {{ selectedSessionDevice.serialNumber || selectedSessionDevice.code }}
-            <span class="mx-2 text-base-content/40">|</span>
-            <span class="font-semibold">Trạng thái Config:</span>
-            <span class="badge badge-sm ml-1" :class="selectedSessionDevice.configStatus === 'CONFIGURED_PASS' ? 'badge-success' : 'badge-error'">
-              {{ selectedSessionDevice.configStatus }}
-            </span>
-          </div>
-          <div class="text-sm">
-            <span class="font-semibold">Session ID:</span> {{ selectedSessionDevice.finalConfigSessionId || 'Chưa liên kết Session' }}
-          </div>
-          <div class="bg-base-300/50 p-3 rounded-lg border border-base-300 font-mono text-xs overflow-auto max-h-96">
-            <pre>{{ JSON.stringify(selectedSessionDevice.sessionProfile || selectedSessionDevice.auditData || selectedSessionDevice, null, 2) }}</pre>
-          </div>
-        </div>
-        <div class="modal-action">
-          <button class="btn btn-sm" @click="sessionAuditDialogVisible = false">Đóng</button>
-        </div>
-      </div>
-      <div class="modal-backdrop bg-black/60" @click="sessionAuditDialogVisible = false"></div>
-    </dialog>
+    <!-- DIALOG 2: SESSION AUDIT VIEWER (MODULARIZED) -->
+    <SessionAuditModal
+      :visible="sessionAuditDialogVisible"
+      :device="selectedSessionDevice"
+      @close="sessionAuditDialogVisible = false"
+    />
 
-    <!-- DIALOG 3: TẠO MỚI SALE ORDER -->
-    <dialog class="modal" :class="{ 'modal-open': createSoVisible }">
-      <div class="modal-box max-w-md bg-base-100 border border-base-300">
-        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
-          <h3 class="font-bold text-lg flex items-center gap-2">
-            <FolderOpen class="w-5 h-5 text-primary" />
-            Tạo Mới Đơn Hàng (Sale Order)
-          </h3>
-          <button class="btn btn-sm btn-circle btn-ghost" @click="createSoVisible = false">✕</button>
-        </div>
-        <form @submit.prevent="submitCreateSo" class="space-y-3">
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text font-semibold text-xs">Mã Sale Order <span class="text-error">*</span></span></label>
-            <input v-model="newSoForm.soNumber" type="text" placeholder="Ví dụ: SO-2026-001 hoặc SO/26/001" class="input input-bordered input-sm w-full" required />
-          </div>
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text font-semibold text-xs">Tên Khách Hàng</span></label>
-            <input v-model="newSoForm.customerName" type="text" placeholder="Tên khách hàng / Đối tác" class="input input-bordered input-sm w-full" />
-          </div>
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text font-semibold text-xs">Ghi Chú</span></label>
-            <textarea v-model="newSoForm.notes" rows="3" placeholder="Ghi chú đơn hàng..." class="textarea textarea-bordered textarea-sm w-full"></textarea>
-          </div>
-          <div class="modal-action mt-4">
-            <button type="button" class="btn btn-ghost btn-sm" @click="createSoVisible = false">Hủy</button>
-            <button type="submit" class="btn btn-primary btn-sm" :disabled="submittingSo">
-              <Loader2 v-if="submittingSo" class="w-4 h-4 animate-spin" />
-              Tạo Mới
-            </button>
-          </div>
-        </form>
-      </div>
-      <div class="modal-backdrop bg-black/60" @click="createSoVisible = false"></div>
-    </dialog>
+    <!-- DIALOG 3: TẠO MỚI SALE ORDER (MODULARIZED) -->
+    <CreateSoModal
+      :visible="createSoVisible"
+      :submitting="submittingSo"
+      @close="createSoVisible = false"
+      @submit="handleCreateSoSubmit"
+    />
 
-    <!-- DIALOG 4: TẠO MỚI WORK AUTHORIZATION (WA) -->
-    <dialog class="modal" :class="{ 'modal-open': createWaVisible }">
-      <div class="modal-box max-w-lg bg-base-100 border border-base-300">
-        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
-          <h3 class="font-bold text-lg flex items-center gap-2">
-            <Ticket class="w-5 h-5 text-primary" />
-            Tạo Work Authorization (WA) Thuộc SO
-          </h3>
-          <button class="btn btn-sm btn-circle btn-ghost" @click="createWaVisible = false">✕</button>
-        </div>
-        <form @submit.prevent="submitCreateWa" class="space-y-3">
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text font-semibold text-xs">Sale Order</span></label>
-            <div class="font-bold text-primary text-sm px-1">{{ newWaForm.soNumber }}</div>
-          </div>
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text font-semibold text-xs">Mã WA (WA/xxxx/xxxxx) <span class="text-error">*</span></span></label>
-            <input
-              v-model="newWaForm.waNumber"
-              type="text"
-              placeholder="Ví dụ: WA/2026/00001"
-              class="input input-bordered input-sm w-full"
-              @blur="formatWaNumberInput"
-              required
-            />
-            <span class="text-xs text-base-content/60 mt-1">Cú pháp bắt buộc theo chuẩn: WA/xxxx/xxxxx</span>
-          </div>
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text font-semibold text-xs">Item Code / Mã SP</span></label>
-            <input v-model="newWaForm.itemCode" type="text" placeholder="Ví dụ: WSLRW-C-RS485-01" class="input input-bordered input-sm w-full" />
-          </div>
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text font-semibold text-xs">Số Lượng Kế Hoạch</span></label>
-            <input v-model.number="newWaForm.plannedQuantity" type="number" min="1" max="100000" class="input input-bordered input-sm w-full" />
-          </div>
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text font-semibold text-xs">Ghi Chú</span></label>
-            <textarea v-model="newWaForm.notes" rows="2" placeholder="Ghi chú lệnh..." class="textarea textarea-bordered textarea-sm w-full"></textarea>
-          </div>
-          <div class="modal-action mt-4">
-            <button type="button" class="btn btn-ghost btn-sm" @click="createWaVisible = false">Hủy</button>
-            <button type="submit" class="btn btn-primary btn-sm" :disabled="submittingWa">
-              <Loader2 v-if="submittingWa" class="w-4 h-4 animate-spin" />
-              Tạo WA
-            </button>
-          </div>
-        </form>
-      </div>
-      <div class="modal-backdrop bg-black/60" @click="createWaVisible = false"></div>
-    </dialog>
+    <!-- DIALOG 4: TẠO MỚI WORK AUTHORIZATION (WA) (MODULARIZED) -->
+    <CreateWaModal
+      :visible="createWaVisible"
+      :target-so="targetSoForWa"
+      :submitting="submittingWa"
+      @close="createWaVisible = false"
+      @submit="handleCreateWaSubmit"
+    />
 
-    <!-- DIALOG 5: CHI TIẾT SALE ORDER & DANH SÁCH WORK AUTHORIZATIONS (WA) -->
-    <dialog class="modal" :class="{ 'modal-open': soDetailVisible }">
-      <div class="modal-box max-w-4xl bg-base-100 border border-base-300">
-        <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
-          <h3 class="font-bold text-lg flex items-center gap-2">
-            <FolderOpen class="w-5 h-5 text-primary" />
-            Chi Tiết Sale Order: {{ selectedSo?.soNumber || '' }}
-          </h3>
-          <button class="btn btn-sm btn-circle btn-ghost" @click="soDetailVisible = false">✕</button>
-        </div>
-        <div v-if="selectedSo" class="space-y-4">
-          <!-- Summary Header -->
-          <div class="p-3 bg-base-200/60 border border-base-300 rounded-lg text-xs space-y-2">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <div><span class="text-base-content/70">Mã Đơn Hàng (SO):</span> <strong class="text-primary font-mono text-sm ml-1">{{ selectedSo.soNumber }}</strong></div>
-                <div><span class="text-base-content/70">Khách Hàng:</span> <strong class="ml-1">{{ selectedSo.customerName || 'Không có tên' }}</strong></div>
-                <div v-if="selectedSo.partnerEmail || selectedSo.partner_email"><span class="text-base-content/70">Email:</span> <span class="font-mono text-primary ml-1">{{ selectedSo.partnerEmail || selectedSo.partner_email }}</span></div>
-              </div>
-              <div>
-                <div><span class="text-base-content/70">Tổng Lệnh WA:</span> <span class="badge badge-warning badge-sm font-semibold ml-1">{{ selectedSo.workAuthorizations?.length || selectedSo.waCount || 0 }} WA</span></div>
-                <div><span class="text-base-content/70">Tổng Thiết Bị:</span> <strong class="ml-1">{{ selectedSo.stats?.totalDevices ?? selectedSo.totalDevices ?? 0 }} thiết bị</strong></div>
-                <div class="mt-1">
-                  <span class="text-base-content/70">Trạng Thái Test:</span>
-                  <span class="badge badge-success badge-xs font-bold ml-1">PASS: {{ selectedSo.stats?.testPassCount ?? selectedSo.testPassCount ?? 0 }}</span>
-                  <span class="badge badge-info badge-xs font-bold ml-1">Config PASS: {{ selectedSo.stats?.configPassCount ?? selectedSo.configPassCount ?? 0 }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-if="selectedSo.notes" class="mt-2 text-xs text-base-content/70 border-t border-base-300 pt-2">
-              <strong>Ghi chú / Nguồn:</strong> {{ selectedSo.notes }}
-            </div>
-          </div>
-
-          <!-- WA Table Section -->
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-semibold text-warning text-sm flex items-center gap-1">
-                <Ticket class="w-4 h-4" />
-                Danh Sách Lệnh Work Authorization (WA) ({{ selectedSo.workAuthorizations?.length || 0 }} lệnh):
-              </span>
-              <button class="btn btn-primary btn-xs gap-1" @click="openCreateWaDialog(selectedSo)">
-                <Plus class="w-3.5 h-3.5" /> Thêm WA Mới
-              </button>
-            </div>
-
-            <div class="overflow-x-auto border border-base-300 rounded-lg max-h-72">
-              <table class="table table-xs table-zebra w-full">
-                <thead>
-                  <tr class="bg-base-200">
-                    <th class="w-44">Mã Lệnh WA</th>
-                    <th>Item Code / Sản Phẩm</th>
-                    <th class="text-right w-28">Kế Hoạch</th>
-                    <th>Ghi Chú</th>
-                    <th class="text-center w-28">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="wa in (selectedSo.workAuthorizations || [])" :key="wa.id">
-                    <td><code class="font-bold text-warning font-mono">{{ wa.waNumber }}</code></td>
-                    <td><span class="font-bold text-primary">{{ wa.itemCode || '-' }}</span></td>
-                    <td class="text-right font-mono">{{ wa.plannedQuantity || 0 }} pcs</td>
-                    <td class="text-xs text-base-content/70">{{ wa.notes || '-' }}</td>
-                    <td class="text-center">
-                      <button class="btn btn-success btn-xs gap-1" @click="openImportCsvForWa(selectedSo.id, wa.id)">
-                        <Upload class="w-3 h-3" /> Import CSV
-                      </button>
-                    </td>
-                  </tr>
-                  <tr v-if="!selectedSo.workAuthorizations || selectedSo.workAuthorizations.length === 0">
-                    <td colspan="5" class="text-center py-4 text-base-content/60">Chưa có lệnh WA nào thuộc SO này.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div class="modal-action">
-          <button class="btn btn-ghost btn-sm" @click="soDetailVisible = false">Đóng</button>
-          <button class="btn btn-primary btn-sm gap-1" @click="openImportCsvForSo(selectedSo?.id)">
-            <Upload class="w-4 h-4" /> Import CSV Cho SO Này
-          </button>
-        </div>
-      </div>
-      <div class="modal-backdrop bg-black/60" @click="soDetailVisible = false"></div>
-    </dialog>
+    <!-- DIALOG 5: CHI TIẾT SALE ORDER & DANH SÁCH WORK AUTHORIZATIONS (WA) (MODULARIZED) -->
+    <SoDetailModal
+      :visible="soDetailVisible"
+      :selected-so="selectedSo"
+      @close="soDetailVisible = false"
+      @create-wa="openCreateWaDialog"
+      @import-csv-wa="openImportCsvForWa"
+      @import-csv-so="openImportCsvForSo"
+    />
 
     <!-- DIALOG 6: IMPORT CSV FILE ĐÃ TEST -->
     <dialog class="modal" :class="{ 'modal-open': importCsvVisible }">
@@ -1136,6 +932,11 @@ import {
 } from 'lucide-vue-next';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
+import RawTestDataModal from '../components/RawTestDataModal.vue';
+import SessionAuditModal from '../components/SessionAuditModal.vue';
+import CreateSoModal from '../components/CreateSoModal.vue';
+import CreateWaModal from '../components/CreateWaModal.vue';
+import SoDetailModal from '../components/SoDetailModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -2634,6 +2435,14 @@ const submitCreateSo = async () => {
   }
 };
 
+const handleCreateSoSubmit = async (form: any) => {
+  newSoForm.soNumber = form.soNumber;
+  newSoForm.customerName = form.customerName;
+  newSoForm.customerCode = form.customerCode;
+  newSoForm.notes = form.notes;
+  await submitCreateSo();
+};
+
 const openCreateWaDialog = (so: any) => {
   targetSoForWa.value = so;
   newWaForm.soNumber = so?.soNumber || '';
@@ -2684,6 +2493,14 @@ const submitCreateWa = async () => {
   } finally {
     submittingWa.value = false;
   }
+};
+
+const handleCreateWaSubmit = async (form: any) => {
+  newWaForm.waNumber = form.waNumber;
+  newWaForm.itemCode = form.itemCode;
+  newWaForm.plannedQuantity = form.plannedQuantity;
+  newWaForm.notes = form.notes;
+  await submitCreateWa();
 };
 
 const viewSoDetail = async (soId: string) => {

@@ -1,5 +1,6 @@
 /* ==========================================================================
    iTest Theme - Global Reset & Base Typography
+   Typography: system-ui, -apple-system, "Segoe UI", sans-serif in đậm sắc nét nịnh mắt
    ========================================================================== */
 
 html,
@@ -11,9 +12,33 @@ body,
   color: var(--owl-text-primary);
   font-family: var(--cyber-font-body);
   font-size: 14px;
+  font-weight: 500; /* Crisp medium weight base font for eye-pleasing readability */
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Headings & Display Titles in đậm sắc sảo, nịnh mắt */
+h1, h2, h3, h4, h5, h6,
+.font-bold,
+.font-display,
+.page-title,
+.card-title,
+.el-card__header,
+.dialog-title {
+  font-family: var(--cyber-font-display);
+  font-weight: 700 !important;
+  letter-spacing: -0.015em;
+}
+
+.font-semibold,
+.btn,
+.badge,
+.tab-active,
+.sidebar-item-active {
+  font-weight: 600 !important;
 }
 
 /* Ensure form controls and interactive elements inherit uniform typography (preflight: false normalization) */
@@ -24,6 +49,7 @@ select,
 textarea {
   font-family: inherit;
   font-size: inherit;
+  font-weight: inherit;
   line-height: inherit;
   color: inherit;
 }
@@ -50,6 +76,7 @@ samp,
 pre,
 .font-mono {
   font-family: var(--cyber-font-mono) !important;
+  font-weight: 500;
 }
 
 /* Typography utility classes */
@@ -82,4 +109,5 @@ pre,
   background-color: var(--owl-bg-canvas) !important;
   background-image: none !important;
   color: var(--owl-text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }

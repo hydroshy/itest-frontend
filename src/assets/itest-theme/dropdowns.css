@@ -77,7 +77,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--owl-primary, #7c3aed);
+  background: var(--owl-primary, #2563eb);
   display: inline-block;
 }
 

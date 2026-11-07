@@ -1,243 +1,121 @@
 <template>
   <div class="launcher-view flex-1 flex flex-col justify-start w-full max-w-[1720px] mx-auto px-4 sm:px-8 xl:px-12 pt-2 sm:pt-4 pb-4 select-none min-h-[calc(100vh-4rem)]">
-    <!-- Header Banner: Title, Subtitle, Search & Category Filters -->
-    <div class="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 mb-3 bg-[#151d2c] border border-white/10 rounded-3xl shadow-none">
-      <div>
-        <h2 class="text-xl font-bold font-display text-[#f8fafc] tracking-wide flex items-center gap-2.5">
-          <CyberIcon name="grid" :size="22" class="text-violet-400" />
-          <span>Menu Ứng Dụng & Phân Hệ</span>
-        </h2>
-        <p class="text-xs sm:text-sm text-[#94a3b8] mt-1">
-          Khởi chạy các tiện ích kiểm thử, cấu hình thiết bị và công cụ vận hành hệ thống ITEST
-        </p>
-      </div>
-
-      <!-- Search & Category Filters -->
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Search bar with refined smooth Memphis style -->
-        <div class="relative flex items-center min-w-[200px] max-w-xs group">
-          <CyberIcon
-            name="search"
-            :size="14"
-            class="absolute left-3 text-slate-400 group-focus-within:text-violet-400 transition-colors pointer-events-none"
-          />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Tìm kiếm phân hệ..."
-            class="w-full h-9 pl-9 pr-8 bg-[#1a2436] hover:bg-[#202c42] focus:bg-[#202c42] text-xs text-slate-200 placeholder:text-slate-400/60 placeholder:italic placeholder:font-light rounded-xl border border-white/10 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 shadow-none transition-all outline-none"
-          />
-          <button
-            v-if="searchQuery"
-            type="button"
-            @click="searchQuery = ''"
-            class="absolute right-2.5 text-slate-400 hover:text-slate-200 text-xs transition-colors p-0.5 rounded-full"
-            title="Xóa tìm kiếm"
-          >
-            ✕
-          </button>
-        </div>
-
-        <!-- Category tabs -->
-        <div class="join bg-[#1a2436] p-0.5 rounded-xl border border-white/10 shrink-0 shadow-none h-9 items-center flex">
-          <button
-            class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-            :class="selectedCategory === 'all' ? 'bg-violet-600 text-white font-semibold shadow-none border-none' : 'btn-ghost text-slate-400 hover:text-white'"
-            @click="setCategory('all')"
-          >
-            Tất cả
-          </button>
-          <button
-            class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-            :class="selectedCategory === 'system' ? 'bg-violet-600 text-white font-semibold shadow-none border-none' : 'btn-ghost text-slate-400 hover:text-white'"
-            @click="setCategory('system')"
-          >
-            Hệ thống
-          </button>
-          <button
-            class="btn btn-xs h-7 min-h-0 join-item rounded-lg transition-all px-3"
-            :class="selectedCategory === 'plugin' ? 'bg-violet-600 text-white font-semibold shadow-none border-none' : 'btn-ghost text-slate-400 hover:text-white'"
-            @click="setCategory('plugin')"
-          >
-            Plugin
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Header Banner: Modular Component -->
+    <MenuHeaderBar
+      v-model:search-query="searchQuery"
+      v-model:selected-category="selectedCategory"
+      :counts="categoryCounts"
+    />
 
     <!-- Main Content Area: 2-Row Grid -->
     <div class="flex-1 flex flex-col justify-start w-full pt-1 pb-4 sm:pt-2 sm:pb-6">
-      <!-- Cards Viewport Container (Horizontal Transition between pages) -->
       <div class="w-full min-w-0 overflow-hidden py-1">
-          <transition :name="slideDirection === 'next' ? 'slide-left' : 'slide-right'" mode="out-in">
-            <!-- Loading Skeleton Grid -->
+        <transition :name="slideDirection === 'next' ? 'slide-left' : 'slide-right'" mode="out-in">
+          <!-- Loading Skeleton Grid -->
+          <div
+            v-if="loading"
+            :key="'loading'"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
+          >
             <div
-              v-if="loading"
-              :key="'loading'"
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
+              v-for="i in cardsPerPage"
+              :key="i"
+              class="card bg-[var(--owl-bg-card)] border border-[var(--owl-border)] rounded-2xl p-5 min-h-[180px] flex flex-col justify-between animate-pulse"
             >
-              <div
-                v-for="i in cardsPerPage"
-                :key="i"
-                class="card bg-[#1a2436] border border-white/10 rounded-2xl p-5 min-h-[180px] flex flex-col justify-between animate-pulse shadow-none"
-              >
-                <div class="flex items-center justify-between">
-                  <div class="w-10 h-10 rounded-xl bg-[#202c42]"></div>
-                  <div class="w-16 h-5 rounded-md bg-[#202c42]"></div>
-                </div>
-                <div class="space-y-2">
-                  <div class="w-3/4 h-4 rounded bg-[#202c42]"></div>
-                  <div class="w-full h-3 rounded bg-[#202c42]/80"></div>
-                </div>
-                <div class="w-1/2 h-3 rounded bg-[#202c42]/80 pt-2 border-t border-white/10"></div>
+              <div class="flex items-center justify-between">
+                <div class="w-10 h-10 rounded-xl bg-[var(--owl-bg-surface)]"></div>
+                <div class="w-16 h-5 rounded-md bg-[var(--owl-bg-surface)]"></div>
               </div>
+              <div class="space-y-2">
+                <div class="w-3/4 h-4 rounded bg-[var(--owl-bg-surface)]"></div>
+                <div class="w-full h-3 rounded bg-[var(--owl-bg-surface)]/80"></div>
+              </div>
+              <div class="w-1/2 h-3 rounded bg-[var(--owl-bg-surface)]/80 pt-2 border-t border-[var(--owl-border-light)]"></div>
             </div>
+          </div>
 
-            <!-- Empty State -->
-            <div
-              v-else-if="filteredCards.length === 0"
-              :key="'empty'"
-              class="flex flex-col items-center justify-center py-16 text-center w-full"
+          <!-- Empty State -->
+          <div
+            v-else-if="filteredCards.length === 0"
+            :key="'empty'"
+            class="flex flex-col items-center justify-center p-12 text-center rounded-3xl bg-[var(--owl-bg-surface)] border border-dashed border-[var(--owl-border)] my-6"
+          >
+            <div class="w-16 h-16 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-500 flex items-center justify-center mb-4 text-2xl">
+              <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
+            </div>
+            <h3 class="text-base font-bold font-display text-[var(--owl-text-primary)]">Không tìm thấy phân hệ phù hợp</h3>
+            <p class="text-xs font-semibold text-[var(--owl-text-secondary)] mt-1.5 max-w-sm leading-relaxed">
+              Vui lòng kiểm tra lại từ khóa tìm kiếm hoặc chuyển sang bộ lọc danh mục khác.
+            </p>
+            <button
+              type="button"
+              class="btn btn-sm mt-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white border-none font-bold text-xs"
+              @click="resetFilters"
             >
-              <div class="w-14 h-14 rounded-2xl bg-base-300 border border-base-content/10 flex items-center justify-center mb-3 text-base-content/40 shadow-inner">
-                <CyberIcon name="search" :size="24" />
-              </div>
-              <p class="text-sm font-semibold text-base-content">Không tìm thấy phân hệ nào</p>
-              <p class="text-xs text-base-content/50 mt-1 max-w-sm">
-                Không có thẻ chức năng nào khớp với bộ lọc "{{ searchQuery || selectedCategory }}".
-              </p>
-              <button
-                v-if="searchQuery || selectedCategory !== 'all'"
-                @click="resetFilters"
-                class="btn btn-primary btn-xs mt-4 rounded-lg font-semibold text-base-100 shadow-sm"
-              >
-                Xóa bộ lọc
-              </button>
-            </div>
+              Đặt lại bộ lọc
+            </button>
+          </div>
 
-            <!-- 2-Row Menu Cards Grid -->
-            <div
-              v-else
-              :key="currentPage"
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
-            >
-              <div
-                v-for="card in paginatedCards"
-                :key="card.id"
-                class="card bg-[#1a2436] hover:bg-[#202c42] border border-white/10 hover:border-violet-500/40 rounded-2xl p-5 sm:p-6 shadow-none transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden min-h-[185px]"
-                @click="navigateTo(card)"
-                @contextmenu.prevent="handleContextMenu($event, card)"
-              >
-                <!-- Top Row: Icon + Category Badge -->
-                <div class="flex items-center justify-between">
-                  <div
-                    class="w-11 h-11 rounded-xl bg-[#151d2c] border border-white/10 flex items-center justify-center group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/15 transition-all duration-200 shadow-none"
-                  >
-                    <CyberIcon
-                      :name="resolveCyberIconName(card)"
-                      :size="22"
-                      class="text-violet-400 group-hover:text-violet-300 transition-colors"
-                    />
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      class="btn btn-ghost btn-xs btn-circle text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-colors"
-                      title="Tùy chọn & chi tiết"
-                      @click.stop="handleContextMenu($event, card)"
-                    >
-                      <MoreVertical :size="14" />
-                    </button>
-                    <span
-                      class="badge badge-sm font-mono tracking-wider font-semibold"
-                      :class="card.category === 'system' ? 'badge-info badge-outline border-sky-500/30 text-sky-400' : 'badge-ghost border-white/10 text-slate-400'"
-                    >
-                      {{ card.category === 'system' ? 'SYSTEM' : 'PLUGIN' }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Middle Content: Title + Description -->
-                <div class="space-y-1.5 my-2">
-                  <h3 class="text-sm font-semibold text-slate-100 group-hover:text-violet-300 transition-colors tracking-wide line-clamp-1">
-                    {{ card.title }}
-                  </h3>
-                  <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                    {{ card.description || 'Truy cập phân hệ chức năng hệ thống.' }}
-                  </p>
-                </div>
-
-                <!-- Bottom Action Row: Direct Link Indication -->
-                <div class="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-medium text-slate-400 group-hover:text-violet-400 transition-colors">
-                  <span class="tracking-wide text-[11px]">Mở phân hệ</span>
-                  <div class="flex items-center gap-1">
-                    <span class="text-[10px] text-base-content/40 group-hover:text-violet-400/80 uppercase font-mono tracking-wider">Khởi chạy</span>
-                    <CyberIcon
-                      name="chevron-right"
-                      :size="14"
-                      class="transform group-hover:translate-x-1 transition-transform"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- Cards Grid -->
+          <div
+            v-else
+            :key="currentPage"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
+          >
+            <MenuCardItem
+              v-for="card in paginatedCards"
+              :key="card.id"
+              :card="card"
+              @navigate="navigateTo"
+              @contextmenu="handleContextMenu"
+            />
+          </div>
         </transition>
       </div>
     </div>
 
-    <!-- Bottom Pagination Footer: Information & Indicators -->
+    <!-- Pagination Controls -->
     <div
-      v-if="filteredCards.length > 0"
-      class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-base-content/10 w-full text-xs text-base-content/60 shrink-0"
+      v-if="!loading && totalPages > 1"
+      class="flex flex-wrap items-center justify-between gap-4 py-3 px-4 sm:px-6 bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-2xl"
     >
-      <!-- Count summary -->
-      <div class="flex items-center gap-2">
-        <span>
-          Hiển thị
-          <span class="font-semibold text-base-content">{{ paginationInfo.start }}</span>
-          -
-          <span class="font-semibold text-base-content">{{ paginationInfo.end }}</span>
-          trong tổng số
-          <span class="font-semibold text-base-content">{{ filteredCards.length }}</span>
-          phân hệ
-        </span>
-        <span v-if="totalPages > 1" class="hidden sm:inline text-base-content/30">•</span>
-        <span v-if="totalPages > 1" class="hidden sm:inline text-[11px] text-base-content/40">
-          (Dùng phím ← / → để chuyển trang nhanh)
-        </span>
+      <div class="text-xs font-semibold text-[var(--owl-text-secondary)]">
+        Trang <span class="font-bold text-[var(--owl-text-primary)] font-mono">{{ currentPage }}</span> / {{ totalPages }}
+        (Tổng số {{ filteredCards.length }} phân hệ)
       </div>
 
-      <!-- Pagination Controls & Indicators -->
-      <div v-if="totalPages > 1" class="flex items-center gap-2">
+      <div class="flex items-center gap-2">
         <button
-          class="btn btn-xs btn-ghost gap-1 font-normal text-base-content/70 hover:text-base-content"
+          type="button"
+          class="btn btn-xs h-8 px-3 rounded-lg bg-[var(--owl-bg-card)] hover:bg-[var(--owl-bg-card-hover)] text-[var(--owl-text-primary)] border border-[var(--owl-border)] text-xs font-bold"
           :disabled="currentPage <= 1"
           @click="prevPage"
         >
-          <CyberIcon name="chevron-left" :size="13" />
-          <span>Trước</span>
+          <font-awesome-icon :icon="['fas', 'chevron-left']" class="mr-1" />
+          Trước
         </button>
 
-        <!-- Page Number Buttons -->
-        <div class="join bg-base-300/80 p-0.5 rounded-lg border border-base-content/15">
+        <div class="join bg-[var(--owl-bg-card)] rounded-lg border border-[var(--owl-border)] p-0.5">
           <button
             v-for="page in totalPages"
             :key="page"
-            class="btn btn-xs join-item rounded-md transition-all font-mono"
-            :class="currentPage === page ? 'btn-primary font-bold text-base-100 shadow-sm' : 'btn-ghost text-base-content/70 hover:text-base-content'"
-            @click="goToPage(page)"
+            type="button"
+            class="btn btn-xs join-item w-8 h-7 text-xs font-bold border-none transition-all"
+            :class="currentPage === page ? 'bg-blue-600 text-white' : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)]'"
+            @click="setPage(page)"
           >
             {{ page }}
           </button>
         </div>
 
         <button
-          class="btn btn-xs btn-ghost gap-1 font-normal text-base-content/70 hover:text-base-content"
+          type="button"
+          class="btn btn-xs h-8 px-3 rounded-lg bg-[var(--owl-bg-card)] hover:bg-[var(--owl-bg-card-hover)] text-[var(--owl-text-primary)] border border-[var(--owl-border)] text-xs font-bold"
           :disabled="currentPage >= totalPages"
           @click="nextPage"
         >
-          <span>Sau</span>
-          <CyberIcon name="chevron-right" :size="13" />
+          Sau
+          <font-awesome-icon :icon="['fas', 'chevron-right']" class="ml-1" />
         </button>
       </div>
     </div>
@@ -246,195 +124,91 @@
     <Teleport to="body">
       <div
         v-if="contextMenu.visible && contextMenu.card"
-        class="fixed z-[9999] min-w-[210px] bg-[#151d2c] border border-white/10 rounded-2xl shadow-none py-1.5 px-1.5 text-slate-200 select-none animate-in fade-in zoom-in-95 duration-100"
+        class="fixed z-[9999] min-w-[210px] bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-2xl shadow-xl py-1.5 px-1.5 text-[var(--owl-text-primary)] select-none animate-in fade-in zoom-in-95 duration-100"
         :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
         @click.stop
       >
-        <div class="px-3 py-1.5 border-b border-white/10 mb-1">
-          <div class="text-xs font-semibold text-slate-100 truncate">{{ contextMenu.card.title }}</div>
-          <div class="text-[10px] text-slate-400 truncate font-mono">{{ contextMenu.card.pluginId || contextMenu.card.category }}</div>
+        <div class="px-3 py-1.5 border-b border-[var(--owl-border-light)] mb-1">
+          <div class="text-xs font-bold text-[var(--owl-text-primary)] truncate">{{ contextMenu.card.title }}</div>
+          <div class="text-[10px] text-[var(--owl-text-muted)] truncate font-mono">{{ contextMenu.card.pluginId || contextMenu.card.category }}</div>
         </div>
         <button
+          type="button"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[var(--owl-text-primary)] hover:bg-blue-600/15 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors text-left"
           @click="openCardDetails(contextMenu.card)"
-          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-violet-500/15 hover:text-violet-300 rounded-lg transition-colors text-left"
         >
-          <Info :size="14" class="text-violet-400" />
+          <font-awesome-icon :icon="['fas', 'circle-info']" class="text-blue-500" />
           <span>Hiển thị chi tiết</span>
         </button>
         <button
+          type="button"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors text-left"
           @click="navigateTo(contextMenu.card); closeContextMenu()"
-          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/5 rounded-lg transition-colors text-left"
         >
-          <ExternalLink :size="14" class="text-slate-400" />
+          <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="text-[var(--owl-text-muted)]" />
           <span>Mở phân hệ</span>
         </button>
         <button
+          type="button"
+          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors text-left"
           @click="openInNewTab(contextMenu.card); closeContextMenu()"
-          class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/5 rounded-lg transition-colors text-left"
         >
-          <Layers :size="14" class="text-slate-400" />
+          <font-awesome-icon :icon="['fas', 'layer-group']" class="text-[var(--owl-text-muted)]" />
           <span>Mở trong tab mới</span>
         </button>
       </div>
     </Teleport>
 
-    <!-- Modal Chi Tiết Phân Hệ (Đặc biệt Final Config) -->
-    <Teleport to="body">
-      <Transition name="modal-fade">
-        <div
-          v-if="detailModalVisible && detailCard"
-          class="modal modal-open fixed inset-0 z-[9998] flex items-center justify-center p-4"
-        >
-          <div class="modal-box max-w-2xl bg-[#151d2c] border border-white/10 rounded-3xl shadow-none p-6 text-slate-200 max-h-[85vh] flex flex-col relative z-10">
-          <!-- Header -->
-          <div class="flex items-center justify-between pb-4 border-b border-white/10">
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-400">
-                <CyberIcon :name="resolveCyberIconName(detailCard)" :size="22" />
-              </div>
-              <div>
-                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                  {{ detailCard.title }}
-                  <span class="badge badge-sm badge-outline font-mono text-[10px] border-white/20 text-slate-300">
-                    {{ detailCard.pluginId || detailCard.category }}
-                  </span>
-                </h3>
-                <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">{{ detailCard.description }}</p>
-              </div>
-            </div>
-            <button class="btn btn-ghost btn-sm btn-circle text-slate-400 hover:text-slate-100" @click="detailModalVisible = false">✕</button>
-          </div>
-
-          <!-- Body -->
-          <div class="py-4 space-y-4 overflow-y-auto flex-1 pr-1">
-            <!-- Metadata Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-              <div class="p-2.5 rounded-xl bg-[#1a2436] border border-white/10">
-                <div class="text-[10px] text-slate-400 uppercase font-mono">Đường dẫn Route</div>
-                <div class="font-mono font-semibold text-slate-200 mt-0.5 truncate">{{ detailCard.route || detailCard.path || 'N/A' }}</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-[#1a2436] border border-white/10">
-                <div class="text-[10px] text-slate-400 uppercase font-mono">Phân loại</div>
-                <div class="font-semibold text-slate-200 mt-0.5 capitalize">{{ detailCard.category || 'Plugin' }}</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-[#1a2436] border border-white/10">
-                <div class="text-[10px] text-slate-400 uppercase font-mono">Trạng thái Adapter</div>
-                <div class="font-semibold text-emerald-400 mt-0.5 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Online
-                </div>
-              </div>
-            </div>
-
-            <!-- Specific Detail section for Final Config -->
-            <div v-if="detailCard.pluginId === 'final-config' || detailCard.id?.includes('final-config')" class="space-y-3">
-              <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                  <CyberIcon name="cpu" :size="14" class="text-violet-400" />
-                  <span>Danh sách Profile Final Config ({{ finalConfigProfiles.length }})</span>
-                </h4>
-                <span v-if="detailModalLoading" class="loading loading-spinner loading-xs text-violet-400"></span>
-              </div>
-
-              <div v-if="detailModalLoading" class="py-8 text-center text-xs text-slate-400">
-                Đang tải dữ liệu cấu hình Final Config...
-              </div>
-
-              <div v-else-if="finalConfigProfiles.length === 0" class="py-6 text-center text-xs text-slate-400 bg-[#1a2436]/50 rounded-xl border border-dashed border-white/10">
-                Chưa có profile Final Config nào được lưu trong hệ thống.
-              </div>
-
-              <div v-else class="border border-white/10 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
-                <table class="table table-xs w-full bg-[#1a2436]/60">
-                  <thead class="bg-[#1a2436] text-[11px] text-slate-300 sticky top-0">
-                    <tr>
-                      <th>Mã SO</th>
-                      <th>Item Code</th>
-                      <th>SKU</th>
-                      <th>Kết nối</th>
-                      <th>Thanh ghi</th>
-                      <th>Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody class="text-xs font-mono">
-                    <tr v-for="prof in finalConfigProfiles" :key="prof.id" class="hover:bg-[#202c42] transition-colors">
-                      <td class="font-bold text-violet-400">{{ prof.soNumber || '-' }}</td>
-                      <td class="text-slate-200">{{ prof.itemCode || '-' }}</td>
-                      <td class="text-slate-300">{{ prof.sku || '-' }}</td>
-                      <td><span class="badge badge-xs badge-info badge-outline border-sky-500/30 text-sky-400">{{ prof.connectivity || 'RS485' }}</span></td>
-                      <td class="text-center font-bold text-amber-400">{{ prof.registersCount || 0 }}</td>
-                      <td>
-                        <span class="badge badge-xs" :class="prof.status === 'ACTIVE' || prof.status === 'active' ? 'badge-success' : 'badge-ghost'">
-                          {{ prof.status || 'Active' }}
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Detail for other plugins -->
-            <div v-else class="p-4 rounded-xl bg-[#1a2436] border border-white/10 text-xs space-y-2">
-              <div class="text-slate-300 font-semibold">Thông tin mô tả:</div>
-              <p class="text-slate-400 leading-relaxed">{{ detailCard.description || 'Phân hệ chức năng trong hệ thống ITEST.' }}</p>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div class="flex items-center justify-between pt-4 border-t border-slate-800">
-            <button class="btn btn-sm btn-ghost text-xs text-slate-400 hover:text-slate-100" @click="detailModalVisible = false">
-              Đóng
-            </button>
-            <button class="btn btn-sm btn-primary text-xs gap-1.5" @click="navigateTo(detailCard); detailModalVisible = false">
-              <ExternalLink :size="13" />
-              <span>Đi tới phân hệ này</span>
-            </button>
-          </div>
-        </div>
-          <div class="modal-backdrop" @click.stop.prevent></div>
-        </div>
-      </Transition>
-    </Teleport>
+    <!-- Detail Modal Modular Component -->
+    <MenuDetailModal
+      :visible="detailModalVisible"
+      :card="detailCard"
+      :profiles="finalConfigProfiles"
+      :loading="detailModalLoading"
+      @close="detailModalVisible = false"
+      @open="navigateTo(detailCard); detailModalVisible = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { MoreVertical, Info, ExternalLink, Layers } from 'lucide-vue-next';
-import CyberIcon from '@/components/shared/CyberIcon.vue';
-import { httpClient } from '@/api/client';
 import { useAuthStore } from '@/stores/auth';
 import { useCtosTransition } from '@/composables/useCtosTransition';
+import { httpClient } from '@/api/client';
+import MenuHeaderBar from './components/MenuHeaderBar.vue';
+import MenuCardItem from './components/MenuCardItem.vue';
+import MenuDetailModal from './components/MenuDetailModal.vue';
 
-export interface MenuCardItem {
+interface MenuCardItemDef {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   icon?: string;
   route?: string;
   path?: string;
   pluginId?: string;
-  category?: string;
   tab?: string;
-  order?: number;
+  category: 'system' | 'plugin';
+  order: number;
 }
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-const mounted = ref(false);
-const loading = ref(false);
 const searchQuery = ref('');
 const selectedCategory = ref('all');
+const loading = ref(false);
+const currentPage = ref(1);
+const slideDirection = ref<'next' | 'prev'>('next');
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
-// Fallback static items based on standard requirements
-const defaultStaticCards: MenuCardItem[] = [
+const defaultStaticCards: MenuCardItemDef[] = [
   {
     id: 'dashboard',
     title: 'Bảng điều khiển',
-    description: 'Tổng quan hệ thống, trạng thái dịch vụ và phân quyền quản trị menu.',
+    description: 'Thống kê tổng quan hệ thống, tiện ích mở rộng và quản trị phân quyền.',
     icon: 'dashboard',
     route: '/dashboard',
     category: 'system',
@@ -442,8 +216,8 @@ const defaultStaticCards: MenuCardItem[] = [
   },
   {
     id: 'users',
-    title: 'Quản lý Người dùng',
-    description: 'Quản lý danh sách người dùng, kích hoạt tài khoản và gán vai trò.',
+    title: 'Quản lý Tài khoản',
+    description: 'Quản lý người dùng, kích hoạt tài khoản và gán vai trò truy cập.',
     icon: 'users',
     route: '/users',
     category: 'system',
@@ -451,8 +225,8 @@ const defaultStaticCards: MenuCardItem[] = [
   },
   {
     id: 'roles',
-    title: 'Quản lý Phân quyền',
-    description: 'Thiết lập nhóm vai trò và quyền hạn chi tiết trong hệ thống.',
+    title: 'Phân quyền Hệ thống',
+    description: 'Thiết lập nhóm vai trò và phân quyền chi tiết cho người dùng.',
     icon: 'roles',
     route: '/roles',
     category: 'system',
@@ -514,7 +288,7 @@ const defaultStaticCards: MenuCardItem[] = [
   {
     id: 'device-traceability:devices',
     title: 'Device Traceability List',
-    description: 'Tra cứu dòng đời thiết bị, lịch sử test và trạng thái final config.',
+    description: 'Tra cứu danh sách thiết bị, lịch sử kiểm tra và phân bổ đơn hàng.',
     icon: 'traceability',
     route: '/plugins/device-traceability?tab=devices',
     pluginId: 'device-traceability',
@@ -523,35 +297,35 @@ const defaultStaticCards: MenuCardItem[] = [
     order: 9,
   },
   {
-    id: 'memmap-manager:manager',
-    title: 'Memmap Manager',
-    description: 'Quản lý danh sách profile bản đồ bộ nhớ thiết bị Modbus và payload IEC485.',
+    id: 'memmap:template',
+    title: 'Memmap Payload Templates',
+    description: 'Quản lý danh sách bảng thanh ghi cấu hình (Memmap) cho thiết bị.',
     icon: 'memmap',
-    route: '/plugins/memmap-manager?tab=manager',
-    pluginId: 'memmap-manager',
-    tab: 'manager',
+    route: '/plugins/memmap?tab=template',
+    pluginId: 'memmap',
+    tab: 'template',
     category: 'plugin',
     order: 10,
   },
   {
-    id: 'memmap-manager:upload',
-    title: 'Import & Validation Memmap',
-    description: 'Tải lên bảng thanh ghi Excel/JSON và kiểm thử cú pháp bản đồ bộ nhớ.',
-    icon: 'upload',
-    route: '/plugins/memmap-manager?tab=upload',
-    pluginId: 'memmap-manager',
-    tab: 'upload',
+    id: 'memmap:collection',
+    title: 'Memmap Collections',
+    description: 'Tập hợp các nhóm thanh ghi cho từng mã sản phẩm.',
+    icon: 'memmap',
+    route: '/plugins/memmap?tab=collection',
+    pluginId: 'memmap',
+    tab: 'collection',
     category: 'plugin',
     order: 11,
   },
   {
-    id: 'dis-manager:dashboard',
-    title: 'DIS Manager',
-    description: 'Bảng điều khiển đồng bộ và quản lý dữ liệu DIS phân tán.',
-    icon: 'dashboard',
-    route: '/plugins/dis-manager?tab=dashboard',
-    pluginId: 'dis-manager',
-    tab: 'dashboard',
+    id: 'decoder:scripts',
+    title: 'Bộ giải mã Payload (Decoder)',
+    description: 'Quản lý kịch bản giải mã Uplink payload thiết bị IoT, liên kết Item Code và FW Code.',
+    icon: 'file-code',
+    route: '/plugins/decoder?tab=list',
+    pluginId: 'decoder',
+    tab: 'list',
     category: 'plugin',
     order: 12,
   },
@@ -578,90 +352,27 @@ const defaultStaticCards: MenuCardItem[] = [
     order: 14,
   },
   {
-    id: 'testing:gateway-sessions',
-    title: 'Gateway Testing',
-    description: 'Kiểm thử Gateway LoRaWAN, cấu hình packet forwarder và xác thực số serial.',
+    id: 'testing:device-payload',
+    title: 'Device Payload Live Stream',
+    description: 'Giám sát trực tiếp dữ liệu thô và payload đã giải mã từ trạm testing.',
     icon: 'activity',
-    route: '/plugins/testing?tab=gateway-sessions',
+    route: '/plugins/testing?tab=device-payload',
     pluginId: 'testing',
-    tab: 'gateway-sessions',
+    tab: 'device-payload',
     category: 'plugin',
     order: 15,
   },
-  {
-    id: 'testing:simulation-devices',
-    title: 'Simulation Devices',
-    description: 'Quản lý danh sách thiết bị kiểm thử được gắn nhãn simulation trong hệ thống.',
-    icon: 'radio',
-    route: '/plugins/testing?tab=list-device-simulation',
-    pluginId: 'testing',
-    tab: 'list-device-simulation',
-    category: 'plugin',
-    order: 16,
-  },
-  {
-    id: 'testing:list-flow-simulation',
-    title: 'List Flow Simulation',
-    description: 'Danh sách và quản lý các kịch bản Function Blocks mô phỏng gửi nhận dữ liệu.',
-    icon: 'layers',
-    route: '/plugins/testing?tab=list-flow-simulation',
-    pluginId: 'testing',
-    tab: 'list-flow-simulation',
-    category: 'plugin',
-    order: 17,
-  },
-  {
-    id: 'testing:list-device-simulation',
-    title: 'List Device Simulation',
-    description: 'Danh sách quản lý các thiết bị kiểm thử simulation độc lập.',
-    icon: 'radio',
-    route: '/plugins/testing?tab=list-device-simulation',
-    pluginId: 'testing',
-    tab: 'list-device-simulation',
-    category: 'plugin',
-    order: 18,
-  },
 ];
 
-const cards = ref<MenuCardItem[]>([...defaultStaticCards]);
-const currentPage = ref(1);
-const slideDirection = ref<'next' | 'prev'>('next');
-const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1280);
+const cards = ref<MenuCardItemDef[]>([]);
 
-// Responsive calculation of cards per page to maintain strictly 2 rows
-const cardsPerPage = computed(() => {
-  if (windowWidth.value >= 1280) return 8; // 4 columns x 2 rows
-  if (windowWidth.value >= 1024) return 6; // 3 columns x 2 rows
-  if (windowWidth.value >= 640) return 4;  // 2 columns x 2 rows
-  return 4;                               // Mobile 2x2 or 2x1
-});
-
-async function fetchMenuCards() {
-  loading.value = true;
-  try {
-    const res: any = await httpClient.get('/menu/my-cards');
-    const items = Array.isArray(res) ? res : (res?.data || res?.items);
-    if (Array.isArray(items) && items.length > 0) {
-      cards.value = items.map((item: any) => ({
-        ...item,
-        path: item.route || item.path,
-      }));
-      return;
-    }
-  } catch (err) {
-    console.warn('Backend /api/v1/menu/my-cards request failed:', err);
-  } finally {
-    loading.value = false;
-  }
-
-  // Fallback an toàn khi API trả về rỗng hoặc chưa nạp được role
-  const userRoles = (authStore.roles || []).map((r: string) => r.toUpperCase());
+function initCardsForUser() {
+  const userRoles = (authStore.roles || []).map((r: string) => String(r).toUpperCase());
   const isAdmin =
     authStore.isAdmin ||
     userRoles.length === 0 ||
     userRoles.includes('ADMIN') ||
-    userRoles.includes('SUPER_ADMIN') ||
-    userRoles.includes('ADMINISTRATOR');
+    userRoles.includes('SUPER_ADMIN');
 
   if (isAdmin) {
     cards.value = [...defaultStaticCards];
@@ -670,13 +381,10 @@ async function fetchMenuCards() {
       return (
         card.id === 'final-config:tool' ||
         card.id === 'device-traceability:devices' ||
-        card.id === 'lorawan-chirpstack:integration' ||
+        card.id === 'decoder:scripts' ||
+        card.id === 'testing:device-payload' ||
         card.id === 'dashboard'
       );
-    });
-  } else if (userRoles.includes('END_USER')) {
-    cards.value = defaultStaticCards.filter((card) => {
-      return card.id === 'final-config:tool' || card.id === 'dashboard';
     });
   } else {
     cards.value = [...defaultStaticCards];
@@ -700,6 +408,13 @@ const filteredCards = computed(() => {
   return list;
 });
 
+const cardsPerPage = computed(() => {
+  if (windowWidth.value >= 1280) return 8;
+  if (windowWidth.value >= 1024) return 6;
+  if (windowWidth.value >= 640) return 4;
+  return 4;
+});
+
 const totalPages = computed(() => {
   return Math.max(1, Math.ceil(filteredCards.value.length / cardsPerPage.value));
 });
@@ -709,24 +424,22 @@ const paginatedCards = computed(() => {
   return filteredCards.value.slice(start, start + cardsPerPage.value);
 });
 
-const paginationInfo = computed(() => {
-  if (filteredCards.value.length === 0) {
-    return { start: 0, end: 0 };
-  }
-  const start = (currentPage.value - 1) * cardsPerPage.value + 1;
-  const end = Math.min(currentPage.value * cardsPerPage.value, filteredCards.value.length);
-  return { start, end };
+const categoryCounts = computed(() => {
+  const all = cards.value.length;
+  const system = cards.value.filter((c) => c.category === 'system').length;
+  const plugin = cards.value.filter((c) => c.category === 'plugin').length;
+  return { all, system, plugin };
 });
-
-function setCategory(category: string) {
-  selectedCategory.value = category;
-  currentPage.value = 1;
-}
 
 function resetFilters() {
   searchQuery.value = '';
   selectedCategory.value = 'all';
   currentPage.value = 1;
+}
+
+function setPage(page: number) {
+  slideDirection.value = page > currentPage.value ? 'next' : 'prev';
+  currentPage.value = page;
 }
 
 function prevPage() {
@@ -743,21 +456,8 @@ function nextPage() {
   }
 }
 
-function goToPage(page: number) {
-  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
-    slideDirection.value = page > currentPage.value ? 'next' : 'prev';
-    currentPage.value = page;
-  }
-}
-
-// Reset page to 1 when filters or screen width change
-watch([searchQuery, selectedCategory, cardsPerPage], () => {
-  if (currentPage.value > totalPages.value) {
-    currentPage.value = 1;
-  }
-});
-
-function navigateTo(card: MenuCardItem) {
+function navigateTo(card: MenuCardItemDef | null) {
+  if (!card) return;
   const target = card.route || card.path;
   if (target) {
     const { triggerTransition } = useCtosTransition();
@@ -771,32 +471,25 @@ function navigateTo(card: MenuCardItem) {
   }
 }
 
-function resolveCyberIconName(card?: MenuCardItem | null): string {
-  if (!card) return 'tools';
-  const raw = `${card.id || ''} ${card.icon || ''} ${card.title || ''}`.toLowerCase();
-  if (raw.includes('dashboard') || raw.includes('odometer') || raw.includes('databoard')) return 'dashboard';
-  if (raw.includes('cpu') || raw.includes('final-config') || raw.includes('chip')) return 'cpu';
-  if (raw.includes('trace') || raw.includes('tools') || raw.includes('barcode') || raw.includes('scan') || raw.includes('so')) return 'traceability';
-  if (raw.includes('chirp') || raw.includes('lora') || raw.includes('radio') || raw.includes('antenna')) return 'chirpstack';
-  if (raw.includes('user')) return 'users';
-  if (raw.includes('role') || raw.includes('lock') || raw.includes('shield')) return 'roles';
-  if (raw.includes('plugin') || raw.includes('setup')) return 'plugins';
-  return 'tools';
+function openInNewTab(card: MenuCardItemDef | null) {
+  if (!card) return;
+  const target = card.route || card.path;
+  if (target) {
+    const separator = target.includes('?') ? '&' : '?';
+    const url = router.resolve(target.startsWith('/plugins/') ? `${target}${separator}from=menu` : target).href;
+    window.open(url, '_blank');
+  }
 }
 
-function handleResize() {
-  windowWidth.value = window.innerWidth;
-}
-
-// Context menu state
+// Context Menu
 const contextMenu = ref({
   visible: false,
   x: 0,
   y: 0,
-  card: null as MenuCardItem | null,
+  card: null as MenuCardItemDef | null,
 });
 
-function handleContextMenu(e: MouseEvent, card: MenuCardItem) {
+function handleContextMenu(e: MouseEvent, card: MenuCardItemDef) {
   const menuWidth = 220;
   const menuHeight = 160;
   let posX = e.clientX;
@@ -821,107 +514,75 @@ function closeContextMenu() {
   contextMenu.value.visible = false;
 }
 
-function openInNewTab(card: MenuCardItem | null) {
-  if (!card) return;
-  const target = card.route || card.path;
-  if (target) {
-    const separator = target.includes('?') ? '&' : '?';
-    const url = router.resolve(target.startsWith('/plugins/') ? `${target}${separator}from=menu` : target).href;
-    window.open(url, '_blank');
-  }
-}
-
-// Detail modal state
+// Detail Modal
 const detailModalVisible = ref(false);
 const detailModalLoading = ref(false);
-const detailCard = ref<MenuCardItem | null>(null);
-const finalConfigStatus = ref<any>(null);
+const detailCard = ref<MenuCardItemDef | null>(null);
 const finalConfigProfiles = ref<any[]>([]);
 
-async function openCardDetails(card: MenuCardItem | null) {
+async function openCardDetails(card: MenuCardItemDef | null) {
   if (!card) return;
   detailCard.value = card;
   detailModalVisible.value = true;
   closeContextMenu();
 
-  finalConfigProfiles.value = [];
-  finalConfigStatus.value = null;
-
   if (card.pluginId === 'final-config' || card.id?.includes('final-config')) {
     detailModalLoading.value = true;
     try {
-      const [statusRes, profilesRes] = await Promise.allSettled([
-        httpClient.get('/plugins/final-config/status'),
-        httpClient.get('/plugins/final-config/profiles'),
-      ]);
-
-      if (statusRes.status === 'fulfilled' && statusRes.value) {
-        finalConfigStatus.value = statusRes.value;
-      }
-      if (profilesRes.status === 'fulfilled' && profilesRes.value) {
-        const raw = profilesRes.value;
-        finalConfigProfiles.value = Array.isArray(raw) ? raw : (raw.data || []);
-      }
-    } catch (err) {
-      console.warn('Lỗi tải chi tiết final config:', err);
+      const res: any = await httpClient.get('/plugins/final-config/profiles');
+      const data = res?.data || res;
+      finalConfigProfiles.value = Array.isArray(data) ? data : (data?.data || []);
+    } catch {
+      finalConfigProfiles.value = [];
     } finally {
       detailModalLoading.value = false;
     }
   }
 }
 
-function handleKeyDown(e: KeyboardEvent) {
-  // Ignore keyboard shortcuts if user is typing in an input
-  const activeTag = (document.activeElement?.tagName || '').toLowerCase();
-  if (activeTag === 'input' || activeTag === 'textarea') {
-    return;
-  }
-  if (e.key === 'ArrowLeft') {
-    prevPage();
-  } else if (e.key === 'ArrowRight') {
-    nextPage();
-  }
+function handleResize() {
+  windowWidth.value = window.innerWidth;
 }
 
 onMounted(() => {
-  mounted.value = true;
-  fetchMenuCards();
+  initCardsForUser();
   window.addEventListener('resize', handleResize);
-  window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('click', closeContextMenu);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
-  window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('click', closeContextMenu);
 });
 </script>
 
 <style scoped>
-/* Slide horizontal page transitions */
+.launcher-view {
+  font-family: var(--cyber-font-body);
+}
+
 .slide-left-enter-active,
 .slide-left-leave-active,
 .slide-right-enter-active,
 .slide-right-leave-active {
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-left-enter-from {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(16px);
 }
 .slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-16px);
 }
 
 .slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-16px);
 }
 .slide-right-leave-to {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(16px);
 }
 </style>
