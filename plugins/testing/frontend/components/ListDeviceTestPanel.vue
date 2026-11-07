@@ -559,16 +559,11 @@ const authStore = useAuthStore();
 
 // Current User & Role
 const currentUsername = computed(() => {
-  return authStore.user?.username || 'tester';
+  return authStore.user?.username || '';
 });
 
 const isAdmin = computed(() => {
-  const username = (authStore.user?.username || '').toLowerCase();
-  if (username === 'admin') return true;
-  const userType = String((authStore.user as any)?.userType || '').toUpperCase();
-  if (['ADMIN', 'SUPER_ADMIN'].includes(userType)) return true;
-  const roles = (authStore.user?.roles || []).map((r: any) => String(r).toUpperCase());
-  return roles.some((r: string) => ['ADMIN', 'SUPER_ADMIN', 'ADMINISTRATOR'].includes(r));
+  return authStore.isAdmin;
 });
 
 // State
@@ -602,7 +597,7 @@ function setFilterMode(mode: 'mine' | 'all') {
 
 function canDelete(dev: any): boolean {
   if (isAdmin.value) return true;
-  if (!dev?.createdBy || dev.createdBy === 'tester') return true;
+  if (!dev?.createdBy) return false;
   return String(dev.createdBy).toLowerCase() === currentUsername.value.toLowerCase();
 }
 
