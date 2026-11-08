@@ -298,7 +298,7 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'memmap-payload:main',
-    title: 'Memmap Payload',
+    title: 'MEMMAP PAYLOAD',
     description: 'Quản lý danh sách bản đồ bộ nhớ (Memmap) và tải lên bảng thanh ghi thiết bị.',
     icon: 'memmap',
     route: '/plugins/memmap-manager?tab=manager',

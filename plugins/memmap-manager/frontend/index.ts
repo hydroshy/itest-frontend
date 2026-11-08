@@ -4,7 +4,7 @@ import MemmapManagerView from './views/MemmapManagerView.vue';
 export const memmapManagerPlugin: FrontendPluginDefinition = {
   manifest: {
     id: 'memmap-manager',
-    name: 'MemMap Profile Manager',
+    name: 'MEMMAP PAYLOAD',
     version: '1.0.0',
     sdkVersion: '^1.0.0',
     description: 'Quản lý và nhập bản đồ bộ nhớ thiết bị (MemMap) vào cơ sở dữ liệu.',
@@ -19,7 +19,7 @@ export const memmapManagerPlugin: FrontendPluginDefinition = {
       name: 'MemmapManager',
       component: MemmapManagerView,
       meta: {
-        title: 'MemMap Manager',
+        title: 'MEMMAP PAYLOAD',
         icon: 'Files',
         requiresAuth: true,
       },
@@ -30,7 +30,7 @@ export const memmapManagerPlugin: FrontendPluginDefinition = {
       name: 'MemmapPayloadAlias',
       component: MemmapManagerView,
       meta: {
-        title: 'Memmap Payload',
+        title: 'MEMMAP PAYLOAD',
         icon: 'Files',
         requiresAuth: true,
       },
@@ -41,7 +41,7 @@ export const memmapManagerPlugin: FrontendPluginDefinition = {
       name: 'MemmapLegacyAlias',
       component: MemmapManagerView,
       meta: {
-        title: 'Memmap Payload',
+        title: 'MEMMAP PAYLOAD',
         icon: 'Files',
         requiresAuth: true,
       },
@@ -49,7 +49,7 @@ export const memmapManagerPlugin: FrontendPluginDefinition = {
 
     context.registerMenu({
       id: 'menu-memmap-payload',
-      title: 'Memmap Payload',
+      title: 'MEMMAP PAYLOAD',
       path: '/plugins/memmap-manager?tab=manager',
       icon: 'Files',
       order: 22,
