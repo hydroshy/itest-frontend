@@ -115,22 +115,48 @@
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold">SO Number *</span>
+              <span v-if="loadingSos" class="label-text-alt text-xs font-mono text-primary flex items-center gap-1">
+                <span class="loading loading-spinner loading-xs"></span> Đang tải SO...
+              </span>
             </label>
             <div class="relative">
               <input
                 v-model="step1.soNumber"
-                list="so-options-list"
                 type="text"
-                class="input input-bordered input-sm w-full text-xs font-mono uppercase"
-                placeholder="SO/2026/01527"
+                class="input input-bordered input-sm w-full text-xs font-mono uppercase pr-8"
+                placeholder=""
                 :disabled="loadingSos"
+                autocomplete="off"
+                @focus="onSoFocus"
                 @input="onSoInput"
                 @blur="onSoBlur"
-                @change="onSoChange"
+                @keydown.esc="isSoOpen = false"
               />
-              <datalist id="so-options-list">
-                <option v-for="so in salesOrders" :key="so.id || so.soNumber" :value="so.soNumber" />
-              </datalist>
+              <button
+                type="button"
+                tabindex="-1"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content p-1"
+                :disabled="loadingSos"
+                @mousedown.prevent="isSoOpen = !isSoOpen"
+              >
+                <ChevronDown class="w-3.5 h-3.5 transition-transform duration-200" :class="{ 'rotate-180': isSoOpen }" />
+              </button>
+              <ul
+                v-if="isSoOpen"
+                class="absolute left-0 right-0 top-full mt-1 z-50 max-h-56 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl p-1 text-xs font-mono"
+              >
+                <li
+                  v-for="so in filteredSos"
+                  :key="so.id || so.soNumber"
+                  class="px-3 py-1.5 cursor-pointer rounded hover:bg-primary hover:text-primary-content transition-colors"
+                  @mousedown.prevent="selectSo(so.soNumber)"
+                >
+                  {{ so.soNumber }}
+                </li>
+                <li v-if="filteredSos.length === 0" class="px-3 py-2 text-base-content/50 italic text-center">
+                  Không tìm thấy SO phù hợp
+                </li>
+              </ul>
             </div>
           </div>
 
@@ -138,22 +164,49 @@
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold">WA Number *</span>
+              <span v-if="loadingWas" class="label-text-alt text-xs font-mono text-primary flex items-center gap-1">
+                <span class="loading loading-spinner loading-xs"></span> Đang tải WA...
+              </span>
             </label>
             <div class="relative">
               <input
                 v-model="step1.waNumber"
-                list="wa-options-list"
                 type="text"
-                class="input input-bordered input-sm w-full text-xs font-mono uppercase"
-                placeholder="WA/2026/01527"
-                :disabled="loadingWas"
+                class="input input-bordered input-sm w-full text-xs font-mono uppercase pr-8 disabled:bg-base-300/40 disabled:cursor-not-allowed"
+                :placeholder="!step1.soNumber ? 'Vui lòng chọn SO trước' : ''"
+                :disabled="loadingWas || !step1.soNumber"
+                autocomplete="off"
+                @focus="onWaFocus"
                 @input="onWaInput"
                 @blur="onWaBlur"
-                @change="onWaChange"
+                @keydown.esc="isWaOpen = false"
               />
-              <datalist id="wa-options-list">
-                <option v-for="wa in workAssignments" :key="wa.id || wa.waNumber" :value="wa.waNumber" />
-              </datalist>
+              <button
+                v-if="step1.soNumber"
+                type="button"
+                tabindex="-1"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content p-1"
+                :disabled="loadingWas"
+                @mousedown.prevent="isWaOpen = !isWaOpen"
+              >
+                <ChevronDown class="w-3.5 h-3.5 transition-transform duration-200" :class="{ 'rotate-180': isWaOpen }" />
+              </button>
+              <ul
+                v-if="isWaOpen && step1.soNumber"
+                class="absolute left-0 right-0 top-full mt-1 z-50 max-h-56 overflow-y-auto bg-base-100 border border-base-300 rounded-lg shadow-xl p-1 text-xs font-mono"
+              >
+                <li
+                  v-for="wa in filteredWas"
+                  :key="wa.id || wa.waNumber"
+                  class="px-3 py-1.5 cursor-pointer rounded hover:bg-primary hover:text-primary-content transition-colors"
+                  @mousedown.prevent="selectWa(wa.waNumber)"
+                >
+                  {{ wa.waNumber }}
+                </li>
+                <li v-if="filteredWas.length === 0" class="px-3 py-2 text-base-content/50 italic text-center">
+                  {{ workAssignments.length === 0 ? 'Không có WA cho SO này' : 'Không tìm thấy WA phù hợp' }}
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -575,6 +628,7 @@ import {
   CheckCircle2,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Radio,
   BatteryCharging,
   AlertCircle,
@@ -862,22 +916,71 @@ function cleanWaNumber(val?: string): string {
   return trimmed;
 }
 
+const isSoOpen = ref(false);
+const isWaOpen = ref(false);
+
+const filteredSos = computed(() => {
+  const query = step1.soNumber ? step1.soNumber.trim().toUpperCase() : '';
+  if (!query) return salesOrders.value;
+  return salesOrders.value.filter((s) =>
+    (s.soNumber || '').toUpperCase().includes(query)
+  );
+});
+
+const filteredWas = computed(() => {
+  const query = step1.waNumber ? step1.waNumber.trim().toUpperCase() : '';
+  if (!query) return workAssignments.value;
+  return workAssignments.value.filter((w) =>
+    (w.waNumber || '').toUpperCase().includes(query)
+  );
+});
+
+function selectSo(soNum: string) {
+  step1.soNumber = cleanSoNumber(soNum);
+  isSoOpen.value = false;
+  onSoChange();
+}
+
+function selectWa(waNum: string) {
+  step1.waNumber = cleanWaNumber(waNum);
+  isWaOpen.value = false;
+  onWaChange();
+}
+
+function onSoFocus() {
+  isSoOpen.value = true;
+}
+
 function onSoInput() {
   step1.soNumber = step1.soNumber.toUpperCase();
+  isSoOpen.value = true;
 }
 
 function onSoBlur() {
+  setTimeout(() => {
+    isSoOpen.value = false;
+  }, 200);
   if (step1.soNumber) {
     step1.soNumber = cleanSoNumber(step1.soNumber);
     onSoChange();
   }
 }
 
+function onWaFocus() {
+  if (step1.soNumber) {
+    isWaOpen.value = true;
+  }
+}
+
 function onWaInput() {
   step1.waNumber = step1.waNumber.toUpperCase();
+  isWaOpen.value = true;
 }
 
 function onWaBlur() {
+  setTimeout(() => {
+    isWaOpen.value = false;
+  }, 200);
   if (step1.waNumber) {
     step1.waNumber = cleanWaNumber(step1.waNumber);
     onWaChange();
@@ -902,13 +1005,14 @@ async function loadSalesOrders() {
 
 async function onSoChange() {
   step1.soNumber = cleanSoNumber(step1.soNumber);
+  step1.waNumber = '';
+  step1.itemCode = '';
+  workAssignments.value = [];
   const foundSo = salesOrders.value.find(
     (s) => cleanSoNumber(s.soNumber || s.so_number) === step1.soNumber
   );
   step1.customerName = foundSo?.customerName || foundSo?.customer_name || '';
   if (!step1.soNumber) {
-    step1.waNumber = '';
-    workAssignments.value = [];
     return;
   }
   loadingWas.value = true;
@@ -920,11 +1024,8 @@ async function onSoChange() {
     workAssignments.value = items.map((w: any) => ({
       ...w,
       waNumber: cleanWaNumber(w.waNumber || w.wa_number),
+      itemCode: w.itemCode || w.item_code || '',
     }));
-    if (workAssignments.value.length > 0 && !step1.waNumber) {
-      step1.waNumber = workAssignments.value[0].waNumber || '';
-      step1.itemCode = items[0].itemCode || items[0].item_code || '';
-    }
   } catch {
     workAssignments.value = [];
   } finally {
@@ -1543,6 +1644,8 @@ function resetAll() {
   step1.soNumber = '';
   step1.waNumber = '';
   step1.itemCode = '';
+  isSoOpen.value = false;
+  isWaOpen.value = false;
   workAssignments.value = [];
   registerData.FW_CODE = '';
   registerData.FW_VERSION = '';
