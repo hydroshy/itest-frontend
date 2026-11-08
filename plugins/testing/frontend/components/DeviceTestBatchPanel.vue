@@ -19,21 +19,21 @@
               </span>
             </div>
             <h3 class="font-bold text-base text-base-content mt-0.5">
-              Device Test Batch (Kiểm Thử Hàng Loạt Theo Sale Order)
+              Device Test Batch
             </h3>
           </div>
         </div>
 
         <!-- Running Batch Quick Control -->
         <div v-if="runningBatches.length > 0 && !isTesting" class="flex items-center gap-2">
-          <span class="text-xs text-warning font-medium">Có {{ runningBatches.length }} batch đang chạy:</span>
+          <span class="text-xs text-warning font-medium">Batch đang chạy:</span>
           <select
             class="select select-xs select-bordered font-mono font-bold text-warning"
             @change="onSelectRunningBatch(($event.target as HTMLSelectElement).value)"
           >
             <option value="" disabled selected>Chọn batch đang chạy...</option>
             <option v-for="rb in runningBatches" :key="rb.id" :value="rb.id">
-              {{ rb.batchCode || rb.id }} ({{ rb.soNumber || 'SO' }})
+              {{ rb.batch_code || rb.batchCode || rb.id }} {{ rb.so_number || rb.soNumber ? `(${rb.so_number || rb.soNumber})` : '' }}
             </option>
           </select>
         </div>
@@ -47,65 +47,82 @@
         </div>
       </div>
 
-      <!-- 2. Hàng Điều Khiển Chính: FIELD SO_NUMBER & Tự Động Map TEST BATCH (Readonly) -->
+      <!-- 2. Hàng Điều Khiển Chính: SO_NUMBER, TEST BATCH, ITEM_CODE, FW_VERSION -->
       <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end bg-base-100/50 p-3 rounded-lg border border-base-300/60">
-        <!-- FIELD SO_NUMBER (Cho người dùng chọn SO) - 4 cols -->
-        <div class="form-control md:col-span-4">
+        <!-- SO_NUMBER: Điền và tìm kiếm được (Chỉ hiển thị SO_NUMBER) - 3 cols -->
+        <div class="form-control md:col-span-3">
           <label class="label py-0.5">
             <span class="label-text text-xs font-bold text-primary flex items-center gap-1.5">
               <Layers class="w-3.5 h-3.5" />
-              FIELD SO_NUMBER <span class="text-error">*</span>
+              SO_NUMBER <span class="text-error">*</span>
             </span>
             <span v-if="selectedSoNumber" class="badge badge-xs badge-primary font-mono font-bold">Đã chọn</span>
           </label>
-          <select
-            v-model="selectedSoNumber"
-            class="select select-sm select-bordered w-full text-xs font-mono font-bold bg-base-100"
-            :disabled="isTesting || loadingSos"
-            @change="onSoChange"
-          >
-            <option value="" disabled>-- Chọn Sale Order (SO_NUMBER) --</option>
-            <option v-for="so in sosList" :key="so.soNumber" :value="so.soNumber">
-              {{ so.soNumber }} — {{ so.customerName || 'Khách hàng' }} ({{ so.testBatches?.length || 0 }} batch gán)
-            </option>
-          </select>
+          <div class="relative">
+            <input
+              v-model="selectedSoNumber"
+              type="text"
+              list="so-datalist"
+              placeholder="Nhập hoặc chọn SO..."
+              class="input input-sm input-bordered w-full text-xs font-mono font-bold bg-base-100 pr-8"
+              :disabled="isTesting || loadingSos"
+              @change="onSoChange"
+              @input="onSoInput"
+            />
+            <datalist id="so-datalist">
+              <option v-for="so in uniqueSoNumbers" :key="so" :value="so"></option>
+            </datalist>
+          </div>
         </div>
 
-        <!-- Tự Động Nhận Diện TEST BATCH (Readonly) - 4 cols -->
-        <div class="form-control md:col-span-4">
+        <!-- TEST BATCH (Bỏ chữ Readonly) - 3 cols -->
+        <div class="form-control md:col-span-3">
           <label class="label py-0.5 flex items-center justify-between">
             <span class="label-text text-xs font-bold flex items-center gap-1.5 text-base-content">
               <Cpu class="w-3.5 h-3.5 text-info" />
-              TEST BATCH (Tự Động Theo SO)
+              TEST BATCH
             </span>
-            <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/70">Readonly</span>
           </label>
           <input
             :value="activeBatchDisplayName"
             type="text"
             readonly
             class="input input-sm input-bordered w-full font-mono text-xs font-bold bg-base-300/40 border-base-300 text-base-content cursor-not-allowed select-all"
-            title="Tự động lấy TEST BATCH đã gán cho SO ở plugin SO TEST BATCH (người dùng không thể sửa)"
+            title="Tự động nhận diện theo SO"
           />
         </div>
 
-        <!-- ITEM_CODE & FW_VERSION & Giới Hạn Thiết Bị - 4 cols -->
-        <div class="form-control md:col-span-4">
+        <!-- ITEM_CODE riêng biệt - 3 cols -->
+        <div class="form-control md:col-span-3">
+          <label class="label py-0.5">
+            <span class="label-text text-xs font-bold text-base-content">
+              ITEM_CODE
+            </span>
+          </label>
+          <input
+            :value="filterItemCode || '—'"
+            type="text"
+            readonly
+            class="input input-sm input-bordered w-full font-mono text-xs font-bold bg-base-300/40 border-base-300 text-base-content cursor-not-allowed"
+          />
+        </div>
+
+        <!-- FW_VERSION riêng biệt - 3 cols -->
+        <div class="form-control md:col-span-3">
           <label class="label py-0.5 flex items-center justify-between">
             <span class="label-text text-xs font-bold text-base-content">
-              ITEM_CODE &amp; FW_VERSION
+              FW_VERSION
             </span>
             <span v-if="selectedBatchConfig" class="badge badge-xs badge-info font-mono">
-              Tối đa: {{ maxAllowedDevices }} thiết bị
+              Max: {{ maxAllowedDevices }}
             </span>
           </label>
           <div class="flex items-center gap-2">
             <input
-              :value="filterItemCode ? `${filterItemCode} · ${filterFwVersion || '—'}` : 'Chưa xác định'"
+              :value="filterFwVersion || '—'"
               type="text"
               readonly
               class="input input-sm input-bordered w-full font-mono text-xs font-bold bg-base-300/40 border-base-300 text-base-content cursor-not-allowed"
-              title="ITEM_CODE và FW_VERSION đi kèm với Test Batch"
             />
             <button
               class="btn btn-sm btn-square btn-ghost"
@@ -119,18 +136,18 @@
         </div>
       </div>
 
-      <!-- Cảnh báo nếu SO chưa gán Test Batch -->
+      <!-- Cảnh báo nếu SO chưa cấu hình -->
       <div
         v-if="selectedSoNumber && !selectedBatchConfig && !loadingSos"
-        class="alert alert-warning py-2 px-3 text-xs flex items-center gap-2 rounded-lg"
+        class="alert alert-warning py-2 px-3 text-xs flex items-center gap-2 rounded-lg font-medium"
       >
         <AlertCircle class="w-4 h-4 flex-shrink-0" />
         <div>
-          SO <b>{{ selectedSoNumber }}</b> chưa được gán Test Batch ở plugin <b>SO TEST BATCH</b>. Vui lòng chuyển sang tab <b>SO Test Batch</b> để gán kịch bản kiểm thử trước khi test.
+          <b>{{ selectedSoNumber }}</b> chưa được cấu hình vui lòng liên hệ ENGINEERING.
         </div>
       </div>
 
-      <!-- 3. BẢNG TABULATOR 1: Thiết Bị Hiện Có Trong SO (Để Chọn Thêm Vào Batch) -->
+      <!-- 3. BẢNG TABULATOR 1: Thiết Bị Hiện Có Trong SO -->
       <div class="space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2">
@@ -237,7 +254,7 @@
               </span>
             </span>
             <span v-else class="text-info font-medium">
-              Bước: {{ currentStepIndex + 1 }}/{{ Math.max(1, flowSteps.length) }}
+              Tiến độ: {{ Math.round((elapsedSeconds / Math.max(1, totalDurationSeconds)) * 100) }}%
             </span>
           </div>
         </div>
@@ -254,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 import {
@@ -283,7 +300,6 @@ const props = defineProps<{
 }>();
 
 const authStore = useAuthStore();
-const currentUsername = computed(() => authStore.user?.username || '');
 
 // ============================================================================
 // STATE & SELECTIONS
@@ -321,8 +337,6 @@ const elapsedSeconds = ref(0);
 const batchStartedAt = ref('');
 const batchFinishedAt = ref('');
 const batchVerdict = ref('');
-const flowSteps = ref<string[]>([]);
-const currentStepIndex = ref(0);
 
 let timerInterval: any = null;
 let simulationInterval: any = null;
@@ -338,12 +352,20 @@ let batchTabulator: Tabulator | null = null;
 // ============================================================================
 // COMPUTED VALUES
 // ============================================================================
+const uniqueSoNumbers = computed(() => {
+  const set = new Set<string>();
+  sosList.value.forEach((s) => {
+    if (s.soNumber && s.soNumber.trim()) set.add(s.soNumber.trim());
+  });
+  return Array.from(set);
+});
+
 const activeBatchDisplayName = computed(() => {
-  if (!selectedSoNumber.value) return 'Vui lòng chọn SO_NUMBER trước';
-  if (!selectedBatchConfig.value) return 'Chưa gán Test Batch ở plugin SO TEST BATCH';
+  if (!selectedSoNumber.value) return 'Vui lòng nhập/chọn SO_NUMBER';
+  if (!selectedBatchConfig.value) return 'Chưa được cấu hình';
   const code = selectedBatchConfig.value.batchCode || selectedBatchConfig.value.code || '';
-  const name = selectedBatchConfig.value.batchName || selectedBatchConfig.value.name || 'Test Batch';
-  return `[${code}] ${name}`;
+  const name = selectedBatchConfig.value.batchName || selectedBatchConfig.value.name || '';
+  return code ? (name ? `[${code}] ${name}` : code) : (name || 'Test Batch');
 });
 
 const requiresReferenceDevice = computed(() => {
@@ -397,13 +419,9 @@ async function loadSosWithBatches() {
       selectedSoNumber.value = props.initialBatchPayload.soNumber;
       onSoChange();
     } else if (!selectedSoNumber.value && items.length > 0) {
-      // Find first SO that has batches
       const withBatch = items.find((s: any) => Array.isArray(s.testBatches) && s.testBatches.length > 0);
       if (withBatch) {
         selectedSoNumber.value = withBatch.soNumber;
-        onSoChange();
-      } else {
-        selectedSoNumber.value = items[0].soNumber;
         onSoChange();
       }
     }
@@ -417,8 +435,16 @@ async function loadSosWithBatches() {
 // ============================================================================
 // 2. ON SO CHANGE: TỰ ĐỘNG MAP TEST BATCH & LOAD DEVICES
 // ============================================================================
+let soInputTimeout: any = null;
+function onSoInput() {
+  clearTimeout(soInputTimeout);
+  soInputTimeout = setTimeout(() => {
+    onSoChange();
+  }, 400);
+}
+
 async function onSoChange() {
-  if (!selectedSoNumber.value) {
+  if (!selectedSoNumber.value || !selectedSoNumber.value.trim()) {
     selectedBatchConfig.value = null;
     selectedBatchId.value = '';
     filterItemCode.value = '';
@@ -429,7 +455,8 @@ async function onSoChange() {
     return;
   }
 
-  const so = sosList.value.find((s) => (s.soNumber || '').trim() === selectedSoNumber.value.trim());
+  const cleanSo = selectedSoNumber.value.trim();
+  const so = sosList.value.find((s) => (s.soNumber || '').trim().toLowerCase() === cleanSo.toLowerCase());
   const batches = Array.isArray(so?.testBatches) ? so.testBatches : [];
 
   if (batches.length > 0) {
@@ -443,7 +470,6 @@ async function onSoChange() {
       totalDurationSeconds.value = b.flowDurationSeconds;
       remainingSeconds.value = b.flowDurationSeconds;
     }
-    // Fetch full batch details if available
     fetchBatchDetail(selectedBatchId.value);
   } else {
     selectedBatchConfig.value = null;
@@ -454,7 +480,7 @@ async function onSoChange() {
   }
 
   // Load candidate devices for this SO
-  await loadAvailableDevicesForSo(selectedSoNumber.value);
+  await loadAvailableDevicesForSo(cleanSo);
 }
 
 async function fetchBatchDetail(batchId: string) {
@@ -468,9 +494,6 @@ async function fetchBatchDetail(batchId: string) {
       if (data.flowDurationSeconds) {
         totalDurationSeconds.value = data.flowDurationSeconds;
         remainingSeconds.value = data.flowDurationSeconds;
-      }
-      if (Array.isArray(data.simulationFlow?.steps)) {
-        flowSteps.value = data.simulationFlow.steps.map((st: any) => st.name || st.title || 'Step');
       }
     }
   } catch (err: any) {
@@ -505,6 +528,8 @@ async function loadAvailableDevicesForSo(soNumber: string) {
       itemCode: d.itemCode || d.item_code || filterItemCode.value || '—',
       fwVersion: d.fwVersion || d.fw_version || filterFwVersion.value || '—',
       status: d.status || 'READY',
+      isRunningBatch: d.isRunningBatch === true || d.isTestingInBatch === true || d.status === 'RUNNING_BATCH',
+      runningBatchCode: d.runningBatchCode || null,
       createdAt: d.createdAt || d.created_at || '',
       raw: d,
     }));
@@ -536,6 +561,11 @@ function initAvailableTabulator() {
     placeholder: 'Chưa có thiết bị nào trong SO đã chọn.',
     height: '240px',
     selectableRows: true,
+    selectableRowsCheck: (row) => {
+      const data = row.getData();
+      // Block selecting devices that are currently in another running batch
+      return !data.isRunningBatch;
+    },
     columns: [
       {
         formatter: 'rowSelection',
@@ -554,7 +584,7 @@ function initAvailableTabulator() {
         headerSort: false,
       },
       {
-        title: 'Serial Number / Barcode',
+        title: 'Mã Thiết Bị / Serial',
         field: 'serialNumber',
         widthGrow: 2,
         headerSort: true,
@@ -583,6 +613,20 @@ function initAvailableTabulator() {
         formatter: (cell) => `<span class="font-mono text-xs">${cell.getValue() || '—'}</span>`,
       },
       {
+        title: 'Trạng Thái',
+        field: 'status',
+        width: 125,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        formatter: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.isRunningBatch) {
+            return `<span class="badge badge-warning badge-xs font-mono font-bold" title="Đang test trong batch ${rowData.runningBatchCode || ''}">Đang Test (${rowData.runningBatchCode || 'Busy'})</span>`;
+          }
+          return `<span class="badge badge-ghost badge-xs font-mono">${cell.getValue() || 'READY'}</span>`;
+        },
+      },
+      {
         title: 'Thao tác',
         width: 110,
         hozAlign: 'center',
@@ -590,6 +634,9 @@ function initAvailableTabulator() {
         headerSort: false,
         formatter: (cell) => {
           const rowData = cell.getRow().getData();
+          if (rowData.isRunningBatch) {
+            return '<span class="text-[10px] text-warning font-semibold cursor-not-allowed">Đang chạy</span>';
+          }
           const added = isDeviceSelected(rowData);
           if (added) {
             return '<span class="badge badge-success badge-xs font-semibold">Đã thêm</span>';
@@ -598,6 +645,10 @@ function initAvailableTabulator() {
         },
         cellClick: (_e, cell) => {
           const rowData = cell.getRow().getData();
+          if (rowData.isRunningBatch) {
+            cyberToast.warning(`Thiết bị ${rowData.serialNumber} đang chạy test batch khác (${rowData.runningBatchCode || ''}), không thể thêm!`);
+            return;
+          }
           if (!isDeviceSelected(rowData)) {
             addSingleDeviceToBatch(rowData);
           }
@@ -607,7 +658,7 @@ function initAvailableTabulator() {
   });
 
   availableTabulator.on('rowSelectionChanged', (data: any[]) => {
-    selectedAvailableRows.value = data;
+    selectedAvailableRows.value = data.filter((d) => !d.isRunningBatch);
   });
 }
 
@@ -746,6 +797,10 @@ function addSingleDeviceToBatch(deviceRow: any) {
     cyberToast.warning('Batch đang chạy kiểm thử!');
     return;
   }
+  if (deviceRow.isRunningBatch) {
+    cyberToast.warning(`Thiết bị ${deviceRow.serialNumber} đang chạy test batch khác, không thể thêm!`);
+    return;
+  }
   if (selectedDevices.value.length >= maxAllowedDevices.value) {
     cyberToast.warning(`Batch này chỉ cho phép tối đa ${maxAllowedDevices.value} thiết bị!`);
     return;
@@ -778,6 +833,7 @@ function addSelectedAvailableRowsToBatch() {
 
   let addedCount = 0;
   for (const row of selectedAvailableRows.value) {
+    if (row.isRunningBatch) continue;
     if (selectedDevices.value.length >= maxAllowedDevices.value) {
       cyberToast.warning(`Đã đạt giới hạn tối đa ${maxAllowedDevices.value} thiết bị của đợt test!`);
       break;
@@ -903,6 +959,8 @@ async function startBatchTest() {
     simulationInterval = setInterval(() => {
       pollBatchStatus();
     }, 3000);
+
+    await loadRunningBatches();
   } catch (err: any) {
     cyberToast.error(err?.response?.data?.message || 'Không thể bắt đầu Test Batch');
     isTesting.value = false;
@@ -962,6 +1020,7 @@ function finishBatchTest(statusData?: any) {
     if (d.status === 'RUNNING') d.status = batchVerdict.value;
   });
   updateTabulatorData();
+  loadRunningBatches();
   cyberToast.success(`Test Batch hoàn thành! Kết quả: ${batchVerdict.value}`);
 }
 
@@ -989,7 +1048,7 @@ async function cancelSelectedBatch() {
 }
 
 // ============================================================================
-// 7. RUNNING BATCHES & REFERENCE DEVICES
+// 7. RUNNING BATCHES & RESTORING STATE
 // ============================================================================
 async function loadRunningBatches() {
   try {
@@ -1001,15 +1060,80 @@ async function loadRunningBatches() {
   }
 }
 
-function onSelectRunningBatch(id: string) {
+async function onSelectRunningBatch(id: string) {
   if (!id) return;
-  const found = runningBatches.value.find((b) => b.id === id);
-  if (found && found.soNumber) {
-    selectedSoNumber.value = found.soNumber;
-    onSoChange().then(() => {
-      selectedBatchId.value = id;
-      pollBatchStatus();
-    });
+  try {
+    // Call batch status to restore full running state and devices
+    const res: any = await httpClient.get(`/plugins/testing/test-batches/${id}/status`);
+    const statusData = res?.data || res;
+    if (!statusData) return;
+
+    selectedBatchId.value = id;
+    selectedBatchConfig.value = {
+      batchId: id,
+      batchCode: statusData.batchCode,
+      batchName: statusData.batchName || statusData.batchCode,
+      maxDevices: statusData.devices?.length || 5,
+      flowDurationSeconds: statusData.flowDurationSeconds || 300,
+    };
+
+    if (statusData.soNumber) {
+      selectedSoNumber.value = statusData.soNumber;
+      await loadAvailableDevicesForSo(statusData.soNumber);
+    }
+
+    totalDurationSeconds.value = statusData.flowDurationSeconds || 300;
+    elapsedSeconds.value = statusData.elapsedSeconds || 0;
+    remainingSeconds.value = statusData.remainingSeconds || 0;
+
+    if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
+      selectedDevices.value = statusData.devices.map((d: any) => ({
+        serialNumber: d.serialNumber,
+        devEui: d.devEui,
+        itemCode: d.itemCode || filterItemCode.value || '',
+        fwVersion: d.fwVersion || filterFwVersion.value || '',
+        device: d,
+        status: d.verdict || d.status || 'RUNNING',
+        packetsCount: d.packetsReceived ?? 0,
+        avgRssi: d.avgRssi ?? null,
+      }));
+
+      if (statusData.devices[0]?.itemCode) {
+        filterItemCode.value = statusData.devices[0].itemCode;
+      }
+      if (statusData.devices[0]?.fwVersion) {
+        filterFwVersion.value = statusData.devices[0].fwVersion;
+      }
+    }
+
+    if (statusData.status === 'RUNNING') {
+      isTesting.value = true;
+      testFinished.value = false;
+
+      // Start timers
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        elapsedSeconds.value++;
+        remainingSeconds.value = Math.max(0, totalDurationSeconds.value - elapsedSeconds.value);
+        if (remainingSeconds.value <= 0) {
+          pollBatchStatus();
+        }
+      }, 1000);
+
+      clearInterval(simulationInterval);
+      simulationInterval = setInterval(() => {
+        pollBatchStatus();
+      }, 3000);
+    } else if (statusData.status === 'COMPLETED') {
+      isTesting.value = false;
+      testFinished.value = true;
+      batchVerdict.value = statusData.verdict || 'PASS';
+    }
+
+    updateTabulatorData();
+    cyberToast.success(`Đã khôi phục trạng thái Test Batch ${statusData.batchCode}`);
+  } catch (err: any) {
+    cyberToast.error(err?.response?.data?.message || 'Không thể khôi phục Test Batch');
   }
 }
 
@@ -1034,7 +1158,16 @@ onMounted(async () => {
 
   await loadSosWithBatches();
   loadReferenceDevices();
-  loadRunningBatches();
+  await loadRunningBatches();
+
+  // If there is an active running batch, auto restore first running batch
+  if (runningBatches.value.length > 0 && !selectedBatchId.value) {
+    const firstRunning = runningBatches.value[0];
+    if (firstRunning && firstRunning.id) {
+      await onSelectRunningBatch(firstRunning.id);
+    }
+  }
+
   runningBatchesInterval = setInterval(loadRunningBatches, 5000);
 });
 
