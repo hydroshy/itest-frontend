@@ -535,20 +535,22 @@ async function loadAvailableDevicesForSo(soNumber: string) {
 
   loadingDevices.value = true;
   try {
-    const res: any = await httpClient.get('/plugins/testing/devices', {
+    const user = authStore.user?.username || '';
+    const res: any = await httpClient.get('/plugins/testing/test-batches/available-devices', {
       params: {
         soNumber: soNumber.trim(),
+        user: user || undefined,
         limit: 200,
       },
     });
 
-    const rawList = res?.data?.items || res?.data || [];
+    const rawList = res?.data || res?.items || [];
     availableDevices.value = (Array.isArray(rawList) ? rawList : []).map((d: any) => ({
       id: d.id,
-      serialNumber: d.serialNumber || d.serial_number || d.networkId || d.network_id || d.id,
-      devEui: d.networkId || d.network_id || d.devEui || d.dev_eui || '—',
+      serialNumber: d.serialNumber || d.serial_number || d.registrationCode || d.registration_code || d.networkId || d.id,
+      devEui: d.devEui || d.dev_eui || d.networkId || d.network_id || '—',
       itemCode: d.itemCode || d.item_code || filterItemCode.value || '—',
-      fwVersion: d.fwVersion || d.fw_version || filterFwVersion.value || '—',
+      fwVersion: d.fwVersion || d.fw_version || d.longFw || d.long_fw || filterFwVersion.value || '—',
       status: d.status || 'READY',
       isRunningBatch: d.isRunningBatch === true || d.isTestingInBatch === true || d.status === 'RUNNING_BATCH',
       runningBatchCode: d.runningBatchCode || null,
