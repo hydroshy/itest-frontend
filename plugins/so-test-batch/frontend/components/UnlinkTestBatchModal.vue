@@ -131,10 +131,15 @@ async function submitUnlink() {
   if (!selectedBatchId.value || !props.soData) return;
   submitting.value = true;
   try {
+    const selectedBatch = batchesList.value.find(
+      (b) => (b.id || b.batchId || b.batch_id) === selectedBatchId.value
+    );
     await httpClient.post('/plugins/so-test-batch/unlink', {
       soId: props.soData.id,
       soNumber: props.soData.soNumber || props.soData.code,
-      batchId: selectedBatchId.value,
+      batchId: selectedBatch?.batchId || selectedBatch?.id || selectedBatchId.value,
+      batchCode: selectedBatch?.batchCode || selectedBatch?.batch_code,
+      linkId: selectedBatch?.linkId || selectedBatch?.link_id,
     });
     cyberToast.success('Đã hủy liên kết Test Batch khỏi SO thành công');
     emit('success');

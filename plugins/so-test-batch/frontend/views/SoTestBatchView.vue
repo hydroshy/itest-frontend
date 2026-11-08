@@ -252,12 +252,34 @@ async function loadData() {
     }
 
     const items = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.items) ? res.data.items : []);
-    rawData.value = items.map((item: any) => ({
-      ...item,
-      soNumber: item.soNumber || item.so_number || item.code || '',
-      customerName: item.customerName || item.customer_name || '—',
-      testBatches: Array.isArray(item.testBatches) ? item.testBatches : (Array.isArray(item.batches) ? item.batches : []),
-    }));
+    rawData.value = items.map((item: any) => {
+      const rawBatches = Array.isArray(item.testBatches)
+        ? item.testBatches
+        : Array.isArray(item.test_batches)
+          ? item.test_batches
+          : Array.isArray(item.batches)
+            ? item.batches
+            : [];
+      const testBatches = rawBatches.map((b: any) => ({
+        ...b,
+        id: b.id || b.batchId || b.batch_id,
+        linkId: b.linkId || b.link_id,
+        batchId: b.batchId || b.batch_id || b.id,
+        batchCode: b.batchCode || b.batch_code || b.code,
+        batchName: b.batchName || b.batch_name || b.name || 'Test Batch',
+        itemCode: b.itemCode || b.item_code || '',
+        fwVersion: b.fwVersion || b.fw_version || '',
+        deviceCount: b.deviceCount || b.device_count || b.maxDevices || 0,
+        status: b.status,
+      }));
+      return {
+        ...item,
+        soNumber: item.soNumber || item.so_number || item.code || '',
+        customerName: item.customerName || item.customer_name || '—',
+        createdAt: item.createdAt || item.created_at || item.orderDate || item.order_date,
+        testBatches,
+      };
+    });
 
     await nextTick();
     applyTableData();
