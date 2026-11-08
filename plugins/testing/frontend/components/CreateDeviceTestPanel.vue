@@ -126,44 +126,66 @@
             </label>
           </div>
 
-          <!-- Chọn SO (Sales Order) -->
+          <!-- Chọn / Nhập SO Number -->
           <div class="form-control">
             <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Đơn Hàng Sản Xuất (SO Number) *</span>
-              <span class="label-text-alt text-xs text-base-content/60">Từ Device Traceability</span>
+              <span class="label-text text-xs font-semibold">SO Number (Mã Đơn Hàng) *</span>
+              <span class="label-text-alt text-xs font-mono text-base-content/60">Cú pháp: SO/XXXX/XXXXX</span>
             </label>
             <div class="relative">
-              <select
+              <input
                 v-model="step1.soNumber"
-                class="select select-bordered select-sm w-full text-xs font-mono"
+                list="so-options-list"
+                type="text"
+                class="input input-bordered input-sm w-full text-xs font-mono uppercase"
+                placeholder="SO/2026/01527"
                 :disabled="loadingSos"
+                @input="onSoInput"
+                @blur="onSoBlur"
                 @change="onSoChange"
-              >
-                <option value="">-- Chọn Sales Order (SO) --</option>
+              />
+              <datalist id="so-options-list">
                 <option v-for="so in salesOrders" :key="so.id || so.soNumber" :value="so.soNumber">
                   {{ so.soNumber }} {{ so.customerName ? `- ${so.customerName}` : '' }}
                 </option>
-              </select>
+              </datalist>
             </div>
+            <label v-if="step1.soNumber && !isValidSoFormat" class="label py-0.5">
+              <span class="label-text-alt text-[11px] text-warning font-mono">
+                Định dạng chuẩn: SO/XXXX/XXXXX (X là chữ số)
+              </span>
+            </label>
           </div>
 
-          <!-- Chọn WA (Work Assignment) -->
+          <!-- Chọn / Nhập WA Number -->
           <div class="form-control">
             <label class="label py-1">
-              <span class="label-text text-xs font-semibold">Lệnh Làm Việc (WA Number) *</span>
-              <span class="label-text-alt text-xs text-base-content/60">Theo SO đã chọn</span>
+              <span class="label-text text-xs font-semibold">WA Number (Lệnh Sản Xuất) *</span>
+              <span class="label-text-alt text-xs font-mono text-base-content/60">Cú pháp: WA/XXXX/XXXXX</span>
             </label>
-            <select
-              v-model="step1.waNumber"
-              class="select select-bordered select-sm w-full text-xs font-mono"
-              :disabled="loadingWas || !step1.soNumber"
-              @change="onWaChange"
-            >
-              <option value="">-- Chọn Work Order (WA) --</option>
-              <option v-for="wa in workAssignments" :key="wa.id || wa.waNumber" :value="wa.waNumber">
-                {{ wa.waNumber }} {{ wa.itemCode ? `(${wa.itemCode})` : '' }}
-              </option>
-            </select>
+            <div class="relative">
+              <input
+                v-model="step1.waNumber"
+                list="wa-options-list"
+                type="text"
+                class="input input-bordered input-sm w-full text-xs font-mono uppercase"
+                placeholder="WA/2026/01527"
+                :disabled="loadingWas"
+                @input="onWaInput"
+                @blur="onWaBlur"
+                @change="onWaChange"
+              />
+              <datalist id="wa-options-list">
+                <option v-for="wa in workAssignments" :key="wa.id || wa.waNumber" :value="wa.waNumber">
+                  {{ wa.waNumber }}
+                </option>
+              </datalist>
+            </div>
+            <label v-if="step1.waNumber && !isValidWaFormat" class="label py-0.5">
+              <span class="label-text-alt text-[11px] text-warning font-mono">
+                Định dạng chuẩn: WA/XXXX/XXXXX (X là chữ số)
+              </span>
+            </label>
           </div>
         </div>
 
@@ -171,12 +193,12 @@
         <div v-if="step1.soNumber && step1.waNumber" class="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
           <div class="font-bold text-primary flex items-center gap-2">
             <CheckCircle2 class="w-4 h-4" />
-            <span>Đã liên kết Traceability thành công:</span>
+            <span>Đã xác nhận liên kết Testing &amp; Traceability:</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-base-content/80 mt-1">
-            <div>SO: <span class="font-bold text-base-content">{{ step1.soNumber }}</span></div>
-            <div>WA: <span class="font-bold text-base-content">{{ step1.waNumber }}</span></div>
-            <div>Item Code: <span class="font-bold text-base-content">{{ step1.itemCode || 'Theo Sensor' }}</span></div>
+            <div>SO Number: <span class="font-bold text-base-content">{{ step1.soNumber }}</span></div>
+            <div>WA Number: <span class="font-bold text-base-content">{{ step1.waNumber }}</span></div>
+            <div>Item Code: <span class="font-bold text-base-content">{{ step1.itemCode || 'Theo Sensor (Bước 2)' }}</span></div>
             <div>Network Server: <span class="font-bold text-base-content">ChirpStack</span></div>
           </div>
         </div>
@@ -844,12 +866,66 @@ async function loadNetworkServers() {
   }
 }
 
+function cleanSoNumber(val?: string): string {
+  if (!val) return '';
+  const trimmed = val.trim().toUpperCase();
+  const match = trimmed.match(/SO\/\d+\/\d+/);
+  if (match) {
+    const parts = match[0].split('/');
+    const year = parts[1];
+    const seq = parts[2].padStart(5, '0');
+    return `SO/${year}/${seq}`;
+  }
+  return trimmed;
+}
+
+function cleanWaNumber(val?: string): string {
+  if (!val) return '';
+  const trimmed = val.trim().toUpperCase();
+  const match = trimmed.match(/WA\/\d+\/\d+/);
+  if (match) {
+    const parts = match[0].split('/');
+    const year = parts[1];
+    const seq = parts[2].padStart(5, '0');
+    return `WA/${year}/${seq}`;
+  }
+  return trimmed;
+}
+
+const isValidSoFormat = computed(() => /^SO\/\d{4}\/\d{5}$/.test(step1.soNumber.trim()));
+const isValidWaFormat = computed(() => /^WA\/\d{4}\/\d{5}$/.test(step1.waNumber.trim()));
+
+function onSoInput() {
+  step1.soNumber = step1.soNumber.toUpperCase();
+}
+
+function onSoBlur() {
+  if (step1.soNumber) {
+    step1.soNumber = cleanSoNumber(step1.soNumber);
+    onSoChange();
+  }
+}
+
+function onWaInput() {
+  step1.waNumber = step1.waNumber.toUpperCase();
+}
+
+function onWaBlur() {
+  if (step1.waNumber) {
+    step1.waNumber = cleanWaNumber(step1.waNumber);
+    onWaChange();
+  }
+}
+
 async function loadSalesOrders() {
   loadingSos.value = true;
   try {
     const res: any = await httpClient.get('/plugins/testing/lookup/so');
     const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || []);
-    salesOrders.value = items;
+    salesOrders.value = items.map((s: any) => ({
+      ...s,
+      soNumber: cleanSoNumber(s.soNumber || s.so_number),
+    }));
   } catch {
     salesOrders.value = [];
   } finally {
@@ -858,8 +934,9 @@ async function loadSalesOrders() {
 }
 
 async function onSoChange() {
-  step1.waNumber = '';
+  step1.soNumber = cleanSoNumber(step1.soNumber);
   if (!step1.soNumber) {
+    step1.waNumber = '';
     workAssignments.value = [];
     return;
   }
@@ -869,9 +946,12 @@ async function onSoChange() {
       params: { soNumber: step1.soNumber },
     });
     const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || []);
-    workAssignments.value = items;
-    if (items.length > 0) {
-      step1.waNumber = items[0].waNumber || items[0].wa_number || '';
+    workAssignments.value = items.map((w: any) => ({
+      ...w,
+      waNumber: cleanWaNumber(w.waNumber || w.wa_number),
+    }));
+    if (workAssignments.value.length > 0 && !step1.waNumber) {
+      step1.waNumber = workAssignments.value[0].waNumber || '';
       step1.itemCode = items[0].itemCode || items[0].item_code || '';
     }
   } catch {
@@ -882,15 +962,22 @@ async function onSoChange() {
 }
 
 function onWaChange() {
-  const wa = workAssignments.value.find((w) => w.waNumber === step1.waNumber);
+  step1.waNumber = cleanWaNumber(step1.waNumber);
+  const wa = workAssignments.value.find((w) => cleanWaNumber(w.waNumber) === step1.waNumber);
   if (wa && wa.itemCode) {
     step1.itemCode = wa.itemCode;
   }
 }
 
 function nextToStep2() {
+  step1.soNumber = cleanSoNumber(step1.soNumber);
+  step1.waNumber = cleanWaNumber(step1.waNumber);
   if (!step1.soNumber || !step1.waNumber) {
-    cyberToast.warning('Vui lòng chọn Sales Order (SO) và Work Order (WA)!');
+    cyberToast.warning('Vui lòng chọn hoặc nhập SO Number và WA Number!');
+    return;
+  }
+  if (!isValidSoFormat.value || !isValidWaFormat.value) {
+    cyberToast.warning('SO Number và WA Number phải đúng định dạng SO/XXXX/XXXXX và WA/XXXX/XXXXX!');
     return;
   }
   currentStep.value = 2;
@@ -1371,8 +1458,8 @@ const computedChirpstackPayload = computed(() => {
       name: registerData.SERIAL_NUMBER || `DEV-${registerData.deviceEUI}`,
       skipFcntCheck: true,
       variables: {
-        soNumber: step1.soNumber,
-        waNumber: step1.waNumber,
+        soNumber: cleanSoNumber(step1.soNumber),
+        waNumber: cleanWaNumber(step1.waNumber),
         itemCode: registerData.ITEM_CODE || step1.itemCode,
         fwCode: registerData.FW_CODE,
         fwVersion: registerData.FW_VERSION,
@@ -1403,8 +1490,8 @@ async function executeChirpstackRegistration() {
 
   const payload = {
     connectivity: 'LoRaWAN',
-    soNumber: step1.soNumber,
-    waNumber: step1.waNumber,
+    soNumber: cleanSoNumber(step1.soNumber),
+    waNumber: cleanWaNumber(step1.waNumber),
     serverId: step1.serverId,
     serverUrl: step1.serverUrl,
     apiToken: step1.apiToken,

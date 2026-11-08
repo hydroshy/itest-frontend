@@ -119,7 +119,7 @@
                     {{ form.soNumber ? (loadingWa ? 'Đang tải danh sách WA...' : '-- Chọn WA Number --') : 'Vui lòng chọn SO trước' }}
                   </option>
                   <option v-for="wa in waOptions" :key="wa.waNumber" :value="wa.waNumber">
-                    {{ wa.waNumber }} - Item: {{ wa.itemCode || 'N/A' }} (SL: {{ wa.plannedQuantity }})
+                    {{ wa.waNumber }} (SL: {{ wa.plannedQuantity }})
                   </option>
                 </select>
               </div>
