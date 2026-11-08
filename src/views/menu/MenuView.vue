@@ -351,6 +351,17 @@ const defaultStaticCards: MenuCardItemDef[] = [
     category: 'plugin',
     order: 15,
   },
+  {
+    id: 'testing:test-batch',
+    title: 'Device Test Batch',
+    description: 'Kiểm thử hàng loạt thiết bị LoRaWAN theo Sale Order, giám sát tiến độ và đối soát thiết bị chuẩn.',
+    icon: 'boxes',
+    route: '/plugins/testing?tab=test-batch',
+    pluginId: 'testing',
+    tab: 'test-batch',
+    category: 'plugin',
+    order: 16,
+  },
 ];
 
 const cards = ref<MenuCardItemDef[]>([]);
@@ -372,6 +383,7 @@ function initCardsForUser() {
         card.id === 'device-traceability:devices' ||
         card.id === 'decoder:scripts' ||
         card.id === 'testing:device-payload' ||
+        card.id === 'testing:test-batch' ||
         card.id === 'dashboard'
       );
     });

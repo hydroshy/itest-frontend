@@ -37,25 +37,77 @@
             </option>
           </select>
         </div>
-
-        <div v-if="isTesting || testFinished" class="flex items-center gap-2">
-          <span v-if="isTesting" class="text-xs font-mono text-warning animate-pulse font-bold">Đang chạy kiểm thử...</span>
-          <button
-            class="btn btn-xs btn-success gap-1 font-bold"
-            :disabled="completingBatch || !selectedBatchId"
-            @click="completeSelectedBatch"
-          >
-            <CheckCircle2 class="w-3 h-3" />
-            {{ completingBatch ? 'Đang hoàn thành...' : 'Hoàn Thành Test Batch' }}
-          </button>
-          <button v-if="isTesting" class="btn btn-xs btn-error gap-1" :disabled="cancellingBatch" @click="cancelSelectedBatch">
-            <Square class="w-3 h-3" />
-            Hủy Batch
-          </button>
-        </div>
       </div>
 
-      <!-- 2. Hàng Điều Khiển Chính: SO_NUMBER, TEST BATCH, ITEM_CODE, FW_VERSION -->
+      <!-- 2. THANH TIẾN TRÌNH & ĐIỀU KHIỂN KIỂM THỬ (ĐẶT TRÊN PHẦN CHỌN SO_NUMBER) -->
+      <div class="bg-base-100/70 p-3 rounded-lg border border-base-300/80 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <!-- Trạng thái & Bộ đếm thời gian -->
+          <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+            <div
+              class="flex items-center gap-1.5 font-bold"
+              :class="isTesting ? 'text-warning' : testFinished ? (batchVerdict === 'PASS' ? 'text-success' : 'text-error') : 'text-base-content/70'"
+            >
+              <Timer class="w-4 h-4" :class="{ 'animate-spin': isTesting }" />
+              <span>{{ isTesting ? 'ĐANG CHẠY TEST' : testFinished ? `KẾT QUẢ: ${batchVerdict || 'XONG'}` : 'SẴN SÀNG' }}</span>
+            </div>
+            <span>|</span>
+            <span>Còn lại: <b class="text-primary font-bold">{{ formattedRemaining }}</b></span>
+            <span>|</span>
+            <span>Đã chạy: <b class="text-base-content/80">{{ formattedElapsed }}</b></span>
+            <span v-if="isTesting || testFinished">|</span>
+            <span v-if="isTesting || testFinished" class="text-info font-medium">
+              Tiến độ: {{ Math.round((elapsedSeconds / Math.max(1, totalDurationSeconds)) * 100) }}%
+            </span>
+          </div>
+
+          <!-- Các Nút Hành Động Kiểm Thử Chính (Đưa lên trên đỉnh) -->
+          <div class="flex items-center gap-2">
+            <!-- Nút Bắt Đầu Test Batch Chính -->
+            <button
+              v-if="!isTesting && !testFinished"
+              class="btn btn-sm btn-primary gap-1.5 px-4 font-bold shadow-sm"
+              :disabled="selectedDevices.length === 0 || !selectedBatchConfig"
+              @click="startBatchTest"
+            >
+              <Play class="w-4 h-4 fill-current" />
+              Bắt Đầu Test Batch ({{ selectedDevices.length }})
+            </button>
+
+            <!-- Nút Hoàn Thành Test Batch -->
+            <button
+              v-if="isTesting || testFinished"
+              class="btn btn-sm btn-success gap-1.5 px-3 font-bold"
+              :disabled="completingBatch || !selectedBatchId"
+              @click="completeSelectedBatch"
+            >
+              <CheckCircle2 class="w-4 h-4" />
+              {{ completingBatch ? 'Đang Hoàn Thành...' : 'Hoàn Thành Test Batch' }}
+            </button>
+
+            <!-- Nút Hủy Batch -->
+            <button
+              v-if="isTesting"
+              class="btn btn-sm btn-error gap-1 px-3"
+              :disabled="cancellingBatch"
+              @click="cancelSelectedBatch"
+            >
+              <Square class="w-3.5 h-3.5" />
+              Hủy Batch
+            </button>
+          </div>
+        </div>
+
+        <!-- Thanh progress luôn hiển thị trực quan phía trên SO_NUMBER -->
+        <progress
+          class="progress w-full h-2"
+          :class="testFinished ? (batchVerdict === 'PASS' ? 'progress-success' : 'progress-error') : isTesting ? 'progress-primary' : 'progress-ghost'"
+          :value="isTesting || testFinished ? elapsedSeconds : 0"
+          :max="Math.max(1, totalDurationSeconds)"
+        ></progress>
+      </div>
+
+      <!-- 3. Hàng Điều Khiển Chính: SO_NUMBER, TEST BATCH, ITEM_CODE, FW_VERSION -->
       <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end bg-base-100/50 p-3 rounded-lg border border-base-300/60">
         <!-- SO_NUMBER: Điền và tìm kiếm được (Chỉ hiển thị SO_NUMBER) - 3 cols -->
         <div class="form-control md:col-span-3">
@@ -225,28 +277,6 @@
               <Trash2 class="w-3 h-3" />
               Xóa Hết
             </button>
-
-            <!-- Nút Hoàn Thành Test Batch -->
-            <button
-              v-if="isTesting || testFinished"
-              class="btn btn-xs btn-success gap-1 px-3 font-bold"
-              :disabled="completingBatch || !selectedBatchId"
-              @click="completeSelectedBatch"
-            >
-              <CheckCircle2 class="w-3 h-3" />
-              {{ completingBatch ? 'Đang Hoàn Thành...' : 'Hoàn Thành Test Batch' }}
-            </button>
-
-            <!-- Nút Bắt Đầu Test Batch Chính -->
-            <button
-              v-else
-              class="btn btn-xs btn-primary gap-1 px-3 font-bold"
-              :disabled="selectedDevices.length === 0 || !selectedBatchConfig"
-              @click="startBatchTest"
-            >
-              <Play class="w-3 h-3 fill-current" />
-              Bắt Đầu Test Batch
-            </button>
           </div>
         </div>
 
@@ -254,37 +284,6 @@
         <div class="overflow-hidden rounded-lg border border-base-300">
           <div ref="batchTableRef" class="w-full text-xs min-h-[180px] max-h-[300px] overflow-auto"></div>
         </div>
-      </div>
-
-      <!-- 5. Tiến Trình Testing Realtime (Hiển thị khi đang chạy hoặc vừa chạy xong) -->
-      <div v-if="isTesting || testFinished" class="bg-base-100/70 p-3 rounded-lg border border-base-300/80 space-y-2">
-        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div class="flex items-center gap-2 font-mono">
-            <Timer class="w-4 h-4 text-warning" />
-            <span>Còn lại: <b class="text-primary font-bold">{{ formattedRemaining }}</b></span>
-            <span>|</span>
-            <span>Đã chạy: <b class="text-base-content/80">{{ formattedElapsed }}</b></span>
-          </div>
-
-          <div class="flex items-center gap-2 font-mono text-xs">
-            <span v-if="testFinished" class="font-bold flex items-center gap-1">
-              Kết quả:
-              <span :class="batchVerdict === 'PASS' ? 'text-success' : 'text-error'">
-                {{ batchVerdict === 'PASS' ? 'ĐẠT (PASS)' : 'KHÔNG ĐẠT (FAIL)' }}
-              </span>
-            </span>
-            <span v-else class="text-info font-medium">
-              Tiến độ: {{ Math.round((elapsedSeconds / Math.max(1, totalDurationSeconds)) * 100) }}%
-            </span>
-          </div>
-        </div>
-
-        <progress
-          class="progress w-full h-2"
-          :class="testFinished ? (batchVerdict === 'PASS' ? 'progress-success' : 'progress-error') : 'progress-primary'"
-          :value="elapsedSeconds"
-          :max="Math.max(1, totalDurationSeconds)"
-        ></progress>
       </div>
     </div>
   </div>
@@ -751,15 +750,45 @@ function initBatchTabulator() {
         },
       },
       {
-        title: 'Gói Tin / Metrics',
-        field: 'metrics',
-        widthGrow: 1.5,
+        title: 'AVG_CYCLE',
+        field: 'avgCycle',
+        width: 110,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
         formatter: (cell) => {
-          const row = cell.getRow().getData();
-          if (row.status === 'PENDING') {
-            return '<span class="text-xs text-base-content/40 font-mono">Chờ kích hoạt</span>';
+          const val = cell.getValue();
+          if (val != null && val !== '') {
+            return `<span class="font-mono font-bold text-xs text-info">${Number(val).toFixed(1)}s</span>`;
           }
-          return `<span class="font-mono text-xs">Gói: <b>${row.packetsCount ?? 0}</b> | RSSI: ${row.avgRssi ?? '—'} dBm</span>`;
+          return '<span class="text-xs text-base-content/40 font-mono">—</span>';
+        },
+      },
+      {
+        title: 'AVG_RSSI',
+        field: 'avgRssi',
+        width: 110,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        formatter: (cell) => {
+          const val = cell.getValue();
+          if (val != null && val !== '') {
+            return `<span class="font-mono font-bold text-xs text-primary">${val} dBm</span>`;
+          }
+          return '<span class="text-xs text-base-content/40 font-mono">—</span>';
+        },
+      },
+      {
+        title: 'AVG_SNR',
+        field: 'avgSnr',
+        width: 100,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        formatter: (cell) => {
+          const val = cell.getValue();
+          if (val != null && val !== '') {
+            return `<span class="font-mono font-bold text-xs text-success">${val} dB</span>`;
+          }
+          return '<span class="text-xs text-base-content/40 font-mono">—</span>';
         },
       },
       {
@@ -1018,7 +1047,12 @@ async function pollBatchStatus() {
         if (item) {
           item.status = dev.verdict || dev.status || item.status;
           item.packetsCount = dev.packetsReceived ?? dev.packets_received ?? (Array.isArray(dev.dutPackets) ? dev.dutPackets.length : item.packetsCount);
+          if (dev.avgCycle != null) item.avgCycle = dev.avgCycle;
+          else if (dev.comparisonResult?.avg_cycle != null) item.avgCycle = dev.comparisonResult.avg_cycle;
           if (dev.avgRssi != null) item.avgRssi = dev.avgRssi;
+          else if (dev.comparisonResult?.avg_rssi != null) item.avgRssi = dev.comparisonResult.avg_rssi;
+          if (dev.avgSnr != null) item.avgSnr = dev.avgSnr;
+          else if (dev.comparisonResult?.avg_snr != null) item.avgSnr = dev.comparisonResult.avg_snr;
         }
       });
       updateTabulatorData();
@@ -1165,7 +1199,9 @@ async function onSelectRunningBatch(id: string) {
         device: d,
         status: d.verdict || d.status || 'RUNNING',
         packetsCount: d.packetsReceived ?? 0,
-        avgRssi: d.avgRssi ?? null,
+        avgCycle: d.avgCycle ?? d.comparisonResult?.avg_cycle ?? null,
+        avgRssi: d.avgRssi ?? d.comparisonResult?.avg_rssi ?? null,
+        avgSnr: d.avgSnr ?? d.comparisonResult?.avg_snr ?? null,
       }));
 
       if (statusData.devices[0]?.itemCode) {
