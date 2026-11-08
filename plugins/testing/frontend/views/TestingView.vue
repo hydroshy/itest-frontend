@@ -188,6 +188,11 @@
       <CreateTestBatchPanel @switch-tab="onSwitchTabWithPayload" />
     </div>
 
+    <!-- TAB: SO Test Batch (Liên kết SO & Test Batch theo ITEM_CODE) -->
+    <div v-if="activeTab === 'so-test-batch'">
+      <SoTestBatchPanel />
+    </div>
+
     <!-- TAB 4: Device Auto Check (Kiểm Tra Tự Động) -->
     <div v-if="activeTab === 'device-auto-check'">
       <DeviceAutoCheckPanel ref="autoCheckPanelRef" />
@@ -307,6 +312,7 @@ import CreateTestBatchPanel from '../components/CreateTestBatchPanel.vue';
 import DeviceTestBatchPanel from '../components/DeviceTestBatchPanel.vue';
 import DevicePayloadPanel from '../components/DevicePayloadPanel.vue';
 import ListFlowSimulationPanel from '../components/ListFlowSimulationPanel.vue';
+import SoTestBatchPanel from '../components/SoTestBatchPanel.vue';
 
 const route = useRoute();
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
@@ -320,6 +326,7 @@ const VALID_TABS = [
   'test-batch',
   'device-test-batch',
   'create-test-batch',
+  'so-test-batch',
   'list-flow-simulation',
   'device-simulation',
   'list-device-simulation',
@@ -335,6 +342,7 @@ const tabList = [
   { name: 'list-device-testing', label: 'List Device Testing', icon: List },
   { name: 'test-batch', label: 'Device Test Batch', icon: Boxes },
   { name: 'create-test-batch', label: 'Create Test Batch', icon: FolderPlus },
+  { name: 'so-test-batch', label: 'SO Test Batch', icon: Layers },
   { name: 'list-flow-simulation', label: 'List Flow Simulation', icon: Layers },
   { name: 'device-simulation', label: 'Device Simulation (Tạo Flow)', icon: Cpu },
   { name: 'list-device-simulation', label: 'List Device Simulation', icon: Radio },

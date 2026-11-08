@@ -65,6 +65,15 @@ export const testingPlugin: FrontendPluginDefinition = {
         order: 6,
       },
       {
+        id: 'testing:so-test-batch',
+        title: 'SO Test Batch',
+        description: 'Quản lý liên kết giữa các Test Batch và Sale Order (SO) theo từng ITEM_CODE',
+        icon: 'Layers',
+        tab: 'so-test-batch',
+        route: '/plugins/testing?tab=so-test-batch',
+        order: 7,
+      },
+      {
         id: 'testing:list-flow-simulation',
         title: 'List Flow Simulation',
         description: 'Quản lý danh sách các kịch bản mô phỏng Flow Simulation cho kiểm thử thiết bị',
@@ -168,6 +177,12 @@ export const testingPlugin: FrontendPluginDefinition = {
           title: 'Create Test Batch',
           icon: 'FolderPlus',
           path: '/plugins/testing?tab=create-test-batch',
+        },
+        {
+          id: 'testing-menu-so-test-batch',
+          title: 'SO Test Batch',
+          icon: 'Layers',
+          path: '/plugins/testing?tab=so-test-batch',
         },
         {
           id: 'testing-menu-list-flow-simulation',

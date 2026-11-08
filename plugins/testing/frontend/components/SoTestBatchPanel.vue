@@ -1,33 +1,35 @@
 <template>
-  <div class="so-test-batch-container w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
-    <!-- Header Banner theo chuẩn Device Traceability -->
-    <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm">
-      <div class="header-title flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-          <Layers class="w-5 h-5" />
+  <div class="so-test-batch-panel space-y-4">
+    <!-- Header Banner -->
+    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 md:p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <Layers class="w-5 h-5" />
+          </div>
+          <div>
+            <h2 class="text-base font-bold tracking-wide uppercase text-base-content">
+              SO TEST BATCH (QUẢN LÝ LIÊN KẾT SO &amp; TEST BATCH)
+            </h2>
+            <p class="text-xs text-base-content/60 font-mono mt-0.5">
+              1 SO có thể liên kết nhiều Test Batch cho các ITEM_CODE khác nhau
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 class="text-xl font-bold tracking-wide uppercase text-base-content flex items-center gap-2">
-            SO TEST BATCH MANAGEMENT
-          </h1>
-          <p class="text-xs text-base-content/60 font-mono mt-0.5">
-            Quản lý và liên kết danh sách Test Batch theo từng Sale Order (SO)
-          </p>
-        </div>
-      </div>
 
-      <div class="header-actions flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          class="btn btn-sm btn-ghost gap-1.5"
-          :disabled="loading"
-          @click="loadData"
-        >
-          <RotateCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
-          Làm mới
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost gap-1.5"
+            :disabled="loading"
+            @click="loadData"
+          >
+            <RotateCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
+            Làm mới
+          </button>
+        </div>
       </div>
-    </header>
+    </div>
 
     <!-- Quick Filter Bar theo chỉ đạo -->
     <div class="card bg-base-200/60 border border-base-300 rounded-xl p-3 md:p-4 shadow-sm backdrop-blur-md">
@@ -73,7 +75,7 @@
               v-model="searchTerm"
               type="text"
               class="input input-sm input-bordered w-full pr-8 text-xs font-mono"
-              placeholder="Tìm theo mã SO, KH, Batch..."
+              placeholder="Tìm theo SO, KH, Item, Batch..."
               @input="onSearchInput"
             />
             <Search class="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none" />
@@ -102,7 +104,7 @@
       </div>
     </div>
 
-    <!-- Tabulator Table Card -->
+    <!-- Tabulator Table Card (Không có cột Thao Tác Nhanh) -->
     <div class="card bg-base-100 border border-base-300 rounded-xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto min-h-[420px] relative">
         <div v-show="loading" class="absolute inset-0 bg-base-100/60 backdrop-blur-xs z-10 flex items-center justify-center">
@@ -150,9 +152,9 @@ import {
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
-import AssignTestBatchModal from '../components/AssignTestBatchModal.vue';
-import UnlinkTestBatchModal from '../components/UnlinkTestBatchModal.vue';
-import ViewTestBatchDetailModal from '../components/ViewTestBatchDetailModal.vue';
+import AssignTestBatchModal from './AssignTestBatchModal.vue';
+import UnlinkTestBatchModal from './UnlinkTestBatchModal.vue';
+import ViewTestBatchDetailModal from './ViewTestBatchDetailModal.vue';
 
 // State
 const loading = ref(false);
@@ -188,10 +190,11 @@ const filteredRows = computed(() => {
     list = list.filter((r) => {
       const soNum = (r.soNumber || r.code || '').toLowerCase();
       const customer = (r.customerName || '').toLowerCase();
+      const items = Array.isArray(r.itemCodes) ? r.itemCodes.join(' ').toLowerCase() : '';
       const batches = Array.isArray(r.testBatches)
-        ? r.testBatches.map((b: any) => (b.batchCode || b.batch_code || b.name || '').toLowerCase()).join(' ')
+        ? r.testBatches.map((b: any) => `${b.batchCode || ''} ${b.itemCode || ''} ${b.batchName || ''}`).join(' ').toLowerCase()
         : '';
-      return soNum.includes(term) || customer.includes(term) || batches.includes(term);
+      return soNum.includes(term) || customer.includes(term) || items.includes(term) || batches.includes(term);
     });
   }
 
@@ -220,7 +223,7 @@ async function loadData() {
     try {
       res = await httpClient.get('/plugins/so-test-batch/sos');
     } catch {
-      // Fallback: kết hợp SO từ lookup và test-batches
+      // Fallback
       const [soRes, batchRes] = await Promise.allSettled([
         httpClient.get('/plugins/testing/lookup/so'),
         httpClient.get('/plugins/testing/test-batches'),
@@ -272,11 +275,22 @@ async function loadData() {
         deviceCount: b.deviceCount || b.device_count || b.maxDevices || 0,
         status: b.status,
       }));
+
+      // Extract distinct item codes
+      const itemCodesFromBatches = testBatches.map((b: any) => b.itemCode).filter(Boolean);
+      const rawItemCodes = Array.isArray(item.itemCodes)
+        ? item.itemCodes
+        : Array.isArray(item.item_codes)
+          ? item.item_codes
+          : [];
+      const distinctItemCodes = Array.from(new Set([...rawItemCodes, ...itemCodesFromBatches]));
+
       return {
         ...item,
         soNumber: item.soNumber || item.so_number || item.code || '',
         customerName: item.customerName || item.customer_name || '—',
         createdAt: item.createdAt || item.created_at || item.orderDate || item.order_date,
+        itemCodes: distinctItemCodes,
         testBatches,
       };
     });
@@ -362,9 +376,22 @@ function initTabulator() {
         },
       },
       {
-        title: 'Danh Sách Test Batch Đã Gán',
+        title: 'Item Codes',
+        field: 'itemCodes',
+        widthGrow: 1.8,
+        headerSort: false,
+        formatter: (cell) => {
+          const val = cell.getValue();
+          if (!Array.isArray(val) || val.length === 0) {
+            return '<span class="text-base-content/40 font-mono text-[11px]">—</span>';
+          }
+          return `<div class="flex items-center gap-1 flex-wrap">${val.map((it: string) => `<span class="badge badge-ghost badge-xs font-mono">${it}</span>`).join(' ')}</div>`;
+        },
+      },
+      {
+        title: 'Danh Sách Test Batch Đã Gán (Theo Item Code)',
         field: 'testBatches',
-        widthGrow: 3.5,
+        widthGrow: 4.5,
         headerSort: false,
         formatter: (cell) => {
           const batches = cell.getValue();
@@ -374,8 +401,8 @@ function initTabulator() {
           const tags = batches
             .map(
               (b: any) =>
-                `<span class="badge badge-sm badge-outline badge-primary font-mono text-[11px] font-bold" title="${b.batchName || b.name || ''}">
-                  ${b.batchCode || b.batch_code || b.code}
+                `<span class="badge badge-sm badge-outline badge-primary font-mono text-[11px] font-bold mr-1 mb-0.5" title="${b.batchName || b.name || ''}">
+                  ${b.batchCode || b.batch_code || b.code}${b.itemCode ? ` : <span class="text-info">${b.itemCode}</span>` : ''}
                 </span>`
             )
             .join(' ');
@@ -411,30 +438,6 @@ function initTabulator() {
           }
         },
       },
-      {
-        title: 'Thao Tác Nhanh',
-        width: 140,
-        hozAlign: 'center',
-        headerHozAlign: 'center',
-        headerSort: false,
-        formatter: () => {
-          return `<div class="flex items-center justify-center gap-1">
-            <button class="btn btn-xs btn-primary btn-assign-batch" title="Gán Test Batch">➕ Gán</button>
-            <button class="btn btn-xs btn-ghost btn-view-batch" title="Xem chi tiết">👁️</button>
-          </div>`;
-        },
-        cellClick: (e, cell) => {
-          const target = e.target as HTMLElement;
-          const data = cell.getRow().getData();
-          selectedRowData.value = data;
-
-          if (target.closest('.btn-assign-batch')) {
-            isAssignModalOpen.value = true;
-          } else if (target.closest('.btn-view-batch')) {
-            isDetailModalOpen.value = true;
-          }
-        },
-      },
     ],
   });
 }
@@ -457,7 +460,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.so-test-batch-container {
+.so-test-batch-panel {
   animation: fadeIn 0.15s ease-in-out;
 }
 @keyframes fadeIn {
