@@ -111,47 +111,50 @@
             </select>
           </div>
 
-          <!-- Chọn SO Number -->
+          <!-- Chọn / Nhập SO Number -->
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold">SO Number *</span>
             </label>
             <div class="relative">
-              <select
+              <input
                 v-model="step1.soNumber"
-                class="select select-bordered select-sm w-full text-xs font-mono"
+                list="so-options-list"
+                type="text"
+                class="input input-bordered input-sm w-full text-xs font-mono uppercase"
+                placeholder="SO/2026/01527"
                 :disabled="loadingSos"
+                @input="onSoInput"
+                @blur="onSoBlur"
                 @change="onSoChange"
-              >
-                <option value="">-- Chọn SO Number --</option>
-                <option v-for="so in salesOrders" :key="so.id || so.soNumber" :value="so.soNumber">
-                  {{ so.soNumber }} {{ so.customerName ? `- ${so.customerName}` : '' }}
-                </option>
-              </select>
-            </div>
-            <!-- Hiển thị tên khách hàng ngay dưới select -->
-            <div v-if="selectedSoCustomerName" class="flex items-center gap-1.5 text-[11px] mt-1 font-mono">
-              <span class="text-base-content/60">Khách hàng:</span>
-              <span class="font-bold text-primary truncate">{{ selectedSoCustomerName }}</span>
+              />
+              <datalist id="so-options-list">
+                <option v-for="so in salesOrders" :key="so.id || so.soNumber" :value="so.soNumber" />
+              </datalist>
             </div>
           </div>
 
-          <!-- Chọn WA Number -->
+          <!-- Chọn / Nhập WA Number -->
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold">WA Number *</span>
             </label>
-            <select
-              v-model="step1.waNumber"
-              class="select select-bordered select-sm w-full text-xs font-mono"
-              :disabled="loadingWas || !step1.soNumber"
-              @change="onWaChange"
-            >
-              <option value="">{{ step1.soNumber ? (loadingWas ? '-- Đang tải WA... --' : '-- Chọn WA Number --') : '-- Vui lòng chọn SO Number trước --' }}</option>
-              <option v-for="wa in workAssignments" :key="wa.id || wa.waNumber" :value="wa.waNumber">
-                {{ wa.waNumber }}
-              </option>
-            </select>
+            <div class="relative">
+              <input
+                v-model="step1.waNumber"
+                list="wa-options-list"
+                type="text"
+                class="input input-bordered input-sm w-full text-xs font-mono uppercase"
+                placeholder="WA/2026/01527"
+                :disabled="loadingWas"
+                @input="onWaInput"
+                @blur="onWaBlur"
+                @change="onWaChange"
+              />
+              <datalist id="wa-options-list">
+                <option v-for="wa in workAssignments" :key="wa.id || wa.waNumber" :value="wa.waNumber" />
+              </datalist>
+            </div>
           </div>
         </div>
 
@@ -164,8 +167,8 @@
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-base-content/80 mt-1">
             <div>SO Number: <span class="font-bold text-base-content">{{ step1.soNumber }}</span></div>
             <div>WA Number: <span class="font-bold text-base-content">{{ step1.waNumber }}</span></div>
-            <div>Khách hàng: <span class="font-bold text-primary">{{ selectedSoCustomerName || '—' }}</span></div>
             <div>Item Code: <span class="font-bold text-base-content">{{ step1.itemCode || 'Theo Sensor (Bước 2)' }}</span></div>
+            <div>Network Server: <span class="font-bold text-base-content">ChirpStack</span></div>
           </div>
         </div>
 
@@ -859,14 +862,27 @@ function cleanWaNumber(val?: string): string {
   return trimmed;
 }
 
-const selectedSoCustomerName = computed(() => {
-  if (step1.customerName) return step1.customerName;
-  if (!step1.soNumber) return '';
-  const found = salesOrders.value.find(
-    (s) => cleanSoNumber(s.soNumber || s.so_number) === cleanSoNumber(step1.soNumber)
-  );
-  return found?.customerName || found?.customer_name || '';
-});
+function onSoInput() {
+  step1.soNumber = step1.soNumber.toUpperCase();
+}
+
+function onSoBlur() {
+  if (step1.soNumber) {
+    step1.soNumber = cleanSoNumber(step1.soNumber);
+    onSoChange();
+  }
+}
+
+function onWaInput() {
+  step1.waNumber = step1.waNumber.toUpperCase();
+}
+
+function onWaBlur() {
+  if (step1.waNumber) {
+    step1.waNumber = cleanWaNumber(step1.waNumber);
+    onWaChange();
+  }
+}
 
 async function loadSalesOrders() {
   loadingSos.value = true;
@@ -876,7 +892,6 @@ async function loadSalesOrders() {
     salesOrders.value = items.map((s: any) => ({
       ...s,
       soNumber: cleanSoNumber(s.soNumber || s.so_number),
-      customerName: s.customerName || s.customer_name || '',
     }));
   } catch {
     salesOrders.value = [];
