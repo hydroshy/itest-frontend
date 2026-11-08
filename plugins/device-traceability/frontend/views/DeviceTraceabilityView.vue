@@ -205,7 +205,7 @@
                 <RefreshCw class="w-4 h-4" /> Làm mới
               </button>
               <span class="table-guide-hint text-xs text-base-content/60 flex items-center gap-1">
-                <Info class="w-4 h-4 text-info" /> Chuột phải để đổi trạng thái Test hoặc Xóa thiết bị
+                <Info class="w-4 h-4 text-info" /> Nhấp đúp hàng để xem Báo cáo Đo Kiểm (RF Metrics & Timeline); Chuột phải để đổi trạng thái hoặc tùy chọn
               </span>
             </div>
           </div>
@@ -318,6 +318,13 @@
     </div>
 
 
+
+    <!-- DIALOG: DEVICE TEST METRICS REPORT (MODULARIZED) -->
+    <DeviceTestMetricsModal
+      :visible="metricsModalVisible"
+      :device="selectedMetricsDevice"
+      @close="metricsModalVisible = false"
+    />
 
     <!-- DIALOG 1: RAW TEST DATA VIEWER (MODULARIZED) -->
     <RawTestDataModal
@@ -937,6 +944,7 @@ import SessionAuditModal from '../components/SessionAuditModal.vue';
 import CreateSoModal from '../components/CreateSoModal.vue';
 import CreateWaModal from '../components/CreateWaModal.vue';
 import SoDetailModal from '../components/SoDetailModal.vue';
+import DeviceTestMetricsModal from '../components/DeviceTestMetricsModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -1142,6 +1150,13 @@ const submitEditDeviceDetails = async () => {
   } finally {
     savingDeviceDetails.value = false;
   }
+};
+
+const metricsModalVisible = ref(false);
+const selectedMetricsDevice = ref<any>(null);
+const openMetricsReport = (dev: any) => {
+  selectedMetricsDevice.value = dev;
+  metricsModalVisible.value = true;
 };
 
 const rawTestDialogVisible = ref(false);
@@ -1972,81 +1987,106 @@ const initTestingTable = () => {
     placeholder: 'Không có dữ liệu thiết bị kiểm thử',
     columns: [
       {
-        title: 'Serial Number (S/N)',
+        title: 'SERIAL_NUMBER',
         field: 'serialNumber',
-        widthGrow: 1.8,
+        widthGrow: 1.6,
         responsive: 0,
-        formatter: (cell) => `<strong class="mono-font serial-text">${cell.getValue() || '-'}</strong>`,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const val = cell.getValue() || row.SERIAL_NUMBER || row.serial_number || '-';
+          return `<strong class="mono-font serial-text text-primary">${val}</strong>`;
+        },
       },
       {
-        title: 'DevEUI',
+        title: 'DEV_EUI',
         field: 'devEui',
-        widthGrow: 1.8,
-        formatter: (cell) => `<span class="mono-font">${cell.getValue() || '-'}</span>`,
+        widthGrow: 1.6,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const val = cell.getValue() || row.DEV_EUI || row.dev_eui || '-';
+          return `<span class="mono-font">${val}</span>`;
+        },
       },
       {
-        title: 'Mã SO',
+        title: 'SO_NUMBER',
         field: 'soNumber',
         widthGrow: 1.2,
         formatter: (cell) => {
           const row = cell.getRow().getData();
-          const num = row.soNumber || (row.so ? row.so.so_number : '-');
+          const num = row.soNumber || row.SO_NUMBER || row.so_number || (row.so ? row.so.so_number : '-');
           return `<span class="badge-so-sm">${num}</span>`;
         },
       },
       {
-        title: 'Mã WA',
+        title: 'WA_NUMBER',
         field: 'waNumber',
         widthGrow: 1.2,
         formatter: (cell) => {
           const row = cell.getRow().getData();
-          const num = row.waNumber || (row.wa ? row.wa.wa_number : '-');
+          const num = row.waNumber || row.WA_NUMBER || row.wa_number || (row.wa ? row.wa.wa_number : '-');
           return num && num !== '-' ? `<span class="badge-wa-sm">${num}</span>` : '<span class="text-muted">-</span>';
         },
       },
       {
-        title: 'SKU / Item Code',
-        field: 'sku',
-        widthGrow: 1.4,
-        formatter: (cell) => cell.getValue() || cell.getRow().getData().itemCode || '<span class="text-muted">-</span>',
-      },
-      {
-        title: 'HW / FW',
-        field: 'hwVersion',
-        widthGrow: 1.2,
+        title: 'ITEM_CODE',
+        field: 'itemCode',
+        widthGrow: 1.3,
         formatter: (cell) => {
           const row = cell.getRow().getData();
-          return `${row.hwVersion || '-'}/${row.fwVersion || '-'}`;
+          return cell.getValue() || row.ITEM_CODE || row.item_code || row.sku || '<span class="text-muted">-</span>';
         },
       },
       {
-        title: 'Kết Quả Test',
+        title: 'HW_VERSION',
+        field: 'hwVersion',
+        widthGrow: 1.1,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          return cell.getValue() || row.HW_VERSION || row.hw_version || '<span class="text-muted">-</span>';
+        },
+      },
+      {
+        title: 'FW_VERSION',
+        field: 'fwVersion',
+        widthGrow: 1.1,
+        hozAlign: 'center',
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          return cell.getValue() || row.FW_VERSION || row.fw_version || '<span class="text-muted">-</span>';
+        },
+      },
+      {
+        title: 'RESULT',
         field: 'testResult',
         widthGrow: 1.2,
         hozAlign: 'center',
         formatter: (cell) => {
-          const val = (cell.getValue() || 'NONE').toUpperCase();
+          const row = cell.getRow().getData();
+          const val = (cell.getValue() || row.RESULT || row.test_result || row.status || 'NONE').toUpperCase();
           if (val === 'PASS') return '<span class="status-pill pass">PASS</span>';
           if (val === 'FAIL') return '<span class="status-pill fail">FAIL</span>';
           return '<span class="status-pill pending">NONE</span>';
         },
       },
       {
-        title: 'Trạm Test / KTV',
-        field: 'testStation',
-        widthGrow: 1.4,
+        title: 'TESTED BY',
+        field: 'testPerson',
+        widthGrow: 1.3,
         formatter: (cell) => {
           const row = cell.getRow().getData();
-          return `${row.testStation || '-'} (${row.testPerson || '-'})`;
+          const person = cell.getValue() || row['TESTED BY'] || row.test_person || row.testPerson || row.testStation || '-';
+          return person !== '-' ? `<span class="font-medium">${person}</span>` : '<span class="text-muted">-</span>';
         },
       },
       {
-        title: 'Thời Gian Test',
+        title: 'TIME TEST',
         field: 'testedAt',
         widthGrow: 1.4,
         hozAlign: 'center',
         formatter: (cell) => {
-          const d = cell.getValue() || cell.getRow().getData().createdAt;
+          const row = cell.getRow().getData();
+          const d = cell.getValue() || row['TIME TEST'] || row.time_test || row.tested_at || row.testedAt || row.createdAt;
           if (!d) return '<span class="text-muted">-</span>';
           try {
             const dt = new Date(d);
@@ -2057,9 +2097,17 @@ const initTestingTable = () => {
         },
       },
     ],
+    rowDblClick: (e, row) => {
+      openMetricsReport(row.getData());
+    },
     rowContextMenu: (e, row) => {
       const data = row.getData();
       return [
+        {
+          label: '📊 Xem Chi Tiết Báo Cáo Đo Kiểm (Metrics & RF)...',
+          action: () => openMetricsReport(data),
+        },
+        { separator: true },
         {
           label: '✏️ Xem Chi Tiết & Chỉnh Sửa Thông Tin...',
           action: () => openEditDeviceDialog(data),
