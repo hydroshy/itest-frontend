@@ -211,20 +211,6 @@
           </div>
         </div>
 
-        <!-- Traceability Summary Preview (Hiển thị khi đã chọn xong SO và WA) -->
-        <div v-if="step1.soNumber && step1.waNumber" class="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
-          <div class="font-bold text-primary flex items-center gap-2">
-            <CheckCircle2 class="w-4 h-4" />
-            <span>Đã xác nhận liên kết Testing &amp; Traceability:</span>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-base-content/80 mt-1">
-            <div>SO Number: <span class="font-bold text-base-content">{{ step1.soNumber }}</span></div>
-            <div>WA Number: <span class="font-bold text-base-content">{{ step1.waNumber }}</span></div>
-            <div>Item Code: <span class="font-bold text-base-content">{{ step1.itemCode || '—' }}</span></div>
-            <div>Network Server: <span class="font-bold text-base-content">ChirpStack</span></div>
-          </div>
-        </div>
-
         <!-- Next Action -->
         <div class="flex justify-end pt-2">
           <button
