@@ -129,8 +129,7 @@
           <!-- Chọn / Nhập SO Number -->
           <div class="form-control">
             <label class="label py-1">
-              <span class="label-text text-xs font-semibold">SO Number (Mã Đơn Hàng) *</span>
-              <span class="label-text-alt text-xs font-mono text-base-content/60">Cú pháp: SO/XXXX/XXXXX</span>
+              <span class="label-text text-xs font-semibold">SO Number *</span>
             </label>
             <div class="relative">
               <input
@@ -150,18 +149,12 @@
                 </option>
               </datalist>
             </div>
-            <label v-if="step1.soNumber && !isValidSoFormat" class="label py-0.5">
-              <span class="label-text-alt text-[11px] text-warning font-mono">
-                Định dạng chuẩn: SO/XXXX/XXXXX (X là chữ số)
-              </span>
-            </label>
           </div>
 
           <!-- Chọn / Nhập WA Number -->
           <div class="form-control">
             <label class="label py-1">
-              <span class="label-text text-xs font-semibold">WA Number (Lệnh Sản Xuất) *</span>
-              <span class="label-text-alt text-xs font-mono text-base-content/60">Cú pháp: WA/XXXX/XXXXX</span>
+              <span class="label-text text-xs font-semibold">WA Number *</span>
             </label>
             <div class="relative">
               <input
@@ -181,11 +174,6 @@
                 </option>
               </datalist>
             </div>
-            <label v-if="step1.waNumber && !isValidWaFormat" class="label py-0.5">
-              <span class="label-text-alt text-[11px] text-warning font-mono">
-                Định dạng chuẩn: WA/XXXX/XXXXX (X là chữ số)
-              </span>
-            </label>
           </div>
         </div>
 
@@ -892,9 +880,6 @@ function cleanWaNumber(val?: string): string {
   return trimmed;
 }
 
-const isValidSoFormat = computed(() => /^SO\/\d{4}\/\d{5}$/.test(step1.soNumber.trim()));
-const isValidWaFormat = computed(() => /^WA\/\d{4}\/\d{5}$/.test(step1.waNumber.trim()));
-
 function onSoInput() {
   step1.soNumber = step1.soNumber.toUpperCase();
 }
@@ -974,10 +959,6 @@ function nextToStep2() {
   step1.waNumber = cleanWaNumber(step1.waNumber);
   if (!step1.soNumber || !step1.waNumber) {
     cyberToast.warning('Vui lòng chọn hoặc nhập SO Number và WA Number!');
-    return;
-  }
-  if (!isValidSoFormat.value || !isValidWaFormat.value) {
-    cyberToast.warning('SO Number và WA Number phải đúng định dạng SO/XXXX/XXXXX và WA/XXXX/XXXXX!');
     return;
   }
   currentStep.value = 2;

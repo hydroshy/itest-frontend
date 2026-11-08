@@ -73,13 +73,13 @@
           <div v-show="currentWizardStep === 0" class="wizard-step-pane space-y-4">
             <div class="form-section-title flex items-center gap-2 font-bold text-sm text-primary pb-2 border-b border-base-content/10">
               <span class="badge badge-primary badge-sm font-mono">01</span>
-              <span>Liên Kết Lệnh Bán Hàng (SO) &amp; Lệnh Sản Xuất (WA)</span>
+              <span>Liên Kết SO Number &amp; WA Number</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="form-control">
                 <label class="label py-1">
-                  <span class="label-text font-semibold">Sale Order (SO Number) <span class="text-error">*</span></span>
+                  <span class="label-text font-semibold">SO Number <span class="text-error">*</span></span>
                 </label>
                 <div class="flex gap-2">
                   <select
@@ -88,7 +88,7 @@
                     :disabled="loadingSo"
                     @change="onSoChange"
                   >
-                    <option value="" disabled>-- Chọn Sale Order --</option>
+                    <option value="" disabled>-- Chọn SO Number --</option>
                     <option v-for="so in soOptions" :key="so.value" :value="so.value">
                       {{ so.label }}
                     </option>
@@ -108,7 +108,7 @@
 
               <div class="form-control">
                 <label class="label py-1">
-                  <span class="label-text font-semibold">Work Order (WA Number) <span class="text-error">*</span></span>
+                  <span class="label-text font-semibold">WA Number <span class="text-error">*</span></span>
                 </label>
                 <select
                   v-model="form.waNumber"
@@ -116,7 +116,7 @@
                   :disabled="loadingWa || !form.soNumber"
                 >
                   <option value="" disabled>
-                    {{ form.soNumber ? (loadingWa ? 'Đang tải danh sách WA...' : '-- Chọn WA Number --') : 'Vui lòng chọn SO trước' }}
+                    {{ form.soNumber ? (loadingWa ? 'Đang tải danh sách WA...' : '-- Chọn WA Number --') : 'Vui lòng chọn SO Number trước' }}
                   </option>
                   <option v-for="wa in waOptions" :key="wa.waNumber" :value="wa.waNumber">
                     {{ wa.waNumber }} (SL: {{ wa.plannedQuantity }})
@@ -327,8 +327,8 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div class="card border border-base-content/10 bg-base-200/40 p-3 space-y-2">
                 <div class="font-bold text-xs text-primary border-b border-base-content/10 pb-1">THÔNG TIN ĐƠN HÀNG &amp; MẠNG</div>
-                <div class="flex justify-between"><span class="text-base-content/60">Sale Order (SO):</span> <span class="font-mono font-bold">{{ form.soNumber }}</span></div>
-                <div class="flex justify-between"><span class="text-base-content/60">Work Order (WA):</span> <span class="font-mono font-bold">{{ form.waNumber }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">SO Number:</span> <span class="font-mono font-bold">{{ form.soNumber }}</span></div>
+                <div class="flex justify-between"><span class="text-base-content/60">WA Number:</span> <span class="font-mono font-bold">{{ form.waNumber }}</span></div>
                 <div class="flex justify-between"><span class="text-base-content/60">Network Server:</span> <span class="font-mono text-xs">{{ selectedServerName }}</span></div>
                 <div class="flex justify-between"><span class="text-base-content/60">Địa Chỉ IP:</span> <span class="font-mono">{{ form.gatewayIp }}:4050</span></div>
                 <div class="flex justify-between"><span class="text-base-content/60">Băng Tần LoRa:</span> <span class="font-mono font-semibold text-primary">{{ form.regionTest }}</span></div>
