@@ -30,26 +30,29 @@ export const memmapManagerPlugin: FrontendPluginDefinition = {
       name: 'MemmapPayloadAlias',
       component: MemmapManagerView,
       meta: {
-        title: 'MemMap Manager',
+        title: 'Memmap Payload',
+        icon: 'Files',
+        requiresAuth: true,
+      },
+    });
+
+    context.registerRoute({
+      path: '/plugins/memmap',
+      name: 'MemmapLegacyAlias',
+      component: MemmapManagerView,
+      meta: {
+        title: 'Memmap Payload',
         icon: 'Files',
         requiresAuth: true,
       },
     });
 
     context.registerMenu({
-      id: 'menu-memmap-manager',
-      title: 'MemMap Manager',
+      id: 'menu-memmap-payload',
+      title: 'Memmap Payload',
       path: '/plugins/memmap-manager?tab=manager',
       icon: 'Files',
       order: 22,
-    });
-
-    context.registerMenu({
-      id: 'menu-memmap-upload',
-      title: 'Memmap Upload',
-      path: '/plugins/memmap-manager?tab=upload',
-      icon: 'Upload',
-      order: 23,
     });
 
     context.logger.info('MemMap Manager frontend plugin initialized');
