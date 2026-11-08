@@ -110,7 +110,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-base-content/10 mb-3">
             <div>
               <span class="font-bold text-sm text-base-content">Tải lên Memmap Payload mới</span>
-              <p class="text-xs text-base-content/60 mt-0.5">Tải lên file IEC485 CSV và cấu hình thông tin SKU, firmware để lưu bản đồ bộ nhớ.</p>
+              <p class="text-xs text-base-content/60 mt-0.5">Tải lên file IEC485 CSV và cấu hình thông tin ITEM_CODE, FW_VERSION để lưu bản đồ bộ nhớ.</p>
             </div>
             <button type="button" class="btn btn-sm btn-ghost gap-1 text-xs" @click="changeTab('manager')">
               ← Danh sách Memmap
@@ -126,36 +126,27 @@
               </select>
             </div>
             <div class="form-control md:col-span-4">
-              <label class="label py-1"><span class="label-text text-xs font-medium">SKU ({{ skuPrefix }}) <span class="text-error">*</span></span></label>
+              <label class="label py-1"><span class="label-text text-xs font-medium">ITEM_CODE <span class="text-error">*</span></span></label>
               <input
-                v-model="uploadForm.skuSuffix"
+                v-model="uploadForm.itemCode"
                 type="text"
-                class="input input-sm input-bordered bg-base-100 w-full"
-                placeholder="Ví dụ: R100"
-                @input="invalidatePreview"
+                class="input input-sm input-bordered bg-base-100 w-full font-mono uppercase"
+                placeholder="Ví dụ: WSLRW-V1A-025"
+                @input="onItemCodeInput"
               />
             </div>
-            <div class="form-control md:col-span-2">
-              <label class="label py-1"><span class="label-text text-xs font-medium">LONG_FW <span class="text-error">*</span></span></label>
+            <div class="form-control md:col-span-4">
+              <label class="label py-1"><span class="label-text text-xs font-medium">FW_VERSION <span class="text-error">*</span></span></label>
               <input
-                v-model="uploadForm.longFw"
+                v-model="uploadForm.fwVersion"
                 type="text"
                 maxlength="6"
-                class="input input-sm input-bordered bg-base-100 w-full"
-                :class="{ 'input-error': longFirmwareError }"
-                @input="normalizeLongFirmware"
+                class="input input-sm input-bordered bg-base-100 w-full font-mono uppercase"
+                :class="{ 'input-error': fwVersionError }"
+                placeholder="Ví dụ: 1F0001"
+                @input="normalizeFwVersion"
               />
-              <span v-if="longFirmwareError" class="text-[11px] text-error mt-1">{{ longFirmwareError }}</span>
-            </div>
-            <div class="form-control md:col-span-2">
-              <label class="label py-1"><span class="label-text text-xs font-medium">SHORT_FW</span></label>
-              <input
-                :value="shortFirmware"
-                disabled
-                type="text"
-                class="input input-sm input-bordered bg-base-300 text-base-content/70 w-full cursor-not-allowed"
-                placeholder="Tự động"
-              />
+              <span v-if="fwVersionError" class="text-[11px] text-error mt-1">{{ fwVersionError }}</span>
             </div>
           </div>
 
@@ -214,9 +205,8 @@
               <span class="badge" :class="previewResult.valid ? 'badge-success' : 'badge-error'">
                 {{ previewResult.valid ? 'Sẵn sàng Upload' : 'Cần sửa lỗi' }}
               </span>
-              <span><strong>SKU:</strong> {{ sku }}</span>
-              <span><strong>LONG_FW:</strong> {{ uploadForm.longFw }}</span>
-              <span><strong>SHORT_FW:</strong> {{ shortFirmware }}</span>
+              <span><strong>ITEM_CODE:</strong> {{ uploadForm.itemCode }}</span>
+              <span><strong>FW_VERSION:</strong> {{ uploadForm.fwVersion }}</span>
               <span><strong>Registers:</strong> {{ previewResult.registers?.length || 0 }}</span>
               <span class="badge badge-sm" :class="previewResult.profile?.decimalCheck === false ? 'badge-error' : 'badge-success'">
                 DEC: {{ previewResult.profile?.decimalCheck === false ? 'FAIL' : 'PASS' }}
@@ -248,16 +238,12 @@
         <div v-show="!detailLoading">
           <div v-if="currentProfile" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-4 bg-base-100 p-3.5 rounded-lg border border-base-content/10 font-mono">
             <div>
-              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">SKU</span>
-              <span class="font-bold text-sm text-primary">{{ valueOf(currentProfile, 'sku') || '—' }}</span>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">ITEM_CODE</span>
+              <span class="font-bold text-sm text-primary">{{ valueOf(currentProfile, 'itemCode', 'item_code') || valueOf(currentProfile, 'sku') || '—' }}</span>
             </div>
             <div>
-              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">LONG_FW</span>
-              <span class="font-medium text-base-content">{{ valueOf(currentProfile, 'longFw', 'long_fw') || '—' }}</span>
-            </div>
-            <div>
-              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">SHORT_FW</span>
-              <span class="font-medium text-base-content">{{ valueOf(currentProfile, 'shortFw', 'short_fw') || '—' }}</span>
+              <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">FW_VERSION</span>
+              <span class="font-medium text-base-content">{{ valueOf(currentProfile, 'fwVersion', 'fw_version') || valueOf(currentProfile, 'longFw', 'long_fw') || '—' }}</span>
             </div>
             <div>
               <span class="text-base-content/60 block text-[11px] font-sans font-medium uppercase tracking-wider">Registers</span>
@@ -344,9 +330,7 @@ const previewLoading = ref(false);
 const importing = ref(false);
 const previewResult = ref<PreviewResponse | null>(null);
 
-const uploadForm = ref({ connectivity: 'LoRaWAN', skuSuffix: '', longFw: '' });
-const skuPrefix = computed(() => uploadForm.value.connectivity === 'Sigfox' ? 'WSSFC-' : 'WSLRW-');
-const sku = computed(() => `${skuPrefix.value}${uploadForm.value.skuSuffix.trim()}`);
+const uploadForm = ref({ connectivity: 'LoRaWAN', itemCode: '', fwVersion: '' });
 
 const detailDialogVisible = ref(false);
 const detailLoading = ref(false);
@@ -359,12 +343,21 @@ let profileTable: Tabulator | undefined;
 let previewTable: Tabulator | undefined;
 let detailTable: Tabulator | undefined;
 
-const longFirmwareValid = computed(() => /^\dF\d{4}$/i.test(uploadForm.value.longFw));
-const longFirmwareError = computed(() => uploadForm.value.longFw && !longFirmwareValid.value ? 'LONG_FW phải đúng mẫu XFXXXX (X là các chữ số 0-9).' : '');
-const shortFirmware = computed(() => longFirmwareValid.value ? uploadForm.value.longFw.charAt(0) : '');
-const canPreview = computed(() => Boolean(uploadForm.value.skuSuffix.trim() && longFirmwareValid.value && selectedFile.value));
+const fwVersionValid = computed(() => /^[0-9]F[0-9]{4}$/.test(uploadForm.value.fwVersion.trim()));
+const fwVersionError = computed(() => uploadForm.value.fwVersion && !fwVersionValid.value ? 'FW_VERSION không hợp lệ (mẫu XFXXXX với X là số).' : '');
+const canPreview = computed(() => Boolean(uploadForm.value.itemCode.trim() && fwVersionValid.value && selectedFile.value));
 const canUpload = computed(() => canPreview.value && previewResult.value?.valid === true && previewInvalidRowsCount.value === 0 && (previewResult.value?.errors?.length ?? 0) === 0);
 const previewInvalidRowsCount = computed(() => (previewResult.value?.registers || []).filter((r: RecordRow) => r.decimalValid === false || r.hexValid === false).length);
+
+function onItemCodeInput() {
+  uploadForm.value.itemCode = uploadForm.value.itemCode.toUpperCase().trim();
+  invalidatePreview();
+}
+
+function normalizeFwVersion() {
+  uploadForm.value.fwVersion = uploadForm.value.fwVersion.toUpperCase().replace(/\s/g, '');
+  invalidatePreview();
+}
 
 function valueOf(row: RecordRow | null | undefined, ...keys: string[]) {
   for (const key of keys) {
@@ -454,9 +447,26 @@ function renderProfileTable() {
     layout: 'fitColumns',
     placeholder: 'Chưa có Memmap Payload nào',
     columns: [
-      { title: 'SKU / Profile', field: 'sku', minWidth: 220, formatter: (c: any) => profileLabel(c.getRow().getData()) || '—' },
-      { title: 'LONG_FW', field: 'longFw', minWidth: 130, formatter: (c: any) => valueOf(c.getRow().getData(), 'longFw', 'long_fw') ?? '—' },
-      { title: 'SHORT_FW', field: 'shortFw', minWidth: 125, formatter: (c: any) => valueOf(c.getRow().getData(), 'shortFw', 'short_fw') ?? '—' },
+      {
+        title: 'ITEM_CODE',
+        field: 'itemCode',
+        minWidth: 200,
+        formatter: (c: any) => {
+          const row = c.getRow().getData();
+          const code = valueOf(row, 'itemCode', 'item_code') || profileLabel(row) || valueOf(row, 'sku') || '—';
+          return `<span class="font-mono font-bold text-xs text-primary">${code}</span>`;
+        },
+      },
+      {
+        title: 'FW_VERSION',
+        field: 'fwVersion',
+        minWidth: 140,
+        formatter: (c: any) => {
+          const row = c.getRow().getData();
+          const ver = valueOf(row, 'fwVersion', 'fw_version', 'longFw', 'long_fw') ?? '—';
+          return `<span class="font-mono font-bold text-xs badge badge-neutral">${ver}</span>`;
+        },
+      },
       { title: 'Registers', field: 'registersCount', width: 110, hozAlign: 'right', formatter: (c: any) => String((c.getRow().getData().registers as unknown[] | undefined)?.length ?? valueOf(c.getRow().getData(), 'registersCount', 'registers_count') ?? 0) },
       { title: 'Created by', field: 'createdBy', minWidth: 130, formatter: (c: any) => valueOf(c.getRow().getData(), 'createdBy', 'created_by') ?? '—' },
       { title: 'Date create', field: 'dateCreate', minWidth: 180, formatter: (c: any) => formatDate(valueOf(c.getRow().getData(), 'dateCreate', 'date_create', 'createdAt')) },
@@ -566,11 +576,6 @@ async function deleteProfile(profile: RecordRow) {
   }
 }
 
-function normalizeLongFirmware() {
-  uploadForm.value.longFw = uploadForm.value.longFw.toUpperCase().replace(/\s/g, '');
-  invalidatePreview();
-}
-
 function invalidatePreview() {
   if (previewResult.value) {
     previewResult.value = null;
@@ -597,9 +602,11 @@ function handleFileRemove() {
 function appendPayload(form: FormData) {
   if (!selectedFile.value) return;
   form.append('file', selectedFile.value);
-  form.append('sku', sku.value);
-  form.append('longFw', uploadForm.value.longFw);
-  form.append('shortFw', shortFirmware.value);
+  form.append('itemCode', uploadForm.value.itemCode);
+  form.append('fwVersion', uploadForm.value.fwVersion);
+  // Compatibility params for existing endpoints if needed
+  form.append('sku', uploadForm.value.itemCode);
+  form.append('longFw', uploadForm.value.fwVersion);
   const author = currentUsername.value;
   if (author) form.append('createdBy', author);
 }
