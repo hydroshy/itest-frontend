@@ -211,6 +211,20 @@
           </div>
         </div>
 
+        <!-- Traceability Summary Preview (Hiển thị khi đã chọn xong SO và WA) -->
+        <div v-if="step1.soNumber && step1.waNumber" class="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
+          <div class="font-bold text-primary flex items-center gap-2">
+            <CheckCircle2 class="w-4 h-4" />
+            <span>Đã xác nhận liên kết Testing &amp; Traceability:</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-base-content/80 mt-1">
+            <div>SO Number: <span class="font-bold text-base-content">{{ step1.soNumber }}</span></div>
+            <div>WA Number: <span class="font-bold text-base-content">{{ step1.waNumber }}</span></div>
+            <div>Item Code: <span class="font-bold text-base-content">{{ step1.itemCode || '—' }}</span></div>
+            <div>Network Server: <span class="font-bold text-base-content">ChirpStack</span></div>
+          </div>
+        </div>
+
         <!-- Next Action -->
         <div class="flex justify-end pt-2">
           <button
@@ -1034,11 +1048,22 @@ async function onSoChange() {
   }
 }
 
-function onWaChange() {
+async function onWaChange() {
   step1.waNumber = cleanWaNumber(step1.waNumber);
-  const wa = workAssignments.value.find((w) => cleanWaNumber(w.waNumber) === step1.waNumber);
-  if (wa && wa.itemCode) {
-    step1.itemCode = wa.itemCode;
+  let wa = workAssignments.value.find((w) => cleanWaNumber(w.waNumber) === step1.waNumber);
+  if ((!wa || !wa.itemCode) && step1.waNumber) {
+    try {
+      const res: any = await httpClient.get('/plugins/testing/lookup/wa', {
+        params: { waNumber: step1.waNumber },
+      });
+      const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || []);
+      if (items.length > 0) {
+        wa = items[0];
+      }
+    } catch {}
+  }
+  if (wa && (wa.itemCode || wa.item_code)) {
+    step1.itemCode = wa.itemCode || wa.item_code;
   }
 }
 
@@ -1599,8 +1624,16 @@ async function executeChirpstackRegistration() {
       res?.data?.error ||
       (isSuccess ? 'Đăng ký Thành công vui lòng gắn pin cảm biến' : 'Lỗi không xác định từ Network Server');
 
+    if (
+      message.includes('device_pkey') ||
+      message.includes('duplicate key') ||
+      message.includes('Thiết bị đã tồn tại')
+    ) {
+      message = 'Thiết bị đã có trên hệ thống.';
+    }
+
     const warnings: string[] = Array.isArray(res?.warnings) ? res.warnings : (Array.isArray(res?.data?.warnings) ? res.data.warnings : []);
-    if (warnings.length > 0) {
+    if (warnings.length > 0 && !message.includes('Thiết bị đã có trên hệ thống')) {
       message += ` (Lưu ý: ${warnings.join('; ')})`;
     }
 
@@ -1615,9 +1648,18 @@ async function executeChirpstackRegistration() {
     }
   } catch (err: any) {
     step3Result.status = 'ERROR';
-    step3Result.message =
-      err?.response?.data?.message || err?.message || 'Lỗi khi gọi API đăng ký ChirpStack';
-    cyberToast.error(step3Result.message);
+    let errMsg = err?.response?.data?.message || err?.message || 'Lỗi khi gọi API đăng ký ChirpStack';
+    if (
+      errMsg.includes('device_pkey') ||
+      errMsg.includes('duplicate key') ||
+      errMsg.includes('Thiết bị đã tồn tại') ||
+      (typeof err?.response?.data === 'string' && err.response.data.includes('device_pkey')) ||
+      JSON.stringify(err?.response?.data || '').includes('device_pkey')
+    ) {
+      errMsg = 'Thiết bị đã có trên hệ thống.';
+    }
+    step3Result.message = errMsg;
+    cyberToast.error(errMsg);
   }
 }
 
