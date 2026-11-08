@@ -1,570 +1,276 @@
 <template>
-  <div class="device-test-batch-panel space-y-4">
-    <!-- Top Header Banner -->
-    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+  <div class="device-test-batch-panel w-full">
+    <!-- KHỐI LIỀN MẠCH DUY NHẤT (UNIFIED SINGLE CONTAINER) -->
+    <div class="card bg-base-200/60 border border-base-300 rounded-xl p-4 md:p-5 shadow-sm space-y-4 backdrop-blur-md">
+      <!-- 1. Header Tinh Gọn -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-base-300/80">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-bold">
+          <div class="w-9 h-9 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-bold">
             <Boxes class="w-5 h-5" />
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-xs font-mono font-bold text-primary tracking-wider uppercase">LoRaWAN Parallel Testing</span>
+              <span class="text-xs font-mono font-bold text-primary tracking-wider uppercase">LoRaWAN Test Batch</span>
               <span
                 class="badge badge-xs font-mono font-bold"
-                :class="isTesting ? 'badge-warning animate-pulse' : testFinished ? 'badge-success' : 'badge-ghost'"
+                :class="isTesting ? 'badge-warning animate-pulse' : testFinished ? (batchVerdict === 'PASS' ? 'badge-success' : 'badge-error') : 'badge-ghost'"
               >
-                {{ isTesting ? 'TESTING IN PROGRESS' : testFinished ? 'COMPLETED' : 'IDLE / READY' }}
+                {{ isTesting ? 'TESTING IN PROGRESS' : testFinished ? `COMPLETED (${batchVerdict || 'DONE'})` : 'IDLE / READY' }}
               </span>
             </div>
-            <h3 class="font-bold text-lg text-base-content mt-0.5">
-              Device Test Batch (Kiểm Thử Hàng Loạt &amp; Đối Chiếu Thiết Bị Chuẩn)
+            <h3 class="font-bold text-base text-base-content mt-0.5">
+              Device Test Batch (Kiểm Thử Hàng Loạt Theo Sale Order)
             </h3>
-            <p class="text-xs text-base-content/70">
-              Chạy song song kịch bản Simulation Flow &amp; tự động đối chiếu thông số với các thiết bị chuẩn (Golden Reference) riêng biệt
-            </p>
           </div>
         </div>
 
-      </div>
-    </div>
-
-    <!-- Step 1: Chọn Cấu Hình Đợt Test (ITEM-CODE & FW_VERSION Tự Động) -->
-    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-300">
-        <div class="flex items-center gap-2">
-          <Filter class="w-4 h-4 text-primary" />
-          <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-            1. Chọn Cấu Hình Đợt Test (Tự Động Theo Test Batch)
-          </h4>
-        </div>
-        <div v-if="selectedBatchConfig" class="text-xs text-base-content/70 font-mono">
-          Batch Code: <span class="text-primary font-bold">{{ selectedBatchConfig.batchCode || selectedBatchConfig.batch_code }}</span>
-          | Max: <span class="font-bold text-info">{{ selectedBatchConfig.maxDevices || 5 }} thiết bị</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-        <!-- Choose Test Batch (Primary Selector) - 6 cols -->
-        <div class="form-control md:col-span-6">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold text-primary flex items-center gap-1.5">
-              <FolderPlus class="w-3.5 h-3.5" />
-              Chọn Test Batch <span class="text-error">*</span>
-            </span>
-            <span v-if="selectedBatchConfig" class="badge badge-xs badge-primary font-mono">Đã chọn</span>
-          </label>
+        <!-- Running Batch Quick Control -->
+        <div v-if="runningBatches.length > 0 && !isTesting" class="flex items-center gap-2">
+          <span class="text-xs text-warning font-medium">Có {{ runningBatches.length }} batch đang chạy:</span>
           <select
-            v-model="selectedBatchId"
-            class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono font-bold"
-            :disabled="isTesting"
-            @change="onBatchSelectChange"
+            class="select select-xs select-bordered font-mono font-bold text-warning"
+            @change="onSelectRunningBatch(($event.target as HTMLSelectElement).value)"
           >
-            <option value="">-- Chọn Test Batch để kiểm thử --</option>
-            <option v-for="b in savedBatches" :key="b.id" :value="b.id">
-              {{ b.batchCode || b.batch_code }} - {{ b.batchName || b.name }} ({{ b.itemCode }} / {{ b.longFw || b.fwVersion }})
+            <option value="" disabled selected>Chọn batch đang chạy...</option>
+            <option v-for="rb in runningBatches" :key="rb.id" :value="rb.id">
+              {{ rb.batchCode || rb.id }} ({{ rb.soNumber || 'SO' }})
             </option>
           </select>
         </div>
 
-        <!-- Auto-selected ITEM-CODE - 3 cols -->
-        <div class="form-control md:col-span-3">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold flex items-center gap-1">
-              ITEM-CODE
-            </span>
-            <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Tự động theo batch</span>
-          </label>
-          <input
-            :value="filterItemCode || 'Chưa chọn batch'"
-            type="text"
-            readonly
-            class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-300/40 border-base-300 font-bold text-base-content cursor-not-allowed select-all"
-            title="ITEM-CODE tự động nhận diện từ Test Batch đã chọn"
-          />
-        </div>
-
-        <!-- Auto-selected FW_VERSION - 3 cols -->
-        <div class="form-control md:col-span-3">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold flex items-center gap-1">
-              FW_VERSION
-            </span>
-            <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/60">Tự động theo batch</span>
-          </label>
-          <input
-            :value="filterFwVersion || 'Chưa chọn batch'"
-            type="text"
-            readonly
-            class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-300/40 border-base-300 font-bold text-base-content cursor-not-allowed select-all"
-            title="FW_VERSION tự động nhận diện từ Test Batch đã chọn"
-          />
+        <div v-if="isTesting" class="flex items-center gap-2">
+          <span class="text-xs font-mono text-warning animate-pulse font-bold">Đang chạy kiểm thử...</span>
+          <button class="btn btn-xs btn-error gap-1" :disabled="cancellingBatch" @click="cancelSelectedBatch">
+            <Square class="w-3 h-3" />
+            Hủy Batch
+          </button>
         </div>
       </div>
-    </div>
 
-    <!-- Step 2: Danh Sách Thiết Bị Cần Test (Full-width) -->
-    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-          <div class="flex items-center justify-between pb-2 border-b border-base-300">
-            <div class="flex items-center gap-2">
-              <Layers class="w-4 h-4 text-primary" />
-              <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-                2. Thiết Bị Sẵn Sàng Thêm Vào Batch
-              </h4>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="badge badge-sm badge-neutral font-mono text-[11px]">
-                {{ candidateDevices.length }} khả dụng
-              </span>
-              <button
-                class="btn btn-ghost btn-xs btn-circle"
-                title="Tải lại danh sách thiết bị testing"
-                :disabled="loadingDevices"
-                @click="loadAvailableDevices"
-              >
-                <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': loadingDevices }" />
-              </button>
-            </div>
+      <!-- 2. Hàng Điều Khiển Chính: FIELD SO_NUMBER & Tự Động Map TEST BATCH (Readonly) -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end bg-base-100/50 p-3 rounded-lg border border-base-300/60">
+        <!-- FIELD SO_NUMBER (Cho người dùng chọn SO) - 4 cols -->
+        <div class="form-control md:col-span-4">
+          <label class="label py-0.5">
+            <span class="label-text text-xs font-bold text-primary flex items-center gap-1.5">
+              <Layers class="w-3.5 h-3.5" />
+              FIELD SO_NUMBER <span class="text-error">*</span>
+            </span>
+            <span v-if="selectedSoNumber" class="badge badge-xs badge-primary font-mono font-bold">Đã chọn</span>
+          </label>
+          <select
+            v-model="selectedSoNumber"
+            class="select select-sm select-bordered w-full text-xs font-mono font-bold bg-base-100"
+            :disabled="isTesting || loadingSos"
+            @change="onSoChange"
+          >
+            <option value="" disabled>-- Chọn Sale Order (SO_NUMBER) --</option>
+            <option v-for="so in sosList" :key="so.soNumber" :value="so.soNumber">
+              {{ so.soNumber }} — {{ so.customerName || 'Khách hàng' }} ({{ so.testBatches?.length || 0 }} batch gán)
+            </option>
+          </select>
+        </div>
+
+        <!-- Tự Động Nhận Diện TEST BATCH (Readonly) - 4 cols -->
+        <div class="form-control md:col-span-4">
+          <label class="label py-0.5 flex items-center justify-between">
+            <span class="label-text text-xs font-bold flex items-center gap-1.5 text-base-content">
+              <Cpu class="w-3.5 h-3.5 text-info" />
+              TEST BATCH (Tự Động Theo SO)
+            </span>
+            <span class="badge badge-xs badge-ghost font-mono text-[10px] text-base-content/70">Readonly</span>
+          </label>
+          <input
+            :value="activeBatchDisplayName"
+            type="text"
+            readonly
+            class="input input-sm input-bordered w-full font-mono text-xs font-bold bg-base-300/40 border-base-300 text-base-content cursor-not-allowed select-all"
+            title="Tự động lấy TEST BATCH đã gán cho SO ở plugin SO TEST BATCH (người dùng không thể sửa)"
+          />
+        </div>
+
+        <!-- ITEM_CODE & FW_VERSION & Giới Hạn Thiết Bị - 4 cols -->
+        <div class="form-control md:col-span-4">
+          <label class="label py-0.5 flex items-center justify-between">
+            <span class="label-text text-xs font-bold text-base-content">
+              ITEM_CODE &amp; FW_VERSION
+            </span>
+            <span v-if="selectedBatchConfig" class="badge badge-xs badge-info font-mono">
+              Tối đa: {{ maxAllowedDevices }} thiết bị
+            </span>
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              :value="filterItemCode ? `${filterItemCode} · ${filterFwVersion || '—'}` : 'Chưa xác định'"
+              type="text"
+              readonly
+              class="input input-sm input-bordered w-full font-mono text-xs font-bold bg-base-300/40 border-base-300 text-base-content cursor-not-allowed"
+              title="ITEM_CODE và FW_VERSION đi kèm với Test Batch"
+            />
+            <button
+              class="btn btn-sm btn-square btn-ghost"
+              title="Tải lại dữ liệu SO & Batch"
+              :disabled="loadingSos || isTesting"
+              @click="loadSosWithBatches"
+            >
+              <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': loadingSos }" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cảnh báo nếu SO chưa gán Test Batch -->
+      <div
+        v-if="selectedSoNumber && !selectedBatchConfig && !loadingSos"
+        class="alert alert-warning py-2 px-3 text-xs flex items-center gap-2 rounded-lg"
+      >
+        <AlertCircle class="w-4 h-4 flex-shrink-0" />
+        <div>
+          SO <b>{{ selectedSoNumber }}</b> chưa được gán Test Batch ở plugin <b>SO TEST BATCH</b>. Vui lòng chuyển sang tab <b>SO Test Batch</b> để gán kịch bản kiểm thử trước khi test.
+        </div>
+      </div>
+
+      <!-- 3. BẢNG TABULATOR 1: Thiết Bị Hiện Có Trong SO (Để Chọn Thêm Vào Batch) -->
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wide text-base-content">
+              1. Danh Sách Thiết Bị Trong SO ({{ availableDevices.length }})
+            </span>
+            <span v-if="loadingDevices" class="loading loading-spinner loading-xs text-primary"></span>
           </div>
 
-          <!-- Search and filter toggle bar -->
-          <div class="space-y-2">
-            <div class="relative w-full">
+          <div class="flex items-center gap-2">
+            <div class="relative w-56">
               <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/50" />
               <input
-                v-model="searchCandidateText"
+                v-model="searchDeviceText"
                 type="text"
-                class="input input-xs input-bordered w-full pl-8 font-mono text-[11px]"
-                placeholder="Tìm theo Serial, DevEUI, ITEM-CODE..."
+                placeholder="Tìm Serial, DevEUI..."
+                class="input input-xs input-bordered w-full pl-8 font-mono text-xs"
+                @input="applyAvailableFilter"
               />
             </div>
-
-            <div class="flex items-center justify-between text-[11px] text-base-content/70">
-              <label class="cursor-pointer label py-0 px-0 gap-1.5">
-                <input
-                  v-model="filterOnlyBatchMatches"
-                  type="checkbox"
-                  class="checkbox checkbox-xs checkbox-primary"
-                />
-                <span class="label-text text-[11px]">Chỉ khớp ITEM-CODE của batch (<strong class="font-mono text-primary">{{ filterItemCode || 'Tất cả' }}</strong>)</span>
-              </label>
-              <span class="font-mono text-[10px] text-base-content/50">
-                Hiển thị {{ candidateDevices.length }} / {{ allRawCandidateDevices.length }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Candidates Table -->
-          <div class="overflow-y-auto max-h-[380px] border border-base-300 rounded-lg">
-            <table class="table table-zebra table-xs w-full">
-              <thead class="sticky top-0 bg-base-200 z-10 text-[11px] uppercase">
-                <tr>
-                  <th class="w-8">
-                    <input
-                      type="checkbox"
-                      class="checkbox checkbox-xs checkbox-primary"
-                      :checked="isAllCandidatesSelected"
-                      :disabled="candidateDevices.length === 0 || isTesting"
-                      @change="toggleSelectAllCandidates"
-                    />
-                  </th>
-                  <th>Serial / DevEUI</th>
-                  <th>ITEM-CODE</th>
-                  <th>FW Ver</th>
-                  <th class="text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="loadingDevices">
-                  <td colspan="5" class="text-center py-6 text-primary text-xs">
-                    <span class="loading loading-spinner loading-xs mr-2"></span>
-                    Đang tải danh sách thiết bị testing...
-                  </td>
-                </tr>
-                <tr v-else-if="candidateDevices.length === 0">
-                  <td colspan="5" class="text-center py-6 text-base-content/50 italic text-xs">
-                    {{ allRawCandidateDevices.length === 0 ? 'Chưa có thiết bị nào trong danh sách Testing Device.' : 'Không tìm thấy thiết bị nào khớp bộ lọc tìm kiếm.' }}
-                  </td>
-                </tr>
-                <tr v-for="dev in candidateDevices" :key="dev.id || dev.devEui || dev.serialNumber" class="hover">
-                  <td>
-                    <input
-                      type="checkbox"
-                      class="checkbox checkbox-xs checkbox-primary"
-                      :checked="isDeviceSelected(dev)"
-                      :disabled="isTesting || (!isDeviceSelected(dev) && selectedDevices.length >= maxAllowedDevices)"
-                      @change="toggleDeviceSelection(dev)"
-                    />
-                  </td>
-                  <td>
-                    <div class="font-mono font-bold text-xs text-primary">{{ dev.serialNumber || dev.serial_number || dev.registrationCode || dev.registration_code || dev.id }}</div>
-                    <div class="font-mono text-[10px] text-base-content/60">{{ dev.devEui || dev.dev_eui || '—' }}</div>
-                  </td>
-                  <td>
-                    <span class="badge badge-xs badge-outline font-mono">{{ dev.itemCode || dev.item_code || '—' }}</span>
-                  </td>
-                  <td>
-                    <span class="font-mono text-xs">{{ dev.longFw || dev.long_fw || dev.fwVersion || dev.fw_version || '—' }}</span>
-                  </td>
-                  <td class="text-right">
-                    <button
-                      v-if="!isDeviceSelected(dev)"
-                      class="btn btn-xs btn-ghost text-primary"
-                      :disabled="selectedDevices.length >= maxAllowedDevices || isTesting"
-                      @click="addDeviceToBatch(dev)"
-                    >
-                      + Thêm
-                    </button>
-                    <span v-else class="text-[10px] text-success font-semibold">Đã thêm</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="flex items-center justify-between text-xs text-base-content/70 pt-1">
-            <span>Tối đa cho phép: <strong class="text-base-content">{{ maxAllowedDevices }}</strong> thiết bị</span>
-            <span>Đã chọn: <strong class="text-primary">{{ selectedDevices.length }}</strong> thiết bị</span>
+            <button
+              class="btn btn-xs btn-primary gap-1"
+              :disabled="selectedAvailableRows.length === 0 || isTesting || selectedDevices.length >= maxAllowedDevices"
+              @click="addSelectedAvailableRowsToBatch"
+            >
+              + Thêm Vào Batch ({{ selectedAvailableRows.length }})
+            </button>
           </div>
         </div>
 
-    <!-- Step 3: BATCH TESTING (Full-width Stacked Below) -->
-    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-300">
-        <div class="flex items-center gap-2">
-          <Play class="w-4 h-4 text-primary" />
-          <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-            3. BATCH TESTING
-          </h4>
-          <span v-if="selectedBatchConfig" class="badge badge-sm badge-primary font-mono text-[11px]">
-            {{ selectedBatchConfig.batchCode || selectedBatchConfig.batch_code }}
-          </span>
-          <span v-else class="badge badge-sm badge-warning font-mono text-[11px]">
-            Chưa chọn Test Batch
-          </span>
-        </div>
-            <div class="flex items-center gap-1.5">
-              <button
-                v-if="requiresReferenceDevice"
-                class="btn btn-xs btn-outline btn-success gap-1"
-                :disabled="selectedDevices.length === 0 || isTesting"
-                @click="autoAssignReferenceDevices"
-              >
-                <Sparkles class="w-3 h-3" />
-                Tự Động Gán Thiết Bị Chuẩn
-              </button>
-              <button
-                class="btn btn-xs btn-ghost text-error"
-                :disabled="selectedDevices.length === 0 || isTesting"
-                @click="clearSelectedDevices"
-              >
-                Xóa Hết
-              </button>
-            </div>
-          </div>
-
-      <section class="space-y-3" aria-labelledby="running-batches-title">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h3 id="running-batches-title" class="font-semibold">Test batch đang chạy của bạn ({{ runningBatches.length }})</h3>
-          <button class="btn btn-sm min-h-11" :disabled="loadingRunningBatches" @click="loadRunningBatches">Làm mới danh sách</button>
-        </div>
-        <p v-if="runningBatchesError" role="alert" class="text-error">{{ runningBatchesError }}</p>
-        <p v-else-if="!hasLoadedRunningBatches" role="status">Đang tải test batch...</p>
-        <p v-else-if="!runningBatches.length">Bạn chưa có test batch nào đang chạy.</p>
-        <div v-if="runningBatches.length" class="flex flex-wrap items-end gap-3">
-          <label class="flex flex-col gap-1 flex-1 min-w-0">
-            <span class="text-sm">Chọn batch để xem thiết bị và đồng hồ</span>
-            <select class="select select-bordered min-h-11 w-full" :value="isTesting ? selectedBatchId : ''" @change="selectRunningBatch(($event.target as HTMLSelectElement).value)">
-              <option value="" disabled>Chọn test batch đang chạy</option>
-              <option v-for="batch in runningBatches" :key="batch.id" :value="batch.id">{{ batch.batch_code || batch.batchCode }} · {{ batch.batch_name || batch.batchName || batch.id }}</option>
-            </select>
-          </label>
-          <button v-if="isTesting" class="btn btn-error min-h-11" :disabled="cancellingBatch" @click="cancelSelectedBatch">{{ cancellingBatch ? 'Đang hủy...' : 'Hủy batch đang xem' }}</button>
-        </div>
-        <div class="flex items-center gap-2">
-          <button v-if="testFinished" class="btn btn-sm btn-primary min-h-11" @click="onBatchSelectChange">Bắt đầu lượt test mới</button>
-          <button v-if="isTesting || testFinished" class="btn btn-sm min-h-11" @click="prepareNewBatch">Chuẩn bị batch khác</button>
-        </div>
-      </section>
-
-          <div v-if="requiresReferenceDevice" class="p-2.5 bg-base-100/60 border border-base-300 rounded-lg text-xs text-base-content/80 flex items-start gap-2">
-            <Info class="w-4 h-4 text-info shrink-0 mt-0.5" />
-            <div>
-              <strong>Quy tắc ghép đôi chuẩn:</strong> Khi test cùng lúc nhiều thiết bị (VD: 5 thiết bị), hệ thống yêu cầu gán riêng biệt từng thiết bị chuẩn tương ứng để thu thập và đối chiếu giá trị đo độc lập theo thời gian thực.
-            </div>
-          </div>
-
-    <!-- Timer belongs to the selected batch monitor. -->
-    <div v-if="isTesting || testFinished" class="card bg-base-200/80 border border-primary/40 rounded-xl shadow-md p-4 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <!-- Timer Countdown -->
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 bg-base-100/90 px-3 py-1.5 rounded-lg border border-base-300">
-            <Timer class="w-5 h-5 text-warning animate-spin-slow" />
-            <div>
-              <div class="text-[10px] font-mono uppercase text-base-content/60">Đếm giờ Simulation Flow</div>
-              <div class="text-lg font-mono font-bold tracking-wider text-warning">
-                {{ formatCountdown(remainingSeconds) }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Duration & Elapsed -->
-          <div class="hidden sm:block text-xs font-mono text-base-content/70">
-            <div>Tổng thời lượng: <span class="font-bold text-base-content">{{ totalDurationSeconds }}s</span></div>
-            <div>Đã chạy: <span class="font-bold text-primary">{{ elapsedSeconds }}s</span></div>
-          </div>
-        </div>
-
-        <!-- Verdict Summary Badges & Server Timestamps -->
-        <div class="flex flex-wrap items-center gap-2">
-          <div v-if="batchStartedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
-            <span>Bắt đầu: {{ formatTimestamp(batchStartedAt) }}</span>
-          </div>
-          <div v-if="testFinished && batchFinishedAt" class="badge badge-ghost gap-1 font-mono text-[11px] py-2 px-2.5">
-            <span>Kết thúc: {{ formatTimestamp(batchFinishedAt) }}</span>
-          </div>
-          <div class="badge badge-success gap-1 font-mono text-xs py-2 px-2.5">
-            <CheckCircle2 class="w-3.5 h-3.5" />
-            PASS: {{ passCount }}/{{ selectedDevices.length }}
-          </div>
-          <div v-if="failCount > 0" class="badge badge-error gap-1 font-mono text-xs py-2 px-2.5">
-            <AlertCircle class="w-3.5 h-3.5" />
-            FAIL: {{ failCount }}/{{ selectedDevices.length }}
-          </div>
-          <a
-            v-if="testFinished"
-            class="badge badge-primary gap-1 font-mono text-xs py-2 px-2.5 cursor-pointer hover:badge-secondary transition-colors shadow-sm"
-            href="/plugins/device-traceability?tab=devices"
-            title="Mở xem dữ liệu đã test trong Device Traceability"
-          >
-            <span>Đã lưu vào Traceability (Xem ngay)</span>
-          </a>
+        <!-- Khung Tabulator 1 -->
+        <div class="overflow-hidden rounded-lg border border-base-300">
+          <div ref="availableTableRef" class="w-full text-xs min-h-[160px] max-h-[260px] overflow-auto"></div>
         </div>
       </div>
-      <div v-if="testFinished" class="w-full text-xs text-info bg-info/10 border border-info/30 rounded-lg p-2.5 flex items-center justify-between gap-2">
-        <span>Lượt test đã hoàn tất và kết quả đã lưu vào Device Traceability. Bạn có thể chọn lại batch để bắt đầu kiểm thử lượt mới cho các thiết bị khác.</span>
-        <button class="btn btn-xs btn-primary font-semibold" @click="onBatchSelectChange">Bắt đầu lượt mới</button>
+
+      <!-- 4. BẢNG TABULATOR 2: Thiết Bị Phục Vụ Chạy Test Batch -->
+      <div class="space-y-2 pt-2 border-t border-base-300/80">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wide text-primary">
+              2. Thiết Bị Phục Vụ Chạy Test Batch ({{ selectedDevices.length }} / {{ maxAllowedDevices }})
+            </span>
+            <span
+              v-if="selectedDevices.length >= maxAllowedDevices"
+              class="badge badge-xs badge-info font-mono font-bold"
+            >
+              ĐÃ ĐẠT GIỚI HẠN TỐI ĐA
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              v-if="requiresReferenceDevice"
+              class="btn btn-xs btn-outline btn-success gap-1"
+              :disabled="selectedDevices.length === 0 || isTesting"
+              @click="autoAssignReferenceDevices"
+            >
+              <Sparkles class="w-3 h-3" />
+              Tự Động Gán Chuẩn
+            </button>
+            <button
+              class="btn btn-xs btn-ghost text-error"
+              :disabled="selectedDevices.length === 0 || isTesting"
+              @click="clearBatchDevices"
+            >
+              <Trash2 class="w-3 h-3" />
+              Xóa Hết
+            </button>
+
+            <!-- Nút Bắt Đầu Test Batch Chính -->
+            <button
+              class="btn btn-xs btn-primary gap-1 px-3 font-bold"
+              :disabled="selectedDevices.length === 0 || isTesting || !selectedBatchConfig"
+              @click="startBatchTest"
+            >
+              <Play class="w-3 h-3 fill-current" />
+              {{ isTesting ? 'Đang Test...' : 'Bắt Đầu Test Batch' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Khung Tabulator 2 -->
+        <div class="overflow-hidden rounded-lg border border-base-300">
+          <div ref="batchTableRef" class="w-full text-xs min-h-[180px] max-h-[300px] overflow-auto"></div>
+        </div>
+      </div>
+
+      <!-- 5. Tiến Trình Testing Realtime (Hiển thị khi đang chạy hoặc vừa chạy xong) -->
+      <div v-if="isTesting || testFinished" class="bg-base-100/70 p-3 rounded-lg border border-base-300/80 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2 font-mono">
+            <Timer class="w-4 h-4 text-warning" />
+            <span>Còn lại: <b class="text-primary font-bold">{{ formattedRemaining }}</b></span>
+            <span>|</span>
+            <span>Đã chạy: <b class="text-base-content/80">{{ formattedElapsed }}</b></span>
+          </div>
+
+          <div class="flex items-center gap-2 font-mono text-xs">
+            <span v-if="testFinished" class="font-bold flex items-center gap-1">
+              Kết quả:
+              <span :class="batchVerdict === 'PASS' ? 'text-success' : 'text-error'">
+                {{ batchVerdict === 'PASS' ? 'ĐẠT (PASS)' : 'KHÔNG ĐẠT (FAIL)' }}
+              </span>
+            </span>
+            <span v-else class="text-info font-medium">
+              Bước: {{ currentStepIndex + 1 }}/{{ Math.max(1, flowSteps.length) }}
+            </span>
+          </div>
+        </div>
+
+        <progress
+          class="progress w-full h-2"
+          :class="testFinished ? (batchVerdict === 'PASS' ? 'progress-success' : 'progress-error') : 'progress-primary'"
+          :value="elapsedSeconds"
+          :max="Math.max(1, totalDurationSeconds)"
+        ></progress>
       </div>
     </div>
-
-          <!-- Mapped Devices Table -->
-          <div class="overflow-x-auto border border-base-300 rounded-lg">
-            <table class="table table-zebra table-xs w-full">
-              <thead class="bg-base-200 text-[11px] uppercase">
-                <tr>
-                  <th>#</th>
-                  <th>Thiết Bị Cần Test (DUT)</th>
-                  <th v-if="requiresReferenceDevice">Thiết Bị Chuẩn Đối Chiếu (Reference Device)</th>
-                  <th>Kết Quả Đối Chiếu</th>
-                  <th class="text-center">Số Gói</th>
-                  <th class="text-right">AVG_CYCLE</th>
-                  <th class="text-right">AVG_RSSI</th>
-                  <th class="text-right">AVG_SNR</th>
-                  <th>Trạng Thái</th>
-                  <th class="text-center">Bỏ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="selectedDevices.length === 0">
-                  <td :colspan="requiresReferenceDevice ? 10 : 9" class="text-center py-8 text-base-content/50 italic text-xs">
-                    Chưa có thiết bị nào trong Test Batch. Hãy chọn từ danh sách bên trên hoặc nhấn "+ Thêm".
-                  </td>
-                </tr>
-                <tr v-for="(item, idx) in selectedDevices" :key="item.device.id" class="hover text-xs">
-                  <td class="font-mono text-base-content/60">{{ idx + 1 }}</td>
-                  <!-- DUT -->
-                  <td>
-                    <div class="font-mono font-bold text-primary">{{ item.device.serialNumber || item.device.serial_number }}</div>
-                    <div class="font-mono text-[10px] text-base-content/60">{{ item.device.devEui || item.device.dev_eui }}</div>
-                    <div class="text-[10px] text-base-content/70">
-                      {{ item.device.itemCode }} ({{ item.device.fwVersion }})
-                    </div>
-                  </td>
-
-                  <!-- Reference Device Picker -->
-                  <td v-if="requiresReferenceDevice" class="min-w-[210px]">
-                    <div class="space-y-1">
-                      <select
-                        v-model="item.referenceDeviceId"
-                        class="select select-bordered select-xs w-full font-mono text-[11px] bg-base-100"
-                        :disabled="isTesting"
-                        @change="onReferenceDeviceChange(item)"
-                      >
-                        <option value="">-- Chọn thiết bị chuẩn --</option>
-                        <option v-if="goldenReferenceDevices.length === 0" value="" disabled>
-                          (Chưa có thiết bị chuẩn trong hệ thống)
-                        </option>
-                        <option
-                          v-for="refDev in goldenReferenceDevices"
-                          :key="refDev.id"
-                          :value="refDev.id"
-                        >
-                          {{ refDev.name }} ({{ refDev.serialNumber }})
-                        </option>
-                      </select>
-                      <div v-if="item.referenceDevice" class="flex items-center gap-1.5 text-[10px] font-mono text-success">
-                        <CheckCircle class="w-3 h-3" />
-                        <span>Mẫu chuẩn: {{ item.referenceDevice.calibratedDate || '2026-Q4' }}</span>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Comparison Live Result -->
-                  <td class="min-w-[170px]">
-                    <div v-if="item.liveComparison" class="space-y-0.5 text-[11px] font-mono">
-                      <div class="flex justify-between text-[10px] text-base-content/70 pb-0.5 border-b border-base-300/40">
-                        <span>Gói tin:</span>
-                        <span class="font-bold text-primary">{{ item.packetsCount ?? 0 }} gói</span>
-                      </div>
-                      <div v-if="item.liveComparison.dutTemp !== undefined || item.liveComparison.refTemp !== undefined" class="flex justify-between">
-                        <span class="text-base-content/60">Nhiệt độ (DUT / Ref):</span>
-                        <span :class="item.liveComparison.tempDeltaPass ? 'text-success' : 'text-error font-bold'">
-                          <template v-if="item.liveComparison.dutTemp !== undefined">{{ item.liveComparison.dutTemp }}°C</template>
-                          <template v-else>--</template>
-                          /
-                          <template v-if="item.liveComparison.refTemp !== undefined">{{ item.liveComparison.refTemp }}°C</template>
-                          <template v-else>--</template>
-                          <template v-if="item.liveComparison.tempDelta !== undefined"> (Δ {{ item.liveComparison.tempDelta }}°C)</template>
-                        </span>
-                      </div>
-                      <div v-if="item.liveComparison.dutHum !== undefined || item.liveComparison.refHum !== undefined" class="flex justify-between">
-                        <span class="text-base-content/60">Độ ẩm (DUT / Ref):</span>
-                        <span :class="item.liveComparison.humDeltaPass ? 'text-success' : 'text-error font-bold'">
-                          <template v-if="item.liveComparison.dutHum !== undefined">{{ item.liveComparison.dutHum }}%</template>
-                          <template v-else>--</template>
-                          /
-                          <template v-if="item.liveComparison.refHum !== undefined">{{ item.liveComparison.refHum }}%</template>
-                          <template v-else>--</template>
-                          <template v-if="item.liveComparison.humDelta !== undefined"> (Δ {{ item.liveComparison.humDelta }}%)</template>
-                        </span>
-                      </div>
-                      <div v-if="item.liveComparison.rssi !== undefined || item.liveComparison.snr !== undefined" class="flex justify-between text-[10px] text-base-content/50">
-                        <span>Chất lượng RF:</span>
-                        <span>{{ item.liveComparison.rssi !== undefined ? `${item.liveComparison.rssi} dBm` : '--' }} | {{ item.liveComparison.snr !== undefined ? `${item.liveComparison.snr} dB` : '--' }}</span>
-                      </div>
-                    </div>
-                    <div v-else class="space-y-0.5 text-[11px]">
-                      <div class="text-base-content/40 italic">
-                        {{ isTesting ? 'Đang đọc dữ liệu...' : 'Chờ bắt đầu test' }}
-                      </div>
-                      <div v-if="item.packetsCount !== undefined && item.packetsCount > 0" class="text-[10px] font-mono text-base-content/60">
-                        Đã nhận: <span class="font-bold text-primary">{{ item.packetsCount }} gói</span>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Số Gói Nhận Được -->
-                  <td class="text-center font-mono">
-                    <span class="badge badge-sm font-bold" :class="(item.packetsCount ?? 0) > 0 ? 'badge-primary' : 'badge-ghost text-base-content/50'">
-                      {{ item.packetsCount ?? 0 }}
-                    </span>
-                  </td>
-
-                  <!-- AVG_CYCLE -->
-                  <td class="text-right font-mono">
-                    <span v-if="item.avgCycle !== undefined" class="font-semibold text-primary">
-                      {{ item.avgCycle.toFixed(1) }} <span class="text-[10px] text-base-content/60 font-normal">phút</span>
-                    </span>
-                    <span v-else class="text-base-content/40">--</span>
-                  </td>
-
-                  <!-- AVG_RSSI -->
-                  <td class="text-right font-mono">
-                    <span v-if="item.avgRssi !== undefined" class="font-semibold text-base-content">
-                      {{ item.avgRssi.toFixed(1) }} <span class="text-[10px] text-base-content/60 font-normal">dBm</span>
-                    </span>
-                    <span v-else class="text-base-content/40">--</span>
-                  </td>
-
-                  <!-- AVG_SNR -->
-                  <td class="text-right font-mono">
-                    <span v-if="item.avgSnr !== undefined" class="font-semibold text-base-content">
-                      {{ item.avgSnr.toFixed(1) }} <span class="text-[10px] text-base-content/60 font-normal">dB</span>
-                    </span>
-                    <span v-else class="text-base-content/40">--</span>
-                  </td>
-
-                  <!-- Status -->
-                  <td>
-                    <span
-                      class="badge badge-xs font-mono font-bold"
-                      :class="getItemStatusClass(item.status)"
-                    >
-                      {{ item.status || 'PENDING' }}
-                    </span>
-                  </td>
-
-                  <!-- Remove Action -->
-                  <td class="text-center">
-                    <button
-                      class="btn btn-ghost btn-xs btn-circle text-error"
-                      :disabled="isTesting"
-                      @click="removeDeviceFromBatch(item.device.id)"
-                    >
-                      <Trash2 class="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Section 3 Footer Action Bar: Start Test Batch & Summary -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-base-300">
-            <div class="flex items-center gap-2 text-xs text-base-content/70">
-              <span>Đã chọn: <strong class="text-primary">{{ selectedDevices.length }}</strong> thiết bị</span>
-              <span v-if="selectedBatchConfig">| Giới hạn tối đa: <strong class="text-base-content">{{ maxAllowedDevices }}</strong></span>
-              <span v-if="!selectedBatchId" class="badge badge-warning badge-xs font-semibold">Chưa chọn Test Batch</span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button
-                v-if="isTesting"
-                class="btn btn-sm btn-error gap-1.5 shadow-sm font-semibold"
-                @click="cancelSelectedBatch"
-              >
-                <Square class="w-4 h-4" />
-                Dừng Kiểm Thử
-              </button>
-              <button
-                v-else
-                class="btn btn-sm btn-primary gap-1.5 shadow-md px-6 font-bold"
-                :disabled="!selectedBatchId || selectedDevices.length === 0 || isTesting"
-                :title="!selectedBatchId ? 'Vui lòng chọn Test Batch trước khi bấm bắt đầu' : (selectedDevices.length === 0 ? 'Vui lòng thêm ít nhất 1 thiết bị test' : 'Bắt đầu kiểm thử')"
-                @click="startBatchTest"
-              >
-                <Play class="w-4 h-4" />
-                Bắt Đầu Test Batch
-              </button>
-            </div>
-          </div>
-        </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { TabulatorFull as Tabulator } from 'tabulator-tables';
+import 'tabulator-tables/dist/css/tabulator.min.css';
 import {
   Boxes,
-  FolderPlus,
   Play,
   Square,
   Timer,
   Cpu,
-  CheckCircle2,
-  AlertCircle,
-  Filter,
-  RefreshCw,
   Layers,
-  GitCompare,
   Sparkles,
-  Info,
-  CheckCircle,
   Trash2,
   Search,
+  RotateCcw,
+  AlertCircle,
 } from 'lucide-vue-next';
-import { httpClient } from '@/api/httpClient';
+import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
 import { useAuthStore } from '@/stores/auth';
 
@@ -572,703 +278,639 @@ const emit = defineEmits<{
   (e: 'switch-tab', tab: string): void;
 }>();
 
-const authStore = useAuthStore();
-
-const currentUsername = computed(() => {
-  return authStore.user?.username || '';
-});
-
-const isAdmin = computed(() => {
-  return authStore.isAdmin;
-});
-
 const props = defineProps<{
   initialBatchPayload?: any;
 }>();
 
-// State filters
+const authStore = useAuthStore();
+const currentUsername = computed(() => authStore.user?.username || '');
+
+// ============================================================================
+// STATE & SELECTIONS
+// ============================================================================
+const loadingSos = ref(false);
+const loadingDevices = ref(false);
+const sosList = ref<any[]>([]);
+
+const selectedSoNumber = ref('');
+const selectedBatchConfig = ref<any>(null);
 const selectedBatchId = ref('');
 const filterItemCode = ref('');
 const filterFwVersion = ref('');
-
-const loadingDevices = ref(false);
-const savedBatches = ref<any[]>([]);
-const allRawCandidateDevices = ref<any[]>([]);
-const searchCandidateText = ref('');
-const filterOnlyBatchMatches = ref(false);
-
-const candidateDevices = computed(() => {
-  let list = allRawCandidateDevices.value;
-  if (filterOnlyBatchMatches.value) {
-    if (filterItemCode.value) {
-      list = list.filter((d: any) => {
-        const item = (d.itemCode || d.item_code || '').toUpperCase();
-        return item.includes(filterItemCode.value.toUpperCase());
-      });
-    }
-    if (filterFwVersion.value) {
-      list = list.filter((d: any) => {
-        const fw = (d.longFw || d.long_fw || d.fwVersion || d.fw_version || '').replace(/^v/i, '');
-        const targetFw = filterFwVersion.value.replace(/^v/i, '');
-        return fw.includes(targetFw);
-      });
-    }
-  }
-  if (searchCandidateText.value.trim()) {
-    const q = searchCandidateText.value.trim().toLowerCase();
-    list = list.filter((d: any) => {
-      const s = (d.serialNumber || d.serial_number || d.registrationCode || d.registration_code || d.id || '').toLowerCase();
-      const eui = (d.devEui || d.dev_eui || '').toLowerCase();
-      const itm = (d.itemCode || d.item_code || '').toLowerCase();
-      return s.includes(q) || eui.includes(q) || itm.includes(q);
-    });
-  }
-  return list;
-});
-
-// Selected DUTs & Mappings
-interface BatchDeviceItem {
-  device: any;
-  referenceDeviceId: string;
-  referenceDevice?: any;
-  status: 'PENDING' | 'RUNNING' | 'PASS' | 'FAIL';
-  packetsCount?: number;
-  avgCycle?: number;
-  avgRssi?: number;
-  avgSnr?: number;
-  liveComparison?: {
-    dutTemp?: number;
-    refTemp?: number;
-    tempDelta?: number;
-    tempDeltaPass?: boolean;
-    dutHum?: number;
-    refHum?: number;
-    humDelta?: number;
-    humDeltaPass?: boolean;
-    rssi?: number;
-    snr?: number;
-  };
-}
-
-const selectedDevices = ref<BatchDeviceItem[]>([]);
 const maxAllowedDevices = ref(5);
 
-// Golden Reference Devices pool (loaded dynamically from API)
+// Available Devices in SO
+const availableDevices = ref<any[]>([]);
+const searchDeviceText = ref('');
+const selectedAvailableRows = ref<any[]>([]);
+
+// Selected Batch Devices
+const selectedDevices = ref<any[]>([]);
 const goldenReferenceDevices = ref<any[]>([]);
 
-function computeMetricsFromPackets(packets: any[]) {
-  if (!Array.isArray(packets) || packets.length === 0) return {};
-  const validPackets = [...packets].filter((p) => p && p.created_at);
-  validPackets.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-  let avgCycle: number | undefined = undefined;
-  if (validPackets.length >= 2) {
-    let totalDiffMs = 0;
-    for (let i = 1; i < validPackets.length; i++) {
-      const prev = new Date(validPackets[i - 1].created_at).getTime();
-      const curr = new Date(validPackets[i].created_at).getTime();
-      totalDiffMs += Math.max(0, curr - prev);
-    }
-    const avgMs = totalDiffMs / (validPackets.length - 1);
-    avgCycle = Number((avgMs / 60000).toFixed(1));
-  }
-
-  const rssiVals = packets.map((p) => parseNumericField(p.rssi)).filter((v): v is number => v !== undefined);
-  const avgRssi = rssiVals.length > 0 ? Number((rssiVals.reduce((a, b) => a + b, 0) / rssiVals.length).toFixed(1)) : undefined;
-
-  const snrVals = packets.map((p) => parseNumericField(p.snr)).filter((v): v is number => v !== undefined);
-  const avgSnr = snrVals.length > 0 ? Number((snrVals.reduce((a, b) => a + b, 0) / snrVals.length).toFixed(1)) : undefined;
-
-  return { avgCycle, avgRssi, avgSnr };
-}
-
-function parseNumericField(val: any): number | undefined {
-  if (val === null || val === undefined || val === '') return undefined;
-  const n = Number(val);
-  return Number.isFinite(n) ? n : undefined;
-}
-
-function buildLiveComparison(comp: any) {
-  if (!comp || typeof comp !== 'object') return undefined;
-  const dutTemp = parseNumericField(comp.dutTemp ?? comp.dut_temp);
-  const refTemp = parseNumericField(comp.refTemp ?? comp.ref_temp);
-  const tempDelta = parseNumericField(comp.tempDelta ?? comp.temp_delta);
-  const dutHum = parseNumericField(comp.dutHum ?? comp.dut_hum);
-  const refHum = parseNumericField(comp.refHum ?? comp.ref_hum);
-  const humDelta = parseNumericField(comp.humDelta ?? comp.hum_delta);
-  const rssi = parseNumericField(comp.rssi);
-  const snr = parseNumericField(comp.snr);
-
-  const hasAnyData =
-    dutTemp !== undefined ||
-    refTemp !== undefined ||
-    dutHum !== undefined ||
-    refHum !== undefined ||
-    rssi !== undefined ||
-    snr !== undefined;
-
-  if (!hasAnyData) return undefined;
-
-  return {
-    dutTemp,
-    refTemp,
-    tempDelta,
-    tempDeltaPass: comp.tempDeltaPass ?? comp.temp_pass ?? (comp.tolerance_pass !== false),
-    dutHum,
-    refHum,
-    humDelta,
-    humDeltaPass: comp.humDeltaPass ?? comp.hum_pass ?? true,
-    rssi,
-    snr,
-  };
-}
-
+// Running Batches
 const runningBatches = ref<any[]>([]);
-const loadingRunningBatches = ref(false);
-const hasLoadedRunningBatches = ref(false);
-const runningBatchesError = ref('');
 const cancellingBatch = ref(false);
-let runningBatchesInterval: ReturnType<typeof setInterval>;
 
-async function loadRunningBatches() {
-  if (loadingRunningBatches.value) return;
-  loadingRunningBatches.value = true;
-  try {
-    const res: any = await httpClient.get('/plugins/testing/test-batches/running');
-    const data = res?.data ?? res;
-    runningBatches.value = Array.isArray(data) ? data : [];
-    hasLoadedRunningBatches.value = true;
-    runningBatchesError.value = '';
-  } catch {
-    runningBatchesError.value = 'Không tải được batch đang chạy. Bấm Làm mới danh sách để thử lại.';
-  } finally {
-    loadingRunningBatches.value = false;
-  }
-}
-
-function prepareNewBatch() {
-  clearInterval(timerInterval);
-  clearInterval(simulationInterval);
-  timerInterval = null;
-  simulationInterval = null;
-  selectedBatchId.value = '';
-  selectedDevices.value = [];
-  isTesting.value = false;
-  testFinished.value = false;
-  batchStartedAt.value = '';
-  batchFinishedAt.value = '';
-  batchVerdict.value = '';
-  elapsedSeconds.value = 0;
-  currentStepIndex.value = 0;
-}
-
-function selectRunningBatch(id: string) {
-  if (!id) return;
-  prepareNewBatch();
-  selectedBatchId.value = id;
-  if (selectedBatchConfig.value) onBatchSelectChange();
-  else checkAndSyncBatchStatus();
-}
-
-async function cancelSelectedBatch() {
-  const id = selectedBatchId.value;
-  if (!id || !window.confirm('Hủy batch đang xem? Các batch khác vẫn tiếp tục chạy.')) return;
-  cancellingBatch.value = true;
-  try {
-    await httpClient.post(`/plugins/testing/test-batches/${id}/cancel`);
-    if (selectedBatchId.value === id) prepareNewBatch();
-    await loadRunningBatches();
-    cyberToast.success('Đã hủy test batch.');
-  } catch (err: any) {
-    cyberToast.error(err?.response?.data?.message || 'Không thể hủy test batch.');
-  } finally {
-    cancellingBatch.value = false;
-  }
-}
-
-// Testing Execution & Timer State
+// Test Execution State
 const isTesting = ref(false);
 const testFinished = ref(false);
 const totalDurationSeconds = ref(300);
 const remainingSeconds = ref(300);
 const elapsedSeconds = ref(0);
-let timerInterval: any = null;
-let simulationInterval: any = null;
-
-const currentFlowName = ref('');
+const batchStartedAt = ref('');
+const batchFinishedAt = ref('');
+const batchVerdict = ref('');
 const flowSteps = ref<string[]>([]);
 const currentStepIndex = ref(0);
 
-const batchStartedAt = ref<string>('');
-const batchFinishedAt = ref<string>('');
-const batchVerdict = ref<string>('');
+let timerInterval: any = null;
+let simulationInterval: any = null;
+let runningBatchesInterval: any = null;
 
-function formatTimestamp(ts?: string): string {
-  if (!ts) return '';
-  try {
-    const d = new Date(ts);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  } catch {
-    return ts;
-  }
-}
+// Tabulator Instance Refs
+const availableTableRef = ref<HTMLDivElement | null>(null);
+let availableTabulator: Tabulator | null = null;
 
-const currentStepName = computed(() => {
-  return flowSteps.value[currentStepIndex.value] || 'Hoàn tất kiểm thử';
-});
+const batchTableRef = ref<HTMLDivElement | null>(null);
+let batchTabulator: Tabulator | null = null;
 
-const progressPercent = computed(() => {
-  if (totalDurationSeconds.value <= 0) return 100;
-  return Math.min(100, Math.round((elapsedSeconds.value / totalDurationSeconds.value) * 100));
-});
-
-const passCount = computed(() => selectedDevices.value.filter((d) => d.status === 'PASS').length);
-const failCount = computed(() => selectedDevices.value.filter((d) => d.status === 'FAIL').length);
-
-const selectedBatchConfig = computed(() => {
-  return savedBatches.value.find((b) => b.id === selectedBatchId.value || b.batchCode === selectedBatchId.value);
+// ============================================================================
+// COMPUTED VALUES
+// ============================================================================
+const activeBatchDisplayName = computed(() => {
+  if (!selectedSoNumber.value) return 'Vui lòng chọn SO_NUMBER trước';
+  if (!selectedBatchConfig.value) return 'Chưa gán Test Batch ở plugin SO TEST BATCH';
+  const code = selectedBatchConfig.value.batchCode || selectedBatchConfig.value.code || '';
+  const name = selectedBatchConfig.value.batchName || selectedBatchConfig.value.name || 'Test Batch';
+  return `[${code}] ${name}`;
 });
 
 const requiresReferenceDevice = computed(() => {
-  const cfg = selectedBatchConfig.value;
-  if (!cfg) return true;
-  if (cfg.requires_reference_device === false || cfg.requiresReferenceDevice === false) {
-    return false;
-  }
-  const flow = cfg.simulation_flow || cfg.simulationFlow;
-  if (flow) {
-    const blocks = Array.isArray(flow.flowBlocks)
-      ? flow.flowBlocks
-      : (Array.isArray(flow.blocks) ? flow.blocks : (Array.isArray(flow) ? flow : []));
-    if (blocks.length > 0) {
-      return blocks.some((b: any) =>
-        (b.targetDevice || b.target) === 'REF' ||
-        b.type?.includes('ref') || b.type?.includes('compare') ||
-        b.name?.toLowerCase().includes('chuẩn') || b.name?.toLowerCase().includes('đối chiếu')
-      );
-    }
-  }
-  return true;
+  return selectedBatchConfig.value?.requiresReferenceDevice === true ||
+    selectedBatchConfig.value?.simulationFlow?.requiresGoldenReference === true;
 });
 
-// Candidate selection helpers
-const isAllCandidatesSelected = computed(() => {
-  if (candidateDevices.value.length === 0) return false;
-  return candidateDevices.value.every((d) => isDeviceSelected(d));
+const formattedRemaining = computed(() => {
+  const m = Math.floor(remainingSeconds.value / 60);
+  const s = remainingSeconds.value % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 });
 
+const formattedElapsed = computed(() => {
+  const m = Math.floor(elapsedSeconds.value / 60);
+  const s = elapsedSeconds.value % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+});
+
+// ============================================================================
+// HELPERS
+// ============================================================================
 function getDeviceIdentifier(dev: any): string {
   if (!dev) return '';
-  return dev.id || dev.devEui || dev.dev_eui || dev.serialNumber || dev.serial_number || dev.registrationCode || dev.registration_code || '';
+  return dev.serialNumber || dev.serial_number || dev.devEui || dev.dev_eui || dev.id || '';
 }
 
-function isDeviceSelected(device: any): boolean {
-  const targetId = getDeviceIdentifier(device);
-  return selectedDevices.value.some((item) => getDeviceIdentifier(item.device) === targetId);
+function isDeviceSelected(dev: any): boolean {
+  const id = getDeviceIdentifier(dev);
+  return selectedDevices.value.some((s) => getDeviceIdentifier(s.device || s) === id);
 }
 
-function toggleSelectAllCandidates(e: Event) {
-  const checked = (e.target as HTMLInputElement).checked;
-  if (checked) {
-    if (isTesting.value) {
-      cyberToast.warning('Batch đang chạy kiểm thử!');
-      (e.target as HTMLInputElement).checked = false;
-      return;
+// ============================================================================
+// 1. LOAD SOs WITH TEST BATCHES
+// ============================================================================
+async function loadSosWithBatches() {
+  loadingSos.value = true;
+  try {
+    let res: any;
+    try {
+      res = await httpClient.get('/plugins/so-test-batch/sos');
+    } catch {
+      res = await httpClient.get('/plugins/testing/so-test-batch/sos');
     }
-    candidateDevices.value.forEach((d) => {
-      if (!isDeviceSelected(d) && selectedDevices.value.length < maxAllowedDevices.value) {
-        addDeviceToBatch(d);
-      }
-    });
-  } else {
-    selectedDevices.value = [];
-  }
-}
+    const data = res?.data || res;
+    const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+    sosList.value = items;
 
-function toggleDeviceSelection(device: any) {
-  if (isDeviceSelected(device)) {
-    removeDeviceFromBatch(getDeviceIdentifier(device));
-  } else {
-    addDeviceToBatch(device);
-  }
-}
-
-function addDeviceToBatch(device: any) {
-  if (isTesting.value) {
-    cyberToast.warning('Batch đang chạy kiểm thử!');
-    return;
-  }
-  if (selectedDevices.value.length >= maxAllowedDevices.value) {
-    cyberToast.warning(`Batch này chỉ cho phép tối đa ${maxAllowedDevices.value} thiết bị cùng lúc!`);
-    return;
-  }
-  // Auto pair with an available golden reference
-  const usedRefIds = new Set(selectedDevices.value.map((s) => s.referenceDeviceId));
-  const availableRef = goldenReferenceDevices.value.find((r) => !usedRefIds.has(r.id));
-
-  selectedDevices.value.push({
-    device,
-    referenceDeviceId: availableRef?.id || '',
-    referenceDevice: availableRef,
-    status: 'PENDING',
-  });
-  const devLabel = device.serialNumber || device.serial_number || device.devEui || device.dev_eui || 'thiết bị';
-  cyberToast.success(`Đã thêm ${devLabel} vào batch`);
-}
-
-function removeDeviceFromBatch(deviceId: string) {
-  selectedDevices.value = selectedDevices.value.filter((item) => getDeviceIdentifier(item.device) !== deviceId);
-}
-
-function clearSelectedDevices() {
-  selectedDevices.value = [];
-}
-
-function onReferenceDeviceChange(item: BatchDeviceItem) {
-  item.referenceDevice = goldenReferenceDevices.value.find((r) => r.id === item.referenceDeviceId);
-}
-
-function autoAssignReferenceDevices() {
-  if (goldenReferenceDevices.value.length === 0) {
-    cyberToast.warning('Chưa có thiết bị chuẩn nào được thiết lập trong hệ thống!');
-    return;
-  }
-  const availableRefs = [...goldenReferenceDevices.value];
-  selectedDevices.value.forEach((item, idx) => {
-    const refDev = availableRefs[idx % availableRefs.length];
-    if (refDev) {
-      item.referenceDeviceId = refDev.id;
-      item.referenceDevice = refDev;
-    }
-  });
-  cyberToast.success(`Đã tự động gán thiết bị chuẩn cho ${selectedDevices.value.length} thiết bị test`);
-}
-
-function onBatchSelectChange() {
-  if (selectedBatchConfig.value) {
-    const b = selectedBatchConfig.value;
-    filterItemCode.value = b.itemCode || b.item_code || '';
-    filterFwVersion.value = b.longFw || b.long_fw || b.fwVersion || b.fw_version || '';
-    maxAllowedDevices.value = b.maxDevices || b.max_devices || 5;
-    totalDurationSeconds.value = b.flowDurationSeconds || b.flow_duration_seconds || 300;
-    remainingSeconds.value = totalDurationSeconds.value;
-    selectedDevices.value = [];
-
-    // Dynamically bind flow information
-    const flow = b.simulationFlow || b.simulation_flow;
-    if (flow) {
-      currentFlowName.value = flow.profileName || flow.name || flow.simuId || b.batchName || 'Kịch bản kiểm thử';
-      if (Array.isArray(flow.flowBlocks) && flow.flowBlocks.length > 0) {
-        flowSteps.value = flow.flowBlocks.map((blk: any) => blk.name || blk.type);
-      } else if (Array.isArray(flow.blocks) && flow.blocks.length > 0) {
-        flowSteps.value = flow.blocks.map((blk: any) => blk.name || blk.type);
-      } else if (Array.isArray(flow.steps) && flow.steps.length > 0) {
-        flowSteps.value = flow.steps;
+    // Auto-select if initial payload provided or only 1 SO exists
+    if (props.initialBatchPayload?.soNumber) {
+      selectedSoNumber.value = props.initialBatchPayload.soNumber;
+      onSoChange();
+    } else if (!selectedSoNumber.value && items.length > 0) {
+      // Find first SO that has batches
+      const withBatch = items.find((s: any) => Array.isArray(s.testBatches) && s.testBatches.length > 0);
+      if (withBatch) {
+        selectedSoNumber.value = withBatch.soNumber;
+        onSoChange();
       } else {
-        flowSteps.value = [
-          'Khởi tạo RF & Modulation Parameters',
-          'OTAA Join Request',
-          'Chu kỳ Uplink Telemetry',
-          'Đối chiếu tiêu chuẩn & Xuất kết quả',
-        ];
+        selectedSoNumber.value = items[0].soNumber;
+        onSoChange();
       }
-    } else {
-      currentFlowName.value = b.batchName || 'Kịch bản kiểm thử';
-      flowSteps.value = [
-        'Khởi tạo RF & Modulation Parameters',
-        'OTAA Join Request',
-        'Chu kỳ Uplink Telemetry',
-        'Đối chiếu tiêu chuẩn & Xuất kết quả',
-      ];
-    }
-
-    loadReferenceDevices();
-    loadAvailableDevices();
-    checkAndSyncBatchStatus();
-  }
-}
-
-async function checkAndSyncBatchStatus() {
-  const id = selectedBatchId.value;
-  if (!id) return;
-  try {
-    const res: any = await httpClient.get(`/plugins/testing/test-batches/${id}/status`);
-    if (selectedBatchId.value !== id) return;
-    const statusData = res?.data || res;
-    if (!statusData) return;
-
-    if (statusData.startedAt) batchStartedAt.value = statusData.startedAt;
-    if (statusData.finishedAt) batchFinishedAt.value = statusData.finishedAt;
-    if (statusData.verdict) batchVerdict.value = statusData.verdict;
-
-    if (statusData.status === 'RUNNING') {
-      isTesting.value = true;
-      testFinished.value = false;
-      if (typeof statusData.flowDurationSeconds === 'number') {
-        totalDurationSeconds.value = statusData.flowDurationSeconds;
-      }
-      if (typeof statusData.elapsedSeconds === 'number') {
-        elapsedSeconds.value = statusData.elapsedSeconds;
-      }
-      if (typeof statusData.remainingSeconds === 'number') {
-        remainingSeconds.value = statusData.remainingSeconds;
-      }
-
-      if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
-        selectedDevices.value = statusData.devices.map((d: any) => {
-          const metrics = computeMetricsFromPackets(d.dutPackets || d.dut_packets || d.comparisonResult?.dut_packets || []);
-          return {
-            device: {
-              id: d.id || d.serialNumber,
-              serialNumber: d.serialNumber,
-              devEui: d.devEui,
-              itemCode: filterItemCode.value,
-              fwVersion: filterFwVersion.value,
-            },
-            referenceDeviceId: d.referenceSerialNumber || d.referenceDeviceId || '',
-            referenceDevice: {
-              id: d.referenceSerialNumber || d.referenceDeviceId,
-              serialNumber: d.referenceSerialNumber,
-              name: d.referenceDeviceName || `Thiết bị chuẩn ${d.referenceSerialNumber || ''}`,
-            },
-            status: d.verdict || d.status || 'RUNNING',
-            packetsCount: d.packetsReceived != null ? d.packetsReceived : (d.packets_received ?? d.dutPackets?.length ?? 0),
-            avgCycle: parseNumericField(d.avgCycle ?? d.avg_cycle ?? d.comparisonResult?.avgCycle ?? d.comparisonResult?.avg_cycle ?? metrics.avgCycle),
-            avgRssi: parseNumericField(d.avgRssi ?? d.avg_rssi ?? d.comparisonResult?.avgRssi ?? d.comparisonResult?.avg_rssi ?? metrics.avgRssi),
-            avgSnr: parseNumericField(d.avgSnr ?? d.avg_snr ?? d.comparisonResult?.avgSnr ?? d.comparisonResult?.avg_snr ?? metrics.avgSnr),
-            liveComparison: buildLiveComparison(d.comparisonResult),
-          };
-        });
-      }
-
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        elapsedSeconds.value++;
-        remainingSeconds.value = Math.max(0, totalDurationSeconds.value - elapsedSeconds.value);
-        if (flowSteps.value.length > 0 && totalDurationSeconds.value > 0) {
-          const stepDuration = totalDurationSeconds.value / flowSteps.value.length;
-          currentStepIndex.value = Math.min(
-            flowSteps.value.length - 1,
-            Math.floor(elapsedSeconds.value / Math.max(1, stepDuration))
-          );
-        }
-        if (remainingSeconds.value <= 0) pollBatchStatus();
-      }, 1000);
-
-      clearInterval(simulationInterval);
-      simulationInterval = setInterval(() => {
-        pollBatchStatus();
-      }, 3000);
-    } else {
-      // Completed, ready, or stopped batch: start fresh and do NOT restore old tested devices
-      clearInterval(timerInterval);
-      clearInterval(simulationInterval);
-      timerInterval = null;
-      simulationInterval = null;
-      isTesting.value = false;
-      testFinished.value = false;
-      selectedDevices.value = [];
-      elapsedSeconds.value = 0;
-      remainingSeconds.value = totalDurationSeconds.value;
-      batchStartedAt.value = '';
-      batchFinishedAt.value = '';
-      batchVerdict.value = '';
-      currentStepIndex.value = 0;
     }
   } catch (err: any) {
-    console.debug('[DeviceTestBatchPanel] Error checking batch status:', err.message);
+    console.warn('[DeviceTestBatchPanel] Error loading SOs:', err.message);
+  } finally {
+    loadingSos.value = false;
   }
 }
 
-async function loadSavedBatches() {
-  try {
-    const res: any = await httpClient.get('/plugins/testing/test-batches');
-    const items = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
-    savedBatches.value = Array.isArray(items) ? items : [];
-  } catch (err: any) {
-    console.debug('[DeviceTestBatchPanel] Error loading batches from API:', err.message);
-    savedBatches.value = [];
+// ============================================================================
+// 2. ON SO CHANGE: TỰ ĐỘNG MAP TEST BATCH & LOAD DEVICES
+// ============================================================================
+async function onSoChange() {
+  if (!selectedSoNumber.value) {
+    selectedBatchConfig.value = null;
+    selectedBatchId.value = '';
+    filterItemCode.value = '';
+    filterFwVersion.value = '';
+    availableDevices.value = [];
+    selectedDevices.value = [];
+    updateTabulatorData();
+    return;
   }
 
-  // Tự động lựa chọn cấu hình FW_VERSION và ITEM_CODE theo Test Batch
-  if (selectedBatchId.value) {
-    onBatchSelectChange();
-  } else if (savedBatches.value.length > 0) {
-    selectedBatchId.value = savedBatches.value[0].id || savedBatches.value[0].batchCode;
-    onBatchSelectChange();
+  const so = sosList.value.find((s) => (s.soNumber || '').trim() === selectedSoNumber.value.trim());
+  const batches = Array.isArray(so?.testBatches) ? so.testBatches : [];
+
+  if (batches.length > 0) {
+    const b = batches[0];
+    selectedBatchConfig.value = b;
+    selectedBatchId.value = b.batchId || b.id || '';
+    filterItemCode.value = b.itemCode || '';
+    filterFwVersion.value = b.fwVersion || '';
+    maxAllowedDevices.value = b.deviceCount || b.maxDevices || 5;
+    if (b.flowDurationSeconds) {
+      totalDurationSeconds.value = b.flowDurationSeconds;
+      remainingSeconds.value = b.flowDurationSeconds;
+    }
+    // Fetch full batch details if available
+    fetchBatchDetail(selectedBatchId.value);
+  } else {
+    selectedBatchConfig.value = null;
+    selectedBatchId.value = '';
+    filterItemCode.value = '';
+    filterFwVersion.value = '';
+    maxAllowedDevices.value = 5;
   }
+
+  // Load candidate devices for this SO
+  await loadAvailableDevicesForSo(selectedSoNumber.value);
 }
 
-async function loadReferenceDevices() {
+async function fetchBatchDetail(batchId: string) {
+  if (!batchId) return;
   try {
-    const res: any = await httpClient.get('/plugins/testing/test-batches/reference-devices', {
-      params: { itemCode: filterItemCode.value || undefined },
-    });
-    const items = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
-    if (Array.isArray(items) && items.length > 0) {
-      goldenReferenceDevices.value = items.map((r: any) => ({
-        id: r.id || r.serialNumber || r.serial_number,
-        name: r.name || `Thiết bị chuẩn ${r.serialNumber || r.serial_number || ''}`,
-        serialNumber: r.serialNumber || r.serial_number || '',
-        devEui: r.devEui || r.dev_eui || '',
-        calibratedDate: r.calibratedAt || r.calibrated_at || '',
-        baseTemp: r.nominalValues?.temperature ?? r.baseTemp ?? 25.0,
-        baseHum: r.nominalValues?.humidity ?? r.baseHum ?? 50.0,
-      }));
-    } else {
-      goldenReferenceDevices.value = [];
+    const res: any = await httpClient.get(`/plugins/testing/test-batches/${batchId}`);
+    const data = res?.data || res;
+    if (data) {
+      selectedBatchConfig.value = { ...selectedBatchConfig.value, ...data };
+      if (data.maxDevices) maxAllowedDevices.value = data.maxDevices;
+      if (data.flowDurationSeconds) {
+        totalDurationSeconds.value = data.flowDurationSeconds;
+        remainingSeconds.value = data.flowDurationSeconds;
+      }
+      if (Array.isArray(data.simulationFlow?.steps)) {
+        flowSteps.value = data.simulationFlow.steps.map((st: any) => st.name || st.title || 'Step');
+      }
     }
   } catch (err: any) {
-    console.debug('[DeviceTestBatchPanel] Error loading reference devices from API:', err.message);
-    goldenReferenceDevices.value = [];
+    console.debug('[DeviceTestBatchPanel] Error fetching full batch detail:', err.message);
   }
 }
 
-async function loadAvailableDevices() {
+// ============================================================================
+// 3. LOAD DEVICES IN SO
+// ============================================================================
+async function loadAvailableDevicesForSo(soNumber: string) {
+  if (!soNumber) {
+    availableDevices.value = [];
+    updateTabulatorData();
+    return;
+  }
+
   loadingDevices.value = true;
   try {
-    let devices: any[] = [];
-    // 1. Try dedicated endpoint first (queries v_list_device_testing / device_test_registrations)
-    try {
-      const res: any = await httpClient.get('/plugins/testing/test-batches/available-devices', {
-        params: {
-          itemCode: filterItemCode.value || undefined,
-          fwVersion: filterFwVersion.value || undefined,
-          user: currentUsername.value || undefined,
-          role: isAdmin.value ? 'ADMIN' : 'TESTER',
-          isAdmin: isAdmin.value,
-          limit: 100,
-        },
-      });
-      const raw1 = res?.data;
-      devices = Array.isArray(raw1?.items) ? raw1.items : (Array.isArray(raw1?.data) ? raw1.data : (Array.isArray(raw1) ? raw1 : []));
-    } catch {}
+    const res: any = await httpClient.get('/plugins/testing/devices', {
+      params: {
+        soNumber: soNumber.trim(),
+        limit: 200,
+      },
+    });
 
-    // 2. Query device-registrations with user credentials if empty
-    if (!Array.isArray(devices) || devices.length === 0) {
-      try {
-        const res2: any = await httpClient.get('/plugins/testing/device-registrations', {
-          params: {
-            itemCode: filterItemCode.value || undefined,
-            user: currentUsername.value || undefined,
-            role: isAdmin.value ? 'ADMIN' : 'TESTER',
-            isAdmin: isAdmin.value,
-            limit: 100,
-          },
-        });
-        const raw2 = res2?.data;
-        devices = Array.isArray(raw2?.items) ? raw2.items : (Array.isArray(raw2?.data) ? raw2.data : (Array.isArray(raw2) ? raw2 : []));
-      } catch {}
-    }
+    const rawList = res?.data?.items || res?.data || [];
+    availableDevices.value = (Array.isArray(rawList) ? rawList : []).map((d: any) => ({
+      id: d.id,
+      serialNumber: d.serialNumber || d.serial_number || d.networkId || d.network_id || d.id,
+      devEui: d.networkId || d.network_id || d.devEui || d.dev_eui || '—',
+      itemCode: d.itemCode || d.item_code || filterItemCode.value || '—',
+      fwVersion: d.fwVersion || d.fw_version || filterFwVersion.value || '—',
+      status: d.status || 'READY',
+      createdAt: d.createdAt || d.created_at || '',
+      raw: d,
+    }));
 
-    allRawCandidateDevices.value = devices;
+    selectedAvailableRows.value = [];
+    updateTabulatorData();
   } catch (err: any) {
-    console.debug('[DeviceTestBatchPanel] Error loading available devices:', err.message);
-    allRawCandidateDevices.value = [];
+    console.warn('[DeviceTestBatchPanel] Error loading devices for SO:', err.message);
+    availableDevices.value = [];
+    updateTabulatorData();
   } finally {
     loadingDevices.value = false;
   }
 }
 
-// Timer & Simulation Execution
-async function startBatchTest() {
-  const id = selectedBatchId.value;
-  if (!selectedBatchId.value) {
-    cyberToast.warning('Vui lòng chọn Test Batch trước khi bấm bắt đầu!');
-    return;
+// ============================================================================
+// 4. TABULATOR MANAGEMENT
+// ============================================================================
+function initAvailableTabulator() {
+  if (!availableTableRef.value) return;
+  if (availableTabulator) {
+    availableTabulator.destroy();
+    availableTabulator = null;
   }
+
+  availableTabulator = new Tabulator(availableTableRef.value, {
+    data: getFilteredAvailableDevices(),
+    layout: 'fitColumns',
+    placeholder: 'Chưa có thiết bị nào trong SO đã chọn.',
+    height: '240px',
+    selectableRows: true,
+    columns: [
+      {
+        formatter: 'rowSelection',
+        titleFormatter: 'rowSelection',
+        width: 45,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        headerSort: false,
+      },
+      {
+        title: 'STT',
+        formatter: 'rownum',
+        width: 55,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        headerSort: false,
+      },
+      {
+        title: 'Serial Number / Barcode',
+        field: 'serialNumber',
+        widthGrow: 2,
+        headerSort: true,
+        formatter: (cell) => {
+          const val = cell.getValue();
+          return `<span class="font-mono font-bold text-xs text-primary">${val || '—'}</span>`;
+        },
+      },
+      {
+        title: 'DevEUI',
+        field: 'devEui',
+        widthGrow: 2,
+        headerSort: true,
+        formatter: (cell) => `<span class="font-mono text-xs text-base-content/80">${cell.getValue() || '—'}</span>`,
+      },
+      {
+        title: 'Item Code',
+        field: 'itemCode',
+        width: 140,
+        formatter: (cell) => `<span class="badge badge-xs badge-outline font-mono">${cell.getValue() || '—'}</span>`,
+      },
+      {
+        title: 'FW Version',
+        field: 'fwVersion',
+        width: 110,
+        formatter: (cell) => `<span class="font-mono text-xs">${cell.getValue() || '—'}</span>`,
+      },
+      {
+        title: 'Thao tác',
+        width: 110,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        headerSort: false,
+        formatter: (cell) => {
+          const rowData = cell.getRow().getData();
+          const added = isDeviceSelected(rowData);
+          if (added) {
+            return '<span class="badge badge-success badge-xs font-semibold">Đã thêm</span>';
+          }
+          return '<button class="btn btn-xs btn-primary font-medium">+ Thêm</button>';
+        },
+        cellClick: (_e, cell) => {
+          const rowData = cell.getRow().getData();
+          if (!isDeviceSelected(rowData)) {
+            addSingleDeviceToBatch(rowData);
+          }
+        },
+      },
+    ],
+  });
+
+  availableTabulator.on('rowSelectionChanged', (data: any[]) => {
+    selectedAvailableRows.value = data;
+  });
+}
+
+function initBatchTabulator() {
+  if (!batchTableRef.value) return;
+  if (batchTabulator) {
+    batchTabulator.destroy();
+    batchTabulator = null;
+  }
+
+  batchTabulator = new Tabulator(batchTableRef.value, {
+    data: selectedDevices.value,
+    layout: 'fitColumns',
+    placeholder: 'Chưa có thiết bị nào được thêm vào Test Batch.',
+    height: '240px',
+    columns: [
+      {
+        title: 'STT',
+        formatter: 'rownum',
+        width: 55,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        headerSort: false,
+      },
+      {
+        title: 'Serial Number',
+        field: 'serialNumber',
+        widthGrow: 2,
+        formatter: (cell) => `<span class="font-mono font-bold text-xs text-primary">${cell.getValue() || '—'}</span>`,
+      },
+      {
+        title: 'DevEUI',
+        field: 'devEui',
+        widthGrow: 2,
+        formatter: (cell) => `<span class="font-mono text-xs text-base-content/80">${cell.getValue() || '—'}</span>`,
+      },
+      {
+        title: 'Item Code',
+        field: 'itemCode',
+        width: 130,
+        formatter: (cell) => `<span class="badge badge-xs badge-outline font-mono">${cell.getValue() || '—'}</span>`,
+      },
+      {
+        title: 'FW Version',
+        field: 'fwVersion',
+        width: 100,
+        formatter: (cell) => `<span class="font-mono text-xs">${cell.getValue() || '—'}</span>`,
+      },
+      {
+        title: 'Trạng Thái',
+        field: 'status',
+        width: 120,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        formatter: (cell) => {
+          const val = cell.getValue() || 'PENDING';
+          const cls =
+            val === 'PASS'
+              ? 'badge-success text-success-content font-bold'
+              : val === 'FAIL'
+              ? 'badge-error text-error-content font-bold'
+              : val === 'RUNNING'
+              ? 'badge-warning text-warning-content animate-pulse font-bold'
+              : 'badge-ghost';
+          return `<span class="badge badge-xs font-mono ${cls}">${val}</span>`;
+        },
+      },
+      {
+        title: 'Gói Tin / Metrics',
+        field: 'metrics',
+        widthGrow: 1.5,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          if (row.status === 'PENDING') {
+            return '<span class="text-xs text-base-content/40 font-mono">Chờ kích hoạt</span>';
+          }
+          return `<span class="font-mono text-xs">Gói: <b>${row.packetsCount ?? 0}</b> | RSSI: ${row.avgRssi ?? '—'} dBm</span>`;
+        },
+      },
+      {
+        title: 'Xóa',
+        width: 65,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        headerSort: false,
+        formatter: () => '<button class="btn btn-xs btn-ghost text-error" title="Xóa khỏi batch">✕</button>',
+        cellClick: (_e, cell) => {
+          if (isTesting.value) {
+            cyberToast.warning('Batch đang chạy kiểm thử!');
+            return;
+          }
+          const rowData = cell.getRow().getData();
+          removeDeviceFromBatch(getDeviceIdentifier(rowData.device || rowData));
+        },
+      },
+    ],
+  });
+}
+
+function getFilteredAvailableDevices() {
+  let list = availableDevices.value;
+  if (searchDeviceText.value.trim()) {
+    const q = searchDeviceText.value.trim().toLowerCase();
+    list = list.filter((d) => {
+      const s = (d.serialNumber || '').toLowerCase();
+      const e = (d.devEui || '').toLowerCase();
+      const it = (d.itemCode || '').toLowerCase();
+      return s.includes(q) || e.includes(q) || it.includes(q);
+    });
+  }
+  return list;
+}
+
+function applyAvailableFilter() {
+  if (availableTabulator) {
+    availableTabulator.replaceData(getFilteredAvailableDevices());
+  }
+}
+
+function updateTabulatorData() {
+  nextTick(() => {
+    if (availableTabulator) {
+      availableTabulator.replaceData(getFilteredAvailableDevices());
+    }
+    if (batchTabulator) {
+      batchTabulator.replaceData(selectedDevices.value);
+    }
+  });
+}
+
+// ============================================================================
+// 5. BATCH DEVICE OPERATIONS
+// ============================================================================
+function addSingleDeviceToBatch(deviceRow: any) {
   if (isTesting.value) {
     cyberToast.warning('Batch đang chạy kiểm thử!');
     return;
   }
-  if (selectedDevices.value.length === 0) {
-    cyberToast.warning('Vui lòng chọn ít nhất 1 thiết bị để test!');
+  if (selectedDevices.value.length >= maxAllowedDevices.value) {
+    cyberToast.warning(`Batch này chỉ cho phép tối đa ${maxAllowedDevices.value} thiết bị!`);
     return;
   }
 
-  // Check if reference devices are mapped only if flow requires it
-  if (requiresReferenceDevice.value) {
-    const unmapped = selectedDevices.value.filter((d) => !d.referenceDeviceId);
-    if (unmapped.length > 0 && goldenReferenceDevices.value.length > 0) {
-      autoAssignReferenceDevices();
+  const rawDev = deviceRow.raw || deviceRow;
+  selectedDevices.value.push({
+    serialNumber: deviceRow.serialNumber,
+    devEui: deviceRow.devEui,
+    itemCode: deviceRow.itemCode,
+    fwVersion: deviceRow.fwVersion,
+    device: rawDev,
+    referenceDeviceId: '',
+    status: 'PENDING',
+    packetsCount: 0,
+    avgRssi: null,
+    avgSnr: null,
+  });
+
+  cyberToast.success(`Đã thêm ${deviceRow.serialNumber} vào batch`);
+  updateTabulatorData();
+}
+
+function addSelectedAvailableRowsToBatch() {
+  if (isTesting.value) {
+    cyberToast.warning('Batch đang chạy kiểm thử!');
+    return;
+  }
+  if (selectedAvailableRows.value.length === 0) return;
+
+  let addedCount = 0;
+  for (const row of selectedAvailableRows.value) {
+    if (selectedDevices.value.length >= maxAllowedDevices.value) {
+      cyberToast.warning(`Đã đạt giới hạn tối đa ${maxAllowedDevices.value} thiết bị của đợt test!`);
+      break;
     }
+    if (!isDeviceSelected(row)) {
+      const rawDev = row.raw || row;
+      selectedDevices.value.push({
+        serialNumber: row.serialNumber,
+        devEui: row.devEui,
+        itemCode: row.itemCode,
+        fwVersion: row.fwVersion,
+        device: rawDev,
+        referenceDeviceId: '',
+        status: 'PENDING',
+        packetsCount: 0,
+        avgRssi: null,
+        avgSnr: null,
+      });
+      addedCount++;
+    }
+  }
+
+  if (addedCount > 0) {
+    cyberToast.success(`Đã thêm ${addedCount} thiết bị vào đợt test`);
+    updateTabulatorData();
+  }
+}
+
+function removeDeviceFromBatch(deviceId: string) {
+  selectedDevices.value = selectedDevices.value.filter((s) => {
+    const id = getDeviceIdentifier(s.device || s);
+    return id !== deviceId;
+  });
+  updateTabulatorData();
+}
+
+function clearBatchDevices() {
+  selectedDevices.value = [];
+  updateTabulatorData();
+  cyberToast.info('Đã xóa tất cả thiết bị khỏi batch');
+}
+
+function autoAssignReferenceDevices() {
+  if (goldenReferenceDevices.value.length === 0) {
+    cyberToast.warning('Không tìm thấy thiết bị chuẩn phù hợp.');
+    return;
+  }
+  selectedDevices.value.forEach((item, idx) => {
+    const refDev = goldenReferenceDevices.value[idx % goldenReferenceDevices.value.length];
+    if (refDev) {
+      item.referenceDeviceId = refDev.id;
+      item.referenceDevice = refDev;
+    }
+  });
+  updateTabulatorData();
+  cyberToast.success('Đã tự động gán thiết bị chuẩn cho các thiết bị trong batch');
+}
+
+// ============================================================================
+// 6. TEST EXECUTION & TELEMETRY
+// ============================================================================
+async function startBatchTest() {
+  if (selectedDevices.value.length === 0) {
+    cyberToast.warning('Vui lòng thêm ít nhất 1 thiết bị vào Test Batch!');
+    return;
+  }
+  if (!selectedBatchId.value) {
+    cyberToast.warning('Không tìm thấy cấu hình Test Batch!');
+    return;
   }
 
   isTesting.value = true;
   testFinished.value = false;
-  remainingSeconds.value = totalDurationSeconds.value;
+  batchVerdict.value = '';
   elapsedSeconds.value = 0;
-  currentStepIndex.value = 0;
+  remainingSeconds.value = totalDurationSeconds.value;
 
   selectedDevices.value.forEach((d) => {
     d.status = 'RUNNING';
-    d.liveComparison = undefined;
+    d.packetsCount = 0;
   });
+  updateTabulatorData();
 
-  // Call backend start API if batch is selected
-  if (selectedBatchId.value) {
-    const testerName = authStore.user?.fullName || authStore.user?.username || 'Tester';
-    const startPayload = {
-      testerName,
-      testPerson: testerName,
-      testedBy: testerName,
-      soNumber: selectedBatchConfig.value?.soNumber || selectedBatchConfig.value?.so_number,
-      waNumber: selectedBatchConfig.value?.waNumber || selectedBatchConfig.value?.wa_number,
-      requiresReferenceDevice: requiresReferenceDevice.value,
-      devices: selectedDevices.value.map((item) => ({
-        serialNumber: item.device.serialNumber || item.device.serial_number,
-        devEui: item.device.devEui || item.device.dev_eui,
-        itemCode: item.device.itemCode || item.device.item_code,
-        fwVersion: item.device.fwVersion || item.device.fw_version,
-        soNumber: item.device.soNumber || item.device.so_number || selectedBatchConfig.value?.soNumber || selectedBatchConfig.value?.so_number,
-        waNumber: item.device.waNumber || item.device.wa_number || selectedBatchConfig.value?.waNumber || selectedBatchConfig.value?.wa_number,
-        referenceDeviceId: item.referenceDeviceId || null,
-        referenceSerialNumber: item.referenceDevice?.serialNumber || null,
-        referenceDevEui: item.referenceDevice?.devEui || null,
-        referenceDeviceName: item.referenceDevice?.name || null,
-      })),
-    };
-    try {
-      const res: any = await httpClient.post(`/plugins/testing/test-batches/${id}/start`, startPayload);
-      await loadRunningBatches();
-      if (selectedBatchId.value !== id) return;
-      const data = res?.data || res;
-      batchStartedAt.value = data.startedAt || '';
-    } catch (err: any) {
-      if (selectedBatchId.value !== id) return;
-      cyberToast.error(err?.response?.data?.message || 'Không thể bắt đầu Test Batch');
-      isTesting.value = false;
-      selectedDevices.value.forEach((d) => { d.status = 'PENDING'; });
-      return;
-    }
-  }
+  const testerName = authStore.user?.fullName || authStore.user?.username || 'Tester';
+  const startPayload = {
+    testerName,
+    testPerson: testerName,
+    testedBy: testerName,
+    soNumber: selectedSoNumber.value,
+    waNumber: selectedBatchConfig.value?.waNumber || '',
+    requiresReferenceDevice: requiresReferenceDevice.value,
+    devices: selectedDevices.value.map((item) => ({
+      serialNumber: item.serialNumber,
+      devEui: item.devEui,
+      itemCode: item.itemCode,
+      fwVersion: item.fwVersion,
+      soNumber: selectedSoNumber.value,
+      referenceDeviceId: item.referenceDeviceId || null,
+    })),
+  };
 
-  cyberToast.success(`Bắt đầu chạy Test Batch với ${selectedDevices.value.length} thiết bị song song`);
+  try {
+    const res: any = await httpClient.post(
+      `/plugins/testing/test-batches/${selectedBatchId.value}/start`,
+      startPayload
+    );
+    batchStartedAt.value = res?.data?.startedAt || new Date().toISOString();
+    cyberToast.success(`Bắt đầu chạy Test Batch với ${selectedDevices.value.length} thiết bị song song`);
 
-  // Start countdown timer
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    elapsedSeconds.value++;
-    remainingSeconds.value = Math.max(0, totalDurationSeconds.value - elapsedSeconds.value);
+    // Timer Interval
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      elapsedSeconds.value++;
+      remainingSeconds.value = Math.max(0, totalDurationSeconds.value - elapsedSeconds.value);
+      if (remainingSeconds.value <= 0) {
+        pollBatchStatus();
+      }
+    }, 1000);
 
-    // Update flow steps based on elapsed progress
-    if (flowSteps.value.length > 0 && totalDurationSeconds.value > 0) {
-      const stepDuration = totalDurationSeconds.value / flowSteps.value.length;
-      currentStepIndex.value = Math.min(
-        flowSteps.value.length - 1,
-        Math.floor(elapsedSeconds.value / Math.max(1, stepDuration))
-      );
-    }
-
-    if (remainingSeconds.value <= 0) pollBatchStatus();
-  }, 1000);
-
-  // Periodic real telemetry polling from backend status
-  clearInterval(simulationInterval);
-  pollBatchStatus();
-  simulationInterval = setInterval(() => {
+    // Status Polling Interval
+    clearInterval(simulationInterval);
     pollBatchStatus();
-  }, 3000);
+    simulationInterval = setInterval(() => {
+      pollBatchStatus();
+    }, 3000);
+  } catch (err: any) {
+    cyberToast.error(err?.response?.data?.message || 'Không thể bắt đầu Test Batch');
+    isTesting.value = false;
+    selectedDevices.value.forEach((d) => {
+      d.status = 'PENDING';
+    });
+    updateTabulatorData();
+  }
 }
 
 async function pollBatchStatus() {
@@ -1276,7 +918,6 @@ async function pollBatchStatus() {
   if (!id) return;
   try {
     const res: any = await httpClient.get(`/plugins/testing/test-batches/${id}/status`);
-    if (selectedBatchId.value !== id) return;
     const statusData = res?.data || res;
     if (!statusData) return;
 
@@ -1286,153 +927,128 @@ async function pollBatchStatus() {
     if (typeof statusData.remainingSeconds === 'number') {
       remainingSeconds.value = statusData.remainingSeconds;
     }
-    if (flowSteps.value.length > 0 && totalDurationSeconds.value > 0) {
-      const stepDuration = totalDurationSeconds.value / flowSteps.value.length;
-      currentStepIndex.value = Math.min(
-        flowSteps.value.length - 1,
-        Math.floor(elapsedSeconds.value / Math.max(1, stepDuration))
-      );
+
+    if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
+      statusData.devices.forEach((dev: any) => {
+        const item = selectedDevices.value.find(
+          (s) => s.serialNumber === dev.serialNumber || s.devEui === dev.devEui
+        );
+        if (item) {
+          item.status = dev.verdict || dev.status || item.status;
+          item.packetsCount = dev.packetsReceived ?? dev.packets_received ?? (Array.isArray(dev.dutPackets) ? dev.dutPackets.length : item.packetsCount);
+          if (dev.avgRssi != null) item.avgRssi = dev.avgRssi;
+        }
+      });
+      updateTabulatorData();
     }
 
-    const devStatuses = statusData.devices || statusData.items || [];
-    selectedDevices.value.forEach((item) => {
-      const serial = item.device.serialNumber || item.device.serial_number;
-      const eui = item.device.devEui || item.device.dev_eui;
-      const matched = devStatuses.find(
-        (d: any) => (d.serialNumber && d.serialNumber === serial) || (d.devEui && d.devEui === eui)
-      );
-      if (matched) {
-        if (matched.status || matched.verdict) {
-          item.status = matched.verdict || matched.status;
-        }
-        if (matched.packetsReceived != null) {
-          item.packetsCount = matched.packetsReceived;
-        } else if (matched.packets_received != null) {
-          item.packetsCount = matched.packets_received;
-        } else if (Array.isArray(matched.dutPackets)) {
-          item.packetsCount = matched.dutPackets.length;
-        }
-        const metrics = computeMetricsFromPackets(matched.dutPackets || matched.dut_packets || matched.comparisonResult?.dut_packets || []);
-        item.avgCycle = parseNumericField(matched.avgCycle ?? matched.avg_cycle ?? matched.comparisonResult?.avgCycle ?? matched.comparisonResult?.avg_cycle ?? metrics.avgCycle);
-        item.avgRssi = parseNumericField(matched.avgRssi ?? matched.avg_rssi ?? matched.comparisonResult?.avgRssi ?? matched.comparisonResult?.avg_rssi ?? metrics.avgRssi);
-        item.avgSnr = parseNumericField(matched.avgSnr ?? matched.avg_snr ?? matched.comparisonResult?.avgSnr ?? matched.comparisonResult?.avg_snr ?? metrics.avgSnr);
-        if (matched.comparisonResult) {
-          item.liveComparison = buildLiveComparison(matched.comparisonResult);
-        }
-      }
-    });
-
-    if (
-      statusData.status === 'COMPLETED' ||
-      statusData.status === 'FINISHED' ||
-      statusData.status === 'PASSED' ||
-      statusData.status === 'FAILED' ||
-      statusData.status === 'STOPPED'
-    ) {
-      finishBatchTest();
+    if (statusData.status === 'COMPLETED' || statusData.status === 'STOPPED' || remainingSeconds.value <= 0) {
+      finishBatchTest(statusData);
     }
   } catch (err: any) {
-    console.debug('[DeviceTestBatchPanel] Poll status error:', err.message);
+    console.debug('[DeviceTestBatchPanel] Polling error:', err.message);
   }
 }
 
-async function finishBatchTest() {
-  const id = selectedBatchId.value;
+function finishBatchTest(statusData?: any) {
   clearInterval(timerInterval);
   clearInterval(simulationInterval);
   isTesting.value = false;
   testFinished.value = true;
+  batchFinishedAt.value = statusData?.finishedAt || new Date().toISOString();
+  batchVerdict.value = statusData?.verdict || 'PASS';
 
-  if (selectedBatchId.value) {
-    try {
-      const res: any = await httpClient.get(`/plugins/testing/test-batches/${id}/status`);
-      if (selectedBatchId.value !== id) return;
-      const statusData = res?.data || res;
-      if (statusData) {
-        if (statusData.startedAt) batchStartedAt.value = statusData.startedAt;
-        if (statusData.finishedAt) batchFinishedAt.value = statusData.finishedAt;
-        if (statusData.verdict) batchVerdict.value = statusData.verdict;
-        if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
-          statusData.devices.forEach((dev: any) => {
-            const item = selectedDevices.value.find(
-              (s) =>
-                (s.device.serialNumber && s.device.serialNumber === dev.serialNumber) ||
-                (s.device.devEui && s.device.devEui === dev.devEui)
-            );
-            if (item) {
-              item.status = dev.verdict || dev.status || item.status;
-              if (dev.packetsReceived != null) {
-                item.packetsCount = dev.packetsReceived;
-              } else if (dev.packets_received != null) {
-                item.packetsCount = dev.packets_received;
-              } else if (Array.isArray(dev.dutPackets)) {
-                item.packetsCount = dev.dutPackets.length;
-              }
-              const metrics = computeMetricsFromPackets(dev.dutPackets || dev.dut_packets || dev.comparisonResult?.dut_packets || []);
-              item.avgCycle = parseNumericField(dev.avgCycle ?? dev.avg_cycle ?? dev.comparisonResult?.avgCycle ?? dev.comparisonResult?.avg_cycle ?? metrics.avgCycle);
-              item.avgRssi = parseNumericField(dev.avgRssi ?? dev.avg_rssi ?? dev.comparisonResult?.avgRssi ?? dev.comparisonResult?.avg_rssi ?? metrics.avgRssi);
-              item.avgSnr = parseNumericField(dev.avgSnr ?? dev.avg_snr ?? dev.comparisonResult?.avgSnr ?? dev.comparisonResult?.avg_snr ?? metrics.avgSnr);
-              if (dev.comparisonResult) {
-                item.liveComparison = buildLiveComparison(dev.comparisonResult);
-              }
-            }
-          });
-        }
-      }
-    } catch (err: any) {
-      console.debug('[DeviceTestBatchPanel] Finish status sync note:', err.message);
-    }
-  }
-
-  // Refresh available devices because completed devices are automatically removed/transferred to traceability
-  await loadAvailableDevices();
-
-  cyberToast.success(`Hoàn thành Test Batch! Đạt ${passCount.value}/${selectedDevices.value.length} thiết bị.`);
+  selectedDevices.value.forEach((d) => {
+    if (d.status === 'RUNNING') d.status = batchVerdict.value;
+  });
+  updateTabulatorData();
+  cyberToast.success(`Test Batch hoàn thành! Kết quả: ${batchVerdict.value}`);
 }
 
-function formatCountdown(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-function getItemStatusClass(status?: string) {
-  switch (status) {
-    case 'PASS':
-      return 'badge-success text-success-content';
-    case 'FAIL':
-      return 'badge-error text-error-content';
-    case 'RUNNING':
-      return 'badge-warning text-warning-content animate-pulse';
-    default:
-      return 'badge-ghost';
+async function cancelSelectedBatch() {
+  const id = selectedBatchId.value;
+  if (!id || !window.confirm('Bạn có chắc chắn muốn hủy Test Batch đang chạy?')) return;
+  cancellingBatch.value = true;
+  try {
+    await httpClient.post(`/plugins/testing/test-batches/${id}/cancel`);
+    clearInterval(timerInterval);
+    clearInterval(simulationInterval);
+    isTesting.value = false;
+    testFinished.value = false;
+    selectedDevices.value.forEach((d) => {
+      d.status = 'PENDING';
+    });
+    updateTabulatorData();
+    await loadRunningBatches();
+    cyberToast.success('Đã hủy Test Batch');
+  } catch (err: any) {
+    cyberToast.error(err?.response?.data?.message || 'Không thể hủy Test Batch');
+  } finally {
+    cancellingBatch.value = false;
   }
 }
 
-onMounted(() => {
-  loadSavedBatches();
+// ============================================================================
+// 7. RUNNING BATCHES & REFERENCE DEVICES
+// ============================================================================
+async function loadRunningBatches() {
+  try {
+    const res: any = await httpClient.get('/plugins/testing/test-batches/running');
+    const items = res?.data || res?.items || [];
+    runningBatches.value = Array.isArray(items) ? items : [];
+  } catch {
+    runningBatches.value = [];
+  }
+}
+
+function onSelectRunningBatch(id: string) {
+  if (!id) return;
+  const found = runningBatches.value.find((b) => b.id === id);
+  if (found && found.soNumber) {
+    selectedSoNumber.value = found.soNumber;
+    onSoChange().then(() => {
+      selectedBatchId.value = id;
+      pollBatchStatus();
+    });
+  }
+}
+
+async function loadReferenceDevices() {
+  try {
+    const res: any = await httpClient.get('/plugins/testing/test-batches/reference-devices');
+    const items = res?.data?.items || res?.data || [];
+    goldenReferenceDevices.value = Array.isArray(items) ? items : [];
+  } catch {
+    goldenReferenceDevices.value = [];
+  }
+}
+
+// ============================================================================
+// LIFECYCLE
+// ============================================================================
+onMounted(async () => {
+  nextTick(() => {
+    initAvailableTabulator();
+    initBatchTabulator();
+  });
+
+  await loadSosWithBatches();
+  loadReferenceDevices();
   loadRunningBatches();
   runningBatchesInterval = setInterval(loadRunningBatches, 5000);
-  loadReferenceDevices();
-  loadAvailableDevices();
-
-  // If passed initialBatchPayload from Create Batch
-  if (props.initialBatchPayload) {
-    const p = props.initialBatchPayload;
-    if (p.itemCode) filterItemCode.value = p.itemCode;
-    if (p.fwVersion) filterFwVersion.value = p.fwVersion;
-    if (p.batchId) selectedBatchId.value = p.batchId;
-    if (p.maxDevices) maxAllowedDevices.value = p.maxDevices;
-    if (p.flowDurationSeconds) {
-      totalDurationSeconds.value = p.flowDurationSeconds;
-      remainingSeconds.value = p.flowDurationSeconds;
-    }
-  }
 });
 
-onUnmounted(() => {
-  clearInterval(runningBatchesInterval);
+onBeforeUnmount(() => {
   clearInterval(timerInterval);
   clearInterval(simulationInterval);
+  clearInterval(runningBatchesInterval);
+  if (availableTabulator) availableTabulator.destroy();
+  if (batchTabulator) batchTabulator.destroy();
 });
 </script>
+
+<style scoped>
+.device-test-batch-panel :deep(.tabulator) {
+  border-radius: 0.5rem;
+}
+</style>
