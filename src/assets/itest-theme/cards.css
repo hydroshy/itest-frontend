@@ -44,7 +44,7 @@
 .cyber-hud-panel:hover,
 .cyber-panel:hover,
 [data-augmented-ui]:hover {
-  border-color: rgba(255, 255, 255, 0.16) !important;
+  border-color: var(--owl-border-focus) !important;
   box-shadow: none !important;
   transform: none !important;
 }

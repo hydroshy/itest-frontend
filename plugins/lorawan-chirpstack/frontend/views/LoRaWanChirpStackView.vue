@@ -6,7 +6,7 @@
           <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
           CHIRPSTACK v4
         </div>
-        <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5 mt-0.5">
+        <h2 class="text-xl md:text-2xl font-bold tracking-tight text-base-content flex items-center gap-2.5 mt-0.5">
           <Radio class="w-6 h-6 text-primary" />
           <span>LoRaWAN Network Console</span>
         </h2>

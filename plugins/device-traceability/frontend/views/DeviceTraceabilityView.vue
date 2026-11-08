@@ -30,7 +30,7 @@
         <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
           <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> TRACEABILITY MANAGEMENT
         </div>
-        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
+        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-base-content mt-0.5">
           <Files class="w-6 h-6 text-primary" />
           <span>Quản Lý Truy Xuất Nguồn Gốc (Traceability)</span>
         </h2>
@@ -106,12 +106,12 @@
                   v-model="soSearchNumber"
                   type="text"
                   placeholder="Tìm mã SO..."
-                  class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  class="h-8 w-48 pl-3 pr-8 bg-base-100 hover:bg-base-200 focus:bg-base-100 text-xs font-mono text-base-content placeholder:text-base-content/40 placeholder:italic placeholder:font-light rounded-lg border border-base-300 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
                   @keyup.enter="loadSoTreeData"
                 />
                 <button
                   v-if="soSearchNumber"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
                   @click="soSearchNumber = ''; loadSoTreeData()"
                 >✕</button>
               </div>
@@ -120,12 +120,12 @@
                   v-model="soSearchCustomer"
                   type="text"
                   placeholder="Tìm tên khách hàng..."
-                  class="h-8 w-52 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  class="h-8 w-52 pl-3 pr-8 bg-base-100 hover:bg-base-200 focus:bg-base-100 text-xs text-base-content placeholder:text-base-content/40 placeholder:italic placeholder:font-light rounded-lg border border-base-300 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
                   @keyup.enter="loadSoTreeData"
                 />
                 <button
                   v-if="soSearchCustomer"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
                   @click="soSearchCustomer = ''; loadSoTreeData()"
                 >✕</button>
               </div>
@@ -163,12 +163,12 @@
                   v-model="testingSearchSerial"
                   type="text"
                   placeholder="Tìm S/N hoặc DevEUI..."
-                  class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  class="h-8 w-48 pl-3 pr-8 bg-base-100 hover:bg-base-200 focus:bg-base-100 text-xs font-mono text-base-content placeholder:text-base-content/40 placeholder:italic placeholder:font-light rounded-lg border border-base-300 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
                   @keyup.enter="loadTestingDevices"
                 />
                 <button
                   v-if="testingSearchSerial"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
                   @click="testingSearchSerial = ''; loadTestingDevices()"
                 >✕</button>
               </div>
@@ -177,16 +177,16 @@
                   v-model="testingSearchSo"
                   type="text"
                   placeholder="Lọc theo Mã SO..."
-                  class="h-8 w-44 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  class="h-8 w-44 pl-3 pr-8 bg-base-100 hover:bg-base-200 focus:bg-base-100 text-xs font-mono text-base-content placeholder:text-base-content/40 placeholder:italic placeholder:font-light rounded-lg border border-base-300 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
                   @keyup.enter="loadTestingDevices"
                 />
                 <button
                   v-if="testingSearchSo"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
                   @click="testingSearchSo = ''; loadTestingDevices()"
                 >✕</button>
               </div>
-              <select v-model="testingFilterResult" class="select select-bordered select-sm w-36 h-8 min-h-0 bg-slate-900/60 text-xs border-slate-700/60 rounded-lg focus:border-primary/80" @change="loadTestingDevices">
+              <select v-model="testingFilterResult" class="select select-bordered select-sm w-36 h-8 min-h-0 bg-base-100 text-xs border-base-300 text-base-content rounded-lg focus:border-primary/80" @change="loadTestingDevices">
                 <option value="">Tất cả kết quả</option>
                 <option value="PASS">PASS</option>
                 <option value="FAIL">FAIL</option>
@@ -253,16 +253,16 @@
                   v-model="configSearchSerial"
                   type="text"
                   placeholder="Tìm S/N hoặc DevEUI..."
-                  class="h-8 w-48 pl-3 pr-8 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900/95 text-xs font-mono text-slate-200 placeholder:text-slate-400/50 placeholder:italic placeholder:font-light rounded-lg border border-slate-700/60 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
+                  class="h-8 w-48 pl-3 pr-8 bg-base-100 hover:bg-base-200 focus:bg-base-100 text-xs font-mono text-base-content placeholder:text-base-content/40 placeholder:italic placeholder:font-light rounded-lg border border-base-300 focus:border-primary/80 focus:ring-1 focus:ring-primary/30 shadow-inner transition-all outline-none"
                   @keyup.enter="loadFinalConfigDevices"
                 />
                 <button
                   v-if="configSearchSerial"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content text-xs"
                   @click="configSearchSerial = ''; loadFinalConfigDevices()"
                 >✕</button>
               </div>
-              <select v-model="configFilterStatus" class="select select-bordered select-sm w-48 h-8 min-h-0 bg-slate-900/60 text-xs border-slate-700/60 rounded-lg focus:border-primary/80" @change="loadFinalConfigDevices">
+              <select v-model="configFilterStatus" class="select select-bordered select-sm w-48 h-8 min-h-0 bg-base-100 text-xs border-base-300 text-base-content rounded-lg focus:border-primary/80" @change="loadFinalConfigDevices">
                 <option value="">Tất cả trạng thái</option>
                 <option value="CONFIGURED_PASS">CONFIGURED_PASS</option>
                 <option value="CONFIG_FAILED">CONFIG_FAILED</option>

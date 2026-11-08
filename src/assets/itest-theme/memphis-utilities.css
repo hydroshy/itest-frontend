@@ -53,14 +53,14 @@
 .corporate-memphis .memphis-card {
   border-radius: var(--memphis-radius-card);
   background-color: var(--owl-bg-card, #1a2436);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--owl-border);
   box-shadow: none !important;
 }
 
 .corporate-memphis .memphis-panel {
   border-radius: var(--memphis-radius-box);
   background-color: var(--owl-bg-surface, #151d2c);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--owl-border);
   box-shadow: none !important;
 }
 

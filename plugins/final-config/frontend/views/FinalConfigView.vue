@@ -135,7 +135,7 @@
           <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
             <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> FINAL CONFIG
           </div>
-          <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5 mt-0.5">
+          <h2 class="text-xl md:text-2xl font-bold tracking-tight text-base-content flex items-center gap-2.5 mt-0.5">
             <SlidersHorizontal class="w-6 h-6 text-primary" /> Final Config
           </h2>
           <p class="subtitle text-xs text-base-content/70 mt-1">Tạo cấu hình cuối từ Memmap Payload đã được kiểm tra.</p>

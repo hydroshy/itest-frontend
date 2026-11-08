@@ -174,10 +174,10 @@
             <span>Đã liên kết Traceability thành công:</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-base-content/80 mt-1">
-            <div>SO: <span class="font-bold text-white">{{ step1.soNumber }}</span></div>
-            <div>WA: <span class="font-bold text-white">{{ step1.waNumber }}</span></div>
-            <div>Item Code: <span class="font-bold text-white">{{ step1.itemCode || 'Theo Sensor' }}</span></div>
-            <div>Network Server: <span class="font-bold text-white">ChirpStack</span></div>
+            <div>SO: <span class="font-bold text-base-content">{{ step1.soNumber }}</span></div>
+            <div>WA: <span class="font-bold text-base-content">{{ step1.waNumber }}</span></div>
+            <div>Item Code: <span class="font-bold text-base-content">{{ step1.itemCode || 'Theo Sensor' }}</span></div>
+            <div>Network Server: <span class="font-bold text-base-content">ChirpStack</span></div>
           </div>
         </div>
 
@@ -338,7 +338,7 @@
                   class="hover:bg-base-200/40 transition-colors"
                 >
                   <td class="text-base-content/40">{{ idx + 1 }}</td>
-                  <td class="font-semibold text-white">{{ row.label }}</td>
+                  <td class="font-semibold text-base-content">{{ row.label }}</td>
                   <td class="text-primary font-bold">Dec {{ row.regDec }}</td>
                   <td>{{ row.numRegs }}</td>
                   <td><span class="badge badge-xs badge-ghost">{{ row.format }}</span></td>
@@ -490,23 +490,23 @@
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">Serial Number</span>
-              <strong class="font-mono text-xs text-white truncate mt-1" :title="registerData.SERIAL_NUMBER">{{ registerData.SERIAL_NUMBER || '—' }}</strong>
+              <strong class="font-mono text-xs text-base-content truncate mt-1" :title="registerData.SERIAL_NUMBER">{{ registerData.SERIAL_NUMBER || '—' }}</strong>
             </div>
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">Item Code</span>
-              <strong class="font-mono text-xs text-white truncate mt-1" :title="registerData.ITEM_CODE || step1.itemCode">{{ registerData.ITEM_CODE || step1.itemCode || '—' }}</strong>
+              <strong class="font-mono text-xs text-base-content truncate mt-1" :title="registerData.ITEM_CODE || step1.itemCode">{{ registerData.ITEM_CODE || step1.itemCode || '—' }}</strong>
             </div>
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">FW Version</span>
-              <strong class="font-mono text-xs text-white truncate mt-1">{{ registerData.FW_VERSION || '—' }}</strong>
+              <strong class="font-mono text-xs text-base-content truncate mt-1">{{ registerData.FW_VERSION || '—' }}</strong>
             </div>
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">HW Version</span>
-              <strong class="font-mono text-xs text-white truncate mt-1">{{ registerData.HW_VERSION || '—' }}</strong>
+              <strong class="font-mono text-xs text-base-content truncate mt-1">{{ registerData.HW_VERSION || '—' }}</strong>
             </div>
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">FW Code</span>
-              <strong class="font-mono text-xs text-white truncate mt-1">{{ registerData.FW_CODE || '—' }}</strong>
+              <strong class="font-mono text-xs text-base-content truncate mt-1">{{ registerData.FW_CODE || '—' }}</strong>
             </div>
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">DevEUI</span>
@@ -514,11 +514,11 @@
             </div>
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">AppEUI</span>
-              <strong class="font-mono text-xs text-white truncate mt-1" :title="registerData['LRW appEUI']">{{ registerData['LRW appEUI'] || '—' }}</strong>
+              <strong class="font-mono text-xs text-base-content truncate mt-1" :title="registerData['LRW appEUI']">{{ registerData['LRW appEUI'] || '—' }}</strong>
             </div>
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">AppKey</span>
-              <strong class="font-mono text-xs text-white truncate mt-1" :title="registerData['LRW appKey']">{{ registerData['LRW appKey'] || '—' }}</strong>
+              <strong class="font-mono text-xs text-base-content truncate mt-1" :title="registerData['LRW appKey']">{{ registerData['LRW appKey'] || '—' }}</strong>
             </div>
             <div class="bg-base-100 p-2.5 rounded-lg border border-base-content/10 shadow-sm flex flex-col justify-between">
               <span class="text-[10px] text-base-content/60 font-semibold uppercase tracking-wider">Class</span>

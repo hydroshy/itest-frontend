@@ -6,7 +6,7 @@
     >
       <!-- Modal Card Container -->
     <div
-      class="relative z-10 w-full max-w-lg bg-base-300 border border-white/10 rounded-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content shadow-none"
+      class="relative z-10 w-full max-w-lg bg-base-300 border border-[var(--owl-border)] rounded-2xl flex flex-col overflow-hidden text-xs font-sans text-base-content shadow-2xl"
     >
       <!-- Top Accent Line (Corporate Memphis Gradient) -->
       <div class="h-1 w-full bg-gradient-to-r from-primary via-secondary to-primary/40"></div>

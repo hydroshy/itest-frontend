@@ -1,17 +1,15 @@
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 
 export type ThemeMode = 'dark' | 'light';
 
 const STORAGE_KEY = 'itest_theme_mode';
 
 const themeMode = ref<ThemeMode>('dark');
+const isDark = computed(() => themeMode.value === 'dark');
 
 export function useTheme() {
-  const isDark = ref(themeMode.value === 'dark');
-
   const applyTheme = (mode: ThemeMode) => {
     themeMode.value = mode;
-    isDark.value = mode === 'dark';
 
     const root = document.documentElement;
     if (mode === 'dark') {

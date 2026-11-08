@@ -6,7 +6,7 @@
         <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
           <span class="w-2 h-2 rounded-full bg-primary animate-pulse" /> DIS ODOO HUB
         </div>
-        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-white mt-0.5">
+        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2.5 tracking-tight text-base-content mt-0.5">
           <Share2 class="w-6 h-6 text-primary" />
           <span>DIS (Odoo) Integration Hub</span>
         </h2>

@@ -3,15 +3,15 @@
     <div v-if="visible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6">
       <!-- Wizard Modal Container -->
     <div
-      class="relative z-10 w-full max-w-5xl bg-[#151d2c] border border-white/10 rounded-2xl flex flex-col max-h-[92vh] overflow-hidden text-xs font-sans text-slate-200 shadow-none"
+      class="relative z-10 w-full max-w-5xl bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-2xl flex flex-col max-h-[92vh] overflow-hidden text-xs font-sans text-[var(--owl-text-primary)] shadow-2xl"
     >
       <!-- Memphis Top Accent line -->
-      <div class="h-1 w-full bg-gradient-to-r from-violet-600 via-sky-400 to-violet-600/40"></div>
+      <div class="h-1 w-full bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600/40"></div>
 
       <!-- Close Button (Top Right) -->
       <button
         type="button"
-        class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors z-10"
+        class="absolute top-4 right-4 text-[var(--owl-text-muted)] hover:text-[var(--owl-text-primary)] p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors z-10"
         @click="visible = false"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -20,28 +20,28 @@
       </button>
 
       <!-- Modal Header -->
-      <div class="p-5 pb-3 border-b border-white/10 bg-[#1a2436] flex-shrink-0">
+      <div class="p-5 pb-3 border-b border-[var(--owl-border)] bg-[var(--owl-bg-aside)] flex-shrink-0">
         <div class="flex items-center gap-2 mb-1">
-          <span class="inline-block w-2 h-2 rounded-full bg-violet-500"></span>
-          <span class="font-mono text-[10px] tracking-widest text-violet-400 uppercase font-bold">RBAC WIZARD CONFIG</span>
+          <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+          <span class="font-mono text-[10px] tracking-widest text-blue-600 dark:text-blue-400 uppercase font-bold">RBAC WIZARD CONFIG</span>
         </div>
-        <h3 class="text-base font-bold text-white font-display tracking-wide flex items-center gap-2">
+        <h3 class="text-base font-bold text-[var(--owl-text-primary)] font-display tracking-wide flex items-center gap-2">
           <span>Cấu hình Phân quyền &amp; Vai trò:</span>
-          <span class="text-sky-400 font-mono">{{ roleData?.name || roleData?.code || '' }}</span>
+          <span class="text-sky-500 font-mono">{{ roleData?.name || roleData?.code || '' }}</span>
         </h3>
-        <p class="text-[11px] text-slate-400 mt-0.5">
+        <p class="text-[11px] text-[var(--owl-text-secondary)] mt-0.5">
           Quy trình 3 bước thiết lập tài khoản thành viên, quyền hạn chức năng API và các view menu hiển thị
         </p>
       </div>
 
       <!-- Stepper Indicator Bar -->
-      <div class="px-5 py-3 bg-[#101726] border-b border-white/10 flex items-center justify-between gap-2 overflow-x-auto flex-shrink-0">
+      <div class="px-5 py-3 bg-[var(--owl-bg-card)] border-b border-[var(--owl-border)] flex items-center justify-between gap-2 overflow-x-auto flex-shrink-0">
         <div
           v-for="(s, idx) in steps"
           :key="s.step"
           class="flex items-center gap-3 cursor-pointer select-none transition-colors py-1.5 px-3 rounded-xl"
           :class="[
-            currentStep === s.step ? 'bg-[#1a2436] border border-violet-500/40' : 'hover:bg-white/5',
+            currentStep === s.step ? 'bg-[var(--owl-bg-surface)] border border-blue-500/40 text-blue-600 dark:text-blue-400' : 'hover:bg-black/5 dark:hover:bg-white/5 text-[var(--owl-text-secondary)]',
             currentStep > s.step ? 'opacity-90' : ''
           ]"
           @click="goToStep(s.step)"
@@ -50,9 +50,9 @@
           <div
             class="w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold transition-colors"
             :class="[
-              currentStep === s.step ? 'bg-violet-600 text-white' : '',
-              currentStep > s.step ? 'bg-emerald-500 text-slate-900' : '',
-              currentStep < s.step ? 'bg-[#151d2c] border border-white/10 text-slate-400' : ''
+              currentStep === s.step ? 'bg-blue-600 text-white' : '',
+              currentStep > s.step ? 'bg-emerald-500 text-white' : '',
+              currentStep < s.step ? 'bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-muted)]' : ''
             ]"
           >
             <span v-if="currentStep > s.step">✓</span>
@@ -89,9 +89,9 @@
           <!-- STEP 1: ASSIGN USERS -->
           <div v-show="currentStep === 1" class="space-y-4">
             <!-- Header bar / search & actions -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#0f172a] border border-slate-700/60 rounded-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-xl">
               <div class="relative flex-1 max-w-md">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--owl-text-muted)]">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -100,24 +100,24 @@
                   v-model="userSearchQuery"
                   type="text"
                   placeholder="Tìm theo tên đăng nhập, họ tên, email..."
-                  class="input input-sm w-full pl-9 bg-[#1a2436] border-slate-700 text-slate-200 font-mono focus:border-violet-500 focus:outline-none rounded-lg"
+                  class="input input-sm w-full pl-9 bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-primary)] font-mono focus:border-blue-500 focus:outline-none rounded-lg"
                 />
               </div>
 
               <div class="flex items-center gap-3">
-                <span class="font-mono text-[11px] text-slate-300">
-                  Đã gán: <strong class="text-violet-400">{{ selectedUserIds.length }}</strong> / {{ allUsers.length }} người dùng
+                <span class="font-mono text-[11px] text-[var(--owl-text-secondary)]">
+                  Đã gán: <strong class="text-blue-500">{{ selectedUserIds.length }}</strong> / {{ allUsers.length }} người dùng
                 </span>
                 <button
                   type="button"
-                  class="btn btn-xs btn-ghost text-violet-400 hover:bg-violet-500/10 font-mono"
+                  class="btn btn-xs btn-ghost text-blue-500 hover:bg-blue-500/10 font-mono"
                   @click="selectAllFilteredUsers"
                 >
                   Chọn tất cả
                 </button>
                 <button
                   type="button"
-                  class="btn btn-xs btn-ghost text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 font-mono"
+                  class="btn btn-xs btn-ghost text-[var(--owl-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 font-mono"
                   @click="clearAllUsers"
                 >
                   Bỏ chọn
@@ -126,15 +126,15 @@
             </div>
 
             <!-- Users Table (DaisyUI) -->
-            <div class="border border-slate-700/60 rounded-xl overflow-hidden bg-[#0f172a]">
+            <div class="border border-[var(--owl-border)] rounded-xl overflow-hidden bg-[var(--owl-bg-surface)]">
               <div class="overflow-x-auto max-h-[380px]">
                 <table class="table table-zebra table-pin-rows w-full text-xs">
                   <thead>
-                    <tr class="bg-[#1a2436] border-b border-slate-700 text-slate-300 font-mono uppercase tracking-wider">
+                    <tr class="bg-[var(--owl-bg-aside)] border-b border-[var(--owl-border)] text-[var(--owl-text-secondary)] font-mono uppercase tracking-wider">
                       <th class="w-12 text-center">
                         <input
                           type="checkbox"
-                          class="checkbox checkbox-xs checkbox-primary border-slate-600"
+                          class="checkbox checkbox-xs checkbox-primary border-[var(--owl-border)]"
                           :checked="isAllVisibleUsersSelected"
                           @change="toggleSelectAllVisibleUsers"
                         />
@@ -146,7 +146,7 @@
                   </thead>
                   <tbody>
                     <tr v-if="filteredUsers.length === 0">
-                      <td colspan="4" class="text-center py-10 text-slate-400 font-mono">
+                      <td colspan="4" class="text-center py-10 text-[var(--owl-text-muted)] font-mono">
                         Không tìm thấy người dùng nào phù hợp từ khóa
                       </td>
                     </tr>
@@ -154,8 +154,8 @@
                       v-else
                       v-for="user in filteredUsers"
                       :key="user.id"
-                      class="border-b border-slate-800/80 hover:bg-slate-800/40 transition-colors cursor-pointer"
-                      :class="{ 'bg-violet-600/10': selectedUserIds.includes(user.id) }"
+                      class="border-b border-[var(--owl-border-light)] hover:bg-[var(--owl-bg-card-hover)] transition-colors cursor-pointer"
+                      :class="{ 'bg-blue-600/10': selectedUserIds.includes(user.id) }"
                       @click="toggleUserSelection(user.id)"
                     >
                       <td class="text-center" @click.stop>
@@ -168,20 +168,20 @@
                       </td>
                       <td>
                         <div class="flex items-center gap-2.5">
-                          <div class="w-7 h-7 rounded-full bg-[#1a2436] border border-slate-700 text-violet-400 font-bold font-mono text-xs flex items-center justify-center flex-shrink-0">
+                          <div class="w-7 h-7 rounded-full bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-blue-500 font-bold font-mono text-xs flex items-center justify-center flex-shrink-0">
                             {{ user.username.charAt(0).toUpperCase() }}
                           </div>
                           <div>
-                            <div class="font-mono font-bold text-slate-200">{{ user.username }}</div>
-                            <div class="text-[10px] text-slate-400">{{ user.fullName || 'Chưa đặt tên' }}</div>
+                            <div class="font-mono font-bold text-[var(--owl-text-primary)]">{{ user.username }}</div>
+                            <div class="text-[10px] text-[var(--owl-text-muted)]">{{ user.fullName || 'Chưa đặt tên' }}</div>
                           </div>
                         </div>
                       </td>
-                      <td class="font-mono text-slate-300">{{ user.email || '—' }}</td>
+                      <td class="font-mono text-[var(--owl-text-secondary)]">{{ user.email || '—' }}</td>
                       <td class="text-center">
                         <span
                           class="badge badge-xs font-mono text-[10px] px-2 py-0.5 rounded-full"
-                          :class="user.isActive ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'"
+                          :class="user.isActive ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-500 border border-rose-500/30'"
                         >
                           {{ user.isActive ? 'Hoạt động' : 'Đã khóa' }}
                         </span>
@@ -196,9 +196,9 @@
           <!-- STEP 2: PLUGIN PERMISSIONS -->
           <div v-show="currentStep === 2" class="space-y-4">
             <!-- Header bar / search & actions -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#0f172a] border border-slate-700/60 rounded-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-xl">
               <div class="relative flex-1 max-w-md">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--owl-text-muted)]">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -207,24 +207,24 @@
                   v-model="permSearchQuery"
                   type="text"
                   placeholder="Tìm theo mã quyền hoặc tên quyền..."
-                  class="input input-sm w-full pl-9 bg-[#1a2436] border-slate-700 text-slate-200 font-mono focus:border-violet-500 focus:outline-none rounded-lg"
+                  class="input input-sm w-full pl-9 bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-primary)] font-mono focus:border-blue-500 focus:outline-none rounded-lg"
                 />
               </div>
 
               <div class="flex items-center gap-3">
-                <span class="font-mono text-[11px] text-slate-300">
-                  Đã cấp: <strong class="text-violet-400">{{ selectedPermissionIds.length }}</strong> / {{ totalPermissionsCount }} quyền
+                <span class="font-mono text-[11px] text-[var(--owl-text-secondary)]">
+                  Đã cấp: <strong class="text-blue-500">{{ selectedPermissionIds.length }}</strong> / {{ totalPermissionsCount }} quyền
                 </span>
                 <button
                   type="button"
-                  class="btn btn-xs btn-ghost text-violet-400 hover:bg-violet-500/10 font-mono"
+                  class="btn btn-xs btn-ghost text-blue-500 hover:bg-blue-500/10 font-mono"
                   @click="toggleSelectAllPermissions(true)"
                 >
                   Cấp tất cả
                 </button>
                 <button
                   type="button"
-                  class="btn btn-xs btn-ghost text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 font-mono"
+                  class="btn btn-xs btn-ghost text-[var(--owl-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 font-mono"
                   @click="toggleSelectAllPermissions(false)"
                 >
                   Bỏ tất cả
@@ -233,7 +233,7 @@
             </div>
 
             <!-- Permission Groups Accordions -->
-            <div v-if="filteredPermissionGroups.length === 0" class="text-center py-12 text-slate-400 font-mono">
+            <div v-if="filteredPermissionGroups.length === 0" class="text-center py-12 text-[var(--owl-text-muted)] font-mono">
               Không tìm thấy quyền nào phù hợp từ khóa
             </div>
 
@@ -241,30 +241,30 @@
               <div
                 v-for="group in filteredPermissionGroups"
                 :key="group.module"
-                class="border border-slate-700/60 rounded-xl bg-[#0f172a] overflow-hidden"
+                class="border border-[var(--owl-border)] rounded-xl bg-[var(--owl-bg-surface)] overflow-hidden"
               >
                 <!-- Group Header -->
-                <div class="p-3 bg-[#151d2c] border-b border-slate-700/60 flex items-center justify-between gap-3">
+                <div class="p-3 bg-[var(--owl-bg-aside)] border-b border-[var(--owl-border)] flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2">
-                    <span class="font-bold text-slate-200">{{ group.moduleTitle || group.module }}</span>
-                    <span class="badge badge-xs bg-[#1a2436] border border-slate-700 font-mono text-slate-400 text-[10px]">
+                    <span class="font-bold text-[var(--owl-text-primary)]">{{ group.moduleTitle || group.module }}</span>
+                    <span class="badge badge-xs bg-[var(--owl-bg-card)] border border-[var(--owl-border)] font-mono text-[var(--owl-text-secondary)] text-[10px]">
                       {{ group.module }}
                     </span>
-                    <span class="badge badge-xs bg-violet-500/20 text-violet-300 border border-violet-500/40 font-mono text-[10px]">
+                    <span class="badge badge-xs bg-blue-500/20 text-blue-600 dark:text-blue-300 border border-blue-500/40 font-mono text-[10px]">
                       {{ group.selectedCount }} / {{ group.permissions.length }}
                     </span>
                   </div>
                   <div class="flex items-center gap-2">
                     <button
                       type="button"
-                      class="btn btn-xs btn-ghost text-violet-400 hover:bg-violet-500/10 font-mono text-[11px]"
+                      class="btn btn-xs btn-ghost text-blue-500 hover:bg-blue-500/10 font-mono text-[11px]"
                       @click="toggleGroupPermissions(group, true)"
                     >
                       Chọn nhóm
                     </button>
                     <button
                       type="button"
-                      class="btn btn-xs btn-ghost text-slate-400 hover:bg-rose-500/10 hover:text-rose-400 font-mono text-[11px]"
+                      class="btn btn-xs btn-ghost text-[var(--owl-text-muted)] hover:bg-rose-500/10 hover:text-rose-500 font-mono text-[11px]"
                       @click="toggleGroupPermissions(group, false)"
                     >
                       Bỏ nhóm
@@ -273,25 +273,25 @@
                 </div>
 
                 <!-- Group Permissions Grid -->
-                <div class="p-3 grid grid-cols-1 md:grid-cols-2 gap-2 bg-[#0f172a]">
+                <div class="p-3 grid grid-cols-1 md:grid-cols-2 gap-2 bg-[var(--owl-bg-surface)]">
                   <div
                     v-for="perm in group.permissions"
                     :key="perm.id"
                     class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 select-none"
                     :class="isPermissionSelected(perm.id)
-                      ? 'bg-violet-600/15 border-violet-500/60 text-slate-100'
-                      : 'bg-[#151d2c] border-slate-700/60 hover:border-slate-600 hover:bg-[#1a2436] text-slate-300'"
+                      ? 'bg-blue-600/15 border-blue-500/60 text-[var(--owl-text-primary)]'
+                      : 'bg-[var(--owl-bg-card)] border-[var(--owl-border)] hover:border-blue-500/50 hover:bg-[var(--owl-bg-card-hover)] text-[var(--owl-text-secondary)]'"
                     @click="toggleSinglePermission(perm.id)"
                   >
                     <input
                       type="checkbox"
-                      class="checkbox checkbox-xs checkbox-primary border-slate-600 mt-0.5"
+                      class="checkbox checkbox-xs checkbox-primary border-[var(--owl-border)] mt-0.5"
                       :checked="isPermissionSelected(perm.id)"
                       @click.stop="toggleSinglePermission(perm.id)"
                     />
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between gap-2">
-                        <span class="font-mono text-xs font-semibold text-violet-400 truncate">{{ perm.code || perm.name }}</span>
+                        <span class="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400 truncate">{{ perm.code || perm.name }}</span>
                         <span
                           v-if="getActionTag(perm.action || perm.code)"
                           class="badge badge-xs font-mono text-[9px] px-1.5 py-0 rounded-full"
@@ -300,7 +300,7 @@
                           {{ getActionTag(perm.action || perm.code)?.label }}
                         </span>
                       </div>
-                      <div class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                      <div class="text-[11px] text-[var(--owl-text-muted)] mt-0.5 line-clamp-1">
                         {{ perm.description || perm.name || 'Không có mô tả chi tiết' }}
                       </div>
                     </div>
@@ -313,9 +313,9 @@
           <!-- STEP 3: MENU VIEWS VISIBILITY -->
           <div v-show="currentStep === 3" class="space-y-4">
             <!-- Header bar / search & actions -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#0f172a] border border-slate-700/60 rounded-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-xl">
               <div class="relative flex-1 max-w-md">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--owl-text-muted)]">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -341,7 +341,7 @@
                 </button>
                 <button
                   type="button"
-                  class="btn btn-xs btn-ghost text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 font-mono"
+                  class="btn btn-xs btn-ghost text-[var(--owl-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 font-mono"
                   @click="toggleSelectAllMenus(false)"
                 >
                   Ẩn tất cả
@@ -350,7 +350,7 @@
             </div>
 
             <!-- Menu Cards Grid -->
-            <div v-if="filteredMenuItems.length === 0" class="text-center py-12 text-slate-400 font-mono">
+            <div v-if="filteredMenuItems.length === 0" class="text-center py-12 text-[var(--owl-text-muted)] font-mono">
               Không tìm thấy mục menu nào phù hợp từ khóa
             </div>
 
@@ -360,45 +360,45 @@
                 :key="menu.id"
                 class="p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between select-none"
                 :class="isMenuSelected(menu.id)
-                  ? 'bg-violet-600/15 border-violet-500/70'
-                  : 'bg-[#151d2c] border-slate-700/60 hover:border-slate-600 opacity-75 hover:opacity-100'"
+                  ? 'bg-blue-600/15 border-blue-500/70'
+                  : 'bg-[var(--owl-bg-surface)] border-[var(--owl-border)] hover:border-blue-500/50 opacity-75 hover:opacity-100'"
                 @click="toggleMenuCard(menu.id)"
               >
                 <!-- Card Header -->
                 <div>
                   <div class="flex items-start justify-between gap-2">
                     <div class="flex items-center gap-2">
-                      <div class="w-8 h-8 rounded-lg bg-[#1a2436] border border-slate-700 text-violet-400 flex items-center justify-center flex-shrink-0">
+                      <div class="w-8 h-8 rounded-lg bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-blue-500 flex items-center justify-center flex-shrink-0">
                         <CyberIcon :name="menu.icon || 'Cpu'" class="w-4 h-4" />
                       </div>
                       <div>
-                        <div class="font-bold text-slate-200 leading-tight">{{ menu.title }}</div>
-                        <div class="font-mono text-[10px] text-slate-400 truncate max-w-[150px]">{{ menu.route || menu.path || '—' }}</div>
+                        <div class="font-bold text-[var(--owl-text-primary)] leading-tight">{{ menu.title }}</div>
+                        <div class="font-mono text-[10px] text-[var(--owl-text-muted)] truncate max-w-[150px]">{{ menu.route || menu.path || '—' }}</div>
                       </div>
                     </div>
 
                     <!-- Switch toggle (DaisyUI) -->
                     <input
                       type="checkbox"
-                      class="toggle toggle-sm toggle-primary border-slate-600"
+                      class="toggle toggle-sm toggle-primary border-[var(--owl-border)]"
                       :checked="isMenuSelected(menu.id)"
                       @click.stop="toggleMenuCard(menu.id)"
                     />
                   </div>
 
-                  <p class="text-[11px] text-slate-400 mt-2.5 line-clamp-2 leading-relaxed">
+                  <p class="text-[11px] text-[var(--owl-text-secondary)] mt-2.5 line-clamp-2 leading-relaxed">
                     {{ menu.description || 'Truy cập và thao tác màn hình chức năng.' }}
                   </p>
                 </div>
 
                 <!-- Card Footer Meta -->
-                <div class="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-slate-700/60">
-                  <span class="badge badge-xs bg-[#1a2436] border border-slate-700 font-mono text-[10px] text-slate-400">
+                <div class="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-[var(--owl-border)]">
+                  <span class="badge badge-xs bg-[var(--owl-bg-card)] border border-[var(--owl-border)] font-mono text-[10px] text-[var(--owl-text-muted)]">
                     {{ menu.category || menu.pluginId || 'system' }}
                   </span>
                   <span
                     class="font-mono text-[10px] font-bold"
-                    :class="isMenuSelected(menu.id) ? 'text-violet-400' : 'text-slate-400'"
+                    :class="isMenuSelected(menu.id) ? 'text-blue-500' : 'text-[var(--owl-text-muted)]'"
                   >
                     {{ isMenuSelected(menu.id) ? '● Hiển thị' : '○ Đã ẩn' }}
                   </span>
@@ -410,15 +410,15 @@
       </div>
 
       <!-- Wizard Footer Controls Bar -->
-      <div class="p-4 bg-[#0f172a] border-t border-slate-700/60 flex items-center justify-between gap-3 flex-shrink-0">
-        <div class="text-[11px] text-slate-400 font-mono hidden sm:block">
-          Bước {{ currentStep }} / 3: <span class="text-violet-300 font-semibold">{{ steps[currentStep - 1]?.title }}</span>
+      <div class="p-4 bg-[var(--owl-bg-aside)] border-t border-[var(--owl-border)] flex items-center justify-between gap-3 flex-shrink-0">
+        <div class="text-[11px] text-[var(--owl-text-secondary)] font-mono hidden sm:block">
+          Bước {{ currentStep }} / 3: <span class="text-blue-600 dark:text-blue-400 font-semibold">{{ steps[currentStep - 1]?.title }}</span>
         </div>
         <div class="flex items-center gap-2.5 ml-auto">
           <button
             type="button"
             :disabled="submitting"
-            class="btn btn-sm btn-ghost border border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+            class="btn btn-sm btn-ghost border border-[var(--owl-border)] text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-[var(--owl-bg-card-hover)]"
             @click="visible = false"
           >
             Hủy
@@ -427,7 +427,7 @@
             v-if="currentStep > 1"
             type="button"
             :disabled="submitting"
-            class="btn btn-sm bg-[#1a2436] hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono"
+            class="btn btn-sm bg-[var(--owl-bg-card)] hover:bg-[var(--owl-bg-card-hover)] border border-[var(--owl-border)] text-[var(--owl-text-secondary)] font-mono"
             @click="prevStep"
           >
             ← Quay lại
@@ -435,7 +435,7 @@
           <button
             v-if="currentStep < 3"
             type="button"
-            class="btn btn-sm bg-violet-600 hover:bg-violet-700 text-white font-bold border-none"
+            class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white font-bold border-none"
             @click="nextStep"
           >
             Tiếp tục →
@@ -444,7 +444,7 @@
             v-else
             type="button"
             :disabled="submitting"
-            class="btn btn-sm bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold border-none"
+            class="btn btn-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold border-none shadow-none flex items-center gap-1.5"
             @click="submitWizard"
           >
             <span v-if="submitting" class="loading loading-spinner loading-xs mr-1"></span>

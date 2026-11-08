@@ -1,15 +1,15 @@
 <template>
   <div class="user-management-container p-6 space-y-6 max-w-7xl mx-auto">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-5 border-b border-white/10">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-5 border-b border-[var(--owl-border)]">
       <div>
         <div class="flex items-center gap-2.5">
-          <span class="inline-block w-2.5 h-2.5 rounded-full bg-violet-400 shadow-none"></span>
-          <h2 class="text-xl font-semibold tracking-tight text-white">Quản lý Người dùng</h2>
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500 shadow-none"></span>
+          <h2 class="text-xl font-bold tracking-tight text-[var(--owl-text-primary)]">Quản lý Người dùng</h2>
         </div>
-        <p class="text-xs text-slate-400 mt-1">Quản lý tài khoản truy cập, phân bổ vai trò và trạng thái kích hoạt hệ thống</p>
+        <p class="text-xs text-[var(--owl-text-secondary)] mt-1">Quản lý tài khoản truy cập, phân bổ vai trò và trạng thái kích hoạt hệ thống</p>
       </div>
-      <button class="btn btn-sm bg-violet-600 hover:bg-violet-500 text-white font-medium border-none rounded-xl shadow-none px-4" @click="openCreateDialog">
+      <button class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold border-none rounded-xl shadow-none px-4" @click="openCreateDialog">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
@@ -18,27 +18,27 @@
     </div>
 
     <!-- Filters Section -->
-    <div class="card bg-[#151d2c] border border-white/10 shadow-none rounded-2xl p-4 backdrop-blur-md">
+    <div class="card bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] shadow-none rounded-2xl p-4">
       <div class="flex flex-wrap items-center gap-4">
         <div class="flex items-center gap-2 flex-1 min-w-[240px]">
-          <span class="text-xs font-medium text-slate-400">Tìm kiếm:</span>
+          <span class="text-xs font-medium text-[var(--owl-text-secondary)]">Tìm kiếm:</span>
           <div class="relative flex-1">
             <input
               v-model="filters.keyword"
               type="text"
               placeholder="Tên đăng nhập, email..."
-              class="input input-sm w-full bg-[#1a2436] border-white/10 text-slate-200 placeholder-slate-500 rounded-xl focus:border-violet-500/50 focus:outline-none text-xs pl-8 transition-colors"
+              class="input input-sm w-full bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-primary)] placeholder-[var(--owl-text-muted)] rounded-xl focus:border-blue-500 focus:outline-none text-xs pl-8 transition-colors"
               @keyup.enter="loadUsers"
             />
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 absolute left-2.5 top-2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 absolute left-2.5 top-2 text-[var(--owl-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
-          <span class="text-xs font-medium text-slate-400">Trạng thái:</span>
-          <select v-model="filters.status" class="select select-sm bg-[#1a2436] border-white/10 text-slate-200 rounded-xl focus:border-violet-500/50 text-xs">
+          <span class="text-xs font-medium text-[var(--owl-text-secondary)]">Trạng thái:</span>
+          <select v-model="filters.status" class="select select-sm bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-primary)] rounded-xl focus:border-blue-500 text-xs">
             <option :value="undefined">Tất cả</option>
             <option :value="true">Hoạt động</option>
             <option :value="false">Khóa</option>
@@ -46,10 +46,10 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <button class="btn btn-sm bg-[#1a2436] hover:bg-[#202c42] text-slate-200 border border-white/10 rounded-xl px-4 transition-colors" @click="loadUsers">
+          <button class="btn btn-sm bg-[var(--owl-bg-card)] hover:bg-[var(--owl-bg-card-hover)] text-[var(--owl-text-primary)] border border-[var(--owl-border)] rounded-xl px-4 transition-colors" @click="loadUsers">
             Tìm kiếm
           </button>
-          <button class="btn btn-sm btn-ghost text-slate-400 hover:text-white rounded-xl" @click="resetFilters">
+          <button class="btn btn-sm btn-ghost text-[var(--owl-text-muted)] hover:text-[var(--owl-text-primary)] rounded-xl" @click="resetFilters">
             Đặt lại
           </button>
         </div>
@@ -57,11 +57,11 @@
     </div>
 
     <!-- User Table -->
-    <div class="card bg-[#151d2c] border border-white/10 shadow-none rounded-2xl overflow-hidden backdrop-blur-md">
+    <div class="card bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] shadow-none rounded-2xl overflow-hidden">
       <div class="overflow-x-auto">
         <table class="table w-full text-xs">
           <thead>
-            <tr class="bg-[#1a2436] border-b border-white/10 text-slate-300 font-medium">
+            <tr class="bg-[var(--owl-bg-aside)] border-b border-[var(--owl-border)] text-[var(--owl-text-secondary)] font-medium">
               <th class="py-3.5 px-4">Tên đăng nhập</th>
               <th class="py-3.5 px-4">Họ và tên</th>
               <th class="py-3.5 px-4">Email</th>
@@ -74,12 +74,12 @@
           <tbody>
             <tr v-if="loading">
               <td colspan="7" class="text-center py-10">
-                <span class="loading loading-spinner text-violet-400"></span>
-                <p class="text-xs text-slate-400 mt-2">Đang tải danh sách người dùng...</p>
+                <span class="loading loading-spinner text-blue-500"></span>
+                <p class="text-xs text-[var(--owl-text-muted)] mt-2">Đang tải danh sách người dùng...</p>
               </td>
             </tr>
             <tr v-else-if="filteredUsers.length === 0">
-              <td colspan="7" class="text-center py-10 text-slate-500">
+              <td colspan="7" class="text-center py-10 text-[var(--owl-text-muted)]">
                 Không tìm thấy người dùng nào phù hợp
               </td>
             </tr>
@@ -87,38 +87,38 @@
               v-else
               v-for="row in filteredUsers"
               :key="row.id"
-              class="border-b border-white/5 hover:bg-[#202c42]/40 transition-colors"
+              class="border-b border-[var(--owl-border-light)] hover:bg-[var(--owl-bg-card-hover)] transition-colors"
             >
               <td class="py-3 px-4">
-                <span class="font-medium text-violet-400">{{ row.username }}</span>
+                <span class="font-bold text-blue-600 dark:text-blue-400">{{ row.username }}</span>
               </td>
-              <td class="text-slate-200 py-3 px-4">{{ row.fullName || '—' }}</td>
-              <td class="text-slate-400 py-3 px-4">{{ row.email || '—' }}</td>
+              <td class="text-[var(--owl-text-primary)] font-medium py-3 px-4">{{ row.fullName || '—' }}</td>
+              <td class="text-[var(--owl-text-secondary)] py-3 px-4">{{ row.email || '—' }}</td>
               <td class="py-3 px-4">
                 <div class="flex flex-wrap gap-1.5">
                   <span
                     v-for="r in row.roles"
                     :key="r.id"
-                    class="badge badge-sm bg-[#1a2436] border border-white/10 text-slate-300 rounded-lg text-[11px]"
+                    class="badge badge-sm bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-secondary)] rounded-lg text-[11px]"
                   >
                     {{ r.name }}
                   </span>
-                  <span v-if="!row.roles || row.roles.length === 0" class="text-slate-500 text-[11px]">Chưa gán</span>
+                  <span v-if="!row.roles || row.roles.length === 0" class="text-[var(--owl-text-muted)] text-[11px]">Chưa gán</span>
                 </div>
               </td>
               <td class="text-center py-3 px-4">
                 <span
                   class="badge badge-sm font-medium rounded-lg"
-                  :class="row.isActive ? 'badge-success text-emerald-950 bg-emerald-400' : 'badge-error text-rose-300 bg-rose-500/20 border border-rose-500/30'"
+                  :class="row.isActive ? 'badge-success text-white' : 'badge-ghost text-[var(--owl-text-muted)]'"
                 >
                   {{ row.isActive ? 'Hoạt động' : 'Khóa' }}
                 </span>
               </td>
-              <td class="text-slate-400 py-3 px-4">{{ formatDate(row.createdAt) }}</td>
+              <td class="text-[var(--owl-text-muted)] py-3 px-4">{{ formatDate(row.createdAt) }}</td>
               <td class="text-center py-3 px-4">
                 <div class="flex items-center justify-center gap-1">
                   <button
-                    class="btn btn-xs btn-ghost text-slate-400 hover:text-violet-400 hover:bg-white/5 rounded-lg"
+                    class="btn btn-xs btn-ghost text-[var(--owl-text-muted)] hover:text-blue-500 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg"
                     title="Chỉnh sửa"
                     @click="openEditDialog(row)"
                   >
@@ -128,7 +128,7 @@
                   </button>
                   <button
                     class="btn btn-xs btn-ghost rounded-lg"
-                    :class="row.isActive ? 'text-slate-400 hover:text-amber-400 hover:bg-white/5' : 'text-slate-400 hover:text-emerald-400 hover:bg-white/5'"
+                    :class="row.isActive ? 'text-[var(--owl-text-muted)] hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/5' : 'text-[var(--owl-text-muted)] hover:text-emerald-500 hover:bg-black/5 dark:hover:bg-white/5'"
                     :title="row.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'"
                     @click="toggleUserStatus(row)"
                   >
@@ -140,7 +140,7 @@
                     </svg>
                   </button>
                   <button
-                    class="btn btn-xs btn-ghost text-slate-400 hover:text-rose-400 hover:bg-white/5 rounded-lg"
+                    class="btn btn-xs btn-ghost text-[var(--owl-text-muted)] hover:text-rose-500 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg"
                     title="Xóa tài khoản"
                     @click="deleteUser(row)"
                   >
@@ -159,92 +159,92 @@
     <!-- Create / Edit User Modal -->
     <Transition name="modal-fade">
       <div v-if="dialogVisible" class="modal modal-open fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="relative z-10 modal-box bg-[#151d2c] border border-white/10 shadow-none rounded-3xl max-w-lg text-slate-200">
-        <div class="flex items-center justify-between pb-3 border-b border-white/10">
-          <h3 class="font-semibold text-base text-white">
+        <div class="relative z-10 modal-box bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] shadow-xl rounded-3xl max-w-lg text-[var(--owl-text-primary)]">
+        <div class="flex items-center justify-between pb-3 border-b border-[var(--owl-border)]">
+          <h3 class="font-bold text-base text-[var(--owl-text-primary)]">
             {{ isEdit ? 'Cập nhật Người dùng' : 'Thêm Người dùng mới' }}
           </h3>
-          <button class="btn btn-sm btn-circle btn-ghost text-slate-400 hover:text-white rounded-xl" @click="dialogVisible = false">✕</button>
+          <button class="btn btn-sm btn-circle btn-ghost text-[var(--owl-text-muted)] hover:text-[var(--owl-text-primary)] rounded-xl" @click="dialogVisible = false">✕</button>
         </div>
 
         <form @submit.prevent="submitForm" class="py-4 space-y-4 text-xs font-sans">
           <div>
-            <label class="block text-slate-400 font-medium mb-1.5">Tên đăng nhập <span class="text-rose-400">*</span></label>
+            <label class="block text-[var(--owl-text-secondary)] font-medium mb-1.5">Tên đăng nhập <span class="text-rose-500">*</span></label>
             <input
               v-model="form.username"
               type="text"
               :disabled="isEdit"
               placeholder="Nhập tên đăng nhập"
-              class="input input-sm w-full bg-[#1a2436] border-white/10 text-slate-200 rounded-xl focus:border-violet-500/50 focus:outline-none disabled:bg-[#1a2436]/40"
+              class="input input-sm w-full bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-primary)] rounded-xl focus:border-blue-500 focus:outline-none disabled:opacity-50"
               required
             />
           </div>
 
           <div>
-            <label class="block text-slate-400 font-medium mb-1.5">Họ và tên</label>
+            <label class="block text-[var(--owl-text-secondary)] font-medium mb-1.5">Họ và tên</label>
             <input
               v-model="form.fullName"
               type="text"
               placeholder="Nhập họ và tên đầy đủ"
-              class="input input-sm w-full bg-[#1a2436] border-white/10 text-slate-200 rounded-xl focus:border-violet-500/50 focus:outline-none"
+              class="input input-sm w-full bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-primary)] rounded-xl focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label class="block text-slate-400 font-medium mb-1.5">Email <span class="text-rose-400">*</span></label>
+            <label class="block text-[var(--owl-text-secondary)] font-medium mb-1.5">Email <span class="text-rose-500">*</span></label>
             <input
               v-model="form.email"
               type="email"
               placeholder="user@example.com"
-              class="input input-sm w-full bg-[#1a2436] border-white/10 text-slate-200 rounded-xl focus:border-violet-500/50 focus:outline-none"
+              class="input input-sm w-full bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-primary)] rounded-xl focus:border-blue-500 focus:outline-none"
               required
             />
           </div>
 
           <div v-if="!isEdit">
-            <label class="block text-slate-400 font-medium mb-1.5">Mật khẩu <span class="text-rose-400">*</span></label>
+            <label class="block text-[var(--owl-text-secondary)] font-medium mb-1.5">Mật khẩu <span class="text-rose-500">*</span></label>
             <input
               v-model="form.password"
               type="password"
               placeholder="Tối thiểu 6 ký tự"
-              class="input input-sm w-full bg-[#1a2436] border-white/10 text-slate-200 rounded-xl focus:border-violet-500/50 focus:outline-none"
+              class="input input-sm w-full bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-primary)] rounded-xl focus:border-blue-500 focus:outline-none"
               required
             />
           </div>
 
           <div>
-            <label class="block text-slate-400 font-medium mb-1.5">Gán vai trò</label>
-            <div class="grid grid-cols-2 gap-2 p-3 bg-[#1a2436] border border-white/10 rounded-xl max-h-36 overflow-y-auto">
+            <label class="block text-[var(--owl-text-secondary)] font-medium mb-1.5">Gán vai trò</label>
+            <div class="grid grid-cols-2 gap-2 p-3 bg-[var(--owl-bg-card)] border border-[var(--owl-border)] rounded-xl max-h-36 overflow-y-auto">
               <label
                 v-for="r in availableRoles"
                 :key="r.id"
-                class="flex items-center gap-2 cursor-pointer hover:text-white"
+                class="flex items-center gap-2 cursor-pointer hover:text-[var(--owl-text-primary)]"
               >
                 <input
                   type="checkbox"
                   :value="r.id"
                   v-model="form.roleIds"
-                  class="checkbox checkbox-xs border-white/20 checked:bg-violet-600 checked:border-violet-600 rounded"
+                  class="checkbox checkbox-xs border-[var(--owl-border)] checked:bg-blue-600 checked:border-blue-600 rounded"
                 />
-                <span class="text-xs text-slate-300">{{ r.name }}</span>
+                <span class="text-xs text-[var(--owl-text-secondary)]">{{ r.name }}</span>
               </label>
             </div>
           </div>
 
           <div class="flex items-center justify-between pt-2">
-            <span class="text-slate-400 font-medium">Kích hoạt tài khoản</span>
+            <span class="text-[var(--owl-text-secondary)] font-medium">Kích hoạt tài khoản</span>
             <input
               type="checkbox"
               v-model="form.isActive"
-              class="toggle toggle-sm toggle-success bg-[#1a2436] border-white/20"
+              class="toggle toggle-sm toggle-success bg-[var(--owl-bg-card)] border-[var(--owl-border)]"
             />
           </div>
 
-          <div class="modal-action pt-4 border-t border-white/10">
-            <button type="button" class="btn btn-sm btn-ghost text-slate-400 hover:text-white rounded-xl" @click="dialogVisible = false">Hủy</button>
+          <div class="modal-action pt-4 border-t border-[var(--owl-border)]">
+            <button type="button" class="btn btn-sm btn-ghost text-[var(--owl-text-muted)] hover:text-[var(--owl-text-primary)] rounded-xl" @click="dialogVisible = false">Hủy</button>
             <button
               type="submit"
-              class="btn btn-sm bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl border-none px-4 shadow-none"
+              class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl border-none px-4 shadow-none"
               :disabled="submitting"
             >
               <span v-if="submitting" class="loading loading-spinner loading-xs"></span>

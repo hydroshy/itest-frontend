@@ -223,7 +223,7 @@
           </div>
 
           <div class="flex items-center justify-between text-xs text-base-content/70 pt-1">
-            <span>Tối đa cho phép: <strong class="text-white">{{ maxAllowedDevices }}</strong> thiết bị</span>
+            <span>Tối đa cho phép: <strong class="text-base-content">{{ maxAllowedDevices }}</strong> thiết bị</span>
             <span>Đã chọn: <strong class="text-primary">{{ selectedDevices.length }}</strong> thiết bị</span>
           </div>
         </div>
@@ -311,7 +311,7 @@
 
           <!-- Total Duration & Elapsed -->
           <div class="hidden sm:block text-xs font-mono text-base-content/70">
-            <div>Tổng thời lượng: <span class="font-bold text-white">{{ totalDurationSeconds }}s</span></div>
+            <div>Tổng thời lượng: <span class="font-bold text-base-content">{{ totalDurationSeconds }}s</span></div>
             <div>Đã chạy: <span class="font-bold text-primary">{{ elapsedSeconds }}s</span></div>
           </div>
         </div>

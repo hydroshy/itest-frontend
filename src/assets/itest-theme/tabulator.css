@@ -115,7 +115,7 @@ div.tabulator .tabulator-row.tabulator-selected {
 .tabulator .tabulator-row.tabulator-selected:hover,
 div.tabulator .tabulator-row.tabulator-selected:hover {
   background-color: rgba(56, 189, 248, 0.2) !important;
-  color: #ffffff !important;
+  color: var(--owl-text-bright) !important;
 }
 
 /* Cells */
