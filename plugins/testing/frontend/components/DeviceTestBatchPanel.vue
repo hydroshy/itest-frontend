@@ -38,9 +38,17 @@
           </select>
         </div>
 
-        <div v-if="isTesting" class="flex items-center gap-2">
-          <span class="text-xs font-mono text-warning animate-pulse font-bold">Đang chạy kiểm thử...</span>
-          <button class="btn btn-xs btn-error gap-1" :disabled="cancellingBatch" @click="cancelSelectedBatch">
+        <div v-if="isTesting || testFinished" class="flex items-center gap-2">
+          <span v-if="isTesting" class="text-xs font-mono text-warning animate-pulse font-bold">Đang chạy kiểm thử...</span>
+          <button
+            class="btn btn-xs btn-success gap-1 font-bold"
+            :disabled="completingBatch || !selectedBatchId"
+            @click="completeSelectedBatch"
+          >
+            <CheckCircle2 class="w-3 h-3" />
+            {{ completingBatch ? 'Đang hoàn thành...' : 'Hoàn Thành Test Batch' }}
+          </button>
+          <button v-if="isTesting" class="btn btn-xs btn-error gap-1" :disabled="cancellingBatch" @click="cancelSelectedBatch">
             <Square class="w-3 h-3" />
             Hủy Batch
           </button>
@@ -218,14 +226,26 @@
               Xóa Hết
             </button>
 
+            <!-- Nút Hoàn Thành Test Batch -->
+            <button
+              v-if="isTesting || testFinished"
+              class="btn btn-xs btn-success gap-1 px-3 font-bold"
+              :disabled="completingBatch || !selectedBatchId"
+              @click="completeSelectedBatch"
+            >
+              <CheckCircle2 class="w-3 h-3" />
+              {{ completingBatch ? 'Đang Hoàn Thành...' : 'Hoàn Thành Test Batch' }}
+            </button>
+
             <!-- Nút Bắt Đầu Test Batch Chính -->
             <button
+              v-else
               class="btn btn-xs btn-primary gap-1 px-3 font-bold"
-              :disabled="selectedDevices.length === 0 || isTesting || !selectedBatchConfig"
+              :disabled="selectedDevices.length === 0 || !selectedBatchConfig"
               @click="startBatchTest"
             >
               <Play class="w-3 h-3 fill-current" />
-              {{ isTesting ? 'Đang Test...' : 'Bắt Đầu Test Batch' }}
+              Bắt Đầu Test Batch
             </button>
           </div>
         </div>
@@ -286,6 +306,7 @@ import {
   Search,
   RotateCcw,
   AlertCircle,
+  CheckCircle2,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
@@ -327,6 +348,7 @@ const goldenReferenceDevices = ref<any[]>([]);
 // Running Batches
 const runningBatches = ref<any[]>([]);
 const cancellingBatch = ref(false);
+const completingBatch = ref(false);
 
 // Test Execution State
 const isTesting = ref(false);
@@ -1024,20 +1046,66 @@ function finishBatchTest(statusData?: any) {
   cyberToast.success(`Test Batch hoàn thành! Kết quả: ${batchVerdict.value}`);
 }
 
+async function completeSelectedBatch() {
+  const id = selectedBatchId.value;
+  if (!id) return;
+  if (isTesting.value) {
+    if (!window.confirm('Đợt test đang chạy. Bạn có chắc chắn muốn hoàn thành ngay? Kết quả sẽ được ghi nhận vào Traceability và thiết bị sẽ được xóa khỏi hệ thống đo kiểm.')) {
+      return;
+    }
+  }
+
+  completingBatch.value = true;
+  try {
+    const res: any = await httpClient.post(`/plugins/testing/test-batches/${id}/complete`);
+    const verdict = res?.data?.verdict || batchVerdict.value || 'PASS';
+    cyberToast.success(`Đã hoàn thành Test Batch (${verdict}) và đồng bộ sang Traceability.`);
+
+    resetBatchInterface();
+    await loadRunningBatches();
+    await loadSosWithBatches();
+  } catch (err: any) {
+    cyberToast.error(err?.response?.data?.message || 'Không thể hoàn thành Test Batch');
+  } finally {
+    completingBatch.value = false;
+  }
+}
+
+function resetBatchInterface() {
+  clearInterval(timerInterval);
+  clearInterval(simulationInterval);
+  timerInterval = null;
+  simulationInterval = null;
+
+  selectedBatchId.value = '';
+  selectedBatchConfig.value = null;
+  selectedSoNumber.value = '';
+  filterItemCode.value = '';
+  filterFwVersion.value = '';
+  availableDevices.value = [];
+  selectedDevices.value = [];
+  selectedAvailableRows.value = [];
+  isTesting.value = false;
+  testFinished.value = false;
+  batchVerdict.value = '';
+  elapsedSeconds.value = 0;
+  remainingSeconds.value = 0;
+
+  try {
+    const user = authStore.user?.username || 'default';
+    sessionStorage.removeItem(`device_test_batch_active_${user}`);
+  } catch {}
+
+  updateTabulatorData();
+}
+
 async function cancelSelectedBatch() {
   const id = selectedBatchId.value;
   if (!id || !window.confirm('Bạn có chắc chắn muốn hủy Test Batch đang chạy?')) return;
   cancellingBatch.value = true;
   try {
     await httpClient.post(`/plugins/testing/test-batches/${id}/cancel`);
-    clearInterval(timerInterval);
-    clearInterval(simulationInterval);
-    isTesting.value = false;
-    testFinished.value = false;
-    selectedDevices.value.forEach((d) => {
-      d.status = 'PENDING';
-    });
-    updateTabulatorData();
+    resetBatchInterface();
     await loadRunningBatches();
     cyberToast.success('Đã hủy Test Batch');
   } catch (err: any) {
@@ -1131,6 +1199,10 @@ async function onSelectRunningBatch(id: string) {
     }
 
     updateTabulatorData();
+    try {
+      const user = authStore.user?.username || 'default';
+      sessionStorage.setItem(`device_test_batch_active_${user}`, id);
+    } catch {}
     cyberToast.success(`Đã khôi phục trạng thái Test Batch ${statusData.batchCode}`);
   } catch (err: any) {
     cyberToast.error(err?.response?.data?.message || 'Không thể khôi phục Test Batch');
@@ -1160,8 +1232,12 @@ onMounted(async () => {
   loadReferenceDevices();
   await loadRunningBatches();
 
-  // If there is an active running batch, auto restore first running batch
-  if (runningBatches.value.length > 0 && !selectedBatchId.value) {
+  // If there is an active running batch, prioritize restoring user's saved session
+  const user = authStore.user?.username || 'default';
+  const savedActiveBatchId = sessionStorage.getItem(`device_test_batch_active_${user}`);
+  if (savedActiveBatchId && runningBatches.value.some((b) => b.id === savedActiveBatchId)) {
+    await onSelectRunningBatch(savedActiveBatchId);
+  } else if (runningBatches.value.length > 0 && !selectedBatchId.value) {
     const firstRunning = runningBatches.value[0];
     if (firstRunning && firstRunning.id) {
       await onSelectRunningBatch(firstRunning.id);
