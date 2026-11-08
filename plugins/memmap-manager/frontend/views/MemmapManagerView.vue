@@ -8,7 +8,7 @@
         <h2 class="text-xl md:text-2xl font-bold tracking-tight text-base-content flex items-center gap-2.5 mt-0.5">
           <Layers class="w-6 h-6 text-primary" /> Memmap Payload
         </h2>
-        <p class="subtitle text-xs text-base-content/70 mt-1">Quản lý profile và tải lên payload IEC485 có kiểm tra trước khi lưu.</p>
+        <p class="subtitle text-xs text-base-content/70 mt-1">Quản lý và tải lên bản đồ bộ nhớ thiết bị.</p>
       </div>
       <div class="header-actions flex items-center gap-2">
         <button
@@ -82,7 +82,7 @@
                 v-model="searchQuery"
                 type="text"
                 class="input input-sm input-bordered bg-base-100 w-64 text-xs"
-                placeholder="Tìm SKU, firmware hoặc profile..."
+                placeholder=""
               />
               <button
                 type="button"
@@ -110,7 +110,6 @@
           <div class="flex items-center justify-between pb-3 border-b border-base-content/10 mb-3">
             <div>
               <span class="font-bold text-sm text-base-content">Tải lên Memmap Payload mới</span>
-              <p class="text-xs text-base-content/60 mt-0.5">Tải lên file IEC485 CSV và cấu hình thông tin ITEM_CODE, FW_VERSION để lưu bản đồ bộ nhớ.</p>
             </div>
             <button type="button" class="btn btn-sm btn-ghost gap-1 text-xs" @click="changeTab('manager')">
               ← Danh sách Memmap
@@ -131,7 +130,7 @@
                 v-model="uploadForm.itemCode"
                 type="text"
                 class="input input-sm input-bordered bg-base-100 w-full font-mono uppercase"
-                placeholder="Ví dụ: WSLRW-V1A-025"
+                placeholder=""
                 @input="onItemCodeInput"
               />
             </div>
@@ -143,7 +142,7 @@
                 maxlength="6"
                 class="input input-sm input-bordered bg-base-100 w-full font-mono uppercase"
                 :class="{ 'input-error': fwVersionError }"
-                placeholder="Ví dụ: 1F0001"
+                placeholder=""
                 @input="normalizeFwVersion"
               />
               <span v-if="fwVersionError" class="text-[11px] text-error mt-1">{{ fwVersionError }}</span>
@@ -163,9 +162,6 @@
                 <button type="button" class="btn btn-ghost btn-xs btn-circle ml-1" @click="handleFileRemove">✕</button>
               </span>
               <span v-else class="text-xs text-base-content/50">Chưa chọn tệp</span>
-            </div>
-            <div class="text-[11px] text-base-content/60 mt-1.5">
-              Định dạng Payload: <strong class="text-base-content/80">IEC485 CSV</strong> · RFC 4180 / Multipart · Validation Decimal + Hex — kiểm tra từng dòng.
             </div>
           </div>
 
