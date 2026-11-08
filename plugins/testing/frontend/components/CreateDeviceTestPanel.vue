@@ -77,27 +77,17 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Connectivity (Chỉ hỗ trợ LoRaWAN) -->
+          <!-- Connectivity -->
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold">Chuẩn Kết Nối (Connectivity) *</span>
             </label>
-            <div class="join w-full">
-              <input
-                type="text"
-                class="input input-bordered input-sm join-item flex-1 bg-base-300 font-bold text-primary text-xs"
-                value="LoRaWAN"
-                readonly
-              />
-              <span class="join-item btn btn-sm btn-neutral pointer-events-none text-xs font-mono">
-                Chỉ hỗ trợ LoRaWAN
-              </span>
-            </div>
-            <label class="label py-0.5">
-              <span class="label-text-alt text-[11px] text-base-content/60">
-                Theo yêu cầu hệ thống: Quy trình tạo thiết bị test chỉ hỗ trợ chuẩn LoRaWAN
-              </span>
-            </label>
+            <input
+              type="text"
+              class="input input-bordered input-sm w-full bg-base-300 font-bold text-primary text-xs"
+              value="LoRaWAN"
+              readonly
+            />
           </div>
 
           <!-- Network Server -->
@@ -106,7 +96,7 @@
               <span class="label-text text-xs font-semibold">Network Server (ChirpStack) *</span>
               <span class="label-text-alt text-xs font-mono text-success">
                 <span v-if="loadingServers" class="loading loading-spinner loading-xs mr-1"></span>
-                API Online
+                Online
               </span>
             </label>
             <select
@@ -116,64 +106,52 @@
               @change="onNetworkServerChange"
             >
               <option v-for="ns in networkServers" :key="ns.id" :value="ns.id">
-                {{ ns.name }} ({{ ns.apiUrl }})
+                {{ ns.name || 'ChirpStack' }}
               </option>
             </select>
-            <label class="label py-0.5">
-              <span class="label-text-alt text-[11px] text-base-content/60 font-mono">
-                URL: {{ step1.serverUrl }}
-              </span>
-            </label>
           </div>
 
-          <!-- Chọn / Nhập SO Number -->
+          <!-- Chọn SO Number -->
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold">SO Number *</span>
             </label>
             <div class="relative">
-              <input
+              <select
                 v-model="step1.soNumber"
-                list="so-options-list"
-                type="text"
-                class="input input-bordered input-sm w-full text-xs font-mono uppercase"
-                placeholder="SO/2026/01527"
+                class="select select-bordered select-sm w-full text-xs font-mono"
                 :disabled="loadingSos"
-                @input="onSoInput"
-                @blur="onSoBlur"
                 @change="onSoChange"
-              />
-              <datalist id="so-options-list">
+              >
+                <option value="">-- Chọn SO Number --</option>
                 <option v-for="so in salesOrders" :key="so.id || so.soNumber" :value="so.soNumber">
                   {{ so.soNumber }} {{ so.customerName ? `- ${so.customerName}` : '' }}
                 </option>
-              </datalist>
+              </select>
+            </div>
+            <!-- Hiển thị tên khách hàng ngay dưới select -->
+            <div v-if="selectedSoCustomerName" class="flex items-center gap-1.5 text-[11px] mt-1 font-mono">
+              <span class="text-base-content/60">Khách hàng:</span>
+              <span class="font-bold text-primary truncate">{{ selectedSoCustomerName }}</span>
             </div>
           </div>
 
-          <!-- Chọn / Nhập WA Number -->
+          <!-- Chọn WA Number -->
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold">WA Number *</span>
             </label>
-            <div class="relative">
-              <input
-                v-model="step1.waNumber"
-                list="wa-options-list"
-                type="text"
-                class="input input-bordered input-sm w-full text-xs font-mono uppercase"
-                placeholder="WA/2026/01527"
-                :disabled="loadingWas"
-                @input="onWaInput"
-                @blur="onWaBlur"
-                @change="onWaChange"
-              />
-              <datalist id="wa-options-list">
-                <option v-for="wa in workAssignments" :key="wa.id || wa.waNumber" :value="wa.waNumber">
-                  {{ wa.waNumber }}
-                </option>
-              </datalist>
-            </div>
+            <select
+              v-model="step1.waNumber"
+              class="select select-bordered select-sm w-full text-xs font-mono"
+              :disabled="loadingWas || !step1.soNumber"
+              @change="onWaChange"
+            >
+              <option value="">{{ step1.soNumber ? (loadingWas ? '-- Đang tải WA... --' : '-- Chọn WA Number --') : '-- Vui lòng chọn SO Number trước --' }}</option>
+              <option v-for="wa in workAssignments" :key="wa.id || wa.waNumber" :value="wa.waNumber">
+                {{ wa.waNumber }}
+              </option>
+            </select>
           </div>
         </div>
 
@@ -186,8 +164,8 @@
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-base-content/80 mt-1">
             <div>SO Number: <span class="font-bold text-base-content">{{ step1.soNumber }}</span></div>
             <div>WA Number: <span class="font-bold text-base-content">{{ step1.waNumber }}</span></div>
+            <div>Khách hàng: <span class="font-bold text-primary">{{ selectedSoCustomerName || '—' }}</span></div>
             <div>Item Code: <span class="font-bold text-base-content">{{ step1.itemCode || 'Theo Sensor (Bước 2)' }}</span></div>
-            <div>Network Server: <span class="font-bold text-base-content">ChirpStack</span></div>
           </div>
         </div>
 
@@ -632,6 +610,7 @@ const step1 = reactive({
   deviceProfileId: '',
   soNumber: '',
   waNumber: '',
+  customerName: '',
   itemCode: '',
 });
 
@@ -880,27 +859,14 @@ function cleanWaNumber(val?: string): string {
   return trimmed;
 }
 
-function onSoInput() {
-  step1.soNumber = step1.soNumber.toUpperCase();
-}
-
-function onSoBlur() {
-  if (step1.soNumber) {
-    step1.soNumber = cleanSoNumber(step1.soNumber);
-    onSoChange();
-  }
-}
-
-function onWaInput() {
-  step1.waNumber = step1.waNumber.toUpperCase();
-}
-
-function onWaBlur() {
-  if (step1.waNumber) {
-    step1.waNumber = cleanWaNumber(step1.waNumber);
-    onWaChange();
-  }
-}
+const selectedSoCustomerName = computed(() => {
+  if (step1.customerName) return step1.customerName;
+  if (!step1.soNumber) return '';
+  const found = salesOrders.value.find(
+    (s) => cleanSoNumber(s.soNumber || s.so_number) === cleanSoNumber(step1.soNumber)
+  );
+  return found?.customerName || found?.customer_name || '';
+});
 
 async function loadSalesOrders() {
   loadingSos.value = true;
@@ -910,6 +876,7 @@ async function loadSalesOrders() {
     salesOrders.value = items.map((s: any) => ({
       ...s,
       soNumber: cleanSoNumber(s.soNumber || s.so_number),
+      customerName: s.customerName || s.customer_name || '',
     }));
   } catch {
     salesOrders.value = [];
@@ -920,6 +887,10 @@ async function loadSalesOrders() {
 
 async function onSoChange() {
   step1.soNumber = cleanSoNumber(step1.soNumber);
+  const foundSo = salesOrders.value.find(
+    (s) => cleanSoNumber(s.soNumber || s.so_number) === step1.soNumber
+  );
+  step1.customerName = foundSo?.customerName || foundSo?.customer_name || '';
   if (!step1.soNumber) {
     step1.waNumber = '';
     workAssignments.value = [];
