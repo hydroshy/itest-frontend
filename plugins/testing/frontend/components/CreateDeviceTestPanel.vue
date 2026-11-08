@@ -106,7 +106,7 @@
               @change="onNetworkServerChange"
             >
               <option v-for="ns in networkServers" :key="ns.id" :value="ns.id">
-                {{ ns.name || 'ChirpStack' }}
+                {{ formatServerName(ns) }}
               </option>
             </select>
           </div>
@@ -208,20 +208,6 @@
                 </li>
               </ul>
             </div>
-          </div>
-        </div>
-
-        <!-- Traceability Summary Preview -->
-        <div v-if="step1.soNumber && step1.waNumber" class="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
-          <div class="font-bold text-primary flex items-center gap-2">
-            <CheckCircle2 class="w-4 h-4" />
-            <span>Đã xác nhận liên kết Testing &amp; Traceability:</span>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-base-content/80 mt-1">
-            <div>SO Number: <span class="font-bold text-base-content">{{ step1.soNumber }}</span></div>
-            <div>WA Number: <span class="font-bold text-base-content">{{ step1.waNumber }}</span></div>
-            <div>Item Code: <span class="font-bold text-base-content">{{ step1.itemCode || 'Theo Sensor (Bước 2)' }}</span></div>
-            <div>Network Server: <span class="font-bold text-base-content">ChirpStack</span></div>
           </div>
         </div>
 
@@ -840,6 +826,21 @@ function selectCandidateProfile(profile: any) {
   profileMatchError.value = '';
 }
 
+function formatServerName(ns?: any): string {
+  if (!ns) return 'ChirpStack';
+  const name = String(ns.name || '').trim();
+  if (
+    !name ||
+    /^https?:\/\//i.test(name) ||
+    name.toLowerCase().includes('chirpstack-test-api') ||
+    name.toLowerCase().includes('globiots.com')
+  ) {
+    return 'ChirpStack';
+  }
+  const cleaned = name.replace(/\(?https?:\/\/[^\s)]+\)?/gi, '').replace(/[-–—]\s*$/, '').trim();
+  return cleaned || 'ChirpStack';
+}
+
 async function loadNetworkServers() {
   loadingServers.value = true;
   try {
@@ -857,7 +858,7 @@ async function loadNetworkServers() {
     if (list.length > 0) {
       networkServers.value = list.map((ns: any) => ({
         id: ns.id,
-        name: ns.name,
+        name: formatServerName(ns),
         apiUrl: ns.apiUrl || ns.api_url || '',
         apiToken: ns.apiToken || ns.api_token || '',
         tenantId: ns.tenantId || ns.tenant_id || '',
@@ -872,7 +873,7 @@ async function loadNetworkServers() {
       networkServers.value = [
         {
           id: 'srv-globiots-test',
-          name: 'Globiots ChirpStack Test Network Server',
+          name: 'ChirpStack',
           apiUrl: 'https://chirpstack-test-api.globiots.com',
           apiToken: '',
           tenantId: '52f14fb4-c5a1-4566-9b57-69502b78a9c1',
