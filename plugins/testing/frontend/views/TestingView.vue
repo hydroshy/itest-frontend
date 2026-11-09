@@ -344,9 +344,9 @@ const tabList = [
   { name: 'create-test-batch', label: 'Create Test Batch', icon: FolderPlus },
   { name: 'so-test-batch', label: 'SO Test Batch', icon: Layers },
   { name: 'list-flow-simulation', label: 'List Flow Simulation', icon: Layers },
-  { name: 'device-simulation', label: 'Device Simulation (Tạo Flow)', icon: Cpu },
+  { name: 'device-simulation', label: 'Simulation Flow & Auto Check', icon: Cpu },
   { name: 'list-device-simulation', label: 'List Device Simulation', icon: Radio },
-  { name: 'device-auto-check', label: 'Device Auto Check (Tự Động)', icon: CheckCircle2 },
+  { name: 'device-auto-check', label: 'Device Auto Check', icon: CheckCircle2 },
 ];
 
 const activeTab = ref('gateway-sessions');

@@ -181,35 +181,35 @@
         </div>
       </div>
 
-      <!-- Section 2: Gán Simulation Flow (Full Width) -->
+      <!-- Section 2: Gán Simulation Flow & Auto Check (Unified Profile) -->
       <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-base-300">
           <div class="flex items-center gap-2">
             <PlayCircle class="w-4 h-4 text-primary" />
             <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-              2. Gán Simulation Flow
+              2. Gán Kịch Bản Simulation Flow &amp; Auto Check
             </h4>
           </div>
           <button
             type="button"
             class="text-xs text-primary hover:underline flex items-center gap-1"
-            @click="$emit('switch-tab', 'list-flow-simulation')"
+            @click="$emit('switch-tab', 'device-simulation')"
           >
-            <span>Quản lý kịch bản</span>
+            <span>Tạo Unified Flow</span>
             <ExternalLink class="w-3 h-3" />
           </button>
         </div>
 
         <div class="form-control">
           <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Chọn Kịch Bản Mô Phỏng (Simulation Flow)</span>
+            <span class="label-text text-xs font-semibold">Chọn Kịch Bản Unified (Simulation Flow &amp; Auto Check)</span>
           </label>
           <select
             v-model="batchForm.simuId"
             class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
             @change="onSimulationFlowSelected"
           >
-            <option value="">-- Chọn kịch bản mô phỏng --</option>
+            <option value="">-- Chọn kịch bản mô phỏng &amp; Auto Check --</option>
             <option v-for="flow in availableFlows" :key="flow.id" :value="flow.id">
               {{ flow.name }} ({{ flow.duration }}s - {{ flow.blocksCount }} blocks)
             </option>
@@ -218,19 +218,27 @@
 
         <!-- Flow Summary Card -->
         <div v-if="selectedFlowData" class="p-3 bg-base-100/80 border border-base-300 rounded-lg space-y-2">
-          <div class="flex items-center justify-between text-xs font-semibold">
-            <span class="text-primary flex items-center gap-1.5">
+          <div class="flex items-center justify-between text-xs font-semibold flex-wrap gap-1">
+            <span class="text-primary flex items-center gap-1.5 font-bold">
               <PlayCircle class="w-3.5 h-3.5" />
               {{ selectedFlowData.name }}
             </span>
-            <span class="badge badge-xs badge-neutral font-mono">
-              {{ selectedFlowData.duration }} giây
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span v-if="selectedFlowData.autoCheckCriteria || selectedFlowData.autocheckId" class="badge badge-xs badge-success font-mono font-bold">
+                ✓ ĐÃ GỘP AUTOCHECK
+              </span>
+              <span v-if="selectedFlowData.referenceDevices?.length" class="badge badge-xs badge-warning font-mono">
+                {{ selectedFlowData.referenceDevices.length }} REF
+              </span>
+              <span class="badge badge-xs badge-neutral font-mono">
+                {{ selectedFlowData.duration }} giây
+              </span>
+            </div>
           </div>
-          <p class="text-[11px] text-base-content/70">
+          <p v-if="selectedFlowData.description" class="text-[11px] text-base-content/70">
             {{ selectedFlowData.description }}
           </p>
-          <div class="flex flex-wrap gap-1 pt-1">
+          <div v-if="selectedFlowData.steps?.length" class="flex flex-wrap gap-1 pt-1">
             <span
               v-for="(step, idx) in selectedFlowData.steps"
               :key="idx"
@@ -250,11 +258,14 @@
             <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
               3. Gán Device Auto Check
             </h4>
+            <span v-if="hasInheritedAutoCheck" class="badge badge-xs badge-success font-mono">
+              TỰ ĐỘNG THEO UNIFIED FLOW
+            </span>
           </div>
           <button
             type="button"
             class="text-xs text-success hover:underline flex items-center gap-1"
-            @click="$emit('switch-tab', 'device-auto-check')"
+            @click="$emit('switch-tab', 'device-simulation')"
           >
             <span>Quy tắc check</span>
             <ExternalLink class="w-3 h-3" />
@@ -262,14 +273,17 @@
         </div>
 
         <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Chọn Bộ Tiêu Chí Auto Check</span>
+          <label class="label py-1 flex items-center justify-between">
+            <span class="label-text text-xs font-semibold">Chọn Bộ Tiêu Chí Auto Check (Tùy chọn nếu đã gộp)</span>
+            <span v-if="hasInheritedAutoCheck" class="text-[11px] text-success">
+              Đã gộp sẵn trong kịch bản (có thể để mặc định hoặc chọn bộ khác để ghi đè)
+            </span>
           </label>
           <select
             v-model="batchForm.autoCheckId"
             class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
           >
-            <option value="">-- Chọn bộ tiêu chí Auto Check --</option>
+            <option value="">{{ hasInheritedAutoCheck ? '-- Sử dụng tiêu chí gộp theo Unified Flow --' : '-- Chọn bộ tiêu chí Auto Check --' }}</option>
             <option v-for="crit in availableCriteria" :key="crit.id" :value="crit.id">
               {{ crit.name }} ({{ crit.rulesCount }} rules)
             </option>
@@ -527,6 +541,10 @@ const selectedCriteriaData = computed(() => {
   return availableCriteria.value.find((c) => c.id === batchForm.autoCheckId);
 });
 
+const hasInheritedAutoCheck = computed(() => {
+  return Boolean(selectedFlowData.value?.autoCheckCriteria || selectedFlowData.value?.autocheckId);
+});
+
 function onSimulationFlowSelected() {
   const flow = availableFlows.value.find((f) => f.id === batchForm.simuId);
   if (flow) {
@@ -600,8 +618,8 @@ async function saveTestBatch() {
     cyberToast.warning('Vui lòng chọn Kịch Bản Mô Phỏng (Simulation Flow)!');
     return;
   }
-  if (!batchForm.autoCheckId) {
-    cyberToast.warning('Vui lòng chọn Bộ Tiêu Chí Auto Check!');
+  if (!batchForm.autoCheckId && !hasInheritedAutoCheck.value) {
+    cyberToast.warning('Vui lòng chọn Bộ Tiêu Chí Auto Check hoặc chọn Kịch Bản đã gộp!');
     return;
   }
 
@@ -616,7 +634,7 @@ async function saveTestBatch() {
     flowDurationSeconds: batchForm.flowDurationSeconds,
     simuId: batchForm.simuId,
     simulationFlow: selectedFlowData.value?.flowBlocks || selectedFlowData.value || (batchForm.simuId ? { id: batchForm.simuId } : undefined),
-    autoCheckCriteria: selectedCriteriaData.value || (batchForm.autoCheckId ? { id: batchForm.autoCheckId } : undefined),
+    autoCheckCriteria: selectedCriteriaData.value || selectedFlowData.value?.autoCheckCriteria || (batchForm.autoCheckId ? { id: batchForm.autoCheckId } : undefined),
     status: 'READY',
   };
 

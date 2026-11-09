@@ -70,7 +70,8 @@
               <th>Tên Kịch Bản</th>
               <th>ITEM-CODE / SKU</th>
               <th>FW Version</th>
-              <th>Số Blocks &amp; Thời Lượng</th>
+              <th>Số Blocks &amp; AutoCheck</th>
+              <th>Thiết Bị Tham Chiếu</th>
               <th>Loại Kết Nối</th>
               <th class="text-right">Thao Tác</th>
             </tr>
@@ -78,7 +79,7 @@
           <tbody class="font-mono text-xs">
             <!-- Loading State -->
             <tr v-if="loading">
-              <td colspan="8" class="text-center py-10 text-base-content/60">
+              <td colspan="9" class="text-center py-10 text-base-content/60">
                 <span class="loading loading-spinner loading-md text-primary"></span>
                 <p class="mt-2 text-xs">Đang tải danh sách kịch bản mô phỏng...</p>
               </td>
@@ -86,7 +87,7 @@
 
             <!-- Empty State -->
             <tr v-else-if="filteredFlows.length === 0">
-              <td colspan="8" class="text-center py-12 text-base-content/60">
+              <td colspan="9" class="text-center py-12 text-base-content/60">
                 <div class="flex flex-col items-center justify-center gap-2">
                   <Layers class="w-8 h-8 text-base-content/30" />
                   <p class="text-sm font-semibold">Chưa có kịch bản Flow Simulation nào</p>
@@ -148,17 +149,30 @@
                 </span>
               </td>
 
-              <!-- Blocks & Duration -->
+              <!-- Blocks & AutoCheck -->
               <td>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="badge badge-sm badge-primary font-bold">
                     {{ getBlocksList(flow).length }} blocks
+                  </span>
+                  <span v-if="flow.autoCheckCriteria || flow.autocheckId" class="badge badge-xs badge-success font-mono font-bold">
+                    ✓ AUTOCHECK
                   </span>
                   <span class="text-[11px] text-base-content/70 flex items-center gap-1 font-semibold">
                     <Clock class="w-3 h-3 text-warning" />
                     {{ getDurationDisplay(flow) }}
                   </span>
                 </div>
+              </td>
+
+              <!-- Reference Devices -->
+              <td>
+                <span v-if="flow.referenceDevices?.length" class="badge badge-xs badge-warning font-mono">
+                  {{ flow.referenceDevices.length }} tham chiếu
+                </span>
+                <span v-else class="text-base-content/40 text-[11px] italic">
+                  Trống
+                </span>
               </td>
 
               <!-- Connectivity -->
