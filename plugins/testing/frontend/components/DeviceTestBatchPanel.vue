@@ -207,82 +207,98 @@
         </div>
       </div>
 
-      <!-- 3. BẢNG TABULATOR 1: Thiết Bị Hiện Có Trong SO -->
-      <div class="space-y-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold uppercase tracking-wide text-base-content">
-              1. Danh Sách Thiết Bị Trong SO ({{ availableDevices.length }})
-            </span>
-            <span v-if="loadingDevices" class="loading loading-spinner loading-xs text-primary"></span>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <div class="relative w-56">
-              <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/50" />
-              <input
-                v-model="searchDeviceText"
-                type="text"
-                placeholder="Tìm Serial, DevEUI..."
-                class="input input-xs input-bordered w-full pl-8 font-mono text-xs"
-                @input="applyAvailableFilter"
-              />
+      <!-- 4. KHU VỰC 2 TABULATOR: CHIA PHÂN NỬA 50-50 CĂN CHỈNH BẰNG NHAU -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <!-- CỘT 1 (50%): TABULATOR 1 - Danh Sách Thiết Bị Trong SO (Chưa test) -->
+        <div class="flex flex-col h-full bg-base-100/40 p-3 rounded-xl border border-base-300 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-base-content flex items-center gap-1.5">
+                <Layers class="w-3.5 h-3.5 text-primary" />
+                1. Thiết Bị Trong SO ({{ availableDevicesDisplayCount }})
+              </span>
+              <span v-if="loadingDevices" class="loading loading-spinner loading-xs text-primary"></span>
             </div>
-            <button
-              class="btn btn-xs btn-primary gap-1"
-              :disabled="selectedAvailableRows.length === 0 || isTesting || selectedDevices.length >= maxAllowedDevices"
-              @click="addSelectedAvailableRowsToBatch"
-            >
-              + Thêm Vào Batch ({{ selectedAvailableRows.length }})
-            </button>
+
+            <div class="flex items-center gap-2">
+              <div class="relative w-44 sm:w-52">
+                <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/50" />
+                <input
+                  v-model="searchDeviceText"
+                  type="text"
+                  placeholder="Tìm Serial, DevEUI..."
+                  class="input input-xs input-bordered w-full pl-8 font-mono text-xs"
+                  @input="applyAvailableFilter"
+                />
+              </div>
+              <button
+                class="btn btn-xs btn-primary gap-1"
+                :disabled="selectedAvailableRows.length === 0 || isTesting || selectedDevices.length >= maxAllowedDevices"
+                @click="addSelectedAvailableRowsToBatch"
+                title="Chuyển các thiết bị đã chọn sang Batch"
+              >
+                + Chuyển ({{ selectedAvailableRows.length }})
+              </button>
+            </div>
+          </div>
+
+          <!-- Khung Tabulator 1 -->
+          <div class="overflow-hidden rounded-lg border border-base-300 flex-1">
+            <div ref="availableTableRef" class="w-full text-xs h-[350px]"></div>
+          </div>
+          <div class="text-[11px] text-base-content/60 flex items-center justify-between pt-1">
+            <span>💡 Nhấp đúp chuột vào hàng để chuyển nhanh sang Batch</span>
+            <span v-if="selectedAvailableRows.length > 0" class="text-primary font-bold">Đã chọn: {{ selectedAvailableRows.length }} thiết bị</span>
           </div>
         </div>
 
-        <!-- Khung Tabulator 1 -->
-        <div class="overflow-hidden rounded-lg border border-base-300">
-          <div ref="availableTableRef" class="w-full text-xs min-h-[160px] max-h-[260px] overflow-auto"></div>
-        </div>
-      </div>
+        <!-- CỘT 2 (50%): TABULATOR 2 - Thiết Bị Trong Test Batch -->
+        <div class="flex flex-col h-full bg-base-100/40 p-3 rounded-xl border border-base-300 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                <Cpu class="w-3.5 h-3.5 text-primary" />
+                2. Thiết Bị Trong Test Batch ({{ selectedDevices.length }}/{{ maxAllowedDevices }})
+              </span>
+              <span
+                v-if="selectedDevices.length >= maxAllowedDevices"
+                class="badge badge-xs badge-info font-mono font-bold"
+              >
+                TỐI ĐA
+              </span>
+            </div>
 
-      <!-- 4. BẢNG TABULATOR 2: Thiết Bị Phục Vụ Chạy Test Batch -->
-      <div class="space-y-2 pt-2 border-t border-base-300/80">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold uppercase tracking-wide text-primary">
-              2. Thiết Bị Phục Vụ Chạy Test Batch ({{ selectedDevices.length }} / {{ maxAllowedDevices }})
-            </span>
-            <span
-              v-if="selectedDevices.length >= maxAllowedDevices"
-              class="badge badge-xs badge-info font-mono font-bold"
-            >
-              ĐÃ ĐẠT GIỚI HẠN TỐI ĐA
-            </span>
+            <div class="flex items-center gap-2">
+              <button
+                v-if="requiresReferenceDevice"
+                class="btn btn-xs btn-outline btn-success gap-1"
+                :disabled="selectedDevices.length === 0 || isTesting"
+                @click="autoAssignReferenceDevices"
+                title="Tự động gán thiết bị chuẩn"
+              >
+                <Sparkles class="w-3 h-3" />
+                Gán Chuẩn
+              </button>
+              <button
+                class="btn btn-xs btn-ghost text-error gap-1"
+                :disabled="selectedDevices.length === 0 || isTesting"
+                @click="clearBatchDevices"
+                title="Trả tất cả thiết bị về lại danh sách SO"
+              >
+                <Trash2 class="w-3 h-3" />
+                Xóa Hết
+              </button>
+            </div>
           </div>
 
-          <div class="flex items-center gap-2">
-            <button
-              v-if="requiresReferenceDevice"
-              class="btn btn-xs btn-outline btn-success gap-1"
-              :disabled="selectedDevices.length === 0 || isTesting"
-              @click="autoAssignReferenceDevices"
-            >
-              <Sparkles class="w-3 h-3" />
-              Tự Động Gán Chuẩn
-            </button>
-            <button
-              class="btn btn-xs btn-ghost text-error"
-              :disabled="selectedDevices.length === 0 || isTesting"
-              @click="clearBatchDevices"
-            >
-              <Trash2 class="w-3 h-3" />
-              Xóa Hết
-            </button>
+          <!-- Khung Tabulator 2 -->
+          <div class="overflow-hidden rounded-lg border border-base-300 flex-1">
+            <div ref="batchTableRef" class="w-full text-xs h-[350px]"></div>
           </div>
-        </div>
-
-        <!-- Khung Tabulator 2 -->
-        <div class="overflow-hidden rounded-lg border border-base-300">
-          <div ref="batchTableRef" class="w-full text-xs min-h-[180px] max-h-[300px] overflow-auto"></div>
+          <div class="text-[11px] text-base-content/60 flex items-center justify-between pt-1">
+            <span>💡 Nhấp đúp chuột vào hàng để bỏ khỏi Batch trả về SO</span>
+            <span v-if="isTesting" class="text-info font-bold animate-pulse">Đang đo kiểm telemetry...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -339,6 +355,7 @@ const maxAllowedDevices = ref(5);
 const availableDevices = ref<any[]>([]);
 const searchDeviceText = ref('');
 const selectedAvailableRows = ref<any[]>([]);
+const availableDevicesDisplayCount = computed(() => getFilteredAvailableDevices().length);
 
 // Selected Batch Devices
 const selectedDevices = ref<any[]>([]);
@@ -581,19 +598,18 @@ function initAvailableTabulator() {
   availableTabulator = new Tabulator(availableTableRef.value, {
     data: getFilteredAvailableDevices(),
     layout: 'fitColumns',
-    placeholder: 'Chưa có thiết bị nào trong SO đã chọn.',
-    height: '240px',
+    placeholder: 'Không có thiết bị chưa test trong SO.',
+    height: '350px',
     selectableRows: true,
     selectableRowsCheck: (row) => {
       const data = row.getData();
-      // Block selecting devices that are currently in another running batch
       return !data.isRunningBatch;
     },
     columns: [
       {
         formatter: 'rowSelection',
         titleFormatter: 'rowSelection',
-        width: 45,
+        width: 38,
         hozAlign: 'center',
         headerHozAlign: 'center',
         headerSort: false,
@@ -601,15 +617,16 @@ function initAvailableTabulator() {
       {
         title: 'STT',
         formatter: 'rownum',
-        width: 55,
+        width: 45,
         hozAlign: 'center',
         headerHozAlign: 'center',
         headerSort: false,
       },
       {
-        title: 'Mã Thiết Bị / Serial',
+        title: 'Serial Number',
         field: 'serialNumber',
-        widthGrow: 2,
+        widthGrow: 1.8,
+        minWidth: 120,
         headerSort: true,
         formatter: (cell) => {
           const val = cell.getValue();
@@ -619,39 +636,28 @@ function initAvailableTabulator() {
       {
         title: 'DevEUI',
         field: 'devEui',
-        widthGrow: 2,
+        widthGrow: 1.8,
+        minWidth: 120,
         headerSort: true,
         formatter: (cell) => `<span class="font-mono text-xs text-base-content/80">${cell.getValue() || '—'}</span>`,
       },
       {
         title: 'Item Code',
         field: 'itemCode',
-        width: 140,
+        width: 100,
         formatter: (cell) => `<span class="badge badge-xs badge-outline font-mono">${cell.getValue() || '—'}</span>`,
       },
       {
-        title: 'FW Version',
+        title: 'FW',
         field: 'fwVersion',
-        width: 110,
+        width: 75,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
         formatter: (cell) => `<span class="font-mono text-xs">${cell.getValue() || '—'}</span>`,
       },
       {
-        title: 'Trạng Thái',
-        field: 'status',
-        width: 125,
-        hozAlign: 'center',
-        headerHozAlign: 'center',
-        formatter: (cell) => {
-          const rowData = cell.getRow().getData();
-          if (rowData.isRunningBatch) {
-            return `<span class="badge badge-warning badge-xs font-mono font-bold" title="Đang test trong batch ${rowData.runningBatchCode || ''}">Đang Test (${rowData.runningBatchCode || 'Busy'})</span>`;
-          }
-          return `<span class="badge badge-ghost badge-xs font-mono">${cell.getValue() || 'READY'}</span>`;
-        },
-      },
-      {
-        title: 'Thao tác',
-        width: 110,
+        title: 'Chuyển',
+        width: 65,
         hozAlign: 'center',
         headerHozAlign: 'center',
         headerSort: false,
@@ -660,11 +666,7 @@ function initAvailableTabulator() {
           if (rowData.isRunningBatch) {
             return '<span class="text-[10px] text-warning font-semibold cursor-not-allowed">Đang chạy</span>';
           }
-          const added = isDeviceSelected(rowData);
-          if (added) {
-            return '<span class="badge badge-success badge-xs font-semibold">Đã thêm</span>';
-          }
-          return '<button class="btn btn-xs btn-primary font-medium">+ Thêm</button>';
+          return '<button class="btn btn-xs btn-primary btn-outline font-bold px-1.5" title="Chuyển vào Test Batch">→</button>';
         },
         cellClick: (_e, cell) => {
           const rowData = cell.getRow().getData();
@@ -672,12 +674,16 @@ function initAvailableTabulator() {
             cyberToast.warning(`Thiết bị ${rowData.serialNumber} đang chạy test batch khác (${rowData.runningBatchCode || ''}), không thể thêm!`);
             return;
           }
-          if (!isDeviceSelected(rowData)) {
-            addSingleDeviceToBatch(rowData);
-          }
+          addSingleDeviceToBatch(rowData);
         },
       },
     ],
+    rowDblClick: (_e, row) => {
+      const rowData = row.getData();
+      if (!rowData.isRunningBatch) {
+        addSingleDeviceToBatch(rowData);
+      }
+    },
   });
 
   availableTabulator.on('rowSelectionChanged', (data: any[]) => {
@@ -695,13 +701,13 @@ function initBatchTabulator() {
   batchTabulator = new Tabulator(batchTableRef.value, {
     data: selectedDevices.value,
     layout: 'fitColumns',
-    placeholder: 'Chưa có thiết bị nào được thêm vào Test Batch.',
-    height: '240px',
+    placeholder: 'Chưa có thiết bị nào trong Test Batch. Nhấp đúp chuột hoặc chọn từ bảng bên trái.',
+    height: '350px',
     columns: [
       {
         title: 'STT',
         formatter: 'rownum',
-        width: 55,
+        width: 45,
         hozAlign: 'center',
         headerHozAlign: 'center',
         headerSort: false,
@@ -709,50 +715,49 @@ function initBatchTabulator() {
       {
         title: 'Serial Number',
         field: 'serialNumber',
-        widthGrow: 2,
+        widthGrow: 1.5,
+        minWidth: 115,
         formatter: (cell) => `<span class="font-mono font-bold text-xs text-primary">${cell.getValue() || '—'}</span>`,
       },
       {
         title: 'DevEUI',
         field: 'devEui',
-        widthGrow: 2,
+        widthGrow: 1.5,
+        minWidth: 115,
         formatter: (cell) => `<span class="font-mono text-xs text-base-content/80">${cell.getValue() || '—'}</span>`,
-      },
-      {
-        title: 'Item Code',
-        field: 'itemCode',
-        width: 130,
-        formatter: (cell) => `<span class="badge badge-xs badge-outline font-mono">${cell.getValue() || '—'}</span>`,
-      },
-      {
-        title: 'FW Version',
-        field: 'fwVersion',
-        width: 100,
-        formatter: (cell) => `<span class="font-mono text-xs">${cell.getValue() || '—'}</span>`,
       },
       {
         title: 'Trạng Thái',
         field: 'status',
-        width: 120,
+        width: 90,
         hozAlign: 'center',
         headerHozAlign: 'center',
         formatter: (cell) => {
-          const val = cell.getValue() || 'PENDING';
-          const cls =
-            val === 'PASS'
-              ? 'badge-success text-success-content font-bold'
-              : val === 'FAIL'
-              ? 'badge-error text-error-content font-bold'
-              : val === 'RUNNING'
-              ? 'badge-warning text-warning-content animate-pulse font-bold'
-              : 'badge-ghost';
-          return `<span class="badge badge-xs font-mono ${cls}">${val}</span>`;
+          const val = (cell.getValue() || 'PENDING').toUpperCase();
+          if (val === 'PASS' || val === 'TESTED_PASS') {
+            return '<span class="badge badge-success badge-xs font-bold">PASS</span>';
+          }
+          if (val === 'FAIL' || val === 'TESTED_FAIL') {
+            return '<span class="badge badge-error badge-xs font-bold">FAIL</span>';
+          }
+          if (val === 'RUNNING') {
+            return '<span class="badge badge-warning badge-xs animate-pulse font-bold">RUNNING</span>';
+          }
+          return '<span class="badge badge-ghost badge-xs font-bold">PENDING</span>';
         },
+      },
+      {
+        title: 'Gói',
+        field: 'packetsCount',
+        width: 50,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        formatter: (cell) => `<span class="badge badge-ghost badge-xs font-mono">${cell.getValue() || 0}</span>`,
       },
       {
         title: 'AVG_CYCLE',
         field: 'avgCycle',
-        width: 110,
+        width: 85,
         hozAlign: 'center',
         headerHozAlign: 'center',
         formatter: (cell) => {
@@ -766,13 +771,13 @@ function initBatchTabulator() {
       {
         title: 'AVG_RSSI',
         field: 'avgRssi',
-        width: 110,
+        width: 85,
         hozAlign: 'center',
         headerHozAlign: 'center',
         formatter: (cell) => {
           const val = cell.getValue();
           if (val != null && val !== '') {
-            return `<span class="font-mono font-bold text-xs text-primary">${val} dBm</span>`;
+            return `<span class="font-mono font-bold text-xs text-primary">${val}</span>`;
           }
           return '<span class="text-xs text-base-content/40 font-mono">—</span>';
         },
@@ -780,24 +785,24 @@ function initBatchTabulator() {
       {
         title: 'AVG_SNR',
         field: 'avgSnr',
-        width: 100,
+        width: 80,
         hozAlign: 'center',
         headerHozAlign: 'center',
         formatter: (cell) => {
           const val = cell.getValue();
           if (val != null && val !== '') {
-            return `<span class="font-mono font-bold text-xs text-success">${val} dB</span>`;
+            return `<span class="font-mono font-bold text-xs text-success">${val}</span>`;
           }
           return '<span class="text-xs text-base-content/40 font-mono">—</span>';
         },
       },
       {
-        title: 'Xóa',
-        width: 65,
+        title: 'Bỏ',
+        width: 50,
         hozAlign: 'center',
         headerHozAlign: 'center',
         headerSort: false,
-        formatter: () => '<button class="btn btn-xs btn-ghost text-error" title="Xóa khỏi batch">✕</button>',
+        formatter: () => '<button class="btn btn-xs btn-ghost text-error px-1 font-bold" title="Bỏ khỏi batch trả về SO">✕</button>',
         cellClick: (_e, cell) => {
           if (isTesting.value) {
             cyberToast.warning('Batch đang chạy kiểm thử!');
@@ -808,11 +813,36 @@ function initBatchTabulator() {
         },
       },
     ],
+    rowDblClick: (_e, row) => {
+      if (isTesting.value) {
+        cyberToast.warning('Batch đang chạy kiểm thử!');
+        return;
+      }
+      const rowData = row.getData();
+      removeDeviceFromBatch(getDeviceIdentifier(rowData.device || rowData));
+    },
   });
 }
 
 function getFilteredAvailableDevices() {
-  let list = availableDevices.value;
+  let list = availableDevices.value || [];
+
+  // 1. Chỉ hiển thị thiết bị CHƯA TEST
+  list = list.filter((d) => {
+    const st = (d.status || '').toUpperCase();
+    const tr = (d.testResult || d.raw?.testResult || d.raw?.test_result || d.raw?.status || '').toUpperCase();
+    if (st === 'PASS' || st === 'FAIL' || st === 'TESTED_PASS' || st === 'TESTED_FAIL') return false;
+    if (tr === 'PASS' || tr === 'FAIL' || tr === 'TESTED_PASS' || tr === 'TESTED_FAIL') return false;
+    return true;
+  });
+
+  // 2. Khi chuyển sang Tabulator 2 thì thiết bị ở Tabulator 1 biến mất
+  const selectedIdentifiers = new Set(
+    selectedDevices.value.map((s) => getDeviceIdentifier(s.device || s))
+  );
+  list = list.filter((d) => !selectedIdentifiers.has(getDeviceIdentifier(d.raw || d)));
+
+  // 3. Lọc tìm kiếm nếu có
   if (searchDeviceText.value.trim()) {
     const q = searchDeviceText.value.trim().toLowerCase();
     list = list.filter((d) => {
@@ -860,6 +890,11 @@ function addSingleDeviceToBatch(deviceRow: any) {
   }
 
   const rawDev = deviceRow.raw || deviceRow;
+  const devId = getDeviceIdentifier(rawDev);
+  if (selectedDevices.value.some((s) => getDeviceIdentifier(s.device || s) === devId)) {
+    return;
+  }
+
   selectedDevices.value.push({
     serialNumber: deviceRow.serialNumber,
     devEui: deviceRow.devEui,
@@ -869,11 +904,25 @@ function addSingleDeviceToBatch(deviceRow: any) {
     referenceDeviceId: '',
     status: 'PENDING',
     packetsCount: 0,
+    avgCycle: null,
     avgRssi: null,
     avgSnr: null,
   });
 
-  cyberToast.success(`Đã thêm ${deviceRow.serialNumber} vào batch`);
+  if (requiresReferenceDevice.value && goldenReferenceDevices.value.length > 0) {
+    const idx = selectedDevices.value.length - 1;
+    const refDev = goldenReferenceDevices.value[idx % goldenReferenceDevices.value.length];
+    if (refDev) {
+      selectedDevices.value[idx].referenceDeviceId = refDev.id;
+      selectedDevices.value[idx].referenceDevice = refDev;
+    }
+  }
+
+  selectedAvailableRows.value = selectedAvailableRows.value.filter(
+    (r) => getDeviceIdentifier(r.raw || r) !== devId
+  );
+
+  cyberToast.success(`Đã chuyển ${deviceRow.serialNumber} vào Test Batch`);
   updateTabulatorData();
 }
 
@@ -891,8 +940,9 @@ function addSelectedAvailableRowsToBatch() {
       cyberToast.warning(`Đã đạt giới hạn tối đa ${maxAllowedDevices.value} thiết bị của đợt test!`);
       break;
     }
-    if (!isDeviceSelected(row)) {
-      const rawDev = row.raw || row;
+    const rawDev = row.raw || row;
+    const devId = getDeviceIdentifier(rawDev);
+    if (!selectedDevices.value.some((s) => getDeviceIdentifier(s.device || s) === devId)) {
       selectedDevices.value.push({
         serialNumber: row.serialNumber,
         devEui: row.devEui,
@@ -902,6 +952,7 @@ function addSelectedAvailableRowsToBatch() {
         referenceDeviceId: '',
         status: 'PENDING',
         packetsCount: 0,
+        avgCycle: null,
         avgRssi: null,
         avgSnr: null,
       });
@@ -909,24 +960,49 @@ function addSelectedAvailableRowsToBatch() {
     }
   }
 
+  if (requiresReferenceDevice.value && goldenReferenceDevices.value.length > 0) {
+    selectedDevices.value.forEach((item, idx) => {
+      if (!item.referenceDeviceId) {
+        const refDev = goldenReferenceDevices.value[idx % goldenReferenceDevices.value.length];
+        if (refDev) {
+          item.referenceDeviceId = refDev.id;
+          item.referenceDevice = refDev;
+        }
+      }
+    });
+  }
+
+  selectedAvailableRows.value = [];
+  updateTabulatorData();
   if (addedCount > 0) {
-    cyberToast.success(`Đã thêm ${addedCount} thiết bị vào đợt test`);
-    updateTabulatorData();
+    cyberToast.success(`Đã chuyển ${addedCount} thiết bị vào Test Batch.`);
   }
 }
 
 function removeDeviceFromBatch(deviceId: string) {
+  if (isTesting.value) {
+    cyberToast.warning('Batch đang chạy kiểm thử!');
+    return;
+  }
+  const removed = selectedDevices.value.find((s) => getDeviceIdentifier(s.device || s) === deviceId);
   selectedDevices.value = selectedDevices.value.filter((s) => {
     const id = getDeviceIdentifier(s.device || s);
     return id !== deviceId;
   });
   updateTabulatorData();
+  if (removed) {
+    cyberToast.info(`Đã trả thiết bị ${removed.serialNumber} về danh sách SO`);
+  }
 }
 
 function clearBatchDevices() {
+  if (isTesting.value) {
+    cyberToast.warning('Batch đang chạy kiểm thử!');
+    return;
+  }
   selectedDevices.value = [];
   updateTabulatorData();
-  cyberToast.info('Đã xóa tất cả thiết bị khỏi batch');
+  cyberToast.info('Đã trả tất cả thiết bị về lại danh sách SO');
 }
 
 function autoAssignReferenceDevices() {
