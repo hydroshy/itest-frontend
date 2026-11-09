@@ -74,8 +74,33 @@ const showSidebar = computed(() => {
 });
 
 const currentRouteTitle = computed(() => {
+  if (isFromMenu.value && route.query.tab) {
+    const tab = String(route.query.tab);
+    const tabMap: Record<string, string> = {
+      'test-batch': 'Device Test Batch',
+      'device-test-batch': 'Device Test Batch',
+      'device-payload': 'Device Payload Live Stream',
+      'tool': 'Final Config Tool',
+      'manager': 'Final Config Manager',
+      'create': 'Tạo Final Config',
+      'so': 'Sales Orders & Work Orders',
+      'devices': 'Device Traceability List',
+      'scripts': 'Payload Decoder Scripts',
+      'network': 'ChirpStack Network Server',
+      'memmaps': 'Bản Đồ Memmap Payload',
+      'rules': 'Auto Check Rules Engine',
+    };
+    if (tabMap[tab]) {
+      return tabMap[tab];
+    }
+  }
+
   if (route.meta?.title) {
-    return String(route.meta.title);
+    const t = String(route.meta.title);
+    if (t === 'LoRaWAN Testing') {
+      return 'Device Testing';
+    }
+    return t;
   }
   return 'Hệ Thống Kiểm Thử iTEST';
 });

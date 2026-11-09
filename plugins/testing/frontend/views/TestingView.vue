@@ -1,7 +1,7 @@
 <template>
   <div class="testing-view w-full max-w-[1720px] mx-auto p-4 md:p-6 space-y-4">
-    <!-- Header -->
-    <header class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
+    <!-- Header (Chỉ hiển thị khi không ở chế độ phân lập tab) -->
+    <header v-if="!isIsolatedView" class="page-header flex flex-wrap items-center justify-between gap-4 p-4 md:p-5 bg-base-200/60 border border-base-300 rounded-xl backdrop-blur-md shadow-sm mb-4">
       <div class="header-title">
         <div class="eyebrow flex items-center gap-2 text-xs font-mono text-primary font-bold">
           <span class="w-2 h-2 rounded-full bg-primary" /> LORAWAN TESTING SUITE
