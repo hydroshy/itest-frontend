@@ -67,8 +67,8 @@
               <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement Window</a></li>
               <li><a @click="addBlock('average')">📊 Average Function (Trung bình)</a></li>
               <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear (y = ax + b)</a></li>
-              <li class="menu-title text-[10px] uppercase font-bold text-primary mt-1">Đánh Giá</li>
-              <li><a @click="addBlock('device_auto_check')">✅ Device Auto Check</a></li>
+              <li class="menu-title text-[10px] uppercase font-bold text-primary mt-1">Đánh Giá (Tùy Chọn)</li>
+              <li><a @click="addBlock('device_auto_check')">✅ Device Auto Check (Tùy chọn)</a></li>
             </ul>
           </div>
         </div>
@@ -131,6 +131,10 @@
 
               <span class="badge badge-sm font-bold uppercase tracking-wider" :class="getFunctionBadgeClass(block.functionType)">
                 {{ getFunctionLabel(block.functionType) }}
+              </span>
+
+              <span v-if="block.functionType === 'device_auto_check'" class="badge badge-sm badge-ghost font-mono text-[10px] text-base-content/60">
+                TÙY CHỌN
               </span>
 
               <template v-if="block.targetDevice">
@@ -219,8 +223,8 @@
                   <option value="average">Average Function (Tính trung bình)</option>
                   <option value="calculate_linear">Calculate Linear (y = ax + b)</option>
                 </optgroup>
-                <optgroup label="Đánh Giá">
-                  <option value="device_auto_check">Device Auto Check</option>
+                <optgroup label="Đánh Giá (Tùy Chọn)">
+                  <option value="device_auto_check">Device Auto Check (Tùy chọn)</option>
                 </optgroup>
               </select>
             </div>
@@ -565,9 +569,10 @@
             </template>
 
             <!-- BLOCK: DEVICE_AUTO_CHECK -->
-            <div v-if="block.functionType === 'device_auto_check'" class="form-control md:col-span-8">
+            <div v-if="block.functionType === 'device_auto_check'" class="form-control md:col-span-12 space-y-1">
               <label class="label py-0.5">
                 <span class="label-text text-xs font-semibold text-base-content/80">Ghi Chú Đánh Giá Tiêu Chuẩn</span>
+                <span class="badge badge-xs badge-ghost font-mono text-[10px]">Tùy chọn</span>
               </label>
               <input
                 v-model="block.description"
@@ -576,6 +581,9 @@
                 placeholder="VD: Kiểm tra cảm biến sau khi hiệu chuẩn 2 điểm hoàn tất"
                 @input="emitUpdate"
               />
+              <p class="text-[11px] text-base-content/60 italic">
+                💡 Khối này là tùy chọn trong kịch bản. Tiêu chuẩn đánh giá và ngưỡng kiểm tra được cấu hình tập trung ở mục "Tiêu Chuẩn Auto Check" bên dưới.
+              </p>
             </div>
 
             <!-- Description / Ghi chú chung cho block -->

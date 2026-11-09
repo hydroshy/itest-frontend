@@ -339,7 +339,7 @@
           <button
             type="button"
             class="btn btn-xs btn-outline btn-success gap-1"
-            @click="addDutRule"
+            @click="() => addDutRule()"
           >
             <Plus class="w-3.5 h-3.5" />
             + Thêm Quy Tắc DUT
@@ -348,7 +348,7 @@
             v-if="referenceDevices.length > 0"
             type="button"
             class="btn btn-xs btn-outline btn-warning gap-1"
-            @click="addComparisonRule"
+            @click="() => addComparisonRule()"
           >
             <Plus class="w-3.5 h-3.5" />
             + So Sánh Dung Sai DUT vs REF
@@ -356,14 +356,68 @@
         </div>
       </div>
 
-      <!-- Danh Sách Quy Tắc DUT -->
+      <!-- Khung Hiển Thị Các Biến Có Trong Flow Simulation -->
+      <div class="p-3 bg-base-100 rounded-xl border border-primary/20 space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <Variable class="w-4 h-4 text-primary" />
+            <span class="text-xs font-bold uppercase tracking-wide text-primary">
+              Biến Có Trong Flow Simulation (Simulation Variables)
+            </span>
+            <span class="badge badge-xs badge-primary font-mono font-bold">
+              {{ simulationVariables.length }} BIẾN
+            </span>
+          </div>
+          <span class="text-[11px] text-base-content/60">
+            Click vào biến để thêm nhanh quy tắc kiểm tra Auto Check
+          </span>
+        </div>
+
+        <!-- Trạng thái chưa có biến -->
+        <div
+          v-if="simulationVariables.length === 0"
+          class="p-2.5 bg-base-200/50 rounded-lg border border-dashed border-base-300 text-xs text-base-content/60 flex items-center gap-2"
+        >
+          <Info class="w-4 h-4 text-info shrink-0" />
+          <span>
+            Chưa có biến nào được sinh ra từ Flow Simulation. Thêm các block <strong>Average</strong> (lưu outputVar), <strong>Calculate Linear</strong> (hệ số a, b), hoặc <strong>Start Measurement</strong> (windowId) để tự động xuất hiện tại đây.
+          </span>
+        </div>
+
+        <!-- Danh sách biến dạng Chips / Cards -->
+        <div v-else class="flex flex-wrap gap-1.5">
+          <div
+            v-for="v in simulationVariables"
+            :key="v.name"
+            class="group inline-flex items-center gap-1.5 px-2.5 py-1 bg-base-200/90 hover:bg-primary/10 border border-base-300 hover:border-primary/50 rounded-lg transition-all text-xs cursor-pointer shadow-xs"
+            title="Nhấn để thêm nhanh quy tắc Auto Check cho biến này"
+            @click="addRuleForVariable(v.name)"
+          >
+            <span class="badge badge-xs font-mono font-bold" :class="getVariableBadgeClass(v.sourceType)">
+              {{ v.sourceType.toUpperCase() }}
+            </span>
+            <span class="font-mono font-bold text-primary group-hover:underline">
+              {{ v.name }}
+            </span>
+            <span class="text-[11px] text-base-content/60">
+              ({{ v.details }})
+            </span>
+            <span class="badge badge-ghost badge-xs text-[10px] text-base-content/50 font-mono">
+              {{ v.sourceBlock }}
+            </span>
+            <Plus class="w-3 h-3 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Danh Sách Quy Tắc Kiểm Tra (DUT, REF & Biến Simulation) -->
       <div class="space-y-2">
         <h4 class="text-xs font-bold uppercase tracking-wide text-base-content/70">
-          Quy Tắc Đánh Giá Cho DUT (Device Under Test)
+          Quy Tắc Đánh Giá Cho DUT, REF &amp; Biến Simulation
         </h4>
 
         <div v-if="dutRules.length === 0" class="p-3 bg-base-100/60 rounded-lg border border-dashed border-base-300 text-center text-xs text-base-content/50 italic">
-          Chưa có quy tắc Auto Check nào cho DUT. Nhấn "+ Thêm Quy Tắc DUT" để định nghĩa kiểm tra giá trị, Measurement Window, hoặc Average.
+          Chưa có quy tắc Auto Check nào. Nhấn "+ Thêm Quy Tắc DUT" hoặc click vào biến simulation ở trên để tạo quy tắc.
         </div>
 
         <div
@@ -399,17 +453,69 @@
               </select>
             </div>
 
-            <!-- Trường Kiểm Tra (Parameter Field) -->
+            <!-- Trường Kiểm Tra (Parameter Field / Biến Simulation) -->
             <div class="form-control">
-              <label class="label py-0.5">
-                <span class="label-text text-[11px] font-semibold">Trường Kiểm Tra (Field)</span>
+              <label class="label py-0.5 flex justify-between">
+                <span class="label-text text-[11px] font-semibold">Trường / Biến Kiểm Tra</span>
+                <span v-if="rule.parameter_name" class="text-[10px] text-primary cursor-pointer hover:underline" @click="rule.parameter_name = ''">Xóa</span>
               </label>
               <input
                 v-model="rule.parameter_name"
+                :list="'param-datalist-' + rIdx"
                 type="text"
-                class="input input-bordered input-xs w-full font-mono text-xs"
-                placeholder="VD: gas_raw, fcnt, rssi..."
+                class="input input-bordered input-xs w-full font-mono text-xs text-primary font-semibold"
+                placeholder="Chọn gợi ý hoặc gõ tên..."
               />
+              <datalist :id="'param-datalist-' + rIdx">
+                <!-- 1. Biến Simulation Flow -->
+                <option v-for="v in simulationVariables" :key="'var-' + v.name" :value="v.name">
+                  [Biến Simulation] {{ v.name }} - {{ v.details }}
+                </option>
+                <!-- 2. DUT Fields -->
+                <option v-for="f in dutFieldNames" :key="'dut-' + f" :value="f">
+                  [DUT Field] {{ f }}
+                </option>
+                <!-- 3. Reference Device Fields -->
+                <option v-for="rf in allRefFields" :key="'ref-' + rf.label" :value="rf.fieldName">
+                  [{{ rf.refName }}] {{ rf.fieldName }}
+                </option>
+                <!-- 4. RF & Network Metrics -->
+                <option value="rssi">[RF Metric] rssi (Chỉ số sóng dBm)</option>
+                <option value="snr">[RF Metric] snr (Tỷ số tín hiệu/nhiễu dB)</option>
+                <option value="fcnt">[Counter] fcnt (Bộ đếm gói uplink)</option>
+                <option value="battery_voltage">[Battery] battery_voltage (Điện áp pin)</option>
+              </datalist>
+
+              <!-- Mini source tag below input -->
+              <div v-if="rule.parameter_name" class="flex items-center gap-1 mt-0.5">
+                <span
+                  v-if="isSimulationVar(rule.parameter_name)"
+                  class="badge badge-xs badge-info font-mono text-[9px] gap-0.5"
+                >
+                  <Variable class="w-2.5 h-2.5" />
+                  Biến Simulation
+                </span>
+                <span
+                  v-else-if="isDutField(rule.parameter_name)"
+                  class="badge badge-xs badge-accent font-mono text-[9px] gap-0.5"
+                >
+                  <Cpu class="w-2.5 h-2.5" />
+                  Field DUT
+                </span>
+                <span
+                  v-else-if="isRefField(rule.parameter_name)"
+                  class="badge badge-xs badge-warning font-mono text-[9px] gap-0.5"
+                >
+                  <Cpu class="w-2.5 h-2.5" />
+                  Field REF
+                </span>
+                <span
+                  v-else
+                  class="badge badge-xs badge-ghost font-mono text-[9px]"
+                >
+                  Tùy chỉnh
+                </span>
+              </div>
             </div>
 
             <!-- Form fields theo loại hàm -->
@@ -549,25 +655,43 @@
         >
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-[11px] font-semibold">Trường của DUT</span>
+              <span class="label-text text-[11px] font-semibold">Trường của DUT / Biến</span>
             </label>
             <input
               v-model="comp.dut_field"
+              :list="'comp-dut-list-' + cIdx"
               type="text"
-              class="input input-bordered input-xs w-full font-mono text-xs"
-              placeholder="VD: gas_raw"
+              class="input input-bordered input-xs w-full font-mono text-xs text-accent font-semibold"
+              placeholder="VD: gas_raw hoặc var:x1"
             />
+            <datalist :id="'comp-dut-list-' + cIdx">
+              <option v-for="f in dutFieldNames" :key="'dut-comp-' + f" :value="f">
+                [DUT Field] {{ f }}
+              </option>
+              <option v-for="v in simulationVariables" :key="'var-comp-' + v.name" :value="v.name">
+                [Biến Simulation] {{ v.name }} - {{ v.details }}
+              </option>
+            </datalist>
           </div>
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-[11px] font-semibold">Trường Tham Chiếu (REF)</span>
+              <span class="label-text text-[11px] font-semibold">Trường Tham Chiếu (REF) / Biến</span>
             </label>
             <input
               v-model="comp.reference_field"
+              :list="'comp-ref-list-' + cIdx"
               type="text"
-              class="input input-bordered input-xs w-full font-mono text-xs"
-              placeholder="VD: gas_raw"
+              class="input input-bordered input-xs w-full font-mono text-xs text-warning font-semibold"
+              placeholder="VD: gas_raw hoặc var:x2"
             />
+            <datalist :id="'comp-ref-list-' + cIdx">
+              <option v-for="rf in allRefFields" :key="'ref-comp-' + rf.label" :value="rf.fieldName">
+                [{{ rf.refName }}] {{ rf.fieldName }}
+              </option>
+              <option v-for="v in simulationVariables" :key="'var-ref-comp-' + v.name" :value="v.name">
+                [Biến Simulation] {{ v.name }} - {{ v.details }}
+              </option>
+            </datalist>
           </div>
           <div class="form-control">
             <label class="label py-0.5">
@@ -607,6 +731,8 @@ import {
   RefreshCw,
   Plus,
   Trash2,
+  Variable,
+  Info,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
@@ -755,6 +881,147 @@ const simulatorForm = reactive({
 // Flow Blocks state
 const flowBlocks = ref<FlowBlock[]>([]);
 
+// Simulation Variables Extraction
+export interface SimulationVariableInfo {
+  name: string;
+  sourceBlock: string;
+  sourceType: string;
+  blockIndex: number;
+  target?: string;
+  details?: string;
+}
+
+const simulationVariables = computed<SimulationVariableInfo[]>(() => {
+  const vars: SimulationVariableInfo[] = [];
+  const seen = new Set<string>();
+
+  flowBlocks.value.forEach((b: FlowBlock, idx: number) => {
+    const fnType = b.functionType;
+    if (fnType === 'average' && b.outputVar && b.outputVar.trim()) {
+      const vName = b.outputVar.trim();
+      if (!seen.has(vName)) {
+        seen.add(vName);
+        vars.push({
+          name: vName,
+          sourceBlock: `Block #${idx + 1}: Average`,
+          sourceType: 'average',
+          blockIndex: idx + 1,
+          target: b.targetDevice || 'DUT',
+          details: `Average [${b.averageMode || 'WINDOW'}] của '${b.metric || 'metric'}'`,
+        });
+      }
+    } else if (fnType === 'calculate_linear') {
+      if (b.coeffAVar && b.coeffAVar.trim()) {
+        const vName = b.coeffAVar.trim();
+        if (!seen.has(vName)) {
+          seen.add(vName);
+          vars.push({
+            name: vName,
+            sourceBlock: `Block #${idx + 1}: Linear Slope`,
+            sourceType: 'calculate_linear',
+            blockIndex: idx + 1,
+            target: 'SIMU',
+            details: `Hệ số góc (Slope) a từ 2 điểm`,
+          });
+        }
+      }
+      if (b.coeffBVar && b.coeffBVar.trim()) {
+        const vName = b.coeffBVar.trim();
+        if (!seen.has(vName)) {
+          seen.add(vName);
+          vars.push({
+            name: vName,
+            sourceBlock: `Block #${idx + 1}: Linear Offset`,
+            sourceType: 'calculate_linear',
+            blockIndex: idx + 1,
+            target: 'SIMU',
+            details: `Hệ số bù (Offset) b từ 2 điểm`,
+          });
+        }
+      }
+    } else if ((fnType === 'start_measurement' || fnType === 'stop_measurement') && b.windowId && b.windowId.trim()) {
+      const vName = b.windowId.trim();
+      if (!seen.has(vName)) {
+        seen.add(vName);
+        vars.push({
+          name: vName,
+          sourceBlock: `Block #${idx + 1}: Measurement Window`,
+          sourceType: 'window',
+          blockIndex: idx + 1,
+          target: b.targetDevice || 'DUT',
+          details: `Window ID đo lường đếm gói`,
+        });
+      }
+    } else if (b.outputVar && b.outputVar.trim()) {
+      const vName = b.outputVar.trim();
+      if (!seen.has(vName)) {
+        seen.add(vName);
+        vars.push({
+          name: vName,
+          sourceBlock: `Block #${idx + 1}: ${fnType}`,
+          sourceType: fnType,
+          blockIndex: idx + 1,
+          target: b.targetDevice || 'DUT',
+          details: `Output var từ block ${fnType}`,
+        });
+      }
+    }
+  });
+
+  return vars;
+});
+
+// Normalized Field Names for DUT & Reference Devices
+const dutFieldNames = computed<string[]>(() => {
+  return (dutFields.value || [])
+    .map((f: any) => (typeof f === 'string' ? f : (f.name || f.field || '')))
+    .filter(Boolean);
+});
+
+const allRefFields = computed<Array<{ refName: string; fieldName: string; label: string }>>(() => {
+  const result: Array<{ refName: string; fieldName: string; label: string }> = [];
+  referenceDevices.value.forEach((r, idx) => {
+    const rName = r.reference_name || `REF_${idx + 1}`;
+    const fields = (r.fields || []).map((f: any) => (typeof f === 'string' ? f : (f.name || f.field || ''))).filter(Boolean);
+    fields.forEach((f: string) => {
+      result.push({
+        refName: rName,
+        fieldName: f,
+        label: `${rName} -> ${f}`,
+      });
+    });
+  });
+  return result;
+});
+
+function isSimulationVar(name: string): boolean {
+  if (!name) return false;
+  return simulationVariables.value.some((v) => v.name.toLowerCase() === name.trim().toLowerCase());
+}
+
+function isDutField(name: string): boolean {
+  if (!name) return false;
+  return dutFieldNames.value.some((f) => f.toLowerCase() === name.trim().toLowerCase());
+}
+
+function isRefField(name: string): boolean {
+  if (!name) return false;
+  return allRefFields.value.some((rf) => rf.fieldName.toLowerCase() === name.trim().toLowerCase());
+}
+
+function getVariableBadgeClass(type: string): string {
+  switch (type) {
+    case 'average':
+      return 'badge-primary text-primary-content';
+    case 'calculate_linear':
+      return 'badge-secondary text-secondary-content';
+    case 'window':
+      return 'badge-info text-info-content';
+    default:
+      return 'badge-accent text-accent-content';
+  }
+}
+
 // DUT AutoCheck Rules State
 export interface AutoCheckRuleItem {
   function_name: string;
@@ -770,15 +1037,32 @@ export interface AutoCheckRuleItem {
 
 const dutRules = ref<AutoCheckRuleItem[]>([]);
 
-function addDutRule() {
+function addDutRule(defaultParam?: string | Event) {
+  const param = typeof defaultParam === 'string' ? defaultParam : '';
+  const initialParam = param
+    || (simulationVariables.value.length > 0 ? simulationVariables.value[0].name : '')
+    || (dutFieldNames.value.length > 0 ? dutFieldNames.value[0] : '');
+
   dutRules.value.push({
     function_name: 'CHECKVALUE',
-    parameter_name: dutFields.value.length > 0 ? dutFields.value[0].name : '',
+    parameter_name: initialParam,
     low_threshold: 0,
     high_threshold: 100,
     min_count: 1,
     max_count: 100,
   });
+}
+
+function addRuleForVariable(varName: string) {
+  dutRules.value.push({
+    function_name: 'CHECKVALUE',
+    parameter_name: varName,
+    low_threshold: 0,
+    high_threshold: 100,
+    min_count: 1,
+    max_count: 100,
+  });
+  cyberToast.info(`Đã thêm quy tắc kiểm tra cho biến '${varName}'`);
 }
 
 // Tolerance Comparisons State
@@ -791,9 +1075,12 @@ export interface ToleranceComparisonItem {
 const comparisons = ref<ToleranceComparisonItem[]>([]);
 
 function addComparisonRule() {
+  const dutParam = dutFieldNames.value.length > 0 ? dutFieldNames.value[0] : (simulationVariables.value[0]?.name || '');
+  const refParam = allRefFields.value.length > 0 ? allRefFields.value[0].fieldName : '';
+
   comparisons.value.push({
-    dut_field: dutFields.value.length > 0 ? dutFields.value[0].name : '',
-    reference_field: '',
+    dut_field: dutParam,
+    reference_field: refParam,
     tolerance: 5,
   });
 }
