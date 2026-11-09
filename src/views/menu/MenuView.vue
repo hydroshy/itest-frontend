@@ -360,30 +360,52 @@ const defaultStaticCards: MenuCardItemDef[] = [
 
 const cards = ref<MenuCardItemDef[]>([]);
 
-function initCardsForUser() {
-  const userRoles = (authStore.roles || []).map((r: string) => String(r).toUpperCase());
-  const isAdmin =
-    authStore.isAdmin ||
-    userRoles.length === 0 ||
-    userRoles.includes('ADMIN') ||
-    userRoles.includes('SUPER_ADMIN');
-
-  if (isAdmin) {
-    cards.value = [...defaultStaticCards];
-  } else if (userRoles.includes('OPERATOR')) {
-    cards.value = defaultStaticCards.filter((card) => {
-      return (
-        card.id === 'final-config:tool' ||
-        card.id === 'device-traceability:devices' ||
-        card.id === 'decoder:scripts' ||
-        card.id === 'testing:device-payload' ||
-        card.id === 'testing:test-batch' ||
-        card.id === 'dashboard'
-      );
-    });
-  } else {
-    cards.value = [...defaultStaticCards];
+async function initCardsForUser() {
+  loading.value = true;
+  try {
+    const res: any = await httpClient.get('/menu/my-cards');
+    const myCards = Array.isArray(res) ? res : (res?.data || res?.items || []);
+    if (Array.isArray(myCards) && myCards.length > 0) {
+      const seen = new Set<string>();
+      const list: MenuCardItemDef[] = [];
+      for (const c of myCards) {
+        const key = (c.route || c.path || c.id || '').toLowerCase().trim();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          list.push({
+            id: c.id,
+            title: c.title,
+            description: c.description || '',
+            icon: c.icon || 'desktop',
+            route: c.route || c.path,
+            pluginId: c.pluginId,
+            tab: c.tab,
+            category: c.category || 'plugin',
+            order: c.order || 99,
+          });
+        }
+      }
+      list.sort((a, b) => (a.order || 0) - (b.order || 0));
+      cards.value = list;
+      return;
+    }
+  } catch (err) {
+    console.warn('Could not fetch /menu/my-cards from backend, using fallback:', err);
+  } finally {
+    loading.value = false;
   }
+
+  // Fallback to deduplicated defaultStaticCards
+  const seen = new Set<string>();
+  const list: MenuCardItemDef[] = [];
+  for (const c of defaultStaticCards) {
+    const key = (c.route || c.path || c.id || '').toLowerCase().trim();
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      list.push(c);
+    }
+  }
+  cards.value = list;
 }
 
 const filteredCards = computed(() => {

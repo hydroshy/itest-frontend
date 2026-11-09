@@ -621,10 +621,13 @@ const filteredPermissionGroups = computed<PermissionGroup[]>(() => {
           (p.description && p.description.toLowerCase().includes(q))
       );
 
-  // Group by module
+  // Group by module (Loại bỏ phân hệ MENU ở mục 2)
   const groupsMap = new Map<string, PermissionItem[]>();
   for (const perm of matched) {
     const mod = (perm.module || 'system').toLowerCase();
+    if (mod === 'menu' || perm.code?.toLowerCase().startsWith('menu:') || perm.id?.toLowerCase().startsWith('menu:')) {
+      continue;
+    }
     if (!groupsMap.has(mod)) {
       groupsMap.set(mod, []);
     }
@@ -805,11 +808,21 @@ async function loadAllWizardData() {
     try {
       const mRes: any = await httpClient.get('/menu');
       const mList = Array.isArray(mRes) ? mRes : (mRes?.data || mRes?.items || []);
-      if (Array.isArray(mList) && mList.length > 0) {
-        allMenuItems.value = mList;
-      } else {
-        allMenuItems.value = (PLUGIN_MENU_VIEWS as MenuItem[]) || fallbackMenuItems;
+      const rawList = (Array.isArray(mList) && mList.length > 0)
+        ? mList
+        : ((PLUGIN_MENU_VIEWS as MenuItem[]) || fallbackMenuItems);
+
+      // Deduplicate cards by route or id
+      const seen = new Set<string>();
+      const uniqueList: MenuItem[] = [];
+      for (const item of rawList) {
+        const key = (item.route || item.path || item.id || '').trim().toLowerCase();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          uniqueList.push(item);
+        }
       }
+      allMenuItems.value = uniqueList;
     } catch {
       allMenuItems.value = (PLUGIN_MENU_VIEWS as MenuItem[]) || fallbackMenuItems;
     }
