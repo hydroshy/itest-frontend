@@ -9,7 +9,7 @@
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-bold text-sm tracking-wide">QUY TRÌNH FUNCTION BLOCKS (FLOW SIMULATION)</span>
+              <span class="font-bold text-sm tracking-wide">FUNCTION BLOCKS</span>
               <span class="badge badge-sm badge-primary font-mono font-bold">{{ blocks.length }} BLOCKS</span>
               <span class="badge badge-sm badge-outline font-mono">
                 <Clock class="w-3 h-3 mr-1" />
@@ -27,16 +27,6 @@
 
         <div class="flex items-center gap-2 flex-wrap">
           <button
-            type="button"
-            class="btn btn-sm btn-ghost text-base-content/70"
-            @click="showJsonModal = true"
-            title="Xem / Chỉnh sửa cấu trúc JSON"
-          >
-            <Code class="w-3.5 h-3.5 mr-1" />
-            JSON
-          </button>
-
-          <button
             v-if="blocks.length > 0"
             type="button"
             class="btn btn-sm btn-ghost text-error"
@@ -49,9 +39,9 @@
 
           <!-- Add Function Block Dropdown / Quick Buttons -->
           <div class="dropdown dropdown-end">
-            <label tabindex="0" role="button" class="btn btn-sm btn-primary gap-1">
+            <label tabindex="0" role="button" class="btn btn-sm btn-primary gap-1.5">
               <Plus class="w-4 h-4" />
-              <span>+ Thêm Function Block</span>
+              <span>Thêm Function Block</span>
             </label>
             <ul tabindex="0" class="dropdown-content z-[10] menu p-2 shadow-lg bg-base-100 rounded-box w-64 border border-base-300 text-xs space-y-1">
               <li class="menu-title text-[10px] uppercase font-bold text-primary">Điều Khiển &amp; Thời Gian</li>
@@ -83,9 +73,9 @@
       </div>
       <div class="flex items-center justify-center pt-1">
         <div class="dropdown dropdown-top dropdown-center">
-          <label tabindex="0" role="button" class="btn btn-sm btn-primary gap-1">
+          <label tabindex="0" role="button" class="btn btn-sm btn-primary gap-1.5">
             <Plus class="w-4 h-4" />
-            <span>+ Thêm Function Block</span>
+            <span>Thêm Function Block</span>
           </label>
           <ul tabindex="0" class="dropdown-content z-[10] menu p-2 shadow-lg bg-base-100 rounded-box w-64 border border-base-300 text-xs space-y-1">
             <li class="menu-title text-[10px] uppercase font-bold text-primary">Điều Khiển &amp; Thời Gian</li>
@@ -245,7 +235,7 @@
                   min="1"
                   step="1"
                   class="input input-bordered input-sm join-item w-full font-mono text-xs"
-                  placeholder="30"
+                  placeholder=""
                   @input="emitUpdate"
                 />
                 <span class="join-item btn btn-sm btn-neutral no-animation text-xs">giây</span>
@@ -269,7 +259,7 @@
                   min="0"
                   step="1"
                   class="input input-bordered input-sm join-item w-full font-mono text-xs"
-                  placeholder="120"
+                  placeholder=""
                   @input="emitUpdate"
                 />
                 <span class="join-item btn btn-sm btn-neutral no-animation text-xs">giây</span>
@@ -293,7 +283,7 @@
                   min="1"
                   max="223"
                   class="input input-bordered input-sm w-full font-mono text-xs text-center"
-                  placeholder="1"
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -336,7 +326,7 @@
                   v-model="block.payloadHex"
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder="VD: 01 02 hoặc {{calib_payload_hex}}"
+                  placeholder=""
                   @input="onPayloadInput(block)"
                 />
               </div>
@@ -352,7 +342,7 @@
                   v-model="block.windowId"
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-                  placeholder="VD: WINDOW_0PPM"
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -364,7 +354,7 @@
                   v-model="block.counterField"
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder="Mặc định: fcnt"
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -380,7 +370,7 @@
                   v-model="block.windowId"
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-                  placeholder="VD: WINDOW_0PPM"
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -411,7 +401,7 @@
                   v-model="block.metric"
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder="VD: gas_raw, rssi, snr..."
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -424,7 +414,7 @@
                   v-model="block.windowId"
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-                  placeholder="VD: WINDOW_0PPM"
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -438,7 +428,7 @@
                   type="number"
                   min="1"
                   class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder="10"
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -452,7 +442,7 @@
                   type="number"
                   min="1"
                   class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder="60"
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -465,7 +455,7 @@
                   v-model="block.outputVar"
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs text-primary font-bold"
-                  placeholder="VD: x1 hoặc raw_avg_0ppm"
+                  placeholder=""
                   @input="emitUpdate"
                 />
               </div>
@@ -482,7 +472,7 @@
                     v-model="block.point1X"
                     type="text"
                     class="input input-bordered input-xs font-mono text-xs"
-                    placeholder="VD: {{x1}} hoặc 100"
+                    placeholder=""
                     @input="emitUpdate"
                   />
                 </div>
@@ -495,7 +485,7 @@
                     type="number"
                     step="any"
                     class="input input-bordered input-xs font-mono text-xs"
-                    placeholder="0"
+                    placeholder=""
                     @input="emitUpdate"
                   />
                 </div>
@@ -507,7 +497,7 @@
                     v-model="block.point2X"
                     type="text"
                     class="input input-bordered input-xs font-mono text-xs"
-                    placeholder="VD: {{x2}} hoặc 500"
+                    placeholder=""
                     @input="emitUpdate"
                   />
                 </div>
@@ -520,7 +510,7 @@
                     type="number"
                     step="any"
                     class="input input-bordered input-xs font-mono text-xs"
-                    placeholder="20"
+                    placeholder=""
                     @input="emitUpdate"
                   />
                 </div>
@@ -532,7 +522,7 @@
                     v-model="block.coeffAVar"
                     type="text"
                     class="input input-bordered input-xs font-mono text-xs text-primary font-bold"
-                    placeholder="a"
+                    placeholder=""
                     @input="emitUpdate"
                   />
                 </div>
@@ -544,7 +534,7 @@
                     v-model="block.coeffBVar"
                     type="text"
                     class="input input-bordered input-xs font-mono text-xs text-secondary font-bold"
-                    placeholder="b"
+                    placeholder=""
                     @input="emitUpdate"
                   />
                 </div>
@@ -560,7 +550,7 @@
                 v-model="block.description"
                 type="text"
                 class="input input-bordered input-xs w-full text-xs"
-                placeholder="Mô tả mục đích của block này..."
+                placeholder=""
                 @input="emitUpdate"
               />
             </div>
@@ -594,7 +584,7 @@
           <textarea
             v-model="rawJsonInput"
             class="textarea textarea-bordered font-mono text-xs w-full h-64 bg-base-200"
-            placeholder="Dán mảng JSON blocks..."
+            placeholder=""
           ></textarea>
         </div>
 

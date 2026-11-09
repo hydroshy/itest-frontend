@@ -12,7 +12,6 @@
               <h2 class="text-sm font-bold tracking-wide uppercase text-base-content">
                 CREATE SIMULATION FLOW
               </h2>
-              <span class="badge badge-xs badge-primary font-mono font-bold">GỘP FLOW &amp; AUTOCHECK</span>
             </div>
           </div>
         </div>
@@ -65,13 +64,13 @@
         <!-- Tên Kịch Bản -->
         <div class="form-control lg:col-span-2">
           <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Tên Kịch Bản (Profile Name)</span>
+            <span class="label-text text-xs font-semibold">PROFILE_NAME</span>
           </label>
           <input
             v-model="profileForm.name"
             type="text"
             class="input input-bordered input-sm w-full text-xs"
-            placeholder="VD: Kịch bản kiểm thử khí WSSFC-ATH 20 phút"
+            placeholder=""
           />
         </div>
 
@@ -84,7 +83,7 @@
             v-model="profileForm.itemCode"
             type="text"
             class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder="VD: WSSFC-ATH"
+            placeholder=""
             @input="onDutInputChanged"
           />
         </div>
@@ -98,7 +97,7 @@
             v-model="profileForm.fwVersion"
             type="text"
             class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder="VD: 4F0505"
+            placeholder=""
             @input="onDutInputChanged"
           />
         </div>
@@ -106,7 +105,7 @@
         <!-- Sensor connectivity -->
         <div class="form-control">
           <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Kết Nối</span>
+            <span class="label-text text-xs font-semibold">CONNECTIVITY</span>
           </label>
           <select
             v-model="profileForm.sensorConnectivity"
@@ -121,7 +120,6 @@
         <div class="form-control">
           <label class="label py-1 flex items-center justify-between">
             <span class="label-text text-xs font-semibold">SIMU ID</span>
-            <span class="badge badge-xs badge-neutral font-mono text-[9px]">TỰ SINH</span>
           </label>
           <input
             :value="generatedSimuId"
@@ -129,7 +127,7 @@
             readonly
             disabled
             class="input input-bordered input-sm w-full font-mono text-xs text-primary font-bold bg-base-300/60 cursor-not-allowed"
-            placeholder="Tự sinh từ ITEM &amp; FW..."
+            placeholder=""
           />
         </div>
       </div>
@@ -138,7 +136,7 @@
       <div class="flex items-center justify-between pt-1 flex-wrap gap-2">
         <button
           type="button"
-          class="btn btn-xs btn-outline btn-primary gap-1"
+          class="btn btn-sm btn-primary gap-1.5"
           :disabled="loadingDutFields || (!profileForm.itemCode.trim() && !profileForm.fwVersion.trim())"
           @click="fetchDutFields"
         >
@@ -172,21 +170,21 @@
     <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 space-y-3">
       <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
         <div class="flex items-center gap-2">
-          <span class="badge badge-sm badge-warning font-mono font-bold">2. THIẾT BỊ THAM CHIẾU (REFERENCE) &amp; MÔ PHỎNG (SIMULATOR)</span>
+          <span class="badge badge-sm badge-warning font-mono font-bold">REF DEVICE</span>
         </div>
         <button
           type="button"
-          class="btn btn-xs btn-outline btn-warning gap-1"
+          class="btn btn-sm btn-primary gap-1.5"
           @click="addReferenceDevice"
         >
-          <Plus class="w-3.5 h-3.5" />
-          + Thêm Thiết Bị Tham Chiếu
+          <Plus class="w-4 h-4" />
+          <span>Thêm Thiết Bị Tham Chiếu</span>
         </button>
       </div>
 
       <!-- Danh sách Reference Devices -->
       <div v-if="referenceDevices.length === 0" class="p-3 bg-base-100/60 rounded-lg border border-dashed border-base-300 text-center text-xs text-base-content/50 italic">
-        Không có thiết bị tham chiếu nào. (Phần thiết bị tham chiếu có thể để trống nếu bài test không yêu cầu đối chiếu song song).
+        Không có thiết bị tham chiếu nào.
       </div>
 
       <div v-else class="space-y-2">
@@ -217,13 +215,13 @@
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
             <div class="form-control">
               <label class="label py-0.5">
-                <span class="label-text text-[11px] font-semibold">Tên / Nhãn Tham Chiếu</span>
+                <span class="label-text text-[11px] font-semibold">REFERENCE_NAME</span>
               </label>
               <input
                 v-model="refDev.reference_name"
                 type="text"
                 class="input input-bordered input-xs w-full text-xs"
-                placeholder="VD: Reference Sensor 01"
+                placeholder=""
               />
             </div>
             <div class="form-control">
@@ -234,7 +232,7 @@
                 v-model="refDev.item_code"
                 type="text"
                 class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-                placeholder="VD: WSSFC-REF"
+                placeholder=""
                 @input="onRefInputChanged(refDev)"
               />
             </div>
@@ -246,14 +244,14 @@
                 v-model="refDev.fw_version"
                 type="text"
                 class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-                placeholder="VD: 4F0505"
+                placeholder=""
                 @input="onRefInputChanged(refDev)"
               />
             </div>
             <div class="form-control flex justify-end pb-0.5">
               <button
                 type="button"
-                class="btn btn-xs btn-outline btn-warning w-full"
+                class="btn btn-sm btn-primary w-full gap-1.5"
                 :disabled="refDev.loading || (!refDev.item_code.trim() && !refDev.fw_version.trim())"
                 @click="fetchRefDeviceFields(refDev)"
               >
@@ -288,7 +286,7 @@
               v-model="simulatorForm.name"
               type="text"
               class="input input-bordered input-xs w-full text-xs"
-              placeholder="VD: Gas Chamber Simulator"
+              placeholder=""
             />
           </div>
           <div class="form-control">
@@ -302,7 +300,7 @@
               v-model="simulatorForm.item_code"
               type="text"
               class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-              placeholder="VD: SIMU-GAS-01"
+              placeholder=""
               @input="onSimulatorInputChanged"
             />
           </div>
@@ -314,7 +312,7 @@
               v-model="simulatorForm.dev_eui"
               type="text"
               class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-              placeholder="16 ký tự Hex..."
+              placeholder=""
             />
           </div>
         </div>
@@ -333,25 +331,25 @@
     <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 space-y-3">
       <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
         <div class="flex items-center gap-2">
-          <span class="badge badge-sm badge-success font-mono font-bold">3. TIÊU CHUẨN AUTO CHECK (INTEGRATED CRITERIA)</span>
+          <span class="badge badge-sm badge-success font-mono font-bold">AUTO CHECK</span>
         </div>
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="btn btn-xs btn-outline btn-success gap-1"
+            class="btn btn-sm btn-primary gap-1.5"
             @click="() => addDutRule()"
           >
-            <Plus class="w-3.5 h-3.5" />
-            + Thêm Quy Tắc
+            <Plus class="w-4 h-4" />
+            <span>Thêm Quy Tắc</span>
           </button>
           <button
             v-if="referenceDevices.length > 0"
             type="button"
-            class="btn btn-xs btn-outline btn-warning gap-1"
+            class="btn btn-sm btn-primary gap-1.5"
             @click="() => addComparisonRule()"
           >
-            <Plus class="w-3.5 h-3.5" />
-            + So sánh tham chiếu
+            <Plus class="w-4 h-4" />
+            <span>So Sánh Tham Chiếu</span>
           </button>
         </div>
       </div>
@@ -362,7 +360,7 @@
           <div class="flex items-center gap-2">
             <Variable class="w-4 h-4 text-primary" />
             <span class="text-xs font-bold uppercase tracking-wide text-primary">
-              Biến Có Trong Flow Simulation
+              VARIABLE IN FLOW SIMULATION
             </span>
             <span class="badge badge-xs badge-primary font-mono font-bold">
               {{ simulationVariables.length }} BIẾN
@@ -459,7 +457,7 @@
                 :list="'param-datalist-' + rIdx"
                 type="text"
                 class="input input-bordered input-xs w-full font-mono text-xs text-primary font-semibold"
-                placeholder="Chọn gợi ý hoặc gõ tên..."
+                placeholder=""
               />
               <datalist :id="'param-datalist-' + rIdx">
                 <!-- 1. Biến Simulation Flow -->
@@ -519,7 +517,7 @@
                   type="number"
                   step="any"
                   class="input input-bordered input-xs w-full font-mono text-xs"
-                  placeholder="Min"
+                  placeholder=""
                 />
               </div>
               <div class="form-control">
@@ -531,7 +529,7 @@
                   type="number"
                   step="any"
                   class="input input-bordered input-xs w-full font-mono text-xs"
-                  placeholder="Max"
+                  placeholder=""
                 />
               </div>
             </template>
@@ -545,7 +543,7 @@
                   v-model="rule.measurement_window_id"
                   type="text"
                   class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-                  placeholder="WINDOW_01"
+                  placeholder=""
                 />
               </div>
               <div class="form-control">
@@ -557,7 +555,7 @@
                   type="number"
                   min="1"
                   class="input input-bordered input-xs w-full font-mono text-xs"
-                  placeholder="10"
+                  placeholder=""
                 />
               </div>
             </template>
@@ -586,14 +584,14 @@
                   type="number"
                   min="1"
                   class="input input-bordered input-xs w-full font-mono text-xs"
-                  placeholder="10"
+                  placeholder=""
                 />
                 <input
                   v-else
                   v-model="rule.measurement_window_id"
                   type="text"
                   class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-                  placeholder="WINDOW_01"
+                  placeholder=""
                 />
               </div>
             </template>
@@ -608,7 +606,7 @@
                   type="number"
                   min="1"
                   class="input input-bordered input-xs w-full font-mono text-xs"
-                  placeholder="1"
+                  placeholder=""
                 />
               </div>
               <div class="form-control">
@@ -620,7 +618,7 @@
                   type="number"
                   min="1"
                   class="input input-bordered input-xs w-full font-mono text-xs"
-                  placeholder="100"
+                  placeholder=""
                 />
               </div>
             </template>
@@ -652,7 +650,7 @@
               :list="'comp-dut-list-' + cIdx"
               type="text"
               class="input input-bordered input-xs w-full font-mono text-xs text-accent font-semibold"
-              placeholder="VD: gas_raw hoặc var:x1"
+              placeholder=""
             />
             <datalist :id="'comp-dut-list-' + cIdx">
               <option v-for="f in dutFieldNames" :key="'dut-comp-' + f" :value="f">
@@ -672,7 +670,7 @@
               :list="'comp-ref-list-' + cIdx"
               type="text"
               class="input input-bordered input-xs w-full font-mono text-xs text-warning font-semibold"
-              placeholder="VD: gas_raw hoặc var:x2"
+              placeholder=""
             />
             <datalist :id="'comp-ref-list-' + cIdx">
               <option v-for="rf in allRefFields" :key="'ref-comp-' + rf.label" :value="rf.fieldName">
@@ -692,7 +690,7 @@
               type="number"
               step="any"
               class="input input-bordered input-xs w-full font-mono text-xs"
-              placeholder="VD: 5"
+              placeholder=""
             />
           </div>
           <div class="flex justify-end pt-4">
