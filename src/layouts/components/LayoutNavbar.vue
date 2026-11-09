@@ -30,7 +30,7 @@
       </button>
 
       <!-- Breadcrumb / Page Title -->
-      <div class="flex items-center gap-2">
+      <div v-if="currentRouteTitle && route.path !== '/menu'" class="flex items-center gap-2">
         <span class="text-sm sm:text-base font-bold text-[var(--owl-text-primary)] tracking-wide font-display">{{ currentRouteTitle }}</span>
         <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
       </div>

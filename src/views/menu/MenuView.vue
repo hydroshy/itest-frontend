@@ -1,13 +1,6 @@
 <template>
   <div class="launcher-view flex-1 flex flex-col justify-start w-full max-w-[1720px] mx-auto px-4 sm:px-8 xl:px-12 pt-2 sm:pt-4 pb-4 select-none min-h-[calc(100vh-4rem)]">
-    <!-- Header Banner: Modular Component -->
-    <MenuHeaderBar
-      v-model:search-query="searchQuery"
-      v-model:selected-category="selectedCategory"
-      :counts="categoryCounts"
-    />
-
-    <!-- Main Content Area: 2-Row Grid -->
+    <!-- Main Content Area: 4-Column x 3-Row Grid -->
     <div class="flex-1 flex flex-col justify-start w-full pt-1 pb-4 sm:pt-2 sm:pb-6">
       <div class="w-full min-w-0 overflow-hidden py-1">
         <transition :name="slideDirection === 'next' ? 'slide-left' : 'slide-right'" mode="out-in">
@@ -15,7 +8,7 @@
           <div
             v-if="loading"
             :key="'loading'"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
           >
             <div
               v-for="i in cardsPerPage"
@@ -56,11 +49,11 @@
             </button>
           </div>
 
-          <!-- Cards Grid -->
+          <!-- Cards Grid: 4 Cột 3 Hàng (12 cards) -->
           <div
             v-else
             :key="currentPage"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
           >
             <MenuCardItem
               v-for="card in paginatedCards"
@@ -177,7 +170,6 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useCtosTransition } from '@/composables/useCtosTransition';
 import { httpClient } from '@/api/client';
-import MenuHeaderBar from './components/MenuHeaderBar.vue';
 import MenuCardItem from './components/MenuCardItem.vue';
 import MenuDetailModal from './components/MenuDetailModal.vue';
 
@@ -410,9 +402,10 @@ const filteredCards = computed(() => {
 });
 
 const cardsPerPage = computed(() => {
-  if (windowWidth.value >= 1280) return 8;
-  if (windowWidth.value >= 1024) return 6;
-  if (windowWidth.value >= 640) return 4;
+  // 4 cột x 3 hàng = 12 cards cho màn hình desktop
+  if (windowWidth.value >= 1024) return 12;
+  if (windowWidth.value >= 768) return 9;
+  if (windowWidth.value >= 640) return 6;
   return 4;
 });
 
