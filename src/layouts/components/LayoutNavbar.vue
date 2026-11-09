@@ -1,30 +1,32 @@
 <template>
   <header class="navbar relative shrink-0 h-16 min-h-[4rem] bg-[var(--owl-bg-surface)] backdrop-blur-xl border-b border-[var(--owl-border)] px-4 sm:px-6 justify-between z-10 transition-colors duration-250">
-    <!-- Left: Collapse toggle, Brand & Breadcrumb -->
+    <!-- Left: Brand / Logo iTest 2.0 (Click toggle sidebar at Dashboard or navigate to /menu) & Breadcrumb -->
     <div class="flex items-center gap-3 sm:gap-4 shrink-0">
-      <button
-        v-if="showSidebar"
-        class="btn btn-ghost btn-sm btn-square rounded-xl text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5 border border-[var(--owl-border)]"
-        :title="isCollapse ? 'Mở rộng sidebar' : 'Thu gọn sidebar'"
-        @click="$emit('toggleSidebar')"
-      >
-        <font-awesome-icon :icon="['fas', isCollapse ? 'bars' : 'bars-staggered']" class="text-sm" />
-      </button>
-
-      <!-- Brand / Logo iTest 2.0 with Click to /menu -->
+      <!-- Integrated Brand / Collapse / Back button -->
       <button
         type="button"
         class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-[var(--owl-border)] bg-[var(--owl-bg-card)] hover:bg-[var(--owl-bg-card-hover)] hover:border-blue-500/40 transition-all cursor-pointer shadow-none group"
-        title="Quay về Menu Ứng dụng"
-        @click="goToMenu"
+        :title="buttonTitle"
+        @click="handleBrandClick"
       >
-        <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-400 flex items-center justify-center shadow-xs flex-shrink-0">
+        <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-400 flex items-center justify-center shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
           <span class="text-white text-[10px] font-black font-mono tracking-tighter">iT</span>
         </div>
         <div class="flex items-center gap-1">
           <span class="font-extrabold text-xs tracking-wide text-[var(--owl-text-primary)] font-display group-hover:text-blue-500 transition-colors">iTEST</span>
           <span class="text-blue-500 dark:text-blue-400 font-mono text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-blue-500/10 border border-blue-500/30">2.0</span>
         </div>
+        <!-- Indicator icon: sidebar collapse when at dashboard/with sidebar, back/menu icon when outside -->
+        <font-awesome-icon
+          v-if="showSidebar"
+          :icon="['fas', isCollapse ? 'bars' : 'bars-staggered']"
+          class="text-xs text-[var(--owl-text-muted)] group-hover:text-blue-500 ml-1 transition-colors"
+        />
+        <font-awesome-icon
+          v-else-if="route.path !== '/menu'"
+          :icon="['fas', 'arrow-left']"
+          class="text-xs text-[var(--owl-text-muted)] group-hover:text-blue-500 ml-1 transition-colors"
+        />
       </button>
 
       <!-- Breadcrumb / Page Title -->
@@ -123,12 +125,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 import ThemeToggle from './ThemeToggle.vue';
 
-defineProps<{
+const props = defineProps<{
   showSidebar: boolean;
   isCollapse: boolean;
   currentRouteTitle: string;
@@ -140,13 +142,25 @@ const emit = defineEmits<{
   (e: 'command', cmd: string): void;
 }>();
 
+const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const anchorRef = ref<HTMLButtonElement | null>(null);
 const userDropdown = ref<HTMLElement | null>(null);
 
-function goToMenu() {
-  router.push('/menu');
+const buttonTitle = computed(() => {
+  if (route.path === '/dashboard' || props.showSidebar) {
+    return props.isCollapse ? 'Mở rộng sidebar' : 'Thu gọn sidebar';
+  }
+  return 'Quay về Menu Ứng dụng';
+});
+
+function handleBrandClick() {
+  if (route.path === '/dashboard' || props.showSidebar) {
+    emit('toggleSidebar');
+  } else {
+    router.push('/menu');
+  }
 }
 
 const userInitial = computed(() => {

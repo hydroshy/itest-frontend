@@ -60,7 +60,7 @@
         @click="$emit('launch')"
       >
         <font-awesome-icon :icon="['fas', 'border-all']" class="text-white" />
-        <span>Mở Trung tâm Ứng dụng</span>
+        <span>Mở Menu Phân Hệ</span>
       </button>
     </div>
   </div>
