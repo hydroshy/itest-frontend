@@ -344,9 +344,8 @@ const tabList = [
   { name: 'create-test-batch', label: 'Create Test Batch', icon: FolderPlus },
   { name: 'so-test-batch', label: 'SO Test Batch', icon: Layers },
   { name: 'list-flow-simulation', label: 'List Flow Simulation', icon: Layers },
-  { name: 'device-simulation', label: 'Simulation Flow & Auto Check', icon: Cpu },
+  { name: 'device-simulation', label: 'CREATE SIMULATION FLOW', icon: Cpu },
   { name: 'list-device-simulation', label: 'List Device Simulation', icon: Radio },
-  { name: 'device-auto-check', label: 'Device Auto Check', icon: CheckCircle2 },
 ];
 
 const activeTab = ref('gateway-sessions');
@@ -366,6 +365,7 @@ function normalizeTab(tabName: string): string {
   if (tabName === 'device-test-batch') return 'test-batch';
   if (tabName === 'simulation-devices') return 'list-device-simulation';
   if (tabName === 'simulation-flow') return 'list-flow-simulation';
+  if (tabName === 'device-auto-check') return 'device-simulation';
   return tabName;
 }
 

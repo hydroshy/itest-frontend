@@ -10,9 +10,9 @@
           <div>
             <div class="flex items-center gap-2">
               <h2 class="text-sm font-bold tracking-wide uppercase text-base-content">
-                TẠO SIMULATION FLOW &amp; AUTO CHECK (UNIFIED PROFILE)
+                CREATE SIMULATION FLOW
               </h2>
-              <span class="badge badge-xs badge-primary font-mono font-bold">GỘP FLOW &amp; CRITERIA</span>
+              <span class="badge badge-xs badge-primary font-mono font-bold">GỘP FLOW &amp; AUTOCHECK</span>
             </div>
             <p class="text-xs text-base-content/60">
               Nhập ITEM_CODE &amp; FW_VERSION để nạp field data, cấu hình thiết bị tham chiếu, quy trình function blocks và tiêu chuẩn Auto Check.
