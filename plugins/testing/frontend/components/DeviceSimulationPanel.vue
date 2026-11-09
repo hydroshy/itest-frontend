@@ -830,7 +830,9 @@ const simulationDeviceItems = computed<SimulationDeviceItem[]>(() => {
 
 async function fetchSimulationDevices() {
   try {
-    const res: any = await httpClient.get('/plugins/testing/simulation-devices');
+    const res: any = await httpClient
+      .get('/plugins/testing/simulation/devices')
+      .catch(() => httpClient.get('/plugins/testing/simulation-devices'));
     const items = res?.data?.items || res?.data || res?.items || [];
     simulationDevices.value = Array.isArray(items) ? items : [];
   } catch {
