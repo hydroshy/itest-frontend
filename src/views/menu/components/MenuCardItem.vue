@@ -41,11 +41,11 @@
       </p>
     </div>
 
-    <!-- Bottom Row: Route / Meta & Launch Arrow -->
-    <div class="pt-2 border-t border-[var(--owl-border-light)] flex items-center justify-between text-[11px] text-[var(--owl-text-muted)] font-mono">
-      <span class="truncate max-w-[180px] font-semibold">{{ card.route }}</span>
-      <span class="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform font-bold text-xs">
-        <font-awesome-icon :icon="['fas', 'arrow-right']" />
+    <!-- Bottom Row: Launch Arrow -->
+    <div class="pt-2 border-t border-[var(--owl-border-light)] flex items-center justify-end text-[11px] text-[var(--owl-text-muted)]">
+      <span class="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform font-bold text-xs flex items-center gap-1.5">
+        <span>Truy cập</span>
+        <font-awesome-icon :icon="['fas', 'arrow-right']" class="text-[10px]" />
       </span>
     </div>
   </div>

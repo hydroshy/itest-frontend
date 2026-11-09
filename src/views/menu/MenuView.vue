@@ -23,7 +23,9 @@
                 <div class="w-3/4 h-4 rounded bg-[var(--owl-bg-surface)]"></div>
                 <div class="w-full h-3 rounded bg-[var(--owl-bg-surface)]/80"></div>
               </div>
-              <div class="w-1/2 h-3 rounded bg-[var(--owl-bg-surface)]/80 pt-2 border-t border-[var(--owl-border-light)]"></div>
+              <div class="flex justify-end pt-2 border-t border-[var(--owl-border-light)]">
+                <div class="w-16 h-3 rounded bg-[var(--owl-bg-surface)]/80"></div>
+              </div>
             </div>
           </div>
 
