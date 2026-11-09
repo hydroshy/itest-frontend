@@ -22,9 +22,6 @@
                 CÓ MEASUREMENT WINDOW
               </span>
             </div>
-            <p class="text-xs text-base-content/60 mt-0.5">
-              Tự do ghép nối các function blocks theo quy trình kiểm thử: Downlink, Delay, Mốc thời gian, Đo lường Window, Tính trung bình, Hiệu chuẩn tuyến tính & Auto Check.
-            </p>
           </div>
         </div>
 
@@ -67,8 +64,6 @@
               <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement Window</a></li>
               <li><a @click="addBlock('average')">📊 Average Function (Trung bình)</a></li>
               <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear (y = ax + b)</a></li>
-              <li class="menu-title text-[10px] uppercase font-bold text-primary mt-1">Đánh Giá (Tùy Chọn)</li>
-              <li><a @click="addBlock('device_auto_check')">✅ Device Auto Check (Tùy chọn)</a></li>
             </ul>
           </div>
         </div>
@@ -85,31 +80,26 @@
       </div>
       <div>
         <h4 class="font-bold text-sm text-base-content">Chưa có Function Block nào</h4>
-        <p class="text-xs text-base-content/60 max-w-md mx-auto mt-1">
-          Bắt đầu xây dựng kịch bản kiểm thử bằng cách thêm các block tuần tự bên dưới.
-        </p>
       </div>
-      <div class="flex items-center justify-center gap-2 pt-2 flex-wrap">
-        <button type="button" class="btn btn-sm btn-outline btn-primary" @click="addBlock('downlink')">
-          <Plus class="w-3.5 h-3.5 mr-1" />
-          + Downlink
-        </button>
-        <button type="button" class="btn btn-sm btn-outline btn-accent" @click="addBlock('delay')">
-          <Plus class="w-3.5 h-3.5 mr-1" />
-          + Delay (Chờ)
-        </button>
-        <button type="button" class="btn btn-sm btn-outline btn-info" @click="addBlock('start_measurement')">
-          <Plus class="w-3.5 h-3.5 mr-1" />
-          + Start Window
-        </button>
-        <button type="button" class="btn btn-sm btn-outline btn-warning" @click="addBlock('average')">
-          <Plus class="w-3.5 h-3.5 mr-1" />
-          + Average
-        </button>
-        <button type="button" class="btn btn-sm btn-outline btn-secondary" @click="addBlock('calculate_linear')">
-          <Plus class="w-3.5 h-3.5 mr-1" />
-          + Linear (y = ax+b)
-        </button>
+      <div class="flex items-center justify-center pt-1">
+        <div class="dropdown dropdown-top dropdown-center">
+          <label tabindex="0" role="button" class="btn btn-sm btn-primary gap-1">
+            <Plus class="w-4 h-4" />
+            <span>+ Thêm Function Block</span>
+          </label>
+          <ul tabindex="0" class="dropdown-content z-[10] menu p-2 shadow-lg bg-base-100 rounded-box w-64 border border-base-300 text-xs space-y-1">
+            <li class="menu-title text-[10px] uppercase font-bold text-primary">Điều Khiển &amp; Thời Gian</li>
+            <li><a @click="addBlock('downlink')">📡 Downlink (Gửi lệnh vô tuyến)</a></li>
+            <li><a @click="addBlock('clear_downlink')">🧹 Clear Downlink (FlushQueue)</a></li>
+            <li><a @click="addBlock('delay')">⏱️ Delay (Chờ thời gian)</a></li>
+            <li><a @click="addBlock('wait_until_offset')">🎯 Wait Until Offset (Mốc thời gian)</a></li>
+            <li class="menu-title text-[10px] uppercase font-bold text-primary mt-1">Đo Lường &amp; Hiệu Chuẩn</li>
+            <li><a @click="addBlock('start_measurement')">🟢 Start Measurement Window</a></li>
+            <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement Window</a></li>
+            <li><a @click="addBlock('average')">📊 Average Function (Trung bình)</a></li>
+            <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear (y = ax + b)</a></li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -131,10 +121,6 @@
 
               <span class="badge badge-sm font-bold uppercase tracking-wider" :class="getFunctionBadgeClass(block.functionType)">
                 {{ getFunctionLabel(block.functionType) }}
-              </span>
-
-              <span v-if="block.functionType === 'device_auto_check'" class="badge badge-sm badge-ghost font-mono text-[10px] text-base-content/60">
-                TÙY CHỌN
               </span>
 
               <template v-if="block.targetDevice">
@@ -222,9 +208,6 @@
                   <option value="stop_measurement">Stop Measurement Window</option>
                   <option value="average">Average Function (Tính trung bình)</option>
                   <option value="calculate_linear">Calculate Linear (y = ax + b)</option>
-                </optgroup>
-                <optgroup label="Đánh Giá (Tùy Chọn)">
-                  <option value="device_auto_check">Device Auto Check (Tùy chọn)</option>
                 </optgroup>
               </select>
             </div>
@@ -568,26 +551,8 @@
               </div>
             </template>
 
-            <!-- BLOCK: DEVICE_AUTO_CHECK -->
-            <div v-if="block.functionType === 'device_auto_check'" class="form-control md:col-span-12 space-y-1">
-              <label class="label py-0.5">
-                <span class="label-text text-xs font-semibold text-base-content/80">Ghi Chú Đánh Giá Tiêu Chuẩn</span>
-                <span class="badge badge-xs badge-ghost font-mono text-[10px]">Tùy chọn</span>
-              </label>
-              <input
-                v-model="block.description"
-                type="text"
-                class="input input-bordered input-sm w-full text-xs"
-                placeholder="VD: Kiểm tra cảm biến sau khi hiệu chuẩn 2 điểm hoàn tất"
-                @input="emitUpdate"
-              />
-              <p class="text-[11px] text-base-content/60 italic">
-                💡 Khối này là tùy chọn trong kịch bản. Tiêu chuẩn đánh giá và ngưỡng kiểm tra được cấu hình tập trung ở mục "Tiêu Chuẩn Auto Check" bên dưới.
-              </p>
-            </div>
-
             <!-- Description / Ghi chú chung cho block -->
-            <div v-if="block.functionType !== 'device_auto_check'" class="form-control md:col-span-12">
+            <div class="form-control md:col-span-12">
               <label class="label py-0.5">
                 <span class="label-text text-[11px] text-base-content/60">Ghi Chú Bước</span>
               </label>
@@ -693,7 +658,6 @@ export interface FlowBlock {
     | 'stop_measurement'
     | 'average'
     | 'calculate_linear'
-    | 'device_auto_check'
     | string;
   targetDevice?: 'DUT' | 'REF' | 'SIMU' | string;
   delaySeconds?: number;
@@ -790,7 +754,7 @@ function normalizeBlock(b: any): FlowBlock {
 }
 
 function hasDeviceTarget(type: string): boolean {
-  return ['downlink', 'clear_downlink', 'start_measurement', 'stop_measurement', 'average', 'device_auto_check'].includes(type);
+  return ['downlink', 'clear_downlink', 'start_measurement', 'stop_measurement', 'average'].includes(type);
 }
 
 function isDynamicPayload(str: string): boolean {
@@ -885,8 +849,6 @@ function onFunctionTypeChanged(block: FlowBlock) {
     block.fPort = block.fPort || 1;
   } else if (block.functionType === 'clear_downlink') {
     block.targetDevice = block.targetDevice || 'DUT';
-  } else if (block.functionType === 'device_auto_check') {
-    block.targetDevice = block.targetDevice || 'DUT';
   }
   emitUpdate();
 }
@@ -909,8 +871,6 @@ function getFunctionBadgeClass(type: string) {
       return 'badge-warning text-warning-content';
     case 'calculate_linear':
       return 'badge-info text-info-content';
-    case 'device_auto_check':
-      return 'badge-primary badge-outline font-bold';
     default:
       return 'badge-neutral';
   }
@@ -934,8 +894,6 @@ function getFunctionLabel(type: string) {
       return 'AVERAGE FUNCTION';
     case 'calculate_linear':
       return 'CALCULATE LINEAR (y = ax + b)';
-    case 'device_auto_check':
-      return 'DEVICE AUTO CHECK';
     default:
       return 'FUNCTION';
   }

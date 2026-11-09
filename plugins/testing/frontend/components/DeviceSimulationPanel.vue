@@ -14,9 +14,6 @@
               </h2>
               <span class="badge badge-xs badge-primary font-mono font-bold">GỘP FLOW &amp; AUTOCHECK</span>
             </div>
-            <p class="text-xs text-base-content/60">
-              Nhập ITEM_CODE &amp; FW_VERSION để nạp field data, cấu hình thiết bị tham chiếu, quy trình function blocks và tiêu chuẩn Auto Check.
-            </p>
           </div>
         </div>
 
@@ -58,7 +55,6 @@
       <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
         <div class="flex items-center gap-2">
           <span class="badge badge-sm badge-accent font-mono font-bold">1. THIẾT BỊ ĐƯỢC TEST (DUT)</span>
-          <span class="text-xs font-semibold text-base-content/80">Nhập ITEM_CODE &amp; FW_VERSION để tự động lấy field data</span>
         </div>
         <div v-if="dutFields.length > 0" class="badge badge-sm badge-success font-mono font-bold">
           {{ dutFields.length }} fields giải mã
@@ -177,7 +173,6 @@
       <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
         <div class="flex items-center gap-2">
           <span class="badge badge-sm badge-warning font-mono font-bold">2. THIẾT BỊ THAM CHIẾU (REFERENCE) &amp; MÔ PHỎNG (SIMULATOR)</span>
-          <span class="badge badge-xs badge-ghost font-mono">CÓ THỂ ĐỂ TRỐNG</span>
         </div>
         <button
           type="button"
@@ -240,6 +235,7 @@
                 type="text"
                 class="input input-bordered input-xs w-full font-mono text-xs uppercase"
                 placeholder="VD: WSSFC-REF"
+                @input="onRefInputChanged(refDev)"
               />
             </div>
             <div class="form-control">
@@ -251,6 +247,7 @@
                 type="text"
                 class="input input-bordered input-xs w-full font-mono text-xs uppercase"
                 placeholder="VD: 4F0505"
+                @input="onRefInputChanged(refDev)"
               />
             </div>
             <div class="form-control flex justify-end pb-0.5">
@@ -261,7 +258,7 @@
                 @click="fetchRefDeviceFields(refDev)"
               >
                 <span v-if="refDev.loading" class="loading loading-spinner loading-xs"></span>
-                <span v-else>Lấy Field Data</span>
+                <span v-else>{{ refDev.fields && refDev.fields.length > 0 ? `${refDev.fields.length} fields` : 'Lấy Field Data' }}</span>
               </button>
             </div>
           </div>
@@ -295,14 +292,18 @@
             />
           </div>
           <div class="form-control">
-            <label class="label py-0.5">
+            <label class="label py-0.5 flex items-center justify-between">
               <span class="label-text text-[11px] font-semibold">ITEM_CODE Mô Phỏng</span>
+              <span v-if="simulatorForm.fields.length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
+                {{ simulatorForm.fields.length }} fields
+              </span>
             </label>
             <input
               v-model="simulatorForm.item_code"
               type="text"
               class="input input-bordered input-xs w-full font-mono text-xs uppercase"
               placeholder="VD: SIMU-GAS-01"
+              @input="onSimulatorInputChanged"
             />
           </div>
           <div class="form-control">
@@ -333,7 +334,6 @@
       <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
         <div class="flex items-center gap-2">
           <span class="badge badge-sm badge-success font-mono font-bold">3. TIÊU CHUẨN AUTO CHECK (INTEGRATED CRITERIA)</span>
-          <span class="text-xs font-semibold text-base-content/80">Thiết lập quy tắc kiểm tra tự động gắn liền với kịch bản</span>
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -342,7 +342,7 @@
             @click="() => addDutRule()"
           >
             <Plus class="w-3.5 h-3.5" />
-            + Thêm Quy Tắc DUT
+            + Thêm Quy Tắc
           </button>
           <button
             v-if="referenceDevices.length > 0"
@@ -351,7 +351,7 @@
             @click="() => addComparisonRule()"
           >
             <Plus class="w-3.5 h-3.5" />
-            + So Sánh Dung Sai DUT vs REF
+            + So sánh tham chiếu
           </button>
         </div>
       </div>
@@ -362,15 +362,12 @@
           <div class="flex items-center gap-2">
             <Variable class="w-4 h-4 text-primary" />
             <span class="text-xs font-bold uppercase tracking-wide text-primary">
-              Biến Có Trong Flow Simulation (Simulation Variables)
+              Biến Có Trong Flow Simulation
             </span>
             <span class="badge badge-xs badge-primary font-mono font-bold">
               {{ simulationVariables.length }} BIẾN
             </span>
           </div>
-          <span class="text-[11px] text-base-content/60">
-            Click vào biến để thêm nhanh quy tắc kiểm tra Auto Check
-          </span>
         </div>
 
         <!-- Trạng thái chưa có biến -->
@@ -379,9 +376,7 @@
           class="p-2.5 bg-base-200/50 rounded-lg border border-dashed border-base-300 text-xs text-base-content/60 flex items-center gap-2"
         >
           <Info class="w-4 h-4 text-info shrink-0" />
-          <span>
-            Chưa có biến nào được sinh ra từ Flow Simulation. Thêm các block <strong>Average</strong> (lưu outputVar), <strong>Calculate Linear</strong> (hệ số a, b), hoặc <strong>Start Measurement</strong> (windowId) để tự động xuất hiện tại đây.
-          </span>
+          <span>Chưa có biến nào trong flow.</span>
         </div>
 
         <!-- Danh sách biến dạng Chips / Cards -->
@@ -413,11 +408,11 @@
       <!-- Danh Sách Quy Tắc Kiểm Tra (DUT, REF & Biến Simulation) -->
       <div class="space-y-2">
         <h4 class="text-xs font-bold uppercase tracking-wide text-base-content/70">
-          Quy Tắc Đánh Giá Cho DUT, REF &amp; Biến Simulation
+          Quy Tắc Đánh Giá
         </h4>
 
         <div v-if="dutRules.length === 0" class="p-3 bg-base-100/60 rounded-lg border border-dashed border-base-300 text-center text-xs text-base-content/50 italic">
-          Chưa có quy tắc Auto Check nào. Nhấn "+ Thêm Quy Tắc DUT" hoặc click vào biến simulation ở trên để tạo quy tắc.
+          Chưa có quy tắc Auto Check nào. Nhấn "+ Thêm Quy Tắc" hoặc click vào biến simulation ở trên để tạo quy tắc.
         </div>
 
         <div
@@ -636,11 +631,11 @@
       <!-- So Sánh Dung Sai DUT vs Reference Devices (Tolerance Comparisons) -->
       <div v-if="referenceDevices.length > 0" class="space-y-2 pt-2 border-t border-base-200">
         <h4 class="text-xs font-bold uppercase tracking-wide text-warning">
-          So Sánh Dung Sai DUT vs Thiết Bị Tham Chiếu (Tolerance Comparisons)
+          So sánh tham chiếu
         </h4>
 
         <div v-if="comparisons.length === 0" class="p-3 bg-base-100/60 rounded-lg border border-dashed border-base-300 text-center text-xs text-base-content/50 italic">
-          Chưa có quy tắc so sánh sai lệch. Nhấn "+ So Sánh Dung Sai DUT vs REF" để thiết lập đối chiếu.
+          Chưa có quy tắc so sánh tham chiếu. Nhấn "+ So sánh tham chiếu" để thiết lập đối chiếu.
         </div>
 
         <div
@@ -889,13 +884,77 @@ async function fetchRefDeviceFields(refDev: ReferenceDeviceFormItem) {
   }
 }
 
+const refFetchTimeouts = new Map<string, any>();
+function onRefInputChanged(refDev: ReferenceDeviceFormItem) {
+  if (refFetchTimeouts.has(refDev.id)) {
+    clearTimeout(refFetchTimeouts.get(refDev.id));
+  }
+  if (refDev.item_code.trim()) {
+    const t = setTimeout(() => {
+      fetchRefDeviceFields(refDev);
+    }, 600);
+    refFetchTimeouts.set(refDev.id, t);
+  }
+}
+
 // Simulator Device State
 const simulatorEnabled = ref(false);
 const simulatorForm = reactive({
   name: '',
   item_code: '',
+  fw_version: '',
   dev_eui: '',
+  fields: [] as Array<{ name: string; label?: string; unit?: string }>,
+  loading: false,
 });
+
+let simuFetchTimeout: any = null;
+function onSimulatorInputChanged() {
+  clearTimeout(simuFetchTimeout);
+  if (simulatorForm.item_code.trim()) {
+    simuFetchTimeout = setTimeout(() => {
+      fetchSimulatorFields();
+    }, 600);
+  }
+}
+
+async function fetchSimulatorFields() {
+  const code = simulatorForm.item_code.trim();
+  const fw = simulatorForm.fw_version.trim();
+  if (!code && !fw) return;
+
+  simulatorForm.loading = true;
+  try {
+    const res: any = await httpClient.get('/plugins/testing/autocheck/fields', {
+      params: { itemCode: code, fwVersion: fw, longFw: fw },
+    });
+    const payload = res?.data?.fields !== undefined ? res.data : (res?.fields !== undefined ? res : res?.data || {});
+    let fields: Array<{ name: string; label?: string; unit?: string }> = payload.fields ?? payload.data?.fields ?? [];
+    const standardMetrics = [
+      { name: 'RSSI', label: 'RSSI (Chỉ số sóng dBm)', unit: 'dBm' },
+      { name: 'SNR', label: 'SNR (Tỷ số tín hiệu/nhiễu dB)', unit: 'dB' },
+      { name: 'FCNT', label: 'FCNT (Bộ đếm gói uplink)' },
+      { name: 'FREQ', label: 'FREQ (Tần số vô tuyến MHz)', unit: 'MHz' },
+    ];
+    const merged = Array.isArray(fields) ? [...fields] : [];
+    for (const sm of standardMetrics) {
+      if (!merged.some((f: any) => (f.name || f).toUpperCase() === sm.name)) {
+        merged.push(sm);
+      }
+    }
+    simulatorForm.fields = merged;
+    cyberToast.success(`Đã tự động nạp ${merged.length} trường cho thiết bị mô phỏng`);
+  } catch {
+    simulatorForm.fields = [
+      { name: 'RSSI', label: 'RSSI (Chỉ số sóng dBm)', unit: 'dBm' },
+      { name: 'SNR', label: 'SNR (Tỷ số tín hiệu/nhiễu dB)', unit: 'dB' },
+      { name: 'FCNT', label: 'FCNT (Bộ đếm gói uplink)' },
+      { name: 'FREQ', label: 'FREQ (Tần số vô tuyến MHz)', unit: 'MHz' },
+    ];
+  } finally {
+    simulatorForm.loading = false;
+  }
+}
 
 // Flow Blocks state
 const flowBlocks = ref<FlowBlock[]>([]);
@@ -1010,6 +1069,21 @@ const allRefFields = computed<Array<{ refName: string; fieldName: string; label:
       });
     });
   });
+
+  if (simulatorEnabled.value && simulatorForm.fields && simulatorForm.fields.length > 0) {
+    const sName = simulatorForm.name || 'SIMU';
+    simulatorForm.fields.forEach((f: any) => {
+      const fName = typeof f === 'string' ? f : (f.name || f.field || '');
+      if (fName) {
+        result.push({
+          refName: sName,
+          fieldName: fName,
+          label: `${sName} -> ${fName}`,
+        });
+      }
+    });
+  }
+
   return result;
 });
 
