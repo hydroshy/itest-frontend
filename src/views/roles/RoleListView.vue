@@ -80,7 +80,7 @@
                   </button>
 
                   <button
-                    v-if="row.code !== 'admin'"
+                    v-if="row.code !== 'admin' && row.code !== 'SUPER_ADMIN' && row.code !== 'ADMIN'"
                     class="btn btn-xs btn-ghost text-rose-500 hover:bg-rose-500/10 rounded-lg"
                     title="Xóa vai trò"
                     @click="deleteRole(row)"
