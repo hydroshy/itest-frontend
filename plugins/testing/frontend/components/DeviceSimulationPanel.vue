@@ -471,19 +471,14 @@
                 <option v-for="v in simulationVariables" :key="'var-' + v.name" :value="v.name">
                   [Biến Simulation] {{ v.name }} - {{ v.details }}
                 </option>
-                <!-- 2. DUT Fields -->
+                <!-- 2. DUT Fields (bao gồm decoder fields và RSSI, SNR, FCNT, FREQ của DUT khi đã lấy) -->
                 <option v-for="f in dutFieldNames" :key="'dut-' + f" :value="f">
                   [DUT Field] {{ f }}
                 </option>
-                <!-- 3. Reference Device Fields -->
+                <!-- 3. Reference Device Fields (bao gồm decoder fields và RSSI, SNR, FCNT, FREQ của từng REF khi đã lấy) -->
                 <option v-for="rf in allRefFields" :key="'ref-' + rf.label" :value="rf.fieldName">
                   [{{ rf.refName }}] {{ rf.fieldName }}
                 </option>
-                <!-- 4. RF & Network Metrics -->
-                <option value="rssi">[RF Metric] rssi (Chỉ số sóng dBm)</option>
-                <option value="snr">[RF Metric] snr (Tỷ số tín hiệu/nhiễu dB)</option>
-                <option value="fcnt">[Counter] fcnt (Bộ đếm gói uplink)</option>
-                <option value="battery_voltage">[Battery] battery_voltage (Điện áp pin)</option>
               </datalist>
 
               <!-- Mini source tag below input -->
@@ -796,12 +791,23 @@ async function fetchDutFields() {
       },
     });
     const payload = res?.data?.fields !== undefined ? res.data : (res?.fields !== undefined ? res : res?.data || {});
-    const fields = payload.fields ?? payload.data?.fields ?? [];
-    if (Array.isArray(fields)) {
-      dutFields.value = fields;
-      if (fields.length > 0) {
-        cyberToast.success(`Đã nạp ${fields.length} trường giải mã cho DUT`);
+    let fields: Array<{ name: string; label: string; unit?: string }> = payload.fields ?? payload.data?.fields ?? [];
+    if (Array.isArray(fields) && fields.length > 0) {
+      const standardMetrics = [
+        { name: 'RSSI', label: 'RSSI (Chỉ số sóng dBm)', unit: 'dBm' },
+        { name: 'SNR', label: 'SNR (Tỷ số tín hiệu/nhiễu dB)', unit: 'dB' },
+        { name: 'FCNT', label: 'FCNT (Bộ đếm gói uplink)' },
+        { name: 'FREQ', label: 'FREQ (Tần số vô tuyến MHz)', unit: 'MHz' },
+      ];
+      for (const sm of standardMetrics) {
+        if (!fields.some((f: any) => (f.name || f).toUpperCase() === sm.name)) {
+          fields.push(sm);
+        }
       }
+      dutFields.value = fields;
+      cyberToast.success(`Đã nạp ${fields.length} trường (gồm decoder, RSSI, SNR, FCNT, FREQ) cho DUT`);
+    } else {
+      dutFields.value = [];
     }
   } catch (err: any) {
     dutFieldsError.value = 'Không thể lấy field data cho DUT từ decoder';
@@ -858,10 +864,23 @@ async function fetchRefDeviceFields(refDev: ReferenceDeviceFormItem) {
       params: { itemCode: code, fwVersion: fw, longFw: fw },
     });
     const payload = res?.data?.fields !== undefined ? res.data : (res?.fields !== undefined ? res : res?.data || {});
-    const fields = payload.fields ?? payload.data?.fields ?? [];
-    if (Array.isArray(fields)) {
+    let fields: Array<{ name: string; label?: string; unit?: string }> = payload.fields ?? payload.data?.fields ?? [];
+    if (Array.isArray(fields) && fields.length > 0) {
+      const standardMetrics = [
+        { name: 'RSSI', label: 'RSSI (Chỉ số sóng dBm)', unit: 'dBm' },
+        { name: 'SNR', label: 'SNR (Tỷ số tín hiệu/nhiễu dB)', unit: 'dB' },
+        { name: 'FCNT', label: 'FCNT (Bộ đếm gói uplink)' },
+        { name: 'FREQ', label: 'FREQ (Tần số vô tuyến MHz)', unit: 'MHz' },
+      ];
+      for (const sm of standardMetrics) {
+        if (!fields.some((f: any) => (f.name || f).toUpperCase() === sm.name)) {
+          fields.push(sm);
+        }
+      }
       refDev.fields = fields;
-      cyberToast.success(`Đã nạp ${fields.length} trường cho ${refDev.reference_name || 'thiết bị tham chiếu'}`);
+      cyberToast.success(`Đã nạp ${fields.length} trường (gồm decoder, RSSI, SNR, FCNT, FREQ) cho ${refDev.reference_name || 'thiết bị tham chiếu'}`);
+    } else {
+      refDev.fields = [];
     }
   } catch {
     cyberToast.warning(`Không tìm thấy decoder cho thiết bị tham chiếu ${code}`);
