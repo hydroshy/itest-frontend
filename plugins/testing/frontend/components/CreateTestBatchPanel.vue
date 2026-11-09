@@ -181,13 +181,13 @@
         </div>
       </div>
 
-      <!-- Section 2: Gán Simulation Flow & Auto Check (Unified Profile) -->
+      <!-- Section 2: SIMULATION FLOW -->
       <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-base-300">
           <div class="flex items-center gap-2">
             <PlayCircle class="w-4 h-4 text-primary" />
             <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-              2. Gán Kịch Bản Simulation Flow &amp; Auto Check
+              SIMULATION FLOW
             </h4>
           </div>
           <button
@@ -195,21 +195,21 @@
             class="text-xs text-primary hover:underline flex items-center gap-1"
             @click="$emit('switch-tab', 'device-simulation')"
           >
-            <span>Tạo Unified Flow</span>
+            <span>Tạo Simulation Flow</span>
             <ExternalLink class="w-3 h-3" />
           </button>
         </div>
 
         <div class="form-control">
           <label class="label py-1">
-            <span class="label-text text-xs font-semibold">Chọn Kịch Bản Unified (Simulation Flow &amp; Auto Check)</span>
+            <span class="label-text text-xs font-semibold">Chọn Kịch Bản Simulation Flow</span>
           </label>
           <select
             v-model="batchForm.simuId"
             class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
             @change="onSimulationFlowSelected"
           >
-            <option value="">-- Chọn kịch bản mô phỏng &amp; Auto Check --</option>
+            <option value="">-- Chọn kịch bản Simulation Flow --</option>
             <option v-for="flow in availableFlows" :key="flow.id" :value="flow.id">
               {{ flow.name }} ({{ flow.duration }}s - {{ flow.blocksCount }} blocks)
             </option>
@@ -249,194 +249,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Section 3: Gán Device Auto Check (Full Width) -->
-      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-        <div class="flex items-center justify-between pb-2 border-b border-base-300">
-          <div class="flex items-center gap-2">
-            <CheckCircle2 class="w-4 h-4 text-success" />
-            <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-              3. Gán Device Auto Check
-            </h4>
-            <span v-if="hasInheritedAutoCheck" class="badge badge-xs badge-success font-mono">
-              TỰ ĐỘNG THEO UNIFIED FLOW
-            </span>
-          </div>
-          <button
-            type="button"
-            class="text-xs text-success hover:underline flex items-center gap-1"
-            @click="$emit('switch-tab', 'device-simulation')"
-          >
-            <span>Quy tắc check</span>
-            <ExternalLink class="w-3 h-3" />
-          </button>
-        </div>
-
-        <div class="form-control">
-          <label class="label py-1 flex items-center justify-between">
-            <span class="label-text text-xs font-semibold">Chọn Bộ Tiêu Chí Auto Check (Tùy chọn nếu đã gộp)</span>
-            <span v-if="hasInheritedAutoCheck" class="text-[11px] text-success">
-              Đã gộp sẵn trong kịch bản (có thể để mặc định hoặc chọn bộ khác để ghi đè)
-            </span>
-          </label>
-          <select
-            v-model="batchForm.autoCheckId"
-            class="select select-sm select-bordered w-full text-xs bg-base-100 font-mono"
-          >
-            <option value="">{{ hasInheritedAutoCheck ? '-- Sử dụng tiêu chí gộp theo Unified Flow --' : '-- Chọn bộ tiêu chí Auto Check --' }}</option>
-            <option v-for="crit in availableCriteria" :key="crit.id" :value="crit.id">
-              {{ crit.name }} ({{ crit.rulesCount }} rules)
-            </option>
-          </select>
-        </div>
-
-        <!-- Auto Check Summary Card -->
-        <div v-if="selectedCriteriaData" class="p-3 bg-base-100/80 border border-base-300 rounded-lg space-y-2">
-          <div class="flex items-center justify-between text-xs font-semibold">
-            <span class="text-success flex items-center gap-1.5">
-              <CheckCircle2 class="w-3.5 h-3.5" />
-              {{ selectedCriteriaData.name }}
-            </span>
-            <span class="badge badge-xs badge-success badge-outline font-mono">
-              {{ selectedCriteriaData.rulesCount }} rules
-            </span>
-          </div>
-          <p class="text-[11px] text-base-content/70">
-            {{ selectedCriteriaData.description }}
-          </p>
-          <div class="space-y-1 pt-1">
-            <div
-              v-for="(rule, idx) in selectedCriteriaData.rules"
-              :key="idx"
-              class="flex items-center justify-between text-[11px] font-mono text-base-content/80 bg-base-200/50 px-2 py-0.5 rounded"
-            >
-              <span>{{ rule.name }}</span>
-              <span class="text-primary text-[10px]">{{ rule.threshold }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Section 4: Danh Sách Các Test Batch Đã Tạo -->
-    <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4 space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-base-300">
-        <div class="flex items-center gap-2">
-          <ListFilter class="w-4 h-4 text-primary" />
-          <h4 class="font-bold text-xs uppercase tracking-wider text-base-content">
-            4. Danh Sách Test Batch Đã Thiết Lập (Batch History)
-          </h4>
-          <span class="badge badge-sm badge-ghost font-mono">
-            {{ filteredBatches.length }} đợt
-          </span>
-        </div>
-
-        <div class="flex items-center gap-2 flex-wrap">
-          <div class="relative w-48 sm:w-64">
-            <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Tìm mã batch, tên..."
-              class="input input-xs input-bordered w-full pl-8 font-mono text-xs bg-base-100"
-            />
-          </div>
-          <button class="btn btn-xs btn-ghost gap-1" @click="loadBatches">
-            <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': loadingBatches }" />
-            <span>Làm Mới</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="table table-xs w-full">
-          <thead>
-            <tr class="text-base-content/70 border-b border-base-300">
-              <th>Mã Batch</th>
-              <th>Tên Đợt Test</th>
-              <th>ITEM-CODE</th>
-              <th>FW_VERSION</th>
-              <th>Số lượng TB</th>
-              <th>Simulation Flow</th>
-              <th>Auto Check</th>
-              <th>Thời Gian</th>
-              <th>Trạng Thái</th>
-              <th class="text-center">Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loadingBatches">
-              <td colspan="10" class="text-center py-6">
-                <span class="loading loading-spinner loading-sm text-primary"></span>
-                <span class="text-xs text-base-content/60 ml-2">Đang tải danh sách Test Batch...</span>
-              </td>
-            </tr>
-            <tr v-else-if="filteredBatches.length === 0">
-              <td colspan="10" class="text-center py-6 text-xs text-base-content/50 italic">
-                Chưa có Test Batch nào phù hợp với bộ lọc.
-              </td>
-            </tr>
-            <tr
-              v-for="b in filteredBatches"
-              v-else
-              :key="b.id || b.batchCode"
-              class="hover:bg-base-200/50 transition-colors"
-            >
-              <td>
-                <span class="font-mono text-xs font-bold text-primary">{{ b.batchCode || b.batch_code }}</span>
-              </td>
-              <td class="font-semibold text-xs max-w-[180px] truncate">
-                {{ b.batchName || b.batch_name || b.name || 'Không có tên' }}
-              </td>
-              <td>
-                <span class="badge badge-sm badge-outline font-mono text-[11px]">{{ b.itemCode || b.item_code }}</span>
-              </td>
-              <td>
-                <span class="font-mono text-xs font-semibold text-accent">{{ b.longFw || b.long_fw || b.fwVersion || b.fw_version }}</span>
-              </td>
-              <td>
-                <span class="font-mono text-xs">{{ b.maxDevices || b.max_devices || 5 }} TB</span>
-              </td>
-              <td class="max-w-[160px] truncate text-[11px]">
-                {{ b.simuId || b.simu_id || 'Mặc định' }}
-              </td>
-              <td class="max-w-[160px] truncate text-[11px]">
-                <span class="text-success">{{ b.autoCheckCriteria?.name || b.auto_check_criteria?.name || 'Standard 2%' }}</span>
-              </td>
-              <td>
-                <span class="font-mono text-xs">{{ b.flowDurationSeconds || b.flow_duration_seconds || 300 }}s</span>
-              </td>
-              <td>
-                <span
-                  class="badge badge-xs font-mono font-bold"
-                  :class="getBatchStatusClass(b.status)"
-                >
-                  {{ b.status || 'READY' }}
-                </span>
-              </td>
-              <td>
-                <div class="flex items-center justify-center gap-1.5">
-                  <button
-                    class="btn btn-xs btn-primary gap-1"
-                    title="Bắt đầu Test đợt này"
-                    @click="executeBatch(b)"
-                  >
-                    <Play class="w-3 h-3" />
-                    <span>Test Ngay</span>
-                  </button>
-                  <button
-                    class="btn btn-xs btn-ghost text-error"
-                    title="Xóa cấu hình Batch này"
-                    @click="deleteBatch(b)"
-                  >
-                    <Trash2 class="w-3 h-3" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
   </div>
 </template>
@@ -449,15 +261,9 @@ import {
   Cpu,
   Clock,
   PlayCircle,
-  CheckCircle2,
   ExternalLink,
   Save,
   RotateCcw,
-  ListFilter,
-  RefreshCw,
-  Search,
-  Trash2,
-  Play,
   AlertTriangle,
   Timer,
   ScanBarcode,
@@ -473,7 +279,6 @@ const emit = defineEmits<{
 }>();
 
 const saving = ref(false);
-const loadingBatches = ref(false);
 
 const batchForm = reactive({
   itemCode: '',
@@ -483,7 +288,6 @@ const batchForm = reactive({
   maxDevices: 10,
   flowDurationSeconds: 0,
   simuId: '',
-  autoCheckId: '',
 });
 
 // FW_VERSION format: XFXXXX where x is a number (0-9)
@@ -537,14 +341,6 @@ const selectedFlowData = computed(() => {
   return availableFlows.value.find((f) => f.id === batchForm.simuId);
 });
 
-const selectedCriteriaData = computed(() => {
-  return availableCriteria.value.find((c) => c.id === batchForm.autoCheckId);
-});
-
-const hasInheritedAutoCheck = computed(() => {
-  return Boolean(selectedFlowData.value?.autoCheckCriteria || selectedFlowData.value?.autocheckId);
-});
-
 function onSimulationFlowSelected() {
   const flow = availableFlows.value.find((f) => f.id === batchForm.simuId);
   if (flow) {
@@ -571,25 +367,7 @@ function resetForm() {
   batchForm.maxDevices = 10;
   batchForm.simuId = '';
   batchForm.flowDurationSeconds = 0;
-  batchForm.autoCheckId = '';
   cyberToast.info('Đã làm mới form tạo Test Batch');
-}
-
-// Batches list
-const batchList = ref<any[]>([]);
-
-async function loadBatches() {
-  loadingBatches.value = true;
-  try {
-    const res: any = await httpClient.get('/plugins/testing/test-batches');
-    const items = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
-    batchList.value = Array.isArray(items) ? items : [];
-  } catch (err: any) {
-    console.debug('[CreateTestBatchPanel] Error loading batches from API:', err.message);
-    batchList.value = [];
-  } finally {
-    loadingBatches.value = false;
-  }
 }
 
 async function saveTestBatch() {
@@ -618,10 +396,6 @@ async function saveTestBatch() {
     cyberToast.warning('Vui lòng chọn Kịch Bản Mô Phỏng (Simulation Flow)!');
     return;
   }
-  if (!batchForm.autoCheckId && !hasInheritedAutoCheck.value) {
-    cyberToast.warning('Vui lòng chọn Bộ Tiêu Chí Auto Check hoặc chọn Kịch Bản đã gộp!');
-    return;
-  }
 
   saving.value = true;
   const payload = {
@@ -634,76 +408,19 @@ async function saveTestBatch() {
     flowDurationSeconds: batchForm.flowDurationSeconds,
     simuId: batchForm.simuId,
     simulationFlow: selectedFlowData.value?.flowBlocks || selectedFlowData.value || (batchForm.simuId ? { id: batchForm.simuId } : undefined),
-    autoCheckCriteria: selectedCriteriaData.value || selectedFlowData.value?.autoCheckCriteria || (batchForm.autoCheckId ? { id: batchForm.autoCheckId } : undefined),
+    autoCheckCriteria: selectedFlowData.value?.autoCheckCriteria || selectedFlowData.value?.criteria || undefined,
     status: 'READY',
   };
 
   try {
     await httpClient.post('/plugins/testing/test-batches', payload);
     cyberToast.success('Tạo Test Batch thành công!');
-    await loadBatches();
     resetForm();
+    emit('switch-tab', 'list-test-batch');
   } catch (err: any) {
     cyberToast.error('Không thể tạo Test Batch: ' + (err.response?.data?.message || err.message));
   } finally {
     saving.value = false;
-  }
-}
-
-async function deleteBatch(batch: any) {
-  const id = batch.id || batch.batchCode;
-  const name = batch.batchName || batch.batchCode || id;
-  if (!confirm(`Bạn có chắc chắn muốn xóa Test Batch "${name}" không?`)) {
-    return;
-  }
-
-  try {
-    await httpClient.delete(`/plugins/testing/test-batches/${id}`);
-    batchList.value = batchList.value.filter((b) => (b.id || b.batchCode) !== id);
-    cyberToast.info('Đã xóa Test Batch thành công');
-  } catch (err: any) {
-    cyberToast.error('Không thể xóa Test Batch: ' + (err.response?.data?.message || err.message));
-  }
-}
-
-function executeBatch(batch: any) {
-  emit('switch-tab', 'test-batch', {
-    batchId: batch.id || batch.batchCode,
-    batchCode: batch.batchCode,
-    itemCode: batch.itemCode,
-    longFw: batch.longFw || batch.fwVersion,
-    fwVersion: batch.longFw || batch.fwVersion,
-    maxDevices: batch.maxDevices,
-    simuId: batch.simuId,
-    flowDurationSeconds: batch.flowDurationSeconds,
-  });
-  cyberToast.success(`Đã chọn Test Batch: ${batch.batchCode || batch.id}`);
-}
-
-const searchQuery = ref('');
-
-const filteredBatches = computed(() => {
-  return batchList.value.filter((b) => {
-    if (!searchQuery.value) return true;
-    const q = searchQuery.value.toLowerCase();
-    const code = (b.batchCode || b.batch_code || '').toLowerCase();
-    const name = (b.batchName || b.batch_name || b.name || '').toLowerCase();
-    const item = (b.itemCode || b.item_code || '').toLowerCase();
-    const fw = (b.longFw || b.long_fw || b.fwVersion || b.fw_version || '').toLowerCase();
-    return code.includes(q) || name.includes(q) || item.includes(q) || fw.includes(q);
-  });
-});
-
-function getBatchStatusClass(status?: string) {
-  switch (status) {
-    case 'COMPLETED':
-      return 'badge-success';
-    case 'RUNNING':
-      return 'badge-warning';
-    case 'FAILED':
-      return 'badge-error';
-    default:
-      return 'badge-info';
   }
 }
 
@@ -759,6 +476,7 @@ async function loadFlows() {
           flowBlocks: blocks,
           description: f.description || `Kịch bản mô phỏng cho ${f.itemCode || 'thiết bị'}`,
           steps: blocks.map((b: any) => getBlockStepLabel(b)),
+          autoCheckCriteria: f.autoCheckCriteria || f.criteria || undefined,
         };
       });
     } else {
@@ -770,31 +488,7 @@ async function loadFlows() {
   }
 }
 
-async function loadCriteria() {
-  try {
-    const res: any = await httpClient.get('/plugins/testing/autocheck/profiles');
-    const raw = res?.data;
-    const items = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []));
-    if (items.length > 0) {
-      availableCriteria.value = items.map((c: any) => ({
-        id: c.autocheck_id || c.autocheckId || c.id,
-        name: c.name || c.autocheck_id || c.id,
-        rulesCount: Array.isArray(c.rules) ? c.rules.length : 0,
-        description: c.description || `Tiêu chuẩn kiểm tra cho ${c.item_code || 'thiết bị'}`,
-        rules: Array.isArray(c.rules) ? c.rules : [],
-      }));
-    } else {
-      availableCriteria.value = [];
-    }
-  } catch (err: any) {
-    console.debug('[CreateTestBatchPanel] Error loading autocheck profiles:', err.message);
-    availableCriteria.value = [];
-  }
-}
-
 onMounted(() => {
-  loadBatches();
   loadFlows();
-  loadCriteria();
 });
 </script>

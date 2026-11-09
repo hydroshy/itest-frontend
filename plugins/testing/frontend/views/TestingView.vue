@@ -188,6 +188,11 @@
       <CreateTestBatchPanel @switch-tab="onSwitchTabWithPayload" />
     </div>
 
+    <!-- TAB: List Test Batch (Danh Sách Test Batch Đã Thiết Lập) -->
+    <div v-if="activeTab === 'list-test-batch'">
+      <ListTestBatchPanel @switch-tab="onSwitchTabWithPayload" />
+    </div>
+
     <!-- TAB: SO Test Batch (Liên kết SO & Test Batch theo ITEM_CODE) -->
     <div v-if="activeTab === 'so-test-batch'">
       <SoTestBatchPanel />
@@ -299,6 +304,7 @@ import {
   Boxes,
   FolderPlus,
   Layers,
+  ListFilter,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
@@ -309,6 +315,7 @@ import SimulationDevicesPanel from '../components/SimulationDevicesPanel.vue';
 import CreateDeviceTestPanel from '../components/CreateDeviceTestPanel.vue';
 import ListDeviceTestPanel from '../components/ListDeviceTestPanel.vue';
 import CreateTestBatchPanel from '../components/CreateTestBatchPanel.vue';
+import ListTestBatchPanel from '../components/ListTestBatchPanel.vue';
 import DeviceTestBatchPanel from '../components/DeviceTestBatchPanel.vue';
 import DevicePayloadPanel from '../components/DevicePayloadPanel.vue';
 import ListFlowSimulationPanel from '../components/ListFlowSimulationPanel.vue';
@@ -326,6 +333,7 @@ const VALID_TABS = [
   'test-batch',
   'device-test-batch',
   'create-test-batch',
+  'list-test-batch',
   'so-test-batch',
   'list-flow-simulation',
   'device-simulation',
@@ -342,6 +350,7 @@ const tabList = [
   { name: 'list-device-testing', label: 'List Device Testing', icon: List },
   { name: 'test-batch', label: 'Device Test Batch', icon: Boxes },
   { name: 'create-test-batch', label: 'Create Test Batch', icon: FolderPlus },
+  { name: 'list-test-batch', label: 'LIST TEST BATCH', icon: ListFilter },
   { name: 'so-test-batch', label: 'SO Test Batch', icon: Layers },
   { name: 'list-flow-simulation', label: 'List Flow Simulation', icon: Layers },
   { name: 'device-simulation', label: 'CREATE SIMULATION FLOW', icon: Cpu },

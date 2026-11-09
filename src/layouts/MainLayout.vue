@@ -79,6 +79,8 @@ const currentRouteTitle = computed(() => {
     const tabMap: Record<string, string> = {
       'test-batch': 'Device Test Batch',
       'device-test-batch': 'Device Test Batch',
+      'create-test-batch': 'Create Test Batch',
+      'list-test-batch': 'LIST TEST BATCH',
       'device-payload': 'Device Payload Live Stream',
       'tool': 'Final Config Tool',
       'manager': 'Final Config Manager',

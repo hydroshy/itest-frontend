@@ -356,6 +356,28 @@ const defaultStaticCards: MenuCardItemDef[] = [
     category: 'plugin',
     order: 16,
   },
+  {
+    id: 'testing:create-test-batch',
+    title: 'Create Test Batch',
+    description: 'Thiết lập cấu hình đợt kiểm thử hàng loạt và gán kịch bản Simulation Flow.',
+    icon: 'folder-plus',
+    route: '/plugins/testing?tab=create-test-batch',
+    pluginId: 'testing',
+    tab: 'create-test-batch',
+    category: 'plugin',
+    order: 17,
+  },
+  {
+    id: 'testing:list-test-batch',
+    title: 'LIST TEST BATCH',
+    description: 'Tra cứu, theo dõi tiến độ và quản lý lịch sử các đợt kiểm thử hàng loạt.',
+    icon: 'list-filter',
+    route: '/plugins/testing?tab=list-test-batch',
+    pluginId: 'testing',
+    tab: 'list-test-batch',
+    category: 'plugin',
+    order: 18,
+  },
 ];
 
 const cards = ref<MenuCardItemDef[]>([]);
