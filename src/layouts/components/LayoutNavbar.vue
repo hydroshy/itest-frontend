@@ -97,13 +97,25 @@
             </a>
           </li>
 
-          <!-- Dark / Light Theme Toggle brought inside user menu -->
-          <li class="px-3 py-1.5 flex items-center justify-between rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-            <span class="flex items-center gap-2.5 font-semibold text-[var(--owl-text-primary)]">
-              <CyberIcon name="desktop" :size="16" color="#2563eb" />
-              <span>Giao diện</span>
-            </span>
-            <ThemeToggle />
+          <!-- Dark / Light Theme Toggle styled consistently as menu item -->
+          <li>
+            <a
+              class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-blue-600/15 hover:text-blue-600 dark:hover:text-blue-400 text-[var(--owl-text-primary)] font-semibold transition-colors cursor-pointer"
+              @click="toggleTheme"
+            >
+              <font-awesome-icon
+                :icon="['fas', isDark ? 'sun' : 'moon']"
+                class="text-sm w-4 text-center transition-transform"
+                :class="isDark ? 'text-amber-400' : 'text-blue-600 dark:text-blue-400'"
+              />
+              <span class="flex-1">Giao diện: {{ isDark ? 'Tối' : 'Sáng' }}</span>
+              <span
+                class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border"
+                :class="isDark ? 'border-amber-500/30 text-amber-400 bg-amber-500/10' : 'border-blue-500/30 text-blue-600 bg-blue-500/10'"
+              >
+                {{ isDark ? 'DARK' : 'LIGHT' }}
+              </span>
+            </a>
           </li>
 
           <div class="divider my-1 border-[var(--owl-border-light)]"></div>
@@ -127,8 +139,8 @@
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useTheme } from '@/composables/useTheme';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
-import ThemeToggle from './ThemeToggle.vue';
 
 const props = defineProps<{
   showSidebar: boolean;
@@ -145,6 +157,7 @@ const emit = defineEmits<{
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const { isDark, toggleTheme } = useTheme();
 const anchorRef = ref<HTMLButtonElement | null>(null);
 const userDropdown = ref<HTMLElement | null>(null);
 
