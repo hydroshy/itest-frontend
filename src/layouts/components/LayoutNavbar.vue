@@ -11,6 +11,22 @@
         <font-awesome-icon :icon="['fas', isCollapse ? 'bars' : 'bars-staggered']" class="text-sm" />
       </button>
 
+      <!-- Brand / Logo iTest 2.0 with Click to /menu -->
+      <button
+        type="button"
+        class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-[var(--owl-border)] bg-[var(--owl-bg-card)] hover:bg-[var(--owl-bg-card-hover)] hover:border-blue-500/40 transition-all cursor-pointer shadow-none group"
+        title="Quay về Menu Ứng dụng"
+        @click="goToMenu"
+      >
+        <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-400 flex items-center justify-center shadow-xs flex-shrink-0">
+          <span class="text-white text-[10px] font-black font-mono tracking-tighter">iT</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="font-extrabold text-xs tracking-wide text-[var(--owl-text-primary)] font-display group-hover:text-blue-500 transition-colors">iTEST</span>
+          <span class="text-blue-500 dark:text-blue-400 font-mono text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-blue-500/10 border border-blue-500/30">2.0</span>
+        </div>
+      </button>
+
       <!-- Breadcrumb / Page Title -->
       <div class="flex items-center gap-2">
         <span class="text-sm sm:text-base font-bold text-[var(--owl-text-primary)] tracking-wide font-display">{{ currentRouteTitle }}</span>
@@ -23,9 +39,6 @@
 
     <!-- Right: Actions & User Dropdown -->
     <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
-      <!-- Dark / Light Theme Toggle Button -->
-      <ThemeToggle />
-
       <!-- User Account Dropdown -->
       <div class="relative inline-block">
         <button
@@ -61,6 +74,17 @@
             <span class="text-xs text-[var(--owl-text-primary)] font-semibold mt-0.5 truncate">{{ authStore.user?.email || authStore.user?.username }}</span>
           </li>
 
+          <!-- Dashboard for Admin (Replaced Phân quyền) -->
+          <li v-if="canAccessAdmin">
+            <a
+              class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-blue-600/15 hover:text-blue-600 dark:hover:text-blue-400 text-[var(--owl-text-primary)] font-semibold transition-colors"
+              @click="handleCommand('dashboard')"
+            >
+              <CyberIcon name="dashboard" :size="16" color="#2563eb" />
+              <span class="flex-1">Bảng điều khiển</span>
+            </a>
+          </li>
+
           <li>
             <a
               class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-blue-600/15 hover:text-blue-600 dark:hover:text-blue-400 text-[var(--owl-text-primary)] font-semibold transition-colors"
@@ -71,14 +95,13 @@
             </a>
           </li>
 
-          <li v-if="canAccessAdmin">
-            <a
-              class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-blue-600/15 hover:text-blue-600 dark:hover:text-blue-400 text-[var(--owl-text-primary)] font-semibold transition-colors"
-              @click="handleCommand('roles')"
-            >
-              <CyberIcon name="shield" :size="16" color="#2563eb" />
-              <span class="flex-1">Phân quyền hệ thống</span>
-            </a>
+          <!-- Dark / Light Theme Toggle brought inside user menu -->
+          <li class="px-3 py-1.5 flex items-center justify-between rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+            <span class="flex items-center gap-2.5 font-semibold text-[var(--owl-text-primary)]">
+              <CyberIcon name="desktop" :size="16" color="#2563eb" />
+              <span>Giao diện</span>
+            </span>
+            <ThemeToggle />
           </li>
 
           <div class="divider my-1 border-[var(--owl-border-light)]"></div>
@@ -100,6 +123,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 import ThemeToggle from './ThemeToggle.vue';
@@ -116,9 +140,14 @@ const emit = defineEmits<{
   (e: 'command', cmd: string): void;
 }>();
 
+const router = useRouter();
 const authStore = useAuthStore();
 const anchorRef = ref<HTMLButtonElement | null>(null);
 const userDropdown = ref<HTMLElement | null>(null);
+
+function goToMenu() {
+  router.push('/menu');
+}
 
 const userInitial = computed(() => {
   const name = authStore.user?.fullName || authStore.user?.username || 'U';

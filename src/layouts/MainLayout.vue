@@ -104,6 +104,8 @@ async function handleUserCommand(cmd: string) {
   if (cmd === 'logout') {
     await authStore.logout();
     await router.replace('/auth/login');
+  } else if (cmd === 'dashboard') {
+    router.push('/dashboard');
   } else if (cmd === 'roles') {
     router.push('/roles');
   } else if (cmd === 'profile') {

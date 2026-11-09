@@ -1,13 +1,31 @@
 <template>
   <div class="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5 mb-3 bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-3xl shadow-sm transition-colors duration-250">
-    <div>
-      <h2 class="text-xl font-bold font-display text-[var(--owl-text-primary)] tracking-wide flex items-center gap-2.5">
-        <font-awesome-icon :icon="['fas', 'border-all']" class="text-blue-500 text-lg" />
-        <span>Menu Ứng Dụng & Phân Hệ</span>
-      </h2>
-      <p class="text-xs sm:text-sm font-semibold text-[var(--owl-text-secondary)] mt-1">
-        Khởi chạy các tiện ích kiểm thử, cấu hình thiết bị và công cụ vận hành hệ thống iTEST
-      </p>
+    <div class="flex items-center gap-3.5">
+      <!-- iTest 2.0 Back Button -->
+      <button
+        type="button"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-[var(--owl-border)] bg-[var(--owl-bg-card)] hover:bg-[var(--owl-bg-card-hover)] hover:border-blue-500/40 transition-all cursor-pointer shadow-none group"
+        title="Quay lại"
+        @click="goBack"
+      >
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-400 flex items-center justify-center shadow-xs flex-shrink-0">
+          <span class="text-white text-[10px] font-black font-mono tracking-tighter">iT</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="font-extrabold text-xs tracking-wide text-[var(--owl-text-primary)] font-display group-hover:text-blue-500 transition-colors">iTEST</span>
+          <span class="text-blue-500 dark:text-blue-400 font-mono text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-blue-500/10 border border-blue-500/30">2.0</span>
+        </div>
+      </button>
+
+      <div>
+        <h2 class="text-xl font-bold font-display text-[var(--owl-text-primary)] tracking-wide flex items-center gap-2.5">
+          <font-awesome-icon :icon="['fas', 'border-all']" class="text-blue-500 text-lg" />
+          <span>Menu Ứng Dụng & Phân Hệ</span>
+        </h2>
+        <p class="text-xs sm:text-sm font-semibold text-[var(--owl-text-secondary)] mt-1">
+          Khởi chạy các tiện ích kiểm thử, cấu hình thiết bị và công cụ vận hành hệ thống iTEST
+        </p>
+      </div>
     </div>
 
     <!-- Search & Category Filters -->
@@ -73,6 +91,8 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
+
 defineProps<{
   searchQuery: string;
   selectedCategory: string;
@@ -83,4 +103,14 @@ defineEmits<{
   (e: 'update:searchQuery', val: string): void;
   (e: 'update:selectedCategory', val: string): void;
 }>();
+
+const router = useRouter();
+
+function goBack() {
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push('/');
+  }
+}
 </script>
