@@ -162,7 +162,7 @@
 
     <!-- Role Wizard Dialog -->
     <RoleWizardDialog
-      v-if="selectedRoleForWizard"
+      v-if="wizardVisible && selectedRoleForWizard"
       v-model="wizardVisible"
       :role="selectedRoleForWizard"
       @saved="loadRoles"

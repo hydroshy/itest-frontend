@@ -459,7 +459,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
@@ -706,16 +706,24 @@ function getActionBadgeClass(type?: string): string {
   }
 }
 
-// Watch dialog open
+// Watch dialog open or role change
 watch(
-  () => props.modelValue,
-  async (newVal) => {
-    if (newVal && props.role) {
+  () => [props.modelValue, props.role?.id],
+  async ([newVal, roleId]) => {
+    if (newVal && roleId) {
       currentStep.value = 1;
       await loadAllWizardData();
     }
-  }
+  },
+  { immediate: true }
 );
+
+onMounted(async () => {
+  if (props.modelValue && props.role) {
+    currentStep.value = 1;
+    await loadAllWizardData();
+  }
+});
 
 async function loadAllWizardData() {
   if (!props.role) return;

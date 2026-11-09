@@ -7,7 +7,7 @@
           <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500 shadow-none"></span>
           <h2 class="text-xl font-bold tracking-tight text-[var(--owl-text-primary)]">Quản lý Người dùng</h2>
         </div>
-        <p class="text-xs text-[var(--owl-text-secondary)] mt-1">Quản lý tài khoản truy cập, phân bổ vai trò và trạng thái kích hoạt hệ thống</p>
+        <p class="text-xs text-[var(--owl-text-secondary)] mt-1">Quản lý tài khoản truy cập và trạng thái kích hoạt hệ thống</p>
       </div>
       <button class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold border-none rounded-xl shadow-none px-4" @click="openCreateDialog">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -65,7 +65,6 @@
               <th class="py-3.5 px-4">Tên đăng nhập</th>
               <th class="py-3.5 px-4">Họ và tên</th>
               <th class="py-3.5 px-4">Email</th>
-              <th class="py-3.5 px-4">Vai trò</th>
               <th class="text-center py-3.5 px-4">Trạng thái</th>
               <th class="py-3.5 px-4">Ngày tạo</th>
               <th class="text-center py-3.5 px-4">Thao tác</th>
@@ -73,13 +72,13 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="7" class="text-center py-10">
+              <td colspan="6" class="text-center py-10">
                 <span class="loading loading-spinner text-blue-500"></span>
                 <p class="text-xs text-[var(--owl-text-muted)] mt-2">Đang tải danh sách người dùng...</p>
               </td>
             </tr>
             <tr v-else-if="filteredUsers.length === 0">
-              <td colspan="7" class="text-center py-10 text-[var(--owl-text-muted)]">
+              <td colspan="6" class="text-center py-10 text-[var(--owl-text-muted)]">
                 Không tìm thấy người dùng nào phù hợp
               </td>
             </tr>
@@ -94,18 +93,6 @@
               </td>
               <td class="text-[var(--owl-text-primary)] font-medium py-3 px-4">{{ row.fullName || '—' }}</td>
               <td class="text-[var(--owl-text-secondary)] py-3 px-4">{{ row.email || '—' }}</td>
-              <td class="py-3 px-4">
-                <div class="flex flex-wrap gap-1.5">
-                  <span
-                    v-for="r in row.roles"
-                    :key="r.id"
-                    class="badge badge-sm bg-[var(--owl-bg-card)] border border-[var(--owl-border)] text-[var(--owl-text-secondary)] rounded-lg text-[11px]"
-                  >
-                    {{ r.name }}
-                  </span>
-                  <span v-if="!row.roles || row.roles.length === 0" class="text-[var(--owl-text-muted)] text-[11px]">Chưa gán</span>
-                </div>
-              </td>
               <td class="text-center py-3 px-4">
                 <span
                   class="badge badge-sm font-medium rounded-lg"
@@ -212,25 +199,6 @@
             />
           </div>
 
-          <div>
-            <label class="block text-[var(--owl-text-secondary)] font-medium mb-1.5">Gán vai trò</label>
-            <div class="grid grid-cols-2 gap-2 p-3 bg-[var(--owl-bg-card)] border border-[var(--owl-border)] rounded-xl max-h-36 overflow-y-auto">
-              <label
-                v-for="r in availableRoles"
-                :key="r.id"
-                class="flex items-center gap-2 cursor-pointer hover:text-[var(--owl-text-primary)]"
-              >
-                <input
-                  type="checkbox"
-                  :value="r.id"
-                  v-model="form.roleIds"
-                  class="checkbox checkbox-xs border-[var(--owl-border)] checked:bg-blue-600 checked:border-blue-600 rounded"
-                />
-                <span class="text-xs text-[var(--owl-text-secondary)]">{{ r.name }}</span>
-              </label>
-            </div>
-          </div>
-
           <div class="flex items-center justify-between pt-2">
             <span class="text-[var(--owl-text-secondary)] font-medium">Kích hoạt tài khoản</span>
             <input
@@ -284,7 +252,6 @@ interface UserItem {
 const loading = ref(false);
 const submitting = ref(false);
 const users = ref<UserItem[]>([]);
-const availableRoles = ref<RoleItem[]>([]);
 
 const filters = reactive({
   keyword: '',
@@ -300,7 +267,6 @@ const form = reactive({
   fullName: '',
   email: '',
   password: '',
-  roleIds: [] as string[],
   isActive: true,
 });
 
@@ -336,15 +302,6 @@ function formatDate(isoStr?: string): string {
   }
 }
 
-async function loadRoles() {
-  try {
-    const res = await httpClient.get<RoleItem[]>('/roles');
-    availableRoles.value = Array.isArray(res) ? res : (res as any)?.data || [];
-  } catch (err: any) {
-    console.warn('Không tải được danh sách vai trò:', err);
-  }
-}
-
 async function loadUsers() {
   loading.value = true;
   try {
@@ -370,7 +327,6 @@ function openCreateDialog() {
   form.fullName = '';
   form.email = '';
   form.password = '';
-  form.roleIds = [];
   form.isActive = true;
   dialogVisible.value = true;
 }
@@ -382,7 +338,6 @@ function openEditDialog(row: UserItem) {
   form.fullName = row.fullName || '';
   form.email = row.email || '';
   form.password = '';
-  form.roleIds = (row.roles || []).map((r) => r.id);
   form.isActive = row.isActive;
   dialogVisible.value = true;
 }
@@ -398,7 +353,6 @@ async function submitForm() {
       await httpClient.patch(`/users/${editId.value}`, {
         fullName: form.fullName,
         email: form.email,
-        roleIds: form.roleIds,
         isActive: form.isActive,
       });
       cyberToast.success('Cập nhật người dùng thành công.');
@@ -408,7 +362,6 @@ async function submitForm() {
         fullName: form.fullName,
         email: form.email,
         password: form.password,
-        roleIds: form.roleIds,
         isActive: form.isActive,
       });
       cyberToast.success('Tạo người dùng mới thành công.');
@@ -457,6 +410,5 @@ function deleteUser(row: UserItem) {
 
 onMounted(() => {
   loadUsers();
-  loadRoles();
 });
 </script>
