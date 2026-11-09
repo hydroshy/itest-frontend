@@ -18,8 +18,7 @@
       </button>
 
       <div>
-        <h2 class="text-xl font-bold font-display text-[var(--owl-text-primary)] tracking-wide flex items-center gap-2.5">
-          <font-awesome-icon :icon="['fas', 'border-all']" class="text-blue-500 text-lg" />
+        <h2 class="text-xl font-bold font-display text-[var(--owl-text-primary)] tracking-wide">
           <span>Menu Ứng Dụng & Phân Hệ</span>
         </h2>
         <p class="text-xs sm:text-sm font-semibold text-[var(--owl-text-secondary)] mt-1">
