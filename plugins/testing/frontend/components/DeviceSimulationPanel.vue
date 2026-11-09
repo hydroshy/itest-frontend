@@ -433,7 +433,7 @@
             <!-- Loại Hàm Check -->
             <div class="form-control">
               <label class="label py-0.5">
-                <span class="label-text text-[11px] font-semibold">Loại Hàm Check</span>
+                <span class="label-text text-[11px] font-semibold">FUNCTION_NAME</span>
               </label>
               <select
                 v-model="rule.function_name"
@@ -449,7 +449,7 @@
             <!-- Trường Kiểm Tra (Parameter Field / Biến Simulation) -->
             <div class="form-control">
               <label class="label py-0.5 flex justify-between">
-                <span class="label-text text-[11px] font-semibold">Trường / Biến Kiểm Tra</span>
+                <span class="label-text text-[11px] font-semibold">PARAMETER_NAME</span>
                 <span v-if="rule.parameter_name" class="text-[10px] text-primary cursor-pointer hover:underline" @click="rule.parameter_name = ''">Xóa</span>
               </label>
               <input
@@ -510,7 +510,7 @@
             <template v-if="rule.function_name === 'CHECKVALUE'">
               <div class="form-control">
                 <label class="label py-0.5">
-                  <span class="label-text text-[11px] font-semibold">LOW_THRESHOLD (Min)</span>
+                  <span class="label-text text-[11px] font-semibold">LOW_THRESHOLD</span>
                 </label>
                 <input
                   v-model.number="rule.low_threshold"
@@ -522,7 +522,7 @@
               </div>
               <div class="form-control">
                 <label class="label py-0.5">
-                  <span class="label-text text-[11px] font-semibold">HIGH_THRESHOLD (Max)</span>
+                  <span class="label-text text-[11px] font-semibold">HIGH_THRESHOLD</span>
                 </label>
                 <input
                   v-model.number="rule.high_threshold"
@@ -537,7 +537,7 @@
             <template v-else-if="rule.function_name === 'MEASUREMENT_WINDOW'">
               <div class="form-control">
                 <label class="label py-0.5">
-                  <span class="label-text text-[11px] font-semibold">Mã Window ID</span>
+                  <span class="label-text text-[11px] font-semibold">WINDOW_ID</span>
                 </label>
                 <input
                   v-model="rule.measurement_window_id"
@@ -548,7 +548,7 @@
               </div>
               <div class="form-control">
                 <label class="label py-0.5">
-                  <span class="label-text text-[11px] font-semibold">Số Gói Tối Thiểu (Min Count)</span>
+                  <span class="label-text text-[11px] font-semibold">MIN_COUNT</span>
                 </label>
                 <input
                   v-model.number="rule.min_count"
@@ -563,7 +563,7 @@
             <template v-else-if="rule.function_name === 'AVERAGE'">
               <div class="form-control">
                 <label class="label py-0.5">
-                  <span class="label-text text-[11px] font-semibold">Chế Độ Average</span>
+                  <span class="label-text text-[11px] font-semibold">AVERAGE_MODE</span>
                 </label>
                 <select
                   v-model="rule.average_mode"
@@ -576,7 +576,7 @@
               </div>
               <div class="form-control">
                 <label class="label py-0.5">
-                  <span class="label-text text-[11px] font-semibold">Số Mẫu / Window ID</span>
+                  <span class="label-text text-[11px] font-semibold">SAMPLE_COUNT / WINDOW_ID</span>
                 </label>
                 <input
                   v-if="rule.average_mode === 'SAMPLE_COUNT'"
@@ -599,7 +599,7 @@
             <template v-else>
               <div class="form-control">
                 <label class="label py-0.5">
-                  <span class="label-text text-[11px] font-semibold">Số Gói Tối Thiểu (MIN_COUNT)</span>
+                  <span class="label-text text-[11px] font-semibold">MIN_COUNT</span>
                 </label>
                 <input
                   v-model.number="rule.min_count"
@@ -611,7 +611,7 @@
               </div>
               <div class="form-control">
                 <label class="label py-0.5">
-                  <span class="label-text text-[11px] font-semibold">Số Gói Tối Đa (MAX_COUNT)</span>
+                  <span class="label-text text-[11px] font-semibold">MAX_COUNT</span>
                 </label>
                 <input
                   v-model.number="rule.max_count"
@@ -643,7 +643,7 @@
         >
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-[11px] font-semibold">Trường của DUT / Biến</span>
+              <span class="label-text text-[11px] font-semibold">DUT_FIELD</span>
             </label>
             <input
               v-model="comp.dut_field"
@@ -663,7 +663,7 @@
           </div>
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-[11px] font-semibold">Trường Tham Chiếu (REF) / Biến</span>
+              <span class="label-text text-[11px] font-semibold">REFERENCE_FIELD</span>
             </label>
             <input
               v-model="comp.reference_field"
@@ -683,7 +683,7 @@
           </div>
           <div class="form-control">
             <label class="label py-0.5">
-              <span class="label-text text-[11px] font-semibold">Dung Sai Cho Phép (Tolerance)</span>
+              <span class="label-text text-[11px] font-semibold">TOLERANCE</span>
             </label>
             <input
               v-model.number="comp.tolerance"
