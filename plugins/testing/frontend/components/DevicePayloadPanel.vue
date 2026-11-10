@@ -25,81 +25,6 @@
             </p>
           </div>
         </div>
-
-        <div class="flex items-center gap-2 flex-wrap">
-          <!-- SSE Realtime Status & Actions -->
-          <div class="flex items-center gap-2">
-            <div
-              class="badge badge-sm gap-1.5 font-mono text-xs border-base-300 bg-base-100"
-              :class="sseConnected ? 'text-success font-semibold' : 'text-base-content/60'"
-            >
-              <span
-                class="w-2 h-2 rounded-full"
-                :class="sseConnected ? 'bg-success animate-pulse' : 'bg-base-content/40'"
-              ></span>
-              <span>{{ sseConnected ? 'SSE Realtime Active' : 'Connecting Stream...' }}</span>
-            </div>
-
-            <button class="btn btn-sm btn-outline gap-1.5" :disabled="loading" @click="loadPayloads(false)">
-              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
-              <span>Làm Mới</span>
-            </button>
-
-            <button
-              class="btn btn-sm btn-outline gap-1.5"
-              title="Quản lý và cấu hình bộ giải mã LoRaWAN theo ITEM_CODE / FW_CODE"
-              @click="goToDecoderPlugin()"
-            >
-              <Cpu class="w-3.5 h-3.5 text-primary" />
-              <span>Bộ Giải Mã Decoder</span>
-            </button>
-
-            <button
-              class="btn btn-sm btn-primary gap-1.5 shadow-sm"
-              :disabled="configuringIntegration"
-              @click="triggerAutoRegisterIntegration"
-            >
-              <span v-if="configuringIntegration" class="loading loading-spinner loading-xs"></span>
-              <Link2 v-else class="w-3.5 h-3.5" />
-              <span>Đồng Bộ ChirpStack</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ChirpStack Webhook Integration Bar -->
-    <div class="card bg-base-200/50 border border-base-300 px-4 py-3 rounded-xl backdrop-blur-md text-xs">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <!-- Status & Protocols -->
-        <div class="flex items-center gap-2 flex-wrap">
-          <Server class="w-4 h-4 text-primary" />
-          <span class="font-bold text-base-content">ChirpStack HTTP Webhook Integration:</span>
-          <span
-            class="badge badge-xs font-mono font-semibold"
-            :class="integrationStatus.active ? 'badge-success text-success-content' : 'badge-ghost'"
-          >
-            {{ integrationStatus.active ? 'INTEGRATION SẴN SÀNG' : 'CHỜ KÍCH HOẠT' }}
-          </span>
-          <span v-if="tokenConfigured" class="badge badge-xs badge-outline font-mono text-[10px] text-primary">
-            TOKEN SECURED
-          </span>
-        </div>
-
-        <!-- ChirpStack Webhook Guide -->
-        <div class="flex items-center gap-2 flex-wrap font-mono text-[11px]">
-          <span class="text-base-content/60">Webhook URL ChirpStack:</span>
-          <code class="bg-base-300/80 px-2.5 py-1 rounded text-primary font-bold border border-base-300 select-all">
-            {{ activeWebhookUrl }}
-          </code>
-          <button
-            class="btn btn-ghost btn-xs text-primary"
-            title="Copy Webhook URL để cấu hình trên ChirpStack"
-            @click="copyText(activeWebhookUrl, 'Đã copy ChirpStack Webhook URL!')"
-          >
-            <Copy class="w-3.5 h-3.5" />
-          </button>
-        </div>
       </div>
     </div>
 
@@ -206,11 +131,6 @@
           <span class="badge badge-sm badge-ghost font-mono">
             {{ filteredPayloads.length }} bản tin
           </span>
-        </div>
-
-        <div class="text-xs text-base-content/60 font-mono flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-success animate-ping"></span>
-          <span>Cột cố định: RSSI, SNR, FCNT, SF, FREQ, RAW</span>
         </div>
       </div>
 
@@ -501,10 +421,7 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   Radio,
-  Cpu,
   Activity,
-  RefreshCw,
-  Link2,
   Search,
   Filter,
   Layers,
@@ -513,7 +430,6 @@ import {
   Binary,
   CheckCircle2,
   X,
-  Server,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/httpClient';
 import { cyberToast } from '@/services/cyberToast';
@@ -528,7 +444,6 @@ function goToDecoderPlugin(itemCode?: string) {
     router.push('/plugins/decoder?tab=list');
   }
 }
-const configuringIntegration = ref(false);
 const sseConnected = ref(false);
 let eventSource: EventSource | null = null;
 
@@ -809,26 +724,6 @@ function closeRealtimeStream() {
     eventSource = null;
   }
   sseConnected.value = false;
-}
-
-async function triggerAutoRegisterIntegration() {
-  configuringIntegration.value = true;
-  try {
-    const res: any = await httpClient.post('/plugins/testing/integrations/chirpstack/register', {});
-    integrationStatus.active = true;
-    if (res?.data?.applicationId) {
-      integrationStatus.applicationId = res.data.applicationId;
-    }
-    cyberToast.success('Đã đồng bộ HTTP Integration vào ChirpStack thành công!');
-    await fetchIntegrationStatus();
-  } catch (err: any) {
-    const msg = err?.response?.data?.message || err?.message || 'Chưa hoàn tất đồng bộ ChirpStack';
-    console.debug('[DevicePayloadPanel] ChirpStack integration auto-register:', msg);
-    integrationStatus.active = false;
-    cyberToast.warning(`Đồng bộ ChirpStack: ${msg}`);
-  } finally {
-    configuringIntegration.value = false;
-  }
 }
 
 function resetFilters() {
