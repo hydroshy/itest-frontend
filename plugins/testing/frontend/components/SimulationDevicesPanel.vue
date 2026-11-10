@@ -68,6 +68,7 @@
               <th>Serial Number</th>
               <th>DevEUI</th>
               <th>AppEUI</th>
+              <th>Region</th>
               <th>Tên Thiết Bị</th>
               <th>Item Code</th>
               <th>FW Version</th>
@@ -85,6 +86,9 @@
               <td class="font-bold text-base-content">{{ dev.serialNumber || '—' }}</td>
               <td class="font-bold text-primary">{{ dev.devEui }}</td>
               <td class="font-mono text-xs text-base-content/70">{{ dev.appEui || '—' }}</td>
+              <td>
+                <span class="badge badge-outline badge-xs font-mono font-semibold">{{ dev.region || 'AS923-1' }}</span>
+              </td>
               <td class="font-sans font-medium text-base-content">{{ dev.name || 'Thiết bị simulation' }}</td>
               <td class="text-base-content/70">{{ dev.itemCode || '—' }}</td>
               <td class="text-base-content/70">
@@ -117,12 +121,12 @@
               </td>
             </tr>
             <tr v-if="filteredDevices.length === 0 && !loadingDevices">
-              <td colspan="9" class="text-center py-8 text-base-content/50 italic font-sans">
+              <td colspan="10" class="text-center py-8 text-base-content/50 italic font-sans">
                 Không tìm thấy thiết bị simulation nào. Nhấn "Đăng Ký Thiết Bị Mới" để thêm.
               </td>
             </tr>
             <tr v-if="loadingDevices">
-              <td colspan="9" class="text-center py-8 text-base-content/50 italic font-sans">
+              <td colspan="10" class="text-center py-8 text-base-content/50 italic font-sans">
                 Đang tải danh sách thiết bị simulation...
               </td>
             </tr>
@@ -216,16 +220,35 @@
             </div>
           </div>
 
-          <!-- 4. APPKEY -->
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text text-xs font-semibold">APPKEY</span></label>
-            <input
-              v-model="newDevForm.appKey"
-              type="text"
-              class="input input-bordered input-sm font-mono uppercase"
-              placeholder=""
-              maxlength="32"
-            />
+          <!-- 4. APPKEY & REGION -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">APPKEY</span></label>
+              <input
+                v-model="newDevForm.appKey"
+                type="text"
+                class="input input-bordered input-sm font-mono uppercase"
+                placeholder=""
+                maxlength="32"
+              />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">REGION</span></label>
+              <select
+                v-model="newDevForm.region"
+                class="select select-bordered select-sm font-mono"
+              >
+                <option value="AS923-1">AS923-1</option>
+                <option value="AU915">AU915</option>
+                <option value="EU868">EU868</option>
+                <option value="US915">US915</option>
+                <option value="AS923-2">AS923-2</option>
+                <option value="AS923-3">AS923-3</option>
+                <option value="AS923-4">AS923-4</option>
+                <option value="KR920">KR920</option>
+                <option value="IN865">IN865</option>
+              </select>
+            </div>
           </div>
 
           <div class="text-[11px] text-base-content/60 bg-base-200/50 p-2.5 rounded border border-base-content/10">
@@ -270,6 +293,7 @@ export interface SimulationDevice {
   name?: string;
   appEui?: string;
   appKey?: string;
+  region?: string;
   itemCode?: string;
   longFw?: string;
   label?: string;
@@ -290,6 +314,7 @@ const newDevForm = reactive({
   devEui: '',
   appEui: '0000000000000000',
   appKey: '',
+  region: 'AS923-1',
   itemCode: '',
   longFw: '',
 });
@@ -326,6 +351,7 @@ async function fetchSimulationDevices() {
         longFw: it.longFw || it.long_fw || it.fwVersion,
         appEui: it.appEui || it.app_eui,
         appKey: it.appKey || it.app_key,
+        region: it.region || it.metadata?.region || 'AS923-1',
         label: it.label || it.status || 'SIMULATION',
       }));
     }
@@ -342,6 +368,7 @@ function openRegisterModal() {
   newDevForm.devEui = '';
   newDevForm.appEui = '0000000000000000';
   newDevForm.appKey = '';
+  newDevForm.region = 'AS923-1';
   newDevForm.itemCode = '';
   newDevForm.longFw = '';
   showRegisterModal.value = true;
@@ -373,6 +400,7 @@ async function submitRegisterModal() {
     name,
     appEui: newDevForm.appEui.trim().toUpperCase() || '0000000000000000',
     appKey: newDevForm.appKey.trim().toUpperCase(),
+    region: newDevForm.region || 'AS923-1',
     itemCode: newDevForm.itemCode.trim(),
     longFw: newDevForm.longFw.trim().toUpperCase(),
     label: 'SIMULATION',
@@ -386,6 +414,7 @@ async function submitRegisterModal() {
       networkId: eui,
       appEui: newDevice.appEui,
       appKey: newDevice.appKey,
+      region: newDevice.region,
       itemCode: newDevice.itemCode,
       fwVersion: newDevice.longFw,
       longFw: newDevice.longFw,

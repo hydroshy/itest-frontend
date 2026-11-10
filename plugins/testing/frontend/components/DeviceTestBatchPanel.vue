@@ -266,6 +266,13 @@
               >
                 TỐI ĐA
               </span>
+              <span
+                v-if="isSharedReferenceDevice"
+                class="badge badge-xs badge-secondary font-mono font-bold"
+                title="Đợt test này cấu hình dùng chung 1 thiết bị simulation cho tất cả DUT"
+              >
+                DÙNG CHUNG REF
+              </span>
             </div>
 
             <div class="flex items-center gap-2">
@@ -613,6 +620,29 @@ const requiresReferenceDevice = computed(() => {
   return false;
 });
 
+const isSharedRefBatch = computed(() => {
+  const b = selectedBatchConfig.value;
+  if (!b) return false;
+  return Boolean(
+    b.shareReferenceDevice ||
+    b.sharedReferenceDevEui ||
+    b.autoCheckCriteria?.shareReferenceDevice ||
+    b.autoCheckCriteria?.sharedReferenceDevEui ||
+    b.metadata?.shareReferenceDevice ||
+    b.config?.shareReferenceDevice
+  );
+});
+
+const sharedReferenceDevEui = computed(() => {
+  const b = selectedBatchConfig.value;
+  return (
+    b?.sharedReferenceDevEui ||
+    b?.autoCheckCriteria?.sharedReferenceDevEui ||
+    b?.metadata?.sharedReferenceDevEui ||
+    ''
+  ).toUpperCase();
+});
+
 const flowReferenceCount = computed(() => {
   const b = selectedBatchConfig.value;
   if (Array.isArray(b?.referenceDevices) && b.referenceDevices.length > 0) {
@@ -634,6 +664,8 @@ const flowReferenceCount = computed(() => {
 const availableRefDevices = computed(() => {
   return goldenReferenceDevices.value || [];
 });
+
+const isSharedReferenceDevice = isSharedRefBatch;
 
 watch(requiresReferenceDevice, () => {
   nextTick(() => {
@@ -993,19 +1025,33 @@ function initBatchTabulator() {
                   e.stopPropagation();
                   const chosenVal = select.value;
                   const chosen = refList.find((r) => r.devEui === chosenVal || r.id === chosenVal);
-                  const dutId = getDeviceIdentifier(row.device || row);
-                  const targetItem = selectedDevices.value.find(
-                    (d) => getDeviceIdentifier(d.device || d) === dutId
-                  );
-                  if (targetItem) {
-                    targetItem.referenceDeviceId = chosen?.id || null;
-                    targetItem.referenceDevEui = chosen?.devEui || '';
-                    targetItem.referenceSerialNumber = chosen?.serialNumber || '';
-                    targetItem.referenceDevice = chosen || null;
-                    row.referenceDeviceId = targetItem.referenceDeviceId;
-                    row.referenceDevEui = targetItem.referenceDevEui;
-                    row.referenceSerialNumber = targetItem.referenceSerialNumber;
-                    row.referenceDevice = targetItem.referenceDevice;
+
+                  if (isSharedRefBatch.value) {
+                    selectedDevices.value.forEach((targetItem) => {
+                      targetItem.referenceDeviceId = chosen?.id || null;
+                      targetItem.referenceDevEui = chosen?.devEui || '';
+                      targetItem.referenceSerialNumber = chosen?.serialNumber || '';
+                      targetItem.referenceDevice = chosen || null;
+                    });
+                    updateTabulatorData();
+                    if (chosen?.devEui) {
+                      cyberToast.info(`Đã gán chung thiết bị REF ${chosen.devEui} cho toàn bộ ${selectedDevices.value.length} thiết bị trong Batch.`);
+                    }
+                  } else {
+                    const dutId = getDeviceIdentifier(row.device || row);
+                    const targetItem = selectedDevices.value.find(
+                      (d) => getDeviceIdentifier(d.device || d) === dutId
+                    );
+                    if (targetItem) {
+                      targetItem.referenceDeviceId = chosen?.id || null;
+                      targetItem.referenceDevEui = chosen?.devEui || '';
+                      targetItem.referenceSerialNumber = chosen?.serialNumber || '';
+                      targetItem.referenceDevice = chosen || null;
+                      row.referenceDeviceId = targetItem.referenceDeviceId;
+                      row.referenceDevEui = targetItem.referenceDevEui;
+                      row.referenceSerialNumber = targetItem.referenceSerialNumber;
+                      row.referenceDevice = targetItem.referenceDevice;
+                    }
                   }
                 });
 
@@ -1203,7 +1249,20 @@ function addSingleDeviceToBatch(deviceRow: any) {
 
   if (requiresReferenceDevice.value && availableRefDevices.value.length > 0) {
     const idx = selectedDevices.value.length - 1;
-    const refDev = availableRefDevices.value[idx % availableRefDevices.value.length];
+    let refDev = null;
+    if (isSharedRefBatch.value) {
+      if (sharedReferenceDevEui.value) {
+        refDev = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
+      }
+      if (!refDev && selectedDevices.value.length > 1) {
+        const firstEui = selectedDevices.value[0]?.referenceDevEui;
+        if (firstEui) refDev = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === firstEui.toUpperCase()) || null;
+      }
+      if (!refDev) refDev = availableRefDevices.value[0];
+    } else {
+      refDev = availableRefDevices.value[idx % availableRefDevices.value.length];
+    }
+
     if (refDev) {
       selectedDevices.value[idx].referenceDeviceId = refDev.id;
       selectedDevices.value[idx].referenceDevEui = refDev.devEui;
@@ -1258,9 +1317,21 @@ function addSelectedAvailableRowsToBatch() {
   }
 
   if (requiresReferenceDevice.value && availableRefDevices.value.length > 0) {
+    let commonRef = null;
+    if (isSharedRefBatch.value) {
+      if (sharedReferenceDevEui.value) {
+        commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
+      }
+      if (!commonRef) {
+        const firstEui = selectedDevices.value.find((d) => d.referenceDevEui)?.referenceDevEui;
+        if (firstEui) commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === firstEui.toUpperCase()) || null;
+      }
+      if (!commonRef) commonRef = availableRefDevices.value[0];
+    }
+
     selectedDevices.value.forEach((item, idx) => {
-      if (!item.referenceDevEui) {
-        const refDev = availableRefDevices.value[idx % availableRefDevices.value.length];
+      if (!item.referenceDevEui || isSharedRefBatch.value) {
+        const refDev = isSharedRefBatch.value ? commonRef : availableRefDevices.value[idx % availableRefDevices.value.length];
         if (refDev) {
           item.referenceDeviceId = refDev.id;
           item.referenceDevEui = refDev.devEui;
@@ -1309,8 +1380,17 @@ function autoAssignReferenceDevices() {
     cyberToast.warning('Không tìm thấy thiết bị chuẩn phù hợp trong LIST DEVICE SIMULATION.');
     return;
   }
+
+  let commonRef = null;
+  if (isSharedRefBatch.value) {
+    if (sharedReferenceDevEui.value) {
+      commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
+    }
+    if (!commonRef) commonRef = availableRefDevices.value[0];
+  }
+
   selectedDevices.value.forEach((item, idx) => {
-    const refDev = availableRefDevices.value[idx % availableRefDevices.value.length];
+    const refDev = isSharedRefBatch.value ? commonRef : availableRefDevices.value[idx % availableRefDevices.value.length];
     if (refDev) {
       item.referenceDeviceId = refDev.id;
       item.referenceDevEui = refDev.devEui;
