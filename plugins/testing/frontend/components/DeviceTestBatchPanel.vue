@@ -328,7 +328,7 @@
         <!-- Description / Instructions -->
         <div class="text-xs text-base-content/70 mb-3 flex items-center justify-between">
           <span>
-            Vui lòng kiểm tra và phân loại thiết bị vào 2 cột <strong>FAIL</strong> và <strong>PASS</strong> trước khi chốt kết quả.
+            Vui lòng kiểm tra và phân loại thiết bị theo kết quả test.
           </span>
           <div class="flex items-center gap-2">
             <span class="badge badge-sm badge-neutral">Tổng: {{ failClassifiedDevices.length + passClassifiedDevices.length }} thiết bị</span>
@@ -343,22 +343,13 @@
 
         <!-- 2 Cột FAIL và PASS -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 overflow-hidden mb-4">
-          <!-- CỘT 1: FAIL -->
+          <!-- CỘT 1: FAIL (Không cho phép chuyển sang PASS) -->
           <div class="flex flex-col rounded-lg border border-error/30 bg-base-300/40 p-3 overflow-hidden">
             <div class="flex items-center justify-between border-b border-error/20 pb-2 mb-2">
               <div class="flex items-center gap-1.5">
                 <span class="badge badge-error badge-sm font-bold text-white">FAIL</span>
                 <span class="text-xs font-bold text-error">THIẾT BỊ KHÔNG ĐẠT ({{ failClassifiedDevices.length }})</span>
               </div>
-              <button
-                v-if="failClassifiedDevices.length > 0"
-                class="btn btn-ghost btn-xs text-success hover:bg-success/10 gap-1 text-[11px]"
-                @click="moveAllToPass"
-                title="Chuyển toàn bộ sang PASS"
-              >
-                Chuyển hết sang PASS
-                <ArrowRight class="w-3 h-3" />
-              </button>
             </div>
 
             <!-- Danh sách thiết bị FAIL -->
@@ -383,20 +374,11 @@
                     {{ item.name || item.itemCode || 'Thiết bị test' }}
                   </div>
                   <div class="text-[10px] text-base-content/50 flex items-center gap-2 mt-0.5">
-                    <span>Gói: {{ item.packetsCount || 0 }}</span>
+                    <span v-if="item.packetsCount && item.packetsCount > 0">Gói: {{ item.packetsCount }}</span>
                     <span v-if="item.avgRssi != null">RSSI: {{ item.avgRssi }}</span>
                     <span v-if="item.avgSnr != null">SNR: {{ item.avgSnr }}</span>
                   </div>
                 </div>
-
-                <button
-                  class="btn btn-xs btn-outline btn-success gap-1 shrink-0 font-medium"
-                  @click="moveToPass(item)"
-                  title="Chuyển sang PASS"
-                >
-                  <span>PASS</span>
-                  <ArrowRight class="w-3 h-3" />
-                </button>
               </div>
             </div>
           </div>
@@ -450,7 +432,7 @@
                     {{ item.name || item.itemCode || 'Thiết bị test' }}
                   </div>
                   <div class="text-[10px] text-base-content/50 flex items-center justify-end gap-2 mt-0.5">
-                    <span>Gói: {{ item.packetsCount || 0 }}</span>
+                    <span v-if="item.packetsCount && item.packetsCount > 0">Gói: {{ item.packetsCount }}</span>
                     <span v-if="item.avgRssi != null">RSSI: {{ item.avgRssi }}</span>
                     <span v-if="item.avgSnr != null">SNR: {{ item.avgSnr }}</span>
                   </div>
@@ -1631,9 +1613,7 @@ async function confirmCompleteBatch() {
     });
 
     const finalVerdict = res?.data?.verdict || (failClassifiedDevices.value.length === 0 ? 'PASS' : 'FAIL');
-    cyberToast.success(
-      `Đã hoàn thành Test Batch (${finalVerdict}): ${passClassifiedDevices.value.length} ĐẠT, ${failClassifiedDevices.value.length} HỎNG và xóa thiết bị khỏi hệ thống test.`
-    );
+    cyberToast.success('Đã thực hiện confirm test batch.');
 
     showCompleteModal.value = false;
     confirmOkText.value = '';
