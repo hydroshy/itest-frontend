@@ -551,11 +551,9 @@ async function loadAvailableDevicesForSo(soNumber: string) {
 
   loadingDevices.value = true;
   try {
-    const user = authStore.user?.username || '';
     const res: any = await httpClient.get('/plugins/testing/test-batches/available-devices', {
       params: {
         soNumber: soNumber.trim(),
-        user: user || undefined,
         limit: 200,
       },
     });
