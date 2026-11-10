@@ -1,62 +1,55 @@
 <template>
-  <div class="simulation-devices-panel space-y-4">
-    <!-- Header Banner -->
-    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-            <Radio class="w-5 h-5" />
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <h2 class="text-base font-bold text-base-content tracking-tight uppercase">
-                Danh Sách Thiết Bị Simulation
-              </h2>
-              <span class="badge badge-info badge-sm font-mono font-bold">NHÃN SIMULATION</span>
-              <span class="badge badge-neutral badge-sm font-mono">{{ filteredDevices.length }} Thiết Bị</span>
-            </div>
-            <p class="text-xs text-base-content/60 mt-0.5">
-              Quản lý các thiết bị kiểm thử được gắn nhãn simulation hoặc template trong hệ thống
-            </p>
-          </div>
+  <div class="space-y-4">
+    <!-- Header Controls -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-base-200 p-4 rounded-box border border-base-content/10 shadow-sm">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-primary/10 rounded-lg text-primary">
+          <Radio class="w-6 h-6" />
         </div>
-
-        <div class="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            class="btn btn-sm btn-outline gap-1.5"
-            @click="fetchSimulationDevices"
-            :disabled="loadingDevices"
-          >
-            <RotateCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': loadingDevices }" />
-            <span>Làm Mới</span>
-          </button>
-
-          <button
-            type="button"
-            class="btn btn-sm btn-primary gap-1.5 shadow-sm"
-            @click="openRegisterModal"
-          >
-            <Plus class="w-4 h-4" />
-            <span>Đăng Ký Thiết Bị Mới</span>
-          </button>
+        <div>
+          <h2 class="text-base font-bold text-base-content uppercase tracking-wide flex items-center gap-2">
+            Danh Sách Thiết Bị Simulation
+            <span class="badge badge-primary badge-sm font-mono">{{ simulationDevices.length }}</span>
+          </h2>
+          <p class="text-xs text-base-content/70">
+            Quản lý thiết bị giả lập đăng ký vào Simulation Application ID trên ChirpStack Network Server.
+          </p>
         </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-sm btn-ghost gap-1.5"
+          :disabled="loadingDevices"
+          @click="fetchSimulationDevices"
+        >
+          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': loadingDevices }" />
+          <span>Làm Mới</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-primary gap-1.5"
+          @click="openRegisterModal"
+        >
+          <Plus class="w-4 h-4" />
+          <span>Đăng Ký Thiết Bị Mới</span>
+        </button>
       </div>
     </div>
 
     <!-- Filter & Search Bar -->
-    <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-3">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="relative flex-1 min-w-[240px] max-w-md">
-          <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
+    <div class="card bg-base-200 border border-base-content/10 rounded-box p-3 shadow-sm">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="relative w-full sm:w-80">
+          <Search class="w-4 h-4 absolute left-3 top-2.5 text-base-content/40" />
           <input
             v-model="searchQuery"
             type="text"
-            class="input input-bordered input-sm w-full pl-9 text-xs"
-            placeholder="Tìm theo DevEUI, tên thiết bị, Item Code..."
+            placeholder="Tìm theo DevEUI, Số Serial, Tên, Item Code..."
+            class="input input-sm input-bordered pl-9 w-full font-mono text-xs"
           />
         </div>
-
         <div class="flex items-center gap-2 text-xs text-base-content/60 font-mono">
           <span>Tổng: {{ simulationDevices.length }}</span>
           <span>|</span>
@@ -72,12 +65,11 @@
           <thead class="bg-base-200/60 font-mono text-xs text-base-content/70">
             <tr>
               <th class="w-10">#</th>
+              <th>Serial Number</th>
               <th>DevEUI</th>
               <th>Tên Thiết Bị</th>
-              <th>Nhãn</th>
-              <th>FPort</th>
               <th>Item Code</th>
-              <th>Long FW</th>
+              <th>FW Version</th>
               <th>Trạng Thái</th>
               <th class="text-right">Thao Tác</th>
             </tr>
@@ -85,18 +77,13 @@
           <tbody class="font-mono text-xs">
             <tr
               v-for="(dev, idx) in filteredDevices"
-              :key="dev.devEui"
+              :key="dev.devEui || dev.id"
               class="hover:bg-base-200/40 transition-colors"
             >
               <td class="text-base-content/40">{{ idx + 1 }}</td>
+              <td class="font-bold text-base-content">{{ dev.serialNumber || '—' }}</td>
               <td class="font-bold text-primary">{{ dev.devEui }}</td>
-              <td class="font-sans font-medium text-base-content">{{ dev.name || 'Thiết bị mẫu' }}</td>
-              <td>
-                <span class="badge badge-info badge-xs font-mono font-bold uppercase tracking-wider">
-                  {{ dev.label || 'SIMULATION' }}
-                </span>
-              </td>
-              <td class="text-base-content/70">{{ dev.fPort || 10 }}</td>
+              <td class="font-sans font-medium text-base-content">{{ dev.name || 'Thiết bị simulation' }}</td>
               <td class="text-base-content/70">{{ dev.itemCode || '—' }}</td>
               <td class="text-base-content/70">
                 <span v-if="dev.longFw" class="badge badge-neutral badge-xs font-mono">{{ dev.longFw }}</span>
@@ -118,7 +105,7 @@
                   </button>
                   <button
                     type="button"
-                    class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                    class="btn btn-ghost btn-xs text-error"
                     @click="removeDevice(dev)"
                     title="Xóa thiết bị"
                   >
@@ -127,12 +114,14 @@
                 </div>
               </td>
             </tr>
-
-            <tr v-if="filteredDevices.length === 0">
-              <td colspan="9" class="text-center py-8 text-base-content/40 italic font-sans text-xs">
-                <span v-if="loadingDevices">Đang tải danh sách thiết bị simulation...</span>
-                <span v-else-if="searchQuery">Không tìm thấy thiết bị nào khớp với "{{ searchQuery }}"</span>
-                <span v-else>Chưa có thiết bị nào được đăng ký với nhãn simulation. Nhấn "Đăng Ký Thiết Bị Mới" để thêm.</span>
+            <tr v-if="filteredDevices.length === 0 && !loadingDevices">
+              <td colspan="8" class="text-center py-8 text-base-content/50 italic font-sans">
+                Không tìm thấy thiết bị simulation nào. Nhấn "Đăng Ký Thiết Bị Mới" để thêm.
+              </td>
+            </tr>
+            <tr v-if="loadingDevices">
+              <td colspan="8" class="text-center py-8 text-base-content/50 italic font-sans">
+                Đang tải danh sách thiết bị simulation...
               </td>
             </tr>
           </tbody>
@@ -142,7 +131,7 @@
 
     <!-- Modal: Đăng ký thiết bị simulation mới -->
     <dialog class="modal" :class="{ 'modal-open': showRegisterModal }">
-      <div class="modal-box bg-base-100 border border-base-content/10 max-w-md p-5">
+      <div class="modal-box bg-base-100 border border-base-content/10 max-w-lg p-5">
         <div class="flex items-center justify-between pb-3 mb-4 border-b border-base-content/10">
           <div class="flex items-center gap-2">
             <Radio class="w-5 h-5 text-primary" />
@@ -154,96 +143,106 @@
         </div>
 
         <form @submit.prevent="submitRegisterModal" class="space-y-3 text-xs">
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text text-xs font-semibold">DevEUI <span class="text-error">*</span></span></label>
-            <input
-              v-model="newDevForm.devEui"
-              type="text"
-              class="input input-bordered input-sm font-mono uppercase"
-              placeholder="16 ký tự HEX (VD: 70B3D57ED0050001)"
-              maxlength="16"
-              required
-            />
-          </div>
-
-          <div class="form-control">
-            <label class="label py-1"><span class="label-text text-xs font-semibold">Tên Thiết Bị</span></label>
-            <input
-              v-model="newDevForm.name"
-              type="text"
-              class="input input-bordered input-sm"
-              placeholder="VD: Node Cảm Biến Khí Gas Mẫu 01"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
+          <!-- 1. DEVICE_NAME & SERIAL_NUMBER -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Item Code</span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Tên Thiết Bị (DEVICE_NAME)</span></label>
+              <input
+                v-model="newDevForm.name"
+                type="text"
+                class="input input-bordered input-sm"
+                placeholder="VD: Node Cảm Biến Sim 01"
+              />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Số Serial (SERIAL_NUMBER) <span class="text-error">*</span></span></label>
+              <input
+                v-model="newDevForm.serialNumber"
+                type="text"
+                class="input input-bordered input-sm font-mono uppercase"
+                placeholder="VD: SIM-SN-0001"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- 2. DEVEUI & APPEUI -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">DevEUI (DEVEUI) <span class="text-error">*</span></span></label>
+              <input
+                v-model="newDevForm.devEui"
+                type="text"
+                class="input input-bordered input-sm font-mono uppercase"
+                placeholder="16 ký tự HEX"
+                maxlength="16"
+                required
+              />
+            </div>
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">AppEUI (APPEUI)</span></label>
+              <input
+                v-model="newDevForm.appEui"
+                type="text"
+                class="input input-bordered input-sm font-mono uppercase"
+                placeholder="16 ký tự HEX (mặc định 0000000000000000)"
+                maxlength="16"
+              />
+            </div>
+          </div>
+
+          <!-- 3. ITEM_CODE & FW_VERSION -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Mã Sản Phẩm (ITEM_CODE)</span></label>
               <input
                 v-model="newDevForm.itemCode"
                 type="text"
-                class="input input-bordered input-sm font-mono"
+                class="input input-bordered input-sm font-mono uppercase"
                 placeholder="VD: WSLRW-ENV-01"
               />
             </div>
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">FW Version (XXFXXXX)</span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">Phiên Bản FW (FW_VERSION)</span></label>
               <input
                 v-model="newDevForm.longFw"
                 type="text"
                 class="input input-bordered input-sm font-mono uppercase"
-                placeholder="VD: 4F0505, 32F0505"
-                maxlength="35"
+                placeholder="XXFXXXX (VD: 4F0505, 32F0505)"
+                maxlength="12"
               />
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">FPort Mặc Định</span></label>
-              <input
-                v-model.number="newDevForm.fPort"
-                type="number"
-                min="1"
-                max="223"
-                class="input input-bordered input-sm font-mono"
-                placeholder="10"
-              />
-            </div>
-            <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Nhãn Gán</span></label>
-              <input
-                type="text"
-                class="input input-bordered input-sm font-mono bg-base-200"
-                value="SIMULATION"
-                readonly
-                disabled
-              />
-            </div>
-          </div>
-
+          <!-- 4. APPKEY -->
           <div class="form-control">
-            <label class="label py-1"><span class="label-text text-xs font-semibold">AppKey (Tùy chọn)</span></label>
+            <label class="label py-1"><span class="label-text text-xs font-semibold">Khóa OTAA (APPKEY)</span></label>
             <input
               v-model="newDevForm.appKey"
               type="text"
               class="input input-bordered input-sm font-mono uppercase"
-              placeholder="32 ký tự HEX"
+              placeholder="32 ký tự HEX (VD: 00112233445566778899AABBCCDDEEFF)"
               maxlength="32"
             />
           </div>
 
-          <div class="flex items-center justify-end gap-2 pt-3 border-t border-base-content/10">
+          <div class="text-[11px] text-base-content/60 bg-base-200/50 p-2.5 rounded border border-base-content/10">
+            ℹ️ Thiết bị sẽ tự động được đăng ký vào <strong>Simulation Application ID</strong> trên ChirpStack Network Server.
+          </div>
+
+          <div class="modal-action pt-2">
             <button type="button" class="btn btn-sm btn-ghost" @click="showRegisterModal = false">
               Hủy
             </button>
-            <button type="submit" class="btn btn-sm btn-primary gap-1">
-              <Plus class="w-4 h-4" />
-              <span>Đăng Ký</span>
+            <button type="submit" class="btn btn-sm btn-primary">
+              Đăng Ký Thiết Bị
             </button>
           </div>
         </form>
       </div>
+      <form method="dialog" class="modal-backdrop">
+        <button type="button" @click="showRegisterModal = false">Đóng</button>
+      </form>
     </dialog>
   </div>
 </template>
@@ -253,10 +252,10 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import {
   Radio,
   Plus,
-  RotateCcw,
+  RotateCw,
   Search,
-  Trash2,
   Workflow,
+  Trash2,
   X,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
@@ -264,13 +263,14 @@ import { httpClient } from '@/api/client';
 
 export interface SimulationDevice {
   id?: string;
+  serialNumber?: string;
   devEui: string;
   name?: string;
-  label?: string;
-  fPort?: number;
+  appEui?: string;
   appKey?: string;
   itemCode?: string;
   longFw?: string;
+  label?: string;
 }
 
 const emit = defineEmits<{
@@ -283,9 +283,10 @@ const searchQuery = ref('');
 const showRegisterModal = ref(false);
 
 const newDevForm = reactive({
-  devEui: '',
   name: '',
-  fPort: 10,
+  serialNumber: '',
+  devEui: '',
+  appEui: '0000000000000000',
   appKey: '',
   itemCode: '',
   longFw: '',
@@ -298,6 +299,7 @@ const filteredDevices = computed(() => {
   const q = searchQuery.value.toLowerCase().trim();
   return simulationDevices.value.filter(
     (d) =>
+      d.serialNumber?.toLowerCase().includes(q) ||
       d.devEui?.toLowerCase().includes(q) ||
       d.name?.toLowerCase().includes(q) ||
       d.itemCode?.toLowerCase().includes(q) ||
@@ -315,13 +317,14 @@ async function fetchSimulationDevices() {
     if (Array.isArray(items)) {
       simulationDevices.value = items.map((it: any) => ({
         id: it.id,
+        serialNumber: it.serialNumber || it.serial_number || '',
         devEui: it.devEui || it.dev_eui || it.networkId || it.serialNumber,
         name: it.name || it.deviceName,
-        label: it.label || it.status || 'SIMULATION',
-        fPort: it.fPort || it.f_port || 10,
         itemCode: it.itemCode || it.item_code,
-        longFw: it.longFw || it.long_fw,
+        longFw: it.longFw || it.long_fw || it.fwVersion,
+        appEui: it.appEui || it.app_eui,
         appKey: it.appKey || it.app_key,
+        label: it.label || it.status || 'SIMULATION',
       }));
     }
   } catch (err: any) {
@@ -332,9 +335,10 @@ async function fetchSimulationDevices() {
 }
 
 function openRegisterModal() {
-  newDevForm.devEui = '';
   newDevForm.name = '';
-  newDevForm.fPort = 10;
+  newDevForm.serialNumber = '';
+  newDevForm.devEui = '';
+  newDevForm.appEui = '0000000000000000';
   newDevForm.appKey = '';
   newDevForm.itemCode = '';
   newDevForm.longFw = '';
@@ -343,37 +347,53 @@ function openRegisterModal() {
 
 async function submitRegisterModal() {
   const eui = newDevForm.devEui.trim().toUpperCase();
-  if (!eui || eui.length < 8) {
-    cyberToast.warning('Vui lòng nhập DevEUI hợp lệ (ít nhất 8 ký tự HEX)!');
+  const serial = newDevForm.serialNumber.trim();
+  const name = newDevForm.name.trim() || serial || `DEV-${eui}`;
+
+  if (!serial) {
+    cyberToast.warning('Vui lòng nhập Số Serial (SERIAL_NUMBER)!');
+    return;
+  }
+  if (!eui || eui.length !== 16 || !/^[0-9A-F]{16}$/i.test(eui)) {
+    cyberToast.warning('Vui lòng nhập DevEUI hợp lệ (chính xác 16 ký tự HEX)!');
     return;
   }
 
-  const existing = simulationDevices.value.find((d) => d.devEui === eui);
+  const existing = simulationDevices.value.find((d) => d.devEui === eui || (d.serialNumber && d.serialNumber === serial));
   if (existing) {
-    cyberToast.warning(`Thiết bị ${eui} đã tồn tại trong danh sách!`);
+    cyberToast.warning(`Thiết bị ${eui} (hoặc SN ${serial}) đã tồn tại trong danh sách!`);
     return;
   }
 
   const newDevice: SimulationDevice = {
+    serialNumber: serial,
     devEui: eui,
-    name: newDevForm.name.trim() || `Thiết bị ${eui.slice(-4)}`,
-    label: 'SIMULATION',
-    fPort: newDevForm.fPort || 10,
+    name,
+    appEui: newDevForm.appEui.trim().toUpperCase() || '0000000000000000',
     appKey: newDevForm.appKey.trim().toUpperCase(),
     itemCode: newDevForm.itemCode.trim(),
     longFw: newDevForm.longFw.trim().toUpperCase(),
+    label: 'SIMULATION',
   };
 
   try {
     await httpClient.post('/plugins/testing/devices', {
-      ...newDevice,
+      serialNumber: serial,
+      deviceName: name,
+      devEui: eui,
+      networkId: eui,
+      appEui: newDevice.appEui,
+      appKey: newDevice.appKey,
+      itemCode: newDevice.itemCode,
+      fwVersion: newDevice.longFw,
+      longFw: newDevice.longFw,
       status: 'simulation',
       isSimulation: true,
       deviceType: 'SIMULATION',
       pluginId: 'testing',
     });
     simulationDevices.value.unshift(newDevice);
-    cyberToast.success(`Đã đăng ký thành công thiết bị ${eui} với nhãn SIMULATION!`);
+    cyberToast.success(`Đã đăng ký thiết bị ${serial} (${eui}) vào Simulation Application ID thành công!`);
     showRegisterModal.value = false;
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || 'Không thể đăng ký thiết bị simulation';
@@ -389,12 +409,11 @@ async function removeDevice(device: SimulationDevice) {
   }
 
   try {
-    const targetId = encodeURIComponent(id);
-    await httpClient.delete(`/plugins/testing/devices/${targetId}`);
+    await httpClient.delete(`/plugins/testing/devices/${id}`);
     simulationDevices.value = simulationDevices.value.filter((d) => (d.id || d.devEui) !== id);
-    cyberToast.info(`Đã xóa thiết bị ${name} khỏi danh sách simulation`);
+    cyberToast.success(`Đã xóa thiết bị ${name}`);
   } catch (err: any) {
-    const msg = err?.response?.data?.message || err?.message || 'Không thể xóa thiết bị simulation';
+    const msg = err?.response?.data?.message || err?.message || 'Không thể xóa thiết bị';
     cyberToast.error(msg);
   }
 }
