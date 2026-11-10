@@ -394,6 +394,8 @@
           <div class="pt-2">
             <SimulationFlowBuilder
               v-model="editFlowBlocks"
+              :reference-devices="selectedFlow?.reference_devices || selectedFlow?.referenceDevices"
+              :dut-name="editFlowForm.profileName || editFlowForm.itemCode || 'DUT'"
             />
           </div>
         </div>
@@ -458,6 +460,7 @@ const editFlowForm = reactive({
   longFw: '',
   sku: '',
   sensorConnectivity: 'LoRaWAN',
+  referenceDevices: [] as any[],
 });
 
 const filteredFlows = computed(() => {
@@ -552,6 +555,8 @@ function openEditFlowModal(flow: any) {
   editFlowForm.longFw = flow.longFw || flow.long_fw || flow.fwVersion || '';
   editFlowForm.sku = flow.sku || '';
   editFlowForm.sensorConnectivity = flow.sensorConnectivity || 'LoRaWAN';
+  const refDevs = flow.reference_devices || flow.referenceDevices || flow.autoCheckCriteria?.reference_devices || flow.criteria?.reference_devices || [];
+  editFlowForm.referenceDevices = Array.isArray(refDevs) ? refDevs : [];
 
   const rawBlocks = getBlocksList(flow);
   editFlowBlocks.value = JSON.parse(JSON.stringify(rawBlocks));

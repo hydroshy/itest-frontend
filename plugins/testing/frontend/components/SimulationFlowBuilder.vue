@@ -202,23 +202,82 @@
               </select>
             </div>
 
-            <!-- 2. Thiết bị mục tiêu: DUT / REF / SIMU (Áp dụng cho các block có target) -->
+            <!-- 2. Thiết bị nhận lệnh: Lựa chọn theo tên thiết bị hoặc tùy chỉnh -->
             <div
               v-if="hasDeviceTarget(block.functionType)"
               class="form-control md:col-span-4"
             >
-              <label class="label py-0.5">
-                <span class="label-text text-xs font-semibold text-base-content/80">Thiết Bị Mục Tiêu</span>
+              <label class="label py-0.5 flex items-center justify-between">
+                <span class="label-text text-xs font-semibold text-base-content/80">Tên Thiết Bị Nhận Lệnh</span>
+                <span
+                  v-if="block.targetDevice && block.targetDevice !== 'DUT'"
+                  class="badge badge-xs badge-info font-mono font-semibold"
+                >
+                  {{ block.targetDevice }}
+                </span>
               </label>
-              <select
-                v-model="block.targetDevice"
-                class="select select-bordered select-sm w-full font-mono text-xs"
-                @change="emitUpdate"
-              >
-                <option value="DUT">🎯 Thiết bị được test (DUT)</option>
-                <option value="REF">⭐ Thiết bị chuẩn đối chiếu (REF)</option>
-                <option value="SIMU">🤖 Thiết bị mô phỏng (SIMU)</option>
-              </select>
+              <div class="space-y-1.5">
+                <select
+                  :value="getTargetSelectValue(block.targetDevice)"
+                  class="select select-bordered select-sm w-full font-mono text-xs"
+                  @change="(e) => onTargetSelectChange(block, (e.target as HTMLSelectElement).value)"
+                >
+                  <optgroup label="Thiết Bị Kiểm Tra (DUT)">
+                    <option value="DUT">
+                      🎯 {{ props.dutName && props.dutName !== 'DUT' ? `${props.dutName} (DUT)` : 'DUT (Thiết bị kiểm tra)' }}
+                    </option>
+                  </optgroup>
+
+                  <optgroup v-if="availableRefDeviceNames.length > 0" label="Thiết Bị Tham Chiếu (REF)">
+                    <option
+                      v-for="refName in availableRefDeviceNames"
+                      :key="refName"
+                      :value="refName"
+                    >
+                      ⭐ {{ refName }}
+                    </option>
+                  </optgroup>
+                  <optgroup v-else label="Thiết Bị Tham Chiếu (REF)">
+                    <option value="REF">⭐ Thiết bị chuẩn đối chiếu (REF)</option>
+                  </optgroup>
+
+                  <optgroup v-if="mergedSimDevices.length > 0" label="Thiết Bị Mô Phỏng (SIMULATION)">
+                    <option
+                      v-for="sim in mergedSimDevices"
+                      :key="sim.name || sim.devEui"
+                      :value="sim.name || sim.devEui"
+                    >
+                      🤖 {{ sim.name || 'SIMU' }} {{ sim.devEui ? `(${sim.devEui})` : '' }}
+                    </option>
+                  </optgroup>
+                  <optgroup v-else label="Thiết Bị Mô Phỏng (SIMULATION)">
+                    <option value="SIMU">🤖 Thiết bị mô phỏng (SIMU)</option>
+                  </optgroup>
+
+                  <optgroup label="Tùy Chọn Khác">
+                    <option value="__CUSTOM__">✏️ Nhập tên thiết bị khác...</option>
+                  </optgroup>
+                </select>
+
+                <!-- Input nhập text trực tiếp khi chọn Tùy Chọn Khác hoặc tên custom -->
+                <div v-if="isCustomTarget(block.targetDevice)" class="join w-full">
+                  <input
+                    v-model="block.targetDevice"
+                    type="text"
+                    class="input input-bordered input-sm join-item w-full font-mono text-xs"
+                    placeholder=""
+                    @input="emitUpdate"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-ghost join-item text-xs text-base-content/60"
+                    title="Đặt lại về DUT"
+                    @click="() => { block.targetDevice = 'DUT'; emitUpdate(); }"
+                  >
+                    DUT
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- 3. Form fields riêng cho từng loại Block -->
@@ -624,7 +683,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import {
   Layers,
   Plus,
@@ -636,6 +695,7 @@ import {
   Code,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
+import { httpClient } from '@/api/client';
 
 export interface FlowBlock {
   id: string;
@@ -649,7 +709,7 @@ export interface FlowBlock {
     | 'average'
     | 'calculate_linear'
     | string;
-  targetDevice?: 'DUT' | 'REF' | 'SIMU' | string;
+  targetDevice?: string;
   delaySeconds?: number;
   offsetSeconds?: number;
   windowId?: string;
@@ -674,6 +734,7 @@ export interface SimulationDeviceItem {
   id?: string;
   devEui: string;
   name?: string;
+  deviceName?: string;
   itemCode?: string;
   status?: string;
   label?: string;
@@ -683,10 +744,14 @@ const props = withDefaults(
   defineProps<{
     modelValue: FlowBlock[];
     devices?: SimulationDeviceItem[];
+    referenceDevices?: string[] | Array<{ name?: string; reference_name?: string }>;
+    dutName?: string;
   }>(),
   {
     modelValue: () => [],
     devices: () => [],
+    referenceDevices: () => [],
+    dutName: 'DUT',
   }
 );
 
@@ -697,6 +762,84 @@ const emit = defineEmits<{
 const blocks = ref<FlowBlock[]>([]);
 const showJsonModal = ref(false);
 const rawJsonInput = ref('');
+
+// Auto-fetch simulation devices if props.devices is empty
+const internalSimDevices = ref<SimulationDeviceItem[]>([]);
+
+onMounted(async () => {
+  if (!props.devices || props.devices.length === 0) {
+    try {
+      const res: any = await httpClient.get('/plugins/testing/simulation/devices').catch(() => null);
+      const items = res?.data?.items || res?.data || res?.items || [];
+      if (Array.isArray(items)) {
+        internalSimDevices.value = items
+          .map((d: any) => ({
+            id: d.id,
+            devEui: d.devEui || d.dev_eui || d.network_id || '',
+            name: d.name || d.device_name || d.deviceName || '',
+            itemCode: d.itemCode || d.item_code || '',
+            status: d.status || '',
+          }))
+          .filter((d: any) => Boolean(d.name || d.devEui));
+      }
+    } catch {
+      // ignore
+    }
+  }
+});
+
+const mergedSimDevices = computed<SimulationDeviceItem[]>(() => {
+  const list = props.devices && props.devices.length > 0 ? props.devices : internalSimDevices.value;
+  const seen = new Set<string>();
+  const out: SimulationDeviceItem[] = [];
+  list.forEach((s) => {
+    const sName = (s.name || s.deviceName || s.label || s.devEui || '').trim();
+    if (sName && !seen.has(sName)) {
+      seen.add(sName);
+      out.push(s);
+    }
+  });
+  return out;
+});
+
+const availableRefDeviceNames = computed<string[]>(() => {
+  const result: string[] = [];
+  if (Array.isArray(props.referenceDevices)) {
+    props.referenceDevices.forEach((item) => {
+      const name = typeof item === 'string' ? item : (item.reference_name || item.name || '');
+      const trimmed = name.trim();
+      if (trimmed && !result.includes(trimmed)) {
+        result.push(trimmed);
+      }
+    });
+  }
+  return result;
+});
+
+function getTargetSelectValue(target?: string): string {
+  const t = (target || 'DUT').trim();
+  if (t === 'DUT' || t === props.dutName) return 'DUT';
+  if (t === 'REF') return 'REF';
+  if (t === 'SIMU') return 'SIMU';
+  if (availableRefDeviceNames.value.includes(t)) return t;
+  if (mergedSimDevices.value.some((s) => (s.name || s.deviceName || s.label || s.devEui) === t)) return t;
+  return '__CUSTOM__';
+}
+
+function isCustomTarget(target?: string): boolean {
+  return getTargetSelectValue(target) === '__CUSTOM__';
+}
+
+function onTargetSelectChange(block: FlowBlock, selectedValue: string) {
+  if (selectedValue === '__CUSTOM__') {
+    if (['DUT', 'REF', 'SIMU'].includes(block.targetDevice || '')) {
+      block.targetDevice = '';
+    }
+  } else {
+    block.targetDevice = selectedValue;
+  }
+  emitUpdate();
+}
 
 // Sync with modelValue prop and normalize legacy blocks
 watch(
@@ -715,8 +858,8 @@ function normalizeBlock(b: any): FlowBlock {
   if (fnType === 'downlink_hex') fnType = 'downlink';
   if (fnType === 'delay_wait') fnType = 'delay';
 
-  const rawTarget = (b.targetDevice || b.target || 'DUT').toUpperCase();
-  const normalizedTarget = rawTarget === 'REF' ? 'REF' : rawTarget === 'SIMU' ? 'SIMU' : 'DUT';
+  const rawTarget = (b.targetDevice || b.target || b.targetDeviceName || 'DUT').toString().trim();
+  const normalizedTarget = rawTarget || 'DUT';
 
   return {
     id: b.id || `block-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -772,7 +915,10 @@ const totalDurationSeconds = computed(() => {
 
 // Check if flow involves reference device
 const hasReferenceDevice = computed(() => {
-  return blocks.value.some((b) => b.targetDevice === 'REF');
+  return blocks.value.some((b) => {
+    const t = (b.targetDevice || '').toUpperCase();
+    return t === 'REF' || availableRefDeviceNames.value.some((r) => r.toUpperCase() === t);
+  });
 });
 
 // Check if flow involves measurement window

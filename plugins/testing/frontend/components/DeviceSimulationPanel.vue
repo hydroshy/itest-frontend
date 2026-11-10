@@ -323,7 +323,9 @@
     <div class="space-y-2">
       <SimulationFlowBuilder
         v-model="flowBlocks"
-        :devices="simulationDeviceItems"
+        :devices="allSimulationDeviceItems"
+        :reference-devices="referenceDevices"
+        :dut-name="profileForm.name || profileForm.itemCode || 'DUT'"
       />
     </div>
 
@@ -1204,6 +1206,18 @@ const simulationDeviceItems = computed<SimulationDeviceItem[]>(() => {
     itemCode: d.itemCode || d.item_code || '',
     status: d.status || '',
   }));
+});
+
+const allSimulationDeviceItems = computed<SimulationDeviceItem[]>(() => {
+  const list = [...simulationDeviceItems.value];
+  if (simulatorEnabled.value && simulatorForm.name.trim()) {
+    list.unshift({
+      devEui: simulatorForm.dev_eui || '',
+      name: simulatorForm.name.trim(),
+      itemCode: simulatorForm.item_code,
+    });
+  }
+  return list;
 });
 
 async function fetchSimulationDevices() {
