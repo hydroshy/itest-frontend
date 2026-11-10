@@ -68,48 +68,34 @@
       </div>
     </div>
 
-    <!-- Backend Connection & Webhook Inspector Bar -->
-    <div class="card bg-base-200/50 border border-base-300 p-3 rounded-xl backdrop-blur-md text-xs space-y-2">
+    <!-- ChirpStack Webhook Integration Bar -->
+    <div class="card bg-base-200/50 border border-base-300 px-4 py-3 rounded-xl backdrop-blur-md text-xs">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <!-- Backend Server Port / Host Setting -->
+        <!-- Status & Protocols -->
         <div class="flex items-center gap-2 flex-wrap">
           <Server class="w-4 h-4 text-primary" />
-          <span class="font-bold text-base-content">Backend Server URL:</span>
-          <div class="join">
-            <input
-              v-model="backendServerUrl"
-              type="text"
-              placeholder="VD: http://lanu.myvc.com:3000"
-              class="input input-xs input-bordered join-item font-mono w-56 sm:w-64 bg-base-100"
-              @keyup.enter="saveAndTestBackendConnection"
-            />
-            <button
-              class="btn btn-xs btn-primary join-item gap-1"
-              :disabled="testingBackend"
-              @click="saveAndTestBackendConnection"
-            >
-              <span v-if="testingBackend" class="loading loading-spinner loading-xs"></span>
-              <span v-else>Kết Nối</span>
-            </button>
-          </div>
+          <span class="font-bold text-base-content">ChirpStack HTTP Webhook Integration:</span>
           <span
-            class="badge badge-xs font-mono font-bold"
-            :class="backendConnected ? 'badge-success text-success-content' : 'badge-ghost'"
+            class="badge badge-xs font-mono font-semibold"
+            :class="integrationStatus.active ? 'badge-success text-success-content' : 'badge-ghost'"
           >
-            {{ backendConnected ? 'ĐÃ KẾT NỐI :3000' : 'CHƯA TEST KẾT NỐI' }}
+            {{ integrationStatus.active ? 'INTEGRATION SẴN SÀNG' : 'CHỜ KÍCH HOẠT' }}
+          </span>
+          <span v-if="tokenConfigured" class="badge badge-xs badge-outline font-mono text-[10px] text-primary">
+            TOKEN SECURED
           </span>
         </div>
 
         <!-- ChirpStack Webhook Guide -->
         <div class="flex items-center gap-2 flex-wrap font-mono text-[11px]">
           <span class="text-base-content/60">Webhook URL ChirpStack:</span>
-          <code class="bg-base-300/80 px-2 py-0.5 rounded text-primary font-bold select-all">
+          <code class="bg-base-300/80 px-2.5 py-1 rounded text-primary font-bold border border-base-300 select-all">
             {{ activeWebhookUrl }}
           </code>
           <button
-            class="btn btn-ghost btn-xs p-1 text-base-content/60 hover:text-primary"
-            title="Sao chép Webhook URL"
-            @click="copyText(activeWebhookUrl, 'Đã copy Webhook URL')"
+            class="btn btn-ghost btn-xs text-primary"
+            title="Copy Webhook URL để cấu hình trên ChirpStack"
+            @click="copyText(activeWebhookUrl, 'Đã copy ChirpStack Webhook URL!')"
           >
             <Copy class="w-3.5 h-3.5" />
           </button>
@@ -546,50 +532,35 @@ const configuringIntegration = ref(false);
 const sseConnected = ref(false);
 let eventSource: EventSource | null = null;
 
-const backendServerUrl = ref(
-  (typeof window !== 'undefined' && localStorage.getItem('itest_backend_url')) ||
-  (typeof window !== 'undefined' && window.location.port !== '3000'
-    ? `${window.location.protocol}//${window.location.hostname}:3000`
-    : '')
-);
-const testingBackend = ref(false);
-const backendConnected = ref(false);
+const configuredWebhookUrl = ref<string>('');
+const tokenConfigured = ref<boolean>(false);
 
 const activeWebhookUrl = computed(() => {
-  const base = backendServerUrl.value.trim() || `${window.location.protocol}//${window.location.hostname}:3000`;
-  return `${base.replace(/\/+$/, '')}/lorawan/chirpstack/uplink`;
+  if (configuredWebhookUrl.value) {
+    return configuredWebhookUrl.value;
+  }
+  try {
+    const apiBase = httpClient.defaults.baseURL || (import.meta as any).env?.VITE_API_BASE_URL || '/api/v1';
+    const resolved = new URL(apiBase, window.location.origin);
+    return `${resolved.origin}/api/v1/lorawan/chirpstack/uplink`;
+  } catch {
+    return `${window.location.origin}/api/v1/lorawan/chirpstack/uplink`;
+  }
 });
 
-async function saveAndTestBackendConnection() {
-  testingBackend.value = true;
-  const rawUrl = backendServerUrl.value.trim();
-  if (!rawUrl) {
-    localStorage.removeItem('itest_backend_url');
-    cyberToast.info('Đã xóa cấu hình backend URL tuỳ chỉnh');
-    testingBackend.value = false;
-    return;
-  }
-
-  const cleanOrigin = rawUrl.replace(/\/+$/, '').replace(/\/api(\/v1)?\/?$/, '');
-  const apiUrl = `${cleanOrigin}/api/v1`;
-
+async function fetchIntegrationStatus() {
   try {
-    const res = await fetch(`${cleanOrigin}/api/realtime/status`, { signal: AbortSignal.timeout(4000) });
-    backendConnected.value = res.ok;
-    localStorage.setItem('itest_backend_url', apiUrl);
-    httpClient.defaults.baseURL = apiUrl;
-    cyberToast.success(`Đã kết nối thành công tới Backend ${cleanOrigin}!`);
-    setupRealtimeStream();
-    loadPayloads(false);
-  } catch {
-    backendConnected.value = false;
-    localStorage.setItem('itest_backend_url', apiUrl);
-    httpClient.defaults.baseURL = apiUrl;
-    cyberToast.warning(`Đã lưu URL: ${cleanOrigin}. Đang thử kết nối...`);
-    setupRealtimeStream();
-    loadPayloads(false);
-  } finally {
-    testingBackend.value = false;
+    const res: any = await httpClient.get('/plugins/testing/integrations/chirpstack/status');
+    const data = res?.data?.data || res?.data;
+    if (data) {
+      if (data.webhookUrlEnv) {
+        configuredWebhookUrl.value = data.webhookUrlEnv;
+      }
+      tokenConfigured.value = Boolean(data.tokenConfigured);
+      integrationStatus.active = Boolean(data.webhookListening);
+    }
+  } catch (err: any) {
+    console.debug('[DevicePayloadPanel] fetchIntegrationStatus error:', err?.message);
   }
 }
 
@@ -843,11 +814,13 @@ async function triggerAutoRegisterIntegration() {
     if (res?.data?.applicationId) {
       integrationStatus.applicationId = res.data.applicationId;
     }
-    cyberToast.success('Đã tự động đăng ký HTTP Integration vào Default Application!');
+    cyberToast.success('Đã đồng bộ HTTP Integration vào ChirpStack thành công!');
+    await fetchIntegrationStatus();
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || 'Chưa hoàn tất đồng bộ ChirpStack';
     console.debug('[DevicePayloadPanel] ChirpStack integration auto-register:', msg);
     integrationStatus.active = false;
+    cyberToast.warning(`Đồng bộ ChirpStack: ${msg}`);
   } finally {
     configuringIntegration.value = false;
   }
@@ -938,13 +911,12 @@ function getSensorMetricBadgeTheme(key: string): string {
 }
 
 onMounted(() => {
-  if (backendServerUrl.value) {
-    const cleanOrigin = backendServerUrl.value.trim().replace(/\/+$/, '').replace(/\/api(\/v1)?\/?$/, '');
-    httpClient.defaults.baseURL = `${cleanOrigin}/api/v1`;
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('itest_backend_url');
   }
+  fetchIntegrationStatus();
   loadPayloads(false);
   setupRealtimeStream();
-  triggerAutoRegisterIntegration();
 });
 
 onUnmounted(() => {

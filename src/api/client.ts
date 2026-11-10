@@ -3,12 +3,6 @@ import { cyberToast } from '@/services/cyberToast';
 import type { FrontendApiClient } from '@itest/frontend-sdk';
 
 function resolveBaseUrl(): string {
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('itest_backend_url');
-    if (saved) {
-      return saved.endsWith('/api/v1') ? saved : `${saved.replace(/\/+$/, '')}/api/v1`;
-    }
-  }
   return import.meta.env.VITE_API_BASE_URL || '/api/v1';
 }
 
