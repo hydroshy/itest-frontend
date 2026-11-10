@@ -46,7 +46,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Tìm theo DevEUI, Số Serial, Tên, Item Code..."
+            placeholder=""
             class="input input-sm input-bordered pl-9 w-full font-mono text-xs"
           />
         </div>
@@ -67,6 +67,7 @@
               <th class="w-10">#</th>
               <th>Serial Number</th>
               <th>DevEUI</th>
+              <th>AppEUI</th>
               <th>Tên Thiết Bị</th>
               <th>Item Code</th>
               <th>FW Version</th>
@@ -83,6 +84,7 @@
               <td class="text-base-content/40">{{ idx + 1 }}</td>
               <td class="font-bold text-base-content">{{ dev.serialNumber || '—' }}</td>
               <td class="font-bold text-primary">{{ dev.devEui }}</td>
+              <td class="font-mono text-xs text-base-content/70">{{ dev.appEui || '—' }}</td>
               <td class="font-sans font-medium text-base-content">{{ dev.name || 'Thiết bị simulation' }}</td>
               <td class="text-base-content/70">{{ dev.itemCode || '—' }}</td>
               <td class="text-base-content/70">
@@ -115,12 +117,12 @@
               </td>
             </tr>
             <tr v-if="filteredDevices.length === 0 && !loadingDevices">
-              <td colspan="8" class="text-center py-8 text-base-content/50 italic font-sans">
+              <td colspan="9" class="text-center py-8 text-base-content/50 italic font-sans">
                 Không tìm thấy thiết bị simulation nào. Nhấn "Đăng Ký Thiết Bị Mới" để thêm.
               </td>
             </tr>
             <tr v-if="loadingDevices">
-              <td colspan="8" class="text-center py-8 text-base-content/50 italic font-sans">
+              <td colspan="9" class="text-center py-8 text-base-content/50 italic font-sans">
                 Đang tải danh sách thiết bị simulation...
               </td>
             </tr>
@@ -146,21 +148,21 @@
           <!-- 1. DEVICE_NAME & SERIAL_NUMBER -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Tên Thiết Bị (DEVICE_NAME)</span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">DEVICE_NAME</span></label>
               <input
                 v-model="newDevForm.name"
                 type="text"
                 class="input input-bordered input-sm"
-                placeholder="VD: Node Cảm Biến Sim 01"
+                placeholder=""
               />
             </div>
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Số Serial (SERIAL_NUMBER) <span class="text-error">*</span></span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">SERIAL_NUMBER <span class="text-error">*</span></span></label>
               <input
                 v-model="newDevForm.serialNumber"
                 type="text"
                 class="input input-bordered input-sm font-mono uppercase"
-                placeholder="VD: SIM-SN-0001"
+                placeholder=""
                 required
               />
             </div>
@@ -169,23 +171,23 @@
           <!-- 2. DEVEUI & APPEUI -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">DevEUI (DEVEUI) <span class="text-error">*</span></span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">DEVEUI <span class="text-error">*</span></span></label>
               <input
                 v-model="newDevForm.devEui"
                 type="text"
                 class="input input-bordered input-sm font-mono uppercase"
-                placeholder="16 ký tự HEX"
+                placeholder=""
                 maxlength="16"
                 required
               />
             </div>
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">AppEUI (APPEUI)</span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">APPEUI</span></label>
               <input
                 v-model="newDevForm.appEui"
                 type="text"
                 class="input input-bordered input-sm font-mono uppercase"
-                placeholder="16 ký tự HEX (mặc định 0000000000000000)"
+                placeholder=""
                 maxlength="16"
               />
             </div>
@@ -194,34 +196,34 @@
           <!-- 3. ITEM_CODE & FW_VERSION -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Mã Sản Phẩm (ITEM_CODE)</span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">ITEM_CODE</span></label>
               <input
                 v-model="newDevForm.itemCode"
                 type="text"
                 class="input input-bordered input-sm font-mono uppercase"
-                placeholder="VD: WSLRW-ENV-01"
+                placeholder=""
               />
             </div>
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Phiên Bản FW (FW_VERSION)</span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">FW_VERSION (XXFXXXX)</span></label>
               <input
                 v-model="newDevForm.longFw"
                 type="text"
                 class="input input-bordered input-sm font-mono uppercase"
-                placeholder="XXFXXXX (VD: 4F0505, 32F0505)"
-                maxlength="12"
+                placeholder=""
+                maxlength="35"
               />
             </div>
           </div>
 
           <!-- 4. APPKEY -->
           <div class="form-control">
-            <label class="label py-1"><span class="label-text text-xs font-semibold">Khóa OTAA (APPKEY)</span></label>
+            <label class="label py-1"><span class="label-text text-xs font-semibold">APPKEY</span></label>
             <input
               v-model="newDevForm.appKey"
               type="text"
               class="input input-bordered input-sm font-mono uppercase"
-              placeholder="32 ký tự HEX (VD: 00112233445566778899AABBCCDDEEFF)"
+              placeholder=""
               maxlength="32"
             />
           </div>
