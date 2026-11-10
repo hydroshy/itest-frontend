@@ -765,10 +765,10 @@ const form = reactive({
   isActive: true,
 });
 
-const fwVersionRegex = /^[0-9]F[0-9]{4}$/;
+const fwVersionRegex = /^[0-9]+F[0-9]+$/i;
 const fwVersionError = computed(() => {
   if (!form.fwVersion) return '';
-  return !fwVersionRegex.test(form.fwVersion) ? 'Định dạng FW_VERSION phải là XFXXXX (X là số, ví dụ 1F0001)' : '';
+  return !fwVersionRegex.test(form.fwVersion) ? 'Định dạng FW_VERSION phải là XXFXXXX (X là số, ví dụ 4F0505, 32F0505)' : '';
 });
 
 // Computed

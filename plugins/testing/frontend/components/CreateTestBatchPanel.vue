@@ -109,7 +109,7 @@
             />
           </div>
 
-          <!-- 4. Phiên Bản Firmware (FW_VERSION: có cấu trúc như là 4F0505 với XFXXXX , x là số) -->
+          <!-- 4. Phiên Bản Firmware (FW_VERSION: có cấu trúc XXFXXXX với XX có thể là từ 1 đến 32 nói chung x là số) -->
           <div class="form-control">
             <label class="label py-1">
               <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
@@ -120,21 +120,21 @@
                 class="label-text-alt text-[10px] font-mono"
                 :class="isFwVersionValid ? 'text-base-content/60' : 'text-error font-semibold'"
               >
-                {{ isFwVersionValid ? 'Cấu trúc: XFXXXX (VD: 4F0505)' : 'Chưa đúng chuẩn XFXXXX' }}
+                {{ isFwVersionValid ? 'Cấu trúc: XXFXXXX (VD: 4F0505, 32F0505)' : 'Chưa đúng chuẩn XXFXXXX' }}
               </span>
             </label>
             <input
               v-model="batchForm.longFw"
               type="text"
-              maxlength="6"
-              placeholder="VD: 4F0505"
+              maxlength="35"
+              placeholder=""
               class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
               :class="{ 'input-error': !isFwVersionValid && batchForm.longFw }"
               @input="onFwVersionInput"
             />
             <div v-if="!isFwVersionValid && batchForm.longFw" class="text-[11px] text-error mt-1 flex items-center gap-1">
               <AlertTriangle class="w-3.5 h-3.5 flex-shrink-0" />
-              <span>FW_VERSION phải có cấu trúc XFXXXX với x là số (VD: 4F0505, x là số)</span>
+              <span>FW_VERSION có cấu trúc XXFXXXX với XX có thể là từ 1 đến 32 nói chung x là số muốn nằm ở mức nào cũng được</span>
             </div>
           </div>
 
@@ -290,10 +290,10 @@ const batchForm = reactive({
   simuId: '',
 });
 
-// FW_VERSION format: XFXXXX where x is a number (0-9)
+// FW_VERSION format: XXFXXXX with XX from 1 to 32 (or numbers in general, e.g. 4F0505, 32F0505)
 const isFwVersionValid = computed(() => {
   if (!batchForm.longFw) return true;
-  return /^[0-9]F[0-9]{4}$/.test(batchForm.longFw.trim());
+  return /^[0-9]+F[0-9]+$/i.test(batchForm.longFw.trim());
 });
 
 function onItemCodeInput(e: Event) {
@@ -379,8 +379,8 @@ async function saveTestBatch() {
     cyberToast.warning('Vui lòng nhập FW_VERSION!');
     return;
   }
-  if (!/^[0-9]F[0-9]{4}$/.test(batchForm.longFw.trim())) {
-    cyberToast.warning('FW_VERSION phải có cấu trúc XFXXXX (VD: 4F0505, x là số)!');
+  if (!/^[0-9]+F[0-9]+$/i.test(batchForm.longFw.trim())) {
+    cyberToast.warning('FW_VERSION có cấu trúc XXFXXXX với XX có thể là từ 1 đến 32 nói chung x là số muốn nằm ở mức nào cũng được!');
     return;
   }
   if (!batchForm.maxDevices || batchForm.maxDevices < 1) {

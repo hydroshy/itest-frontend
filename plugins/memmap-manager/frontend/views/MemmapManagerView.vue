@@ -339,8 +339,8 @@ let profileTable: Tabulator | undefined;
 let previewTable: Tabulator | undefined;
 let detailTable: Tabulator | undefined;
 
-const fwVersionValid = computed(() => /^[0-9]F[0-9]{4}$/.test(uploadForm.value.fwVersion.trim()));
-const fwVersionError = computed(() => uploadForm.value.fwVersion && !fwVersionValid.value ? 'FW_VERSION không hợp lệ (mẫu XFXXXX với X là số).' : '');
+const fwVersionValid = computed(() => /^[0-9]+F[0-9]+$/i.test(uploadForm.value.fwVersion.trim()));
+const fwVersionError = computed(() => uploadForm.value.fwVersion && !fwVersionValid.value ? 'FW_VERSION không hợp lệ (mẫu XXFXXXX với X là số, ví dụ 4F0505, 32F0505).' : '');
 const canPreview = computed(() => Boolean(uploadForm.value.itemCode.trim() && fwVersionValid.value && selectedFile.value));
 const canUpload = computed(() => canPreview.value && previewResult.value?.valid === true && previewInvalidRowsCount.value === 0 && (previewResult.value?.errors?.length ?? 0) === 0);
 const previewInvalidRowsCount = computed(() => (previewResult.value?.registers || []).filter((r: RecordRow) => r.decimalValid === false || r.hexValid === false).length);

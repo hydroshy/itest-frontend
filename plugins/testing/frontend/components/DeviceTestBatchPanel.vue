@@ -508,7 +508,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
 import {
@@ -617,8 +617,48 @@ const activeBatchDisplayName = computed(() => {
 });
 
 const requiresReferenceDevice = computed(() => {
-  return selectedBatchConfig.value?.requiresReferenceDevice === true ||
-    selectedBatchConfig.value?.simulationFlow?.requiresGoldenReference === true;
+  const b = selectedBatchConfig.value;
+  if (!b) return false;
+  if (b.requiresReferenceDevice === true) return true;
+  if (Array.isArray(b.referenceDevices) && b.referenceDevices.length > 0) return true;
+  if (b.simulationFlow?.requiresGoldenReference === true) return true;
+  if (Array.isArray(b.simulationFlow?.referenceDevices) && b.simulationFlow.referenceDevices.length > 0) return true;
+
+  const blocks = Array.isArray(b.simulationFlow)
+    ? b.simulationFlow
+    : (Array.isArray(b.simulationFlow?.flowBlocks) ? b.simulationFlow.flowBlocks : []);
+  if (blocks.some((bl: any) => (bl.targetDevice || bl.target || '').toUpperCase() === 'REF')) {
+    return true;
+  }
+  return false;
+});
+
+const flowReferenceCount = computed(() => {
+  const b = selectedBatchConfig.value;
+  if (Array.isArray(b?.referenceDevices) && b.referenceDevices.length > 0) {
+    return b.referenceDevices.length;
+  }
+  if (Array.isArray(b?.simulationFlow?.referenceDevices) && b.simulationFlow.referenceDevices.length > 0) {
+    return b.simulationFlow.referenceDevices.length;
+  }
+  const blocks = Array.isArray(b?.simulationFlow)
+    ? b.simulationFlow
+    : (Array.isArray(b?.simulationFlow?.flowBlocks) ? b.simulationFlow.flowBlocks : []);
+  const refBlocks = blocks.filter((bl: any) => (bl.targetDevice || bl.target || '').toUpperCase() === 'REF');
+  if (refBlocks.length > 0) {
+    return refBlocks.length;
+  }
+  return 0;
+});
+
+const availableRefDevices = computed(() => {
+  return goldenReferenceDevices.value || [];
+});
+
+watch(requiresReferenceDevice, () => {
+  nextTick(() => {
+    initBatchTabulator();
+  });
 });
 
 const formattedRemaining = computed(() => {
@@ -934,6 +974,67 @@ function initBatchTabulator() {
         minWidth: 115,
         formatter: (cell) => `<span class="font-mono text-xs text-base-content/80">${cell.getValue() || '—'}</span>`,
       },
+      ...(requiresReferenceDevice.value
+        ? [
+            {
+              title: 'Thiết Bị Tham Chiếu (REF)',
+              field: 'referenceDevEui',
+              widthGrow: 2.2,
+              minWidth: 200,
+              formatter: (cell: any) => {
+                const row = cell.getRow().getData();
+                const curEui = (row.referenceDevEui || '').toUpperCase();
+                const curId = row.referenceDeviceId || '';
+                const refList = availableRefDevices.value;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'w-full flex items-center gap-1';
+
+                const select = document.createElement('select');
+                select.className = 'select select-bordered select-xs w-full font-mono text-xs';
+                if (isTesting.value) select.disabled = true;
+
+                const defaultOpt = document.createElement('option');
+                defaultOpt.value = '';
+                defaultOpt.textContent = '-- Chọn thiết bị REF --';
+                select.appendChild(defaultOpt);
+
+                refList.forEach((ref) => {
+                  const opt = document.createElement('option');
+                  opt.value = ref.devEui || ref.id;
+                  opt.textContent = `${ref.serialNumber ? ref.serialNumber + ' - ' : ''}${ref.devEui}`;
+                  if (curEui === ref.devEui || (curId && curId === ref.id)) {
+                    opt.selected = true;
+                  }
+                  select.appendChild(opt);
+                });
+
+                select.addEventListener('change', (e) => {
+                  e.stopPropagation();
+                  const chosenVal = select.value;
+                  const chosen = refList.find((r) => r.devEui === chosenVal || r.id === chosenVal);
+                  const dutId = getDeviceIdentifier(row.device || row);
+                  const targetItem = selectedDevices.value.find(
+                    (d) => getDeviceIdentifier(d.device || d) === dutId
+                  );
+                  if (targetItem) {
+                    targetItem.referenceDeviceId = chosen?.id || null;
+                    targetItem.referenceDevEui = chosen?.devEui || '';
+                    targetItem.referenceSerialNumber = chosen?.serialNumber || '';
+                    targetItem.referenceDevice = chosen || null;
+                    row.referenceDeviceId = targetItem.referenceDeviceId;
+                    row.referenceDevEui = targetItem.referenceDevEui;
+                    row.referenceSerialNumber = targetItem.referenceSerialNumber;
+                    row.referenceDevice = targetItem.referenceDevice;
+                  }
+                });
+
+                wrapper.appendChild(select);
+                return wrapper;
+              },
+            },
+          ]
+        : []),
       {
         title: 'Trạng Thái',
         field: 'status',
@@ -1110,6 +1211,9 @@ function addSingleDeviceToBatch(deviceRow: any) {
     fwVersion: deviceRow.fwVersion,
     device: rawDev,
     referenceDeviceId: '',
+    referenceDevEui: '',
+    referenceSerialNumber: '',
+    referenceDevice: null,
     status: 'PENDING',
     packetsCount: 0,
     avgCycle: null,
@@ -1117,11 +1221,13 @@ function addSingleDeviceToBatch(deviceRow: any) {
     avgSnr: null,
   });
 
-  if (requiresReferenceDevice.value && goldenReferenceDevices.value.length > 0) {
+  if (requiresReferenceDevice.value && availableRefDevices.value.length > 0) {
     const idx = selectedDevices.value.length - 1;
-    const refDev = goldenReferenceDevices.value[idx % goldenReferenceDevices.value.length];
+    const refDev = availableRefDevices.value[idx % availableRefDevices.value.length];
     if (refDev) {
       selectedDevices.value[idx].referenceDeviceId = refDev.id;
+      selectedDevices.value[idx].referenceDevEui = refDev.devEui;
+      selectedDevices.value[idx].referenceSerialNumber = refDev.serialNumber;
       selectedDevices.value[idx].referenceDevice = refDev;
     }
   }
@@ -1158,6 +1264,9 @@ function addSelectedAvailableRowsToBatch() {
         fwVersion: row.fwVersion,
         device: rawDev,
         referenceDeviceId: '',
+        referenceDevEui: '',
+        referenceSerialNumber: '',
+        referenceDevice: null,
         status: 'PENDING',
         packetsCount: 0,
         avgCycle: null,
@@ -1168,12 +1277,14 @@ function addSelectedAvailableRowsToBatch() {
     }
   }
 
-  if (requiresReferenceDevice.value && goldenReferenceDevices.value.length > 0) {
+  if (requiresReferenceDevice.value && availableRefDevices.value.length > 0) {
     selectedDevices.value.forEach((item, idx) => {
-      if (!item.referenceDeviceId) {
-        const refDev = goldenReferenceDevices.value[idx % goldenReferenceDevices.value.length];
+      if (!item.referenceDevEui) {
+        const refDev = availableRefDevices.value[idx % availableRefDevices.value.length];
         if (refDev) {
           item.referenceDeviceId = refDev.id;
+          item.referenceDevEui = refDev.devEui;
+          item.referenceSerialNumber = refDev.serialNumber;
           item.referenceDevice = refDev;
         }
       }
@@ -1214,19 +1325,21 @@ function clearBatchDevices() {
 }
 
 function autoAssignReferenceDevices() {
-  if (goldenReferenceDevices.value.length === 0) {
-    cyberToast.warning('Không tìm thấy thiết bị chuẩn phù hợp.');
+  if (availableRefDevices.value.length === 0) {
+    cyberToast.warning('Không tìm thấy thiết bị chuẩn phù hợp trong LIST DEVICE SIMULATION.');
     return;
   }
   selectedDevices.value.forEach((item, idx) => {
-    const refDev = goldenReferenceDevices.value[idx % goldenReferenceDevices.value.length];
+    const refDev = availableRefDevices.value[idx % availableRefDevices.value.length];
     if (refDev) {
       item.referenceDeviceId = refDev.id;
+      item.referenceDevEui = refDev.devEui;
+      item.referenceSerialNumber = refDev.serialNumber;
       item.referenceDevice = refDev;
     }
   });
   updateTabulatorData();
-  cyberToast.success('Đã tự động gán thiết bị chuẩn cho các thiết bị trong batch');
+  cyberToast.success('Đã tự động gán thiết bị tham chiếu cho các thiết bị trong batch');
 }
 
 // ============================================================================
@@ -1240,6 +1353,19 @@ async function startBatchTest() {
   if (!selectedBatchId.value) {
     cyberToast.warning('Không tìm thấy cấu hình Test Batch!');
     return;
+  }
+
+  // Nếu flow yêu cầu thiết bị tham chiếu (REF), mỗi DUT phải chọn thiết bị tham chiếu với DevEUI hợp lệ
+  if (requiresReferenceDevice.value) {
+    const invalidRefDev = selectedDevices.value.find(
+      (d) => !/^[0-9a-fA-F]{16}$/.test((d.referenceDevEui || '').trim())
+    );
+    if (invalidRefDev) {
+      cyberToast.warning(
+        `Thiết bị ${invalidRefDev.serialNumber} chưa chọn thiết bị tham chiếu với DevEUI hợp lệ (16 ký tự HEX)!`
+      );
+      return;
+    }
   }
 
   isTesting.value = true;
@@ -1269,6 +1395,9 @@ async function startBatchTest() {
       fwVersion: item.fwVersion,
       soNumber: selectedSoNumber.value,
       referenceDeviceId: item.referenceDeviceId || null,
+      referenceDevEui: (item.referenceDevEui || '').trim() || null,
+      referenceSerialNumber: item.referenceSerialNumber || item.referenceDevEui || null,
+      referenceDeviceName: item.referenceDeviceName || null,
     })),
   };
 
@@ -1665,9 +1794,40 @@ async function onSelectRunningBatch(id: string) {
 
 async function loadReferenceDevices() {
   try {
-    const res: any = await httpClient.get('/plugins/testing/test-batches/reference-devices');
-    const items = res?.data?.items || res?.data || [];
-    goldenReferenceDevices.value = Array.isArray(items) ? items : [];
+    // Ưu tiên nạp danh sách thiết bị từ LIST DEVICE SIMULATION theo yêu cầu
+    const res: any = await httpClient.get('/plugins/testing/devices/simulation').catch(() =>
+      httpClient.get('/plugins/testing/simulation-devices')
+    );
+    const items = Array.isArray(res?.data)
+      ? res.data
+      : (res?.data?.items || (Array.isArray(res) ? res : []));
+    if (Array.isArray(items) && items.length > 0) {
+      goldenReferenceDevices.value = items.map((it: any) => {
+        const rawEui = it.networkId || it.devEui || it.dev_eui || it.serialNumber || '';
+        const cleanEui = String(rawEui).replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+        return {
+          id: it.id,
+          serialNumber: it.serialNumber || it.serial_number || cleanEui,
+          devEui: cleanEui,
+          name: it.deviceName || it.name || it.serialNumber || `Thiết bị ${cleanEui.slice(-4)}`,
+          itemCode: it.itemCode || it.item_code,
+        };
+      }).filter((it: any) => it.devEui.length === 16);
+    } else {
+      const fallbackRes: any = await httpClient.get('/plugins/testing/test-batches/reference-devices');
+      const fallbackItems = fallbackRes?.data?.items || fallbackRes?.data || [];
+      goldenReferenceDevices.value = (Array.isArray(fallbackItems) ? fallbackItems : []).map((it: any) => {
+        const rawEui = it.networkId || it.devEui || it.dev_eui || it.serialNumber || '';
+        const cleanEui = String(rawEui).replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+        return {
+          id: it.id,
+          serialNumber: it.serialNumber || it.serial_number || cleanEui,
+          devEui: cleanEui,
+          name: it.deviceName || it.name || it.serialNumber || `Thiết bị ${cleanEui.slice(-4)}`,
+          itemCode: it.itemCode || it.item_code,
+        };
+      }).filter((it: any) => it.devEui.length === 16);
+    }
   } catch {
     goldenReferenceDevices.value = [];
   }
