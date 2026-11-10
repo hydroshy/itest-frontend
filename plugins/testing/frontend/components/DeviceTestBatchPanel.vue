@@ -374,7 +374,6 @@
                     {{ item.name || item.itemCode || 'Thiết bị test' }}
                   </div>
                   <div class="text-[10px] text-base-content/50 flex items-center gap-2 mt-0.5">
-                    <span v-if="item.packetsCount && item.packetsCount > 0">Gói: {{ item.packetsCount }}</span>
                     <span v-if="item.avgRssi != null">RSSI: {{ item.avgRssi }}</span>
                     <span v-if="item.avgSnr != null">SNR: {{ item.avgSnr }}</span>
                   </div>
@@ -432,7 +431,6 @@
                     {{ item.name || item.itemCode || 'Thiết bị test' }}
                   </div>
                   <div class="text-[10px] text-base-content/50 flex items-center justify-end gap-2 mt-0.5">
-                    <span v-if="item.packetsCount && item.packetsCount > 0">Gói: {{ item.packetsCount }}</span>
                     <span v-if="item.avgRssi != null">RSSI: {{ item.avgRssi }}</span>
                     <span v-if="item.avgSnr != null">SNR: {{ item.avgSnr }}</span>
                   </div>
