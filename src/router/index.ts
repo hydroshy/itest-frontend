@@ -43,6 +43,10 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/login',
+    redirect: '/auth/login',
+  },
+  {
     path: '/auth',
     component: AuthLayout,
     meta: { requiresAuth: false },

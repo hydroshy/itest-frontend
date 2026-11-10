@@ -29,6 +29,8 @@ httpClient.interceptors.request.use(
   }
 );
 
+let isRedirectingToLogin = false;
+
 // Response interceptor
 httpClient.interceptors.response.use(
   (response) => {
@@ -59,7 +61,52 @@ httpClient.interceptors.response.use(
       } else {
         // Authenticated request failed with 401: session truly expired
         console.warn('[HTTP 401] Phiên làm việc đã hết hạn hoặc chưa đăng nhập:', url);
-        cyberToast.warning('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        
+        // Clear stored session and tokens
+        localStorage.removeItem('itest_token');
+        localStorage.removeItem('itest_user');
+        sessionStorage.clear();
+        document.cookie = 'access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+
+        if (!isRedirectingToLogin) {
+          isRedirectingToLogin = true;
+          cyberToast.warning('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+
+          const currentPath = window.location.pathname + window.location.search;
+          const hasRedirect = currentPath && currentPath !== '/' && !currentPath.includes('/login');
+          const redirectQuery = hasRedirect ? `?redirect=${encodeURIComponent(currentPath)}` : '';
+
+          // 1. Immediately reset Pinia auth store so reactive UI hides protected content
+          import('@/stores/auth').then(({ useAuthStore }) => {
+            try {
+              const authStore = useAuthStore();
+              authStore.clearAuth();
+            } catch {}
+          }).catch(() => {});
+
+          // 2. Immediately route to Login via Vue Router if ready
+          import('@/router').then(({ router }) => {
+            if (router.currentRoute.value.name !== 'Login') {
+              router.push({
+                name: 'Login',
+                query: hasRedirect ? { redirect: currentPath } : {},
+              }).catch(() => {
+                window.location.href = `/auth/login${redirectQuery}`;
+              });
+            }
+          }).catch(() => {
+            window.location.href = `/auth/login${redirectQuery}`;
+          });
+
+          // 3. Guaranteed fallback redirect
+          setTimeout(() => {
+            if (!window.location.pathname.includes('/auth/login') && !window.location.pathname.includes('/login')) {
+              window.location.href = `/auth/login${redirectQuery}`;
+            } else {
+              isRedirectingToLogin = false;
+            }
+          }, 350);
+        }
       }
     } else if (status === 403) {
       cyberToast.error('Bạn không có quyền thực hiện thao tác này.');
