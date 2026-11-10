@@ -558,6 +558,11 @@ async function fetchIntegrationStatus() {
       }
       tokenConfigured.value = Boolean(data.tokenConfigured);
       integrationStatus.active = Boolean(data.webhookListening);
+      if (data.activeServer?.applicationId) {
+        integrationStatus.applicationId = data.activeServer.applicationId;
+      } else if (data.applicationId) {
+        integrationStatus.applicationId = data.applicationId;
+      }
     }
   } catch (err: any) {
     console.debug('[DevicePayloadPanel] fetchIntegrationStatus error:', err?.message);
