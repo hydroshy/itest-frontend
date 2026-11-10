@@ -187,13 +187,13 @@
               />
             </div>
             <div class="form-control">
-              <label class="label py-1"><span class="label-text text-xs font-semibold">Long FW</span></label>
+              <label class="label py-1"><span class="label-text text-xs font-semibold">FW Version (XXFXXXX)</span></label>
               <input
                 v-model="newDevForm.longFw"
                 type="text"
                 class="input input-bordered input-sm font-mono uppercase"
-                placeholder="VD: 5FA1B2"
-                maxlength="6"
+                placeholder="VD: 4F0505, 32F0505"
+                maxlength="35"
               />
             </div>
           </div>
@@ -368,6 +368,8 @@ async function submitRegisterModal() {
     await httpClient.post('/plugins/testing/devices', {
       ...newDevice,
       status: 'simulation',
+      isSimulation: true,
+      deviceType: 'SIMULATION',
       pluginId: 'testing',
     });
     simulationDevices.value.unshift(newDevice);

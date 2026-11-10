@@ -112,9 +112,15 @@
                 <span class="badge badge-sm badge-ghost font-mono text-[11px]">{{ row.tenantId || '—' }}</span>
                 <span v-if="row.tenantId" class="badge badge-xs badge-success/20 text-success ml-1 font-mono">Default</span>
               </td>
-              <td class="font-mono text-xs text-base-content/80">
-                <span class="badge badge-sm badge-ghost font-mono text-[11px] text-primary">{{ row.applicationId || '—' }}</span>
-                <span v-if="row.applicationId" class="badge badge-xs badge-primary/20 text-primary ml-1 font-mono">Default</span>
+              <td class="font-mono text-xs text-base-content/80 space-y-1">
+                <div class="flex items-center gap-1">
+                  <span class="badge badge-sm badge-ghost font-mono text-[11px] text-primary">{{ row.applicationId || '—' }}</span>
+                  <span v-if="row.applicationId" class="badge badge-xs badge-primary/20 text-primary font-mono">Testing</span>
+                </div>
+                <div v-if="row.simulationApplicationId" class="flex items-center gap-1">
+                  <span class="badge badge-sm badge-ghost font-mono text-[11px] text-secondary">{{ row.simulationApplicationId }}</span>
+                  <span class="badge badge-xs badge-secondary/20 text-secondary font-mono">Simulation</span>
+                </div>
               </td>
               <td class="font-mono text-xs text-base-content/80">
                 <span class="badge badge-sm badge-ghost font-mono text-[11px] text-info">Động theo Region</span>
@@ -246,7 +252,8 @@
               <tr v-for="row in applications" :key="row.id">
                 <td class="font-medium text-base-content">
                   {{ row.name }}
-                  <span v-if="row.id === activeServerAppId" class="badge badge-primary badge-xs font-mono ml-1.5">DEFAULT APP</span>
+                  <span v-if="row.id === activeServerAppId" class="badge badge-primary badge-xs font-mono ml-1.5">DEFAULT TESTING</span>
+                  <span v-if="row.id === activeServerSimAppId" class="badge badge-secondary badge-xs font-mono ml-1.5">DEFAULT SIMULATION</span>
                 </td>
                 <td><code class="text-xs font-mono text-primary bg-base-300/60 px-1.5 py-0.5 rounded">{{ row.id }}</code></td>
                 <td class="text-xs text-base-content/70">{{ row.description || '—' }}</td>
@@ -256,12 +263,23 @@
                     type="button"
                     class="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1 font-mono"
                     :disabled="settingDefaultAppId === row.id"
-                    @click="setDefaultApplication(row.id)"
+                    @click="setDefaultApplication(row.id, 'testing')"
+                    title="Đặt làm Default Application cho Testing Unit"
                   >
                     <span v-if="settingDefaultAppId === row.id" class="loading loading-spinner loading-xs"></span>
-                    ⭐ Đặt làm Default
+                    ⭐ Default Testing
                   </button>
-                  <span v-else class="text-xs font-mono text-primary font-bold">Mặc định</span>
+                  <button
+                    v-if="row.id !== activeServerSimAppId"
+                    type="button"
+                    class="btn btn-ghost btn-xs text-secondary hover:bg-secondary/10 gap-1 font-mono"
+                    :disabled="settingDefaultSimAppId === row.id"
+                    @click="setDefaultApplication(row.id, 'simulation')"
+                    title="Đặt làm Default Application cho Simulation Device"
+                  >
+                    <span v-if="settingDefaultSimAppId === row.id" class="loading loading-spinner loading-xs"></span>
+                    🚀 Default Simulation
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -467,10 +485,17 @@
           </div>
           <div class="form-control">
             <label class="label py-1">
-              <span class="label-text text-xs font-medium">Default Application ID *</span>
-              <span class="label-text-alt text-[10px] text-primary font-mono uppercase font-bold">Mặc định</span>
+              <span class="label-text text-xs font-medium">Default Application ID (Testing Unit) *</span>
+              <span class="label-text-alt text-[10px] text-primary font-mono uppercase font-bold">Testing Unit</span>
             </label>
-            <input v-model="serverForm.applicationId" type="text" placeholder="UUID hoặc ID Application mặc định (ví dụ: app-iot-monitoring)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+            <input v-model="serverForm.applicationId" type="text" placeholder="UUID hoặc ID Application đo kiểm (ví dụ: app-iot-testing)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
+          </div>
+          <div class="form-control">
+            <label class="label py-1">
+              <span class="label-text text-xs font-medium">Default Application ID (Simulation Device)</span>
+              <span class="label-text-alt text-[10px] text-secondary font-mono uppercase font-bold">Simulation Device</span>
+            </label>
+            <input v-model="serverForm.simulationApplicationId" type="text" placeholder="UUID hoặc ID Application thiết bị mô phỏng (ví dụ: app-iot-simulation)" class="input input-sm input-bordered bg-base-100 font-mono text-xs w-full" />
           </div>
           <div class="p-3 bg-base-300/40 rounded-lg border border-base-content/10 text-xs text-base-content/70 space-y-1">
             <div class="flex items-center gap-1.5 font-semibold text-info">
@@ -612,6 +637,7 @@ interface NetworkServer {
   apiToken?: string;
   tenantId?: string;
   applicationId?: string;
+  simulationApplicationId?: string;
   deviceProfileId?: string;
   version?: string;
   status: 'online' | 'offline' | 'unknown';
@@ -700,6 +726,7 @@ const deviceDialogVisible = ref(false);
 const editingServerId = ref<string | null>(null);
 const settingDefaultTenantId = ref('');
 const settingDefaultAppId = ref('');
+const settingDefaultSimAppId = ref('');
 const applicationsLoading = ref(false);
 
 const activeServerTenantId = computed(() => {
@@ -710,12 +737,17 @@ const activeServerAppId = computed(() => {
   return servers.value[0]?.applicationId || null;
 });
 
+const activeServerSimAppId = computed(() => {
+  return servers.value[0]?.simulationApplicationId || null;
+});
+
 const serverForm = reactive({
   name: '',
   apiUrl: '',
   apiToken: '',
   tenantId: '',
   applicationId: '',
+  simulationApplicationId: '',
   deviceProfileId: '',
   description: '',
 });
@@ -855,6 +887,7 @@ function resetServerForm() {
     apiToken: '',
     tenantId: '',
     applicationId: '',
+    simulationApplicationId: '',
     deviceProfileId: '',
     description: '',
   });
@@ -868,6 +901,7 @@ function openEditServerModal(row: NetworkServer) {
     apiToken: row.apiToken || '',
     tenantId: row.tenantId || '',
     applicationId: row.applicationId || '',
+    simulationApplicationId: row.simulationApplicationId || '',
     deviceProfileId: row.deviceProfileId || '',
     description: '',
   });
@@ -901,24 +935,34 @@ async function setDefaultTenant(tenantId: string) {
   }
 }
 
-async function setDefaultApplication(applicationId: string) {
+async function setDefaultApplication(applicationId: string, type: 'testing' | 'simulation' = 'testing') {
   const targetServerId = servers.value[0]?.id;
   if (!targetServerId) {
     cyberToast.warning('Vui lòng chọn hoặc cấu hình Network Server trước');
     return;
   }
-  settingDefaultAppId.value = applicationId;
+  if (type === 'testing') {
+    settingDefaultAppId.value = applicationId;
+  } else {
+    settingDefaultSimAppId.value = applicationId;
+  }
+
   try {
+    const payload = type === 'testing'
+      ? { applicationId }
+      : { simulationApplicationId: applicationId };
     await request(`/servers/${targetServerId}`, {
       method: 'PUT',
-      body: JSON.stringify({ applicationId }),
+      body: JSON.stringify(payload),
     });
-    cyberToast.success('Đã thiết lập Default Application ID thành công!');
+    const label = type === 'testing' ? 'Testing Unit' : 'Simulation Device';
+    cyberToast.success(`Đã thiết lập Default Application ID (${label}) thành công!`);
     await refreshAll();
   } catch (err: any) {
     cyberToast.error(err instanceof Error ? err.message : 'Không thể thiết lập Default Application');
   } finally {
     settingDefaultAppId.value = '';
+    settingDefaultSimAppId.value = '';
   }
 }
 
