@@ -79,7 +79,7 @@
               v-if="isTesting || testFinished"
               class="btn btn-sm btn-success gap-1.5 px-3 font-bold"
               :disabled="completingBatch || !selectedBatchId"
-              @click="completeSelectedBatch"
+              @click="openCompleteModal"
             >
               <CheckCircle2 class="w-4 h-4" />
               {{ completingBatch ? 'Đang Hoàn Thành...' : 'Hoàn Thành Test Batch' }}
@@ -302,6 +302,208 @@
         </div>
       </div>
     </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL PHÂN LOẠI KẾT QUẢ TEST BATCH (FAIL / PASS) & XÁC NHẬN HOÀN THÀNH   -->
+    <!-- ========================================================================= -->
+    <div class="modal" :class="{ 'modal-open': showCompleteModal }">
+      <div class="modal-box max-w-4xl bg-base-200 border border-base-300 p-6 flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <CheckCircle2 class="w-5 h-5 text-primary" />
+            <h3 class="text-base font-bold text-base-content uppercase">
+              Phân Loại Kết Quả Test Batch & Xác Nhận Hoàn Thành
+            </h3>
+          </div>
+          <button
+            class="btn btn-sm btn-ghost btn-circle"
+            :disabled="completingBatch"
+            @click="closeCompleteModal"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Description / Instructions -->
+        <div class="text-xs text-base-content/70 mb-3 flex items-center justify-between">
+          <span>
+            Vui lòng kiểm tra và phân loại thiết bị vào 2 cột <strong>FAIL</strong> và <strong>PASS</strong> trước khi chốt kết quả.
+          </span>
+          <div class="flex items-center gap-2">
+            <span class="badge badge-sm badge-neutral">Tổng: {{ failClassifiedDevices.length + passClassifiedDevices.length }} thiết bị</span>
+          </div>
+        </div>
+
+        <!-- Warning if testing is still active -->
+        <div v-if="isTesting" class="alert alert-warning py-2 px-3 text-xs mb-3">
+          <AlertCircle class="w-4 h-4 shrink-0" />
+          <span>Đợt test đang chạy. Xác nhận hoàn thành sẽ kết thúc đợt test, đồng bộ kết quả sang Traceability và xóa thiết bị khỏi hệ thống đo kiểm.</span>
+        </div>
+
+        <!-- 2 Cột FAIL và PASS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 overflow-hidden mb-4">
+          <!-- CỘT 1: FAIL -->
+          <div class="flex flex-col rounded-lg border border-error/30 bg-base-300/40 p-3 overflow-hidden">
+            <div class="flex items-center justify-between border-b border-error/20 pb-2 mb-2">
+              <div class="flex items-center gap-1.5">
+                <span class="badge badge-error badge-sm font-bold text-white">FAIL</span>
+                <span class="text-xs font-bold text-error">THIẾT BỊ KHÔNG ĐẠT ({{ failClassifiedDevices.length }})</span>
+              </div>
+              <button
+                v-if="failClassifiedDevices.length > 0"
+                class="btn btn-ghost btn-xs text-success hover:bg-success/10 gap-1 text-[11px]"
+                @click="moveAllToPass"
+                title="Chuyển toàn bộ sang PASS"
+              >
+                Chuyển hết sang PASS
+                <ArrowRight class="w-3 h-3" />
+              </button>
+            </div>
+
+            <!-- Danh sách thiết bị FAIL -->
+            <div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[180px] max-h-[300px]">
+              <div
+                v-if="failClassifiedDevices.length === 0"
+                class="h-full flex flex-col items-center justify-center text-xs text-base-content/40 py-8"
+              >
+                <span>Không có thiết bị FAIL</span>
+              </div>
+
+              <div
+                v-for="item in failClassifiedDevices"
+                :key="getDeviceKey(item)"
+                class="p-2.5 rounded bg-base-100 border border-error/20 hover:border-error/50 transition-colors flex items-center justify-between gap-2 shadow-sm"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 font-mono text-xs font-bold text-error truncate">
+                    <span>{{ item.serialNumber || item.devEui || 'N/A' }}</span>
+                  </div>
+                  <div class="text-[11px] text-base-content/60 truncate">
+                    {{ item.name || item.itemCode || 'Thiết bị test' }}
+                  </div>
+                  <div class="text-[10px] text-base-content/50 flex items-center gap-2 mt-0.5">
+                    <span>Gói: {{ item.packetsCount || 0 }}</span>
+                    <span v-if="item.avgRssi != null">RSSI: {{ item.avgRssi }}</span>
+                    <span v-if="item.avgSnr != null">SNR: {{ item.avgSnr }}</span>
+                  </div>
+                </div>
+
+                <button
+                  class="btn btn-xs btn-outline btn-success gap-1 shrink-0 font-medium"
+                  @click="moveToPass(item)"
+                  title="Chuyển sang PASS"
+                >
+                  <span>PASS</span>
+                  <ArrowRight class="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CỘT 2: PASS -->
+          <div class="flex flex-col rounded-lg border border-success/30 bg-base-300/40 p-3 overflow-hidden">
+            <div class="flex items-center justify-between border-b border-success/20 pb-2 mb-2">
+              <div class="flex items-center gap-1.5">
+                <span class="badge badge-success badge-sm font-bold text-white">PASS</span>
+                <span class="text-xs font-bold text-success">THIẾT BỊ ĐẠT CHUẨN ({{ passClassifiedDevices.length }})</span>
+              </div>
+              <button
+                v-if="passClassifiedDevices.length > 0"
+                class="btn btn-ghost btn-xs text-error hover:bg-error/10 gap-1 text-[11px]"
+                @click="moveAllToFail"
+                title="Chuyển toàn bộ sang FAIL"
+              >
+                <ArrowLeft class="w-3 h-3" />
+                Chuyển hết sang FAIL
+              </button>
+            </div>
+
+            <!-- Danh sách thiết bị PASS -->
+            <div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[180px] max-h-[300px]">
+              <div
+                v-if="passClassifiedDevices.length === 0"
+                class="h-full flex flex-col items-center justify-center text-xs text-base-content/40 py-8"
+              >
+                <span>Không có thiết bị PASS</span>
+              </div>
+
+              <div
+                v-for="item in passClassifiedDevices"
+                :key="getDeviceKey(item)"
+                class="p-2.5 rounded bg-base-100 border border-success/20 hover:border-success/50 transition-colors flex items-center justify-between gap-2 shadow-sm"
+              >
+                <button
+                  class="btn btn-xs btn-outline btn-error gap-1 shrink-0 font-medium"
+                  @click="moveToFail(item)"
+                  title="Chuyển sang FAIL"
+                >
+                  <ArrowLeft class="w-3 h-3" />
+                  <span>FAIL</span>
+                </button>
+
+                <div class="min-w-0 flex-1 text-right">
+                  <div class="flex items-center justify-end gap-1.5 font-mono text-xs font-bold text-success truncate">
+                    <span>{{ item.serialNumber || item.devEui || 'N/A' }}</span>
+                  </div>
+                  <div class="text-[11px] text-base-content/60 truncate">
+                    {{ item.name || item.itemCode || 'Thiết bị test' }}
+                  </div>
+                  <div class="text-[10px] text-base-content/50 flex items-center justify-end gap-2 mt-0.5">
+                    <span>Gói: {{ item.packetsCount || 0 }}</span>
+                    <span v-if="item.avgRssi != null">RSSI: {{ item.avgRssi }}</span>
+                    <span v-if="item.avgSnr != null">SNR: {{ item.avgSnr }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Field Nhập OK: Placeholder để trống, tự động in hoa chữ khi nhập vào -->
+        <div class="bg-base-100 border border-base-300 rounded-lg p-3 mb-4">
+          <div class="text-xs font-semibold text-base-content mb-2 flex items-center justify-between">
+            <span>Xác nhận hoàn thành (Nhập chữ <strong class="text-primary font-mono text-sm">OK</strong> để kích hoạt nút xác nhận):</span>
+            <span v-if="confirmOkText.trim() === 'OK'" class="badge badge-success badge-sm font-bold gap-1">
+              <CheckCircle2 class="w-3 h-3" /> HỢP LỆ
+            </span>
+            <span v-else class="text-[11px] text-warning font-medium">Chưa nhập đúng OK</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              :value="confirmOkText"
+              placeholder=""
+              autocomplete="off"
+              class="input input-bordered input-sm flex-1 font-mono font-bold tracking-widest text-base uppercase text-center"
+              style="text-transform: uppercase;"
+              @input="onConfirmOkInput"
+            />
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="modal-action mt-0 pt-2 border-t border-base-300 flex items-center justify-end gap-2">
+          <button
+            class="btn btn-sm btn-ghost"
+            :disabled="completingBatch"
+            @click="closeCompleteModal"
+          >
+            Hủy Bỏ
+          </button>
+
+          <button
+            class="btn btn-sm btn-success font-bold gap-1.5 px-4"
+            :disabled="confirmOkText.trim() !== 'OK' || completingBatch"
+            @click="confirmCompleteBatch"
+          >
+            <CheckCircle2 class="w-4 h-4" />
+            {{ completingBatch ? 'Đang Hoàn Thành...' : 'Xác Nhận Hoàn Thành' }}
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="closeCompleteModal"></div>
+    </div>
   </div>
 </template>
 
@@ -322,6 +524,8 @@ import {
   RotateCcw,
   AlertCircle,
   CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
@@ -365,6 +569,12 @@ const goldenReferenceDevices = ref<any[]>([]);
 const runningBatches = ref<any[]>([]);
 const cancellingBatch = ref(false);
 const completingBatch = ref(false);
+
+// Modal Phân Loại Kết Quả (FAIL/PASS) & Xác Nhận Hoàn Thành
+const showCompleteModal = ref(false);
+const failClassifiedDevices = ref<any[]>([]);
+const passClassifiedDevices = ref<any[]>([]);
+const confirmOkText = ref('');
 
 // Test Execution State
 const isTesting = ref(false);
@@ -1156,20 +1366,148 @@ function finishBatchTest(statusData?: any) {
   cyberToast.success(`Test Batch hoàn thành! Kết quả: ${batchVerdict.value}`);
 }
 
-async function completeSelectedBatch() {
+function getDeviceKey(item: any): string {
+  return getDeviceIdentifier(item.device || item) || item.id || item.serialNumber || item.devEui || String(Math.random());
+}
+
+function openCompleteModal() {
+  const id = selectedBatchId.value;
+  if (!id) {
+    cyberToast.warning('Vui lòng chọn hoặc bắt đầu một Test Batch trước.');
+    return;
+  }
+  if (selectedDevices.value.length === 0) {
+    cyberToast.warning('Test Batch không có thiết bị nào để hoàn thành.');
+    return;
+  }
+
+  const failList: any[] = [];
+  const passList: any[] = [];
+
+  selectedDevices.value.forEach((d) => {
+    const isExplicitPass = d.status === 'PASS' || d.verdict === 'PASS';
+    const isExplicitFail = d.status === 'FAIL' || d.verdict === 'FAIL';
+
+    let isPass = false;
+    if (isExplicitPass) {
+      isPass = true;
+    } else if (isExplicitFail) {
+      isPass = false;
+    } else {
+      isPass = (d.packetsCount || 0) > 0 && d.comparisonResult?.tolerance_pass !== false;
+    }
+
+    const itemCopy = {
+      ...d,
+      identifier: getDeviceIdentifier(d.device || d),
+      serialNumber: d.serialNumber || d.device?.serialNumber || '',
+      devEui: d.devEui || d.device?.devEui || '',
+      name: d.name || d.device?.name || '',
+      packetsCount: d.packetsCount || 0,
+      avgRssi: d.avgRssi ?? d.comparisonResult?.avg_rssi ?? null,
+      avgSnr: d.avgSnr ?? d.comparisonResult?.avg_snr ?? null,
+    };
+
+    if (isPass) {
+      passList.push(itemCopy);
+    } else {
+      failList.push(itemCopy);
+    }
+  });
+
+  failClassifiedDevices.value = failList;
+  passClassifiedDevices.value = passList;
+  confirmOkText.value = '';
+  showCompleteModal.value = true;
+}
+
+function moveToPass(item: any) {
+  const key = getDeviceKey(item);
+  const idx = failClassifiedDevices.value.findIndex((d) => getDeviceKey(d) === key);
+  if (idx !== -1) {
+    const [moved] = failClassifiedDevices.value.splice(idx, 1);
+    passClassifiedDevices.value.push(moved);
+  }
+}
+
+function moveToFail(item: any) {
+  const key = getDeviceKey(item);
+  const idx = passClassifiedDevices.value.findIndex((d) => getDeviceKey(d) === key);
+  if (idx !== -1) {
+    const [moved] = passClassifiedDevices.value.splice(idx, 1);
+    failClassifiedDevices.value.push(moved);
+  }
+}
+
+function moveAllToPass() {
+  passClassifiedDevices.value.push(...failClassifiedDevices.value);
+  failClassifiedDevices.value = [];
+}
+
+function moveAllToFail() {
+  failClassifiedDevices.value.push(...passClassifiedDevices.value);
+  passClassifiedDevices.value = [];
+}
+
+function onConfirmOkInput(e: Event) {
+  const target = e.target as HTMLInputElement;
+  confirmOkText.value = (target.value || '').toUpperCase();
+  target.value = confirmOkText.value;
+}
+
+function closeCompleteModal() {
+  if (completingBatch.value) return;
+  showCompleteModal.value = false;
+  confirmOkText.value = '';
+}
+
+async function confirmCompleteBatch() {
+  if (confirmOkText.value.trim() !== 'OK') {
+    cyberToast.warning('Vui lòng nhập chính xác chữ "OK" để xác nhận hoàn thành.');
+    return;
+  }
   const id = selectedBatchId.value;
   if (!id) return;
-  if (isTesting.value) {
-    if (!window.confirm('Đợt test đang chạy. Bạn có chắc chắn muốn hoàn thành ngay? Kết quả sẽ được ghi nhận vào Traceability và thiết bị sẽ được xóa khỏi hệ thống đo kiểm.')) {
-      return;
-    }
-  }
 
   completingBatch.value = true;
   try {
-    const res: any = await httpClient.post(`/plugins/testing/test-batches/${id}/complete`);
-    const verdict = res?.data?.verdict || batchVerdict.value || 'PASS';
-    cyberToast.success(`Đã hoàn thành Test Batch (${verdict}) và đồng bộ sang Traceability.`);
+    const classifications: Record<string, 'PASS' | 'FAIL'> = {};
+    const passDeviceIds: string[] = [];
+    const failDeviceIds: string[] = [];
+
+    passClassifiedDevices.value.forEach((d) => {
+      const key = d.id || d.serialNumber || d.devEui || d.identifier;
+      if (key) {
+        classifications[key] = 'PASS';
+        passDeviceIds.push(key);
+      }
+      if (d.serialNumber) classifications[d.serialNumber] = 'PASS';
+      if (d.devEui) classifications[d.devEui] = 'PASS';
+    });
+
+    failClassifiedDevices.value.forEach((d) => {
+      const key = d.id || d.serialNumber || d.devEui || d.identifier;
+      if (key) {
+        classifications[key] = 'FAIL';
+        failDeviceIds.push(key);
+      }
+      if (d.serialNumber) classifications[d.serialNumber] = 'FAIL';
+      if (d.devEui) classifications[d.devEui] = 'FAIL';
+    });
+
+    const res: any = await httpClient.post(`/plugins/testing/test-batches/${id}/complete`, {
+      classifications,
+      passDeviceIds,
+      failDeviceIds,
+    });
+
+    const finalVerdict = res?.data?.verdict || (failClassifiedDevices.value.length === 0 ? 'PASS' : 'FAIL');
+    cyberToast.success(
+      `Đã hoàn thành Test Batch (${finalVerdict}): ${passClassifiedDevices.value.length} ĐẠT, ${failClassifiedDevices.value.length} HỎNG và xóa thiết bị khỏi hệ thống test.`
+    );
+
+    showCompleteModal.value = false;
+    confirmOkText.value = '';
 
     resetBatchInterface();
     await loadRunningBatches();
@@ -1179,6 +1517,10 @@ async function completeSelectedBatch() {
   } finally {
     completingBatch.value = false;
   }
+}
+
+async function completeSelectedBatch() {
+  openCompleteModal();
 }
 
 function resetBatchInterface() {
