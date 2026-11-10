@@ -183,6 +183,8 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     isAdmin,
     canAccessDashboard,
+    setAuthData,
+    clearAuth,
     login,
     logout,
     updateUser,
