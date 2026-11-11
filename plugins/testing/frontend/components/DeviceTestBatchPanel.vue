@@ -207,10 +207,10 @@
         </div>
       </div>
 
-      <!-- 4. KHU VỰC 2 TABULATOR: CHIA PHÂN NỬA 50-50 CĂN CHỈNH BẰNG NHAU -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <!-- CỘT 1 (50%): TABULATOR 1 - Danh Sách Thiết Bị Trong SO (Chưa test) -->
-        <div class="flex flex-col h-full bg-base-100/40 p-3 rounded-xl border border-base-300 space-y-2">
+      <!-- 4. KHU VỰC 2 TABULATOR & NÚT ĐIỀU HƯỚNG Ở GIỮA -->
+      <div class="flex flex-col lg:flex-row gap-3 items-stretch justify-center">
+        <!-- CỘT 1: TABULATOR 1 - Danh Sách Thiết Bị Trong SO (Chưa test) -->
+        <div class="flex-1 flex flex-col bg-base-100/40 p-3 rounded-xl border border-base-300 space-y-2 min-w-0">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold uppercase tracking-wide text-base-content flex items-center gap-1.5">
@@ -220,25 +220,15 @@
               <span v-if="loadingDevices" class="loading loading-spinner loading-xs text-primary"></span>
             </div>
 
-            <div class="flex items-center gap-2">
-              <div class="relative w-44 sm:w-52">
-                <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/50" />
-                <input
-                  v-model="searchDeviceText"
-                  type="text"
-                  placeholder="Tìm Serial, DevEUI..."
-                  class="input input-xs input-bordered w-full pl-8 font-mono text-xs"
-                  @input="applyAvailableFilter"
-                />
-              </div>
-              <button
-                class="btn btn-xs btn-primary gap-1"
-                :disabled="selectedAvailableRows.length === 0 || isTesting || selectedDevices.length >= maxAllowedDevices"
-                @click="addSelectedAvailableRowsToBatch"
-                title="Chuyển các thiết bị đã chọn sang Batch"
-              >
-                + Chuyển ({{ selectedAvailableRows.length }})
-              </button>
+            <div class="relative w-44 sm:w-52">
+              <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/50" />
+              <input
+                v-model="searchDeviceText"
+                type="text"
+                placeholder="Tìm Serial, DevEUI..."
+                class="input input-xs input-bordered w-full pl-8 font-mono text-xs"
+                @input="applyAvailableFilter"
+              />
             </div>
           </div>
 
@@ -247,13 +237,47 @@
             <div ref="availableTableRef" class="w-full text-xs h-[350px]"></div>
           </div>
           <div class="text-[11px] text-base-content/60 flex items-center justify-between pt-1">
-            <span>💡 Nhấp đúp chuột vào hàng để chuyển nhanh sang Batch</span>
+            <span>💡 Chọn hàng và bấm nút chuyển giữa 2 bảng</span>
             <span v-if="selectedAvailableRows.length > 0" class="text-primary font-bold">Đã chọn: {{ selectedAvailableRows.length }} thiết bị</span>
           </div>
         </div>
 
-        <!-- CỘT 2 (50%): TABULATOR 2 - Thiết Bị Trong Test Batch -->
-        <div class="flex flex-col h-full bg-base-100/40 p-3 rounded-xl border border-base-300 space-y-2">
+        <!-- CỘT GIỮA: 2 NÚT CHUYỂN QUA LẠI GIỮA 2 TABULATOR -->
+        <div class="flex flex-row lg:flex-col items-center justify-center gap-3 p-2 self-center">
+          <button
+            type="button"
+            class="btn btn-sm btn-primary shadow-sm gap-1 w-12 h-10 lg:w-10 lg:h-12 flex items-center justify-center p-0"
+            :disabled="
+              availableDevices.length === 0 ||
+              selectedAvailableRows.length === 0 ||
+              isTesting ||
+              selectedDevices.length >= maxAllowedDevices
+            "
+            title="Chuyển thiết bị đã chọn từ SO sang Batch"
+            @click="addSelectedAvailableRowsToBatch"
+          >
+            <span class="hidden lg:inline text-base font-black">➔</span>
+            <span class="lg:hidden text-base font-black">⬇</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-sm btn-neutral shadow-sm gap-1 w-12 h-10 lg:w-10 lg:h-12 flex items-center justify-center p-0"
+            :disabled="
+              selectedDevices.length === 0 ||
+              selectedBatchRows.length === 0 ||
+              isTesting
+            "
+            title="Trả thiết bị đã chọn từ Batch về lại SO"
+            @click="removeSelectedBatchRows"
+          >
+            <span class="hidden lg:inline text-base font-black">⬅</span>
+            <span class="lg:hidden text-base font-black">⬆</span>
+          </button>
+        </div>
+
+        <!-- CỘT 2: TABULATOR 2 - Thiết Bị Trong Test Batch -->
+        <div class="flex-1 flex flex-col bg-base-100/40 p-3 rounded-xl border border-base-300 space-y-2 min-w-0">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
@@ -303,7 +327,7 @@
             <div ref="batchTableRef" class="w-full text-xs h-[350px]"></div>
           </div>
           <div class="text-[11px] text-base-content/60 flex items-center justify-between pt-1">
-            <span>💡 Nhấp đúp chuột vào hàng để bỏ khỏi Batch trả về SO</span>
+            <span>💡 Chọn hàng và bấm nút chuyển để trả về SO</span>
             <span v-if="isTesting" class="text-info font-bold animate-pulse">Đang đo kiểm telemetry...</span>
           </div>
         </div>
@@ -550,6 +574,7 @@ const availableDevicesDisplayCount = computed(() => getFilteredAvailableDevices(
 
 // Selected Batch Devices
 const selectedDevices = ref<any[]>([]);
+const selectedBatchRows = ref<any[]>([]);
 const goldenReferenceDevices = ref<any[]>([]);
 
 // Running Batches
@@ -576,6 +601,7 @@ const batchVerdict = ref('');
 let timerInterval: any = null;
 let simulationInterval: any = null;
 let runningBatchesInterval: any = null;
+let sseSource: EventSource | null = null;
 
 // Tabulator Instance Refs
 const availableTableRef = ref<HTMLDivElement | null>(null);
@@ -623,8 +649,10 @@ const requiresReferenceDevice = computed(() => {
 const isSharedRefBatch = computed(() => {
   const b = selectedBatchConfig.value;
   if (!b) return false;
+  // Hỗ trợ cả cơ chế dùng chung cũ (shareReferenceDevice) và cơ chế danh sách mới (simulationDevices)
   return Boolean(
     b.shareReferenceDevice ||
+    (Array.isArray(b.simulationDevices) && b.simulationDevices.length > 0) ||
     b.sharedReferenceDevEui ||
     b.autoCheckCriteria?.shareReferenceDevice ||
     b.autoCheckCriteria?.sharedReferenceDevEui ||
@@ -961,9 +989,18 @@ function initBatchTabulator() {
   batchTabulator = new Tabulator(batchTableRef.value, {
     data: selectedDevices.value,
     layout: 'fitColumns',
-    placeholder: 'Chưa có thiết bị nào trong Test Batch. Nhấp đúp chuột hoặc chọn từ bảng bên trái.',
+    placeholder: 'Chưa có thiết bị nào trong Test Batch. Chọn từ bảng bên trái và nhấn nút chuyển.',
     height: '350px',
+    selectableRows: true,
     columns: [
+      {
+        formatter: 'rowSelection',
+        titleFormatter: 'rowSelection',
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        width: 40,
+        headerSort: false,
+      },
       {
         title: 'STT',
         formatter: 'rownum',
@@ -971,6 +1008,20 @@ function initBatchTabulator() {
         hozAlign: 'center',
         headerHozAlign: 'center',
         headerSort: false,
+      },
+      {
+        title: 'Online',
+        field: 'isOnline',
+        width: 75,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        formatter: (cell: any) => {
+          const val = cell.getValue();
+          if (val === true) {
+            return '<span class="inline-flex items-center gap-1.5 text-success font-semibold text-xs"><span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>ON</span>';
+          }
+          return '<span class="inline-flex items-center gap-1.5 text-base-content/40 text-xs"><span class="w-2 h-2 rounded-full bg-base-content/30"></span>OFF</span>';
+        },
       },
       {
         title: 'Serial Number',
@@ -1062,26 +1113,6 @@ function initBatchTabulator() {
           ]
         : []),
       {
-        title: 'Trạng Thái',
-        field: 'status',
-        width: 90,
-        hozAlign: 'center',
-        headerHozAlign: 'center',
-        formatter: (cell) => {
-          const val = (cell.getValue() || 'PENDING').toUpperCase();
-          if (val === 'PASS' || val === 'TESTED_PASS') {
-            return '<span class="badge badge-success badge-xs font-bold">PASS</span>';
-          }
-          if (val === 'FAIL' || val === 'TESTED_FAIL') {
-            return '<span class="badge badge-error badge-xs font-bold">FAIL</span>';
-          }
-          if (val === 'RUNNING') {
-            return '<span class="badge badge-warning badge-xs animate-pulse font-bold">RUNNING</span>';
-          }
-          return '<span class="badge badge-ghost badge-xs font-bold">PENDING</span>';
-        },
-      },
-      {
         title: 'Gói',
         field: 'packetsCount',
         width: 50,
@@ -1157,6 +1188,10 @@ function initBatchTabulator() {
       removeDeviceFromBatch(getDeviceIdentifier(rowData.device || rowData));
     },
   });
+
+  batchTabulator.on('rowSelectionChanged', (data: any[]) => {
+    selectedBatchRows.value = data;
+  });
 }
 
 function getFilteredAvailableDevices() {
@@ -1205,6 +1240,7 @@ function updateTabulatorData() {
       batchTabulator.replaceData(selectedDevices.value);
     }
   });
+  refreshDeviceOnlineStatus();
 }
 
 // ============================================================================
@@ -1363,6 +1399,22 @@ function removeDeviceFromBatch(deviceId: string) {
   if (removed) {
     cyberToast.info(`Đã trả thiết bị ${removed.serialNumber} về danh sách SO`);
   }
+}
+
+function removeSelectedBatchRows() {
+  if (isTesting.value) {
+    cyberToast.warning('Batch đang chạy kiểm thử!');
+    return;
+  }
+  if (selectedBatchRows.value.length === 0) return;
+
+  const removeIds = new Set(selectedBatchRows.value.map((r) => getDeviceIdentifier(r.device || r)));
+  selectedDevices.value = selectedDevices.value.filter(
+    (s) => !removeIds.has(getDeviceIdentifier(s.device || s))
+  );
+  selectedBatchRows.value = [];
+  updateTabulatorData();
+  cyberToast.info(`Đã trả ${removeIds.size} thiết bị về lại danh sách SO`);
 }
 
 function clearBatchDevices() {
@@ -1917,12 +1969,91 @@ onMounted(async () => {
   }
 
   runningBatchesInterval = setInterval(loadRunningBatches, 5000);
+  setupBatchRealtimeSse();
 });
+
+async function refreshDeviceOnlineStatus() {
+  if (selectedDevices.value.length === 0) return;
+  const euis = selectedDevices.value
+    .map((d) => d.devEui || d.dev_eui)
+    .filter(Boolean)
+    .join(',');
+  if (!euis) return;
+
+  try {
+    const res: any = await httpClient.get('/plugins/testing/devices/status', {
+      params: { euis },
+    });
+    const statusMap = res?.data || res || {};
+    let changed = false;
+    selectedDevices.value.forEach((d) => {
+      const eui = (d.devEui || d.dev_eui || '').toUpperCase();
+      if (statusMap[eui]) {
+        const itemStatus = statusMap[eui];
+        const newOnline = Boolean(itemStatus.isOnline || itemStatus.status === 'ONLINE');
+        if (d.isOnline !== newOnline) {
+          d.isOnline = newOnline;
+          changed = true;
+        }
+      }
+    });
+    if (changed) {
+      updateTabulatorData();
+    }
+  } catch (err) {
+    console.debug('[DeviceTestBatchPanel] Error fetching devices status:', err);
+  }
+}
+
+function setupBatchRealtimeSse() {
+  if (typeof EventSource === 'undefined') return;
+  if (sseSource) {
+    sseSource.close();
+    sseSource = null;
+  }
+
+  try {
+    const apiBase = httpClient.defaults.baseURL || (import.meta as any).env?.VITE_API_BASE_URL || '/api/v1';
+    const resolved = new URL(apiBase, window.location.origin);
+    const sseUrl = `${resolved.origin}/api/realtime/stream`;
+
+    sseSource = new EventSource(sseUrl);
+    sseSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        let incomingEui = '';
+        if (payload?.type === 'plugin' && payload.data?.event === 'testing:packet:received') {
+          const raw = payload.data.packet || payload.data.data || payload.data;
+          incomingEui = raw?.devEui || raw?.dev_eui || raw?.deviceEui || '';
+        } else if (payload?.type === 'telemetry' || payload?.type === 'unified_telemetry') {
+          incomingEui = payload.data?.devEui || payload.data?.dev_eui || '';
+        }
+
+        if (incomingEui) {
+          const clean = incomingEui.toUpperCase().trim();
+          const target = selectedDevices.value.find((d) => (d.devEui || d.dev_eui || '').toUpperCase().trim() === clean);
+          if (target && !target.isOnline) {
+            target.isOnline = true;
+            updateTabulatorData();
+          }
+        }
+      } catch (e) {
+        // ignore parse error
+      }
+    };
+  } catch (err) {
+    console.debug('[DeviceTestBatchPanel] Cannot init SSE:', err);
+  }
+}
 
 onBeforeUnmount(() => {
   clearInterval(timerInterval);
   clearInterval(simulationInterval);
   clearInterval(runningBatchesInterval);
+  if (sseSource) {
+    sseSource.close();
+    sseSource = null;
+  }
   if (availableTabulator) availableTabulator.destroy();
   if (batchTabulator) batchTabulator.destroy();
 });

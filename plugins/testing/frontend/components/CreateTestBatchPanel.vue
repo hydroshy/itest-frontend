@@ -249,53 +249,44 @@
           </div>
         </div>
 
-        <!-- Tích chọn chung thiết bị simulation / tham chiếu -->
+        <!-- Tích chọn danh sách thiết bị simulation / tham chiếu cho Batch -->
         <div v-if="selectedFlowData" class="p-3 bg-base-100/90 border border-base-300 rounded-lg space-y-2.5">
-          <div class="form-control">
-            <label class="label cursor-pointer justify-start gap-3 py-1">
-              <input
-                v-model="batchForm.shareReferenceDevice"
-                type="checkbox"
-                class="checkbox checkbox-primary checkbox-sm"
-              />
-              <span class="label-text text-xs font-semibold text-base-content flex items-center gap-1.5">
-                <Layers class="w-3.5 h-3.5 text-primary" />
-                Tích chọn chung thiết bị simulation cho test batch
-                <span class="text-base-content/50 font-normal">(để trống là không chung)</span>
-              </span>
-            </label>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
+              <Layers class="w-3.5 h-3.5 text-primary" />
+              Cấu Hình Thiết Bị Simulation / Tham Chiếu
+            </span>
           </div>
 
-          <!-- Khi tích chọn chung: hiển thị danh sách thiết bị simulation để chọn -->
-          <div v-if="batchForm.shareReferenceDevice" class="pl-7 space-y-2">
-            <p class="text-[11px] text-base-content/70 leading-relaxed">
-              Chung thiết bị tham chiếu có nghĩa khi chạy test batch thì sẽ chỉ downlink hoặc thực hiện chung lấy giá trị từ 1 thiết bị, khi chọn device test batch thì sẽ chọn chung cho 1 lần tất cả thiết bị có trong list test batch.
+          <div class="space-y-2">
+            <p class="text-[11px] text-base-content/70">
+              Chọn danh sách các thiết bị simulation sẽ dùng cho đợt test batch này.
             </p>
             <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs font-semibold text-primary">
-                  Chọn thiết bị simulation / tham chiếu dùng chung:
-                </span>
-              </label>
               <select
-                v-model="batchForm.sharedReferenceDevEui"
                 class="select select-sm select-bordered w-full font-mono text-xs bg-base-100"
-                @change="onSharedDeviceSelect"
+                @change="addSimulationDevice($event)"
               >
-                <option value="">-- Chọn thiết bị simulation (List Device Simulation) --</option>
+                <option value="">-- Thêm thiết bị simulation vào danh sách --</option>
                 <option
-                  v-for="simDev in simulationDevicesList"
+                  v-for="simDev in simulationDevicesList.filter(d => !batchForm.selectedSimulationDevices.some(s => s.devEui === d.devEui))"
                   :key="simDev.devEui"
                   :value="simDev.devEui"
                 >
-                  {{ simDev.devEui }} - {{ simDev.name || simDev.serialNumber || 'Thiết bị' }} ({{ simDev.region || 'LoRaWAN' }})
+                  {{ simDev.devEui }} - {{ simDev.name || simDev.serialNumber || 'Thiết bị' }}
                 </option>
               </select>
             </div>
-            <div v-if="selectedSharedDev" class="text-xs bg-primary/10 p-2 rounded border border-primary/20 flex items-center gap-2">
-              <span class="badge badge-primary badge-xs font-mono font-bold">ĐÃ CHỌN CHUNG</span>
-              <span class="font-mono font-bold text-primary">{{ selectedSharedDev.devEui }}</span>
-              <span class="text-base-content/80 text-[11px]">({{ selectedSharedDev.name || selectedSharedDev.serialNumber }})</span>
+
+            <div class="flex flex-wrap gap-2 pt-1">
+              <div
+                v-for="dev in batchForm.selectedSimulationDevices"
+                :key="dev.devEui"
+                class="badge badge-primary badge-outline text-[11px] gap-1.5 py-3"
+              >
+                {{ dev.devEui }}
+                <button type="button" @click="removeSimulationDevice(dev.devEui)">✕</button>
+              </div>
             </div>
           </div>
         </div>
@@ -339,29 +330,26 @@ const batchForm = reactive({
   maxDevices: 10,
   flowDurationSeconds: 0,
   simuId: '',
-  shareReferenceDevice: false,
-  sharedReferenceDeviceId: '',
-  sharedReferenceDevEui: '',
-  sharedReferenceDeviceName: '',
+  selectedSimulationDevices: [] as any[], // Danh sách thiết bị simulation đã chọn
 });
 
-// Available Simulation Devices (loaded dynamically from LIST DEVICE SIMULATION)
 const simulationDevicesList = ref<any[]>([]);
 
-const selectedSharedDev = computed(() => {
-  if (!batchForm.sharedReferenceDevEui) return null;
-  return simulationDevicesList.value.find((d) => d.devEui === batchForm.sharedReferenceDevEui) || null;
-});
-
-function onSharedDeviceSelect() {
-  const found = simulationDevicesList.value.find((d) => d.devEui === batchForm.sharedReferenceDevEui);
-  if (found) {
-    batchForm.sharedReferenceDeviceId = found.id || '';
-    batchForm.sharedReferenceDeviceName = found.name || found.serialNumber || '';
-  } else {
-    batchForm.sharedReferenceDeviceId = '';
-    batchForm.sharedReferenceDeviceName = '';
+function addSimulationDevice(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  const devEui = target.value;
+  if (!devEui) return;
+  const dev = simulationDevicesList.value.find((d) => d.devEui === devEui);
+  if (dev && !batchForm.selectedSimulationDevices.some((s) => s.devEui === devEui)) {
+    batchForm.selectedSimulationDevices.push(dev);
   }
+  target.value = ''; // Reset select
+}
+
+function removeSimulationDevice(devEui: string) {
+  batchForm.selectedSimulationDevices = batchForm.selectedSimulationDevices.filter(
+    (d) => d.devEui !== devEui
+  );
 }
 
 async function loadSimulationDevices() {
@@ -462,10 +450,7 @@ function resetForm() {
   batchForm.maxDevices = 10;
   batchForm.simuId = '';
   batchForm.flowDurationSeconds = 0;
-  batchForm.shareReferenceDevice = false;
-  batchForm.sharedReferenceDeviceId = '';
-  batchForm.sharedReferenceDevEui = '';
-  batchForm.sharedReferenceDeviceName = '';
+  batchForm.selectedSimulationDevices = [];
   cyberToast.info('Đã làm mới form tạo Test Batch');
 }
 
@@ -496,11 +481,6 @@ async function saveTestBatch() {
     return;
   }
 
-  if (batchForm.shareReferenceDevice && !batchForm.sharedReferenceDevEui) {
-    cyberToast.warning('Bạn đã tích chọn dùng chung thiết bị, vui lòng chọn một thiết bị simulation trong danh sách!');
-    return;
-  }
-
   saving.value = true;
   const payload = {
     batchCode: batchForm.batchCode,
@@ -513,10 +493,7 @@ async function saveTestBatch() {
     simuId: batchForm.simuId,
     simulationFlow: selectedFlowData.value?.flowBlocks || selectedFlowData.value || (batchForm.simuId ? { id: batchForm.simuId } : undefined),
     autoCheckCriteria: selectedFlowData.value?.autoCheckCriteria || selectedFlowData.value?.criteria || undefined,
-    shareReferenceDevice: batchForm.shareReferenceDevice,
-    sharedReferenceDeviceId: batchForm.shareReferenceDevice ? (batchForm.sharedReferenceDeviceId || undefined) : undefined,
-    sharedReferenceDevEui: batchForm.shareReferenceDevice ? (batchForm.sharedReferenceDevEui || undefined) : undefined,
-    sharedReferenceDeviceName: batchForm.shareReferenceDevice ? (batchForm.sharedReferenceDeviceName || undefined) : undefined,
+    simulationDevices: batchForm.selectedSimulationDevices,
     status: 'READY',
   };
 
