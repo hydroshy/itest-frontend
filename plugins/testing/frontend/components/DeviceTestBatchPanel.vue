@@ -634,13 +634,18 @@ const requiresReferenceDevice = computed(() => {
   if (!b) return false;
   if (b.requiresReferenceDevice === true) return true;
   if (Array.isArray(b.referenceDevices) && b.referenceDevices.length > 0) return true;
+  if (Array.isArray(b.reference_devices) && b.reference_devices.length > 0) return true;
   if (b.simulationFlow?.requiresGoldenReference === true) return true;
   if (Array.isArray(b.simulationFlow?.referenceDevices) && b.simulationFlow.referenceDevices.length > 0) return true;
+  if (Array.isArray(b.simulationFlow?.reference_devices) && b.simulationFlow.reference_devices.length > 0) return true;
 
   const blocks = Array.isArray(b.simulationFlow)
     ? b.simulationFlow
     : (Array.isArray(b.simulationFlow?.flowBlocks) ? b.simulationFlow.flowBlocks : []);
-  if (blocks.some((bl: any) => (bl.targetDevice || bl.target || '').toUpperCase() === 'REF')) {
+  if (blocks.some((bl: any) => {
+    const t = (bl.targetDevice || bl.target || '').toUpperCase();
+    return t === 'REF' || t === 'REFERENCE' || t === 'SIMU' || t === 'SIMULATOR' || t.startsWith('REF');
+  })) {
     return true;
   }
   return false;
@@ -671,22 +676,76 @@ const sharedReferenceDevEui = computed(() => {
   ).toUpperCase();
 });
 
-const flowReferenceCount = computed(() => {
+const configuredFlowReferenceDevices = computed<Array<{ id?: string; name: string; key: string; index: number }>>(() => {
   const b = selectedBatchConfig.value;
-  if (Array.isArray(b?.referenceDevices) && b.referenceDevices.length > 0) {
-    return b.referenceDevices.length;
+  if (!b) return [];
+
+  let list: any[] = [];
+  if (Array.isArray(b.referenceDevices) && b.referenceDevices.length > 0) {
+    list = b.referenceDevices;
+  } else if (typeof b.referenceDevices === 'string') {
+    try { list = JSON.parse(b.referenceDevices); } catch {}
+  } else if (Array.isArray(b.reference_devices) && b.reference_devices.length > 0) {
+    list = b.reference_devices;
+  } else if (typeof b.reference_devices === 'string') {
+    try { list = JSON.parse(b.reference_devices); } catch {}
+  } else if (Array.isArray(b.simulationFlow?.referenceDevices) && b.simulationFlow.referenceDevices.length > 0) {
+    list = b.simulationFlow.referenceDevices;
+  } else if (Array.isArray(b.simulationFlow?.reference_devices) && b.simulationFlow.reference_devices.length > 0) {
+    list = b.simulationFlow.reference_devices;
+  } else if (Array.isArray(b.autoCheckCriteria?.reference_devices) && b.autoCheckCriteria.reference_devices.length > 0) {
+    list = b.autoCheckCriteria.reference_devices;
   }
-  if (Array.isArray(b?.simulationFlow?.referenceDevices) && b.simulationFlow.referenceDevices.length > 0) {
-    return b.simulationFlow.referenceDevices.length;
+
+  if (list.length > 0) {
+    return list.map((item, idx) => {
+      const name = item.reference_name || item.referenceName || item.name || `REF ${idx + 1}`;
+      const id = item.id || item.devEui || item.dev_eui || '';
+      return {
+        id,
+        name,
+        key: `ref_${idx}_${name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`,
+        index: idx,
+      };
+    });
   }
-  const blocks = Array.isArray(b?.simulationFlow)
+
+  // Check flowBlocks
+  const blocks = Array.isArray(b.simulationFlow)
     ? b.simulationFlow
-    : (Array.isArray(b?.simulationFlow?.flowBlocks) ? b.simulationFlow.flowBlocks : []);
-  const refBlocks = blocks.filter((bl: any) => (bl.targetDevice || bl.target || '').toUpperCase() === 'REF');
-  if (refBlocks.length > 0) {
-    return refBlocks.length;
+    : (Array.isArray(b.simulationFlow?.flowBlocks) ? b.simulationFlow.flowBlocks : []);
+
+  const refNames = new Set<string>();
+  blocks.forEach((bl: any) => {
+    const target = (bl.targetDevice || bl.target || '').trim();
+    if (target && target.toUpperCase() !== 'DUT' && !target.toUpperCase().startsWith('ALL')) {
+      if (['REF', 'REFERENCE', 'SIMU', 'SIMULATOR'].includes(target.toUpperCase()) || target.toUpperCase().startsWith('REF')) {
+        refNames.add(target);
+      }
+    }
+  });
+
+  if (refNames.size > 0) {
+    return Array.from(refNames).map((name, idx) => ({
+      name,
+      key: `ref_${idx}_${name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`,
+      index: idx,
+    }));
   }
-  return 0;
+
+  if (requiresReferenceDevice.value) {
+    return [{
+      name: 'REF',
+      key: 'ref_0_default',
+      index: 0,
+    }];
+  }
+
+  return [];
+});
+
+const flowReferenceCount = computed(() => {
+  return configuredFlowReferenceDevices.value.length;
 });
 
 const availableRefDevices = computed(() => {
@@ -695,7 +754,7 @@ const availableRefDevices = computed(() => {
 
 const isSharedReferenceDevice = isSharedRefBatch;
 
-watch(requiresReferenceDevice, () => {
+watch([requiresReferenceDevice, () => configuredFlowReferenceDevices.value.length], () => {
   nextTick(() => {
     initBatchTabulator();
   });
@@ -973,6 +1032,134 @@ function initAvailableTabulator() {
   });
 }
 
+function buildReferenceDeviceColumns(): any[] {
+  const refList = configuredFlowReferenceDevices.value;
+  if (!requiresReferenceDevice.value || refList.length === 0) return [];
+
+  return refList.map((refDef, refIndex) => {
+    const isMultiple = refList.length > 1;
+    const title = isMultiple ? `Tham Chiếu (${refDef.name})` : 'Thiết Bị Tham Chiếu (REF)';
+    const fieldKey = `refDevEui_${refDef.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+    return {
+      title,
+      field: fieldKey,
+      widthGrow: 2.2,
+      minWidth: 195,
+      headerSort: false,
+      formatter: (cell: any) => {
+        const row = cell.getRow().getData();
+        if (!row.referenceDevicesMap) {
+          row.referenceDevicesMap = {};
+        }
+
+        let assigned = row.referenceDevicesMap[refDef.name];
+        if (!assigned && refIndex === 0 && row.referenceDevEui) {
+          assigned = {
+            id: row.referenceDeviceId,
+            devEui: row.referenceDevEui,
+            serialNumber: row.referenceSerialNumber,
+            name: refDef.name,
+          };
+          row.referenceDevicesMap[refDef.name] = assigned;
+        }
+
+        const curEui = (assigned?.devEui || (refIndex === 0 ? row.referenceDevEui : '') || '').toUpperCase();
+        const curId = assigned?.id || (refIndex === 0 ? row.referenceDeviceId : '') || '';
+        const refListOptions = availableRefDevices.value;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'w-full flex items-center gap-1';
+
+        const select = document.createElement('select');
+        select.className = 'select select-bordered select-xs w-full font-mono text-xs';
+        if (isTesting.value) select.disabled = true;
+
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = `-- Chọn ${refDef.name} --`;
+        select.appendChild(defaultOpt);
+
+        refListOptions.forEach((ref) => {
+          const opt = document.createElement('option');
+          opt.value = ref.devEui || ref.id;
+          opt.textContent = `${ref.serialNumber ? ref.serialNumber + ' - ' : ''}${ref.devEui}`;
+          if (curEui === ref.devEui || (curId && curId === ref.id)) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        });
+
+        select.addEventListener('change', (e) => {
+          e.stopPropagation();
+          const chosenVal = select.value;
+          const chosen = refListOptions.find((r) => r.devEui === chosenVal || r.id === chosenVal);
+
+          const newAssigned = chosen
+            ? {
+                id: chosen.id,
+                devEui: chosen.devEui,
+                serialNumber: chosen.serialNumber,
+                device: chosen,
+                name: refDef.name,
+              }
+            : null;
+
+          if (isSharedRefBatch.value) {
+            selectedDevices.value.forEach((targetItem) => {
+              if (!targetItem.referenceDevicesMap) targetItem.referenceDevicesMap = {};
+              if (newAssigned) {
+                targetItem.referenceDevicesMap[refDef.name] = { ...newAssigned };
+              } else {
+                delete targetItem.referenceDevicesMap[refDef.name];
+              }
+
+              if (refIndex === 0) {
+                targetItem.referenceDeviceId = chosen?.id || null;
+                targetItem.referenceDevEui = chosen?.devEui || '';
+                targetItem.referenceSerialNumber = chosen?.serialNumber || '';
+                targetItem.referenceDevice = chosen || null;
+              }
+            });
+            updateTabulatorData();
+            if (chosen?.devEui) {
+              cyberToast.info(`Đã gán ${refDef.name}: ${chosen.devEui} cho toàn bộ ${selectedDevices.value.length} thiết bị.`);
+            }
+          } else {
+            const dutId = getDeviceIdentifier(row.device || row);
+            const targetItem = selectedDevices.value.find(
+              (d) => getDeviceIdentifier(d.device || d) === dutId
+            );
+            if (targetItem) {
+              if (!targetItem.referenceDevicesMap) targetItem.referenceDevicesMap = {};
+              if (newAssigned) {
+                targetItem.referenceDevicesMap[refDef.name] = { ...newAssigned };
+              } else {
+                delete targetItem.referenceDevicesMap[refDef.name];
+              }
+
+              if (refIndex === 0) {
+                targetItem.referenceDeviceId = chosen?.id || null;
+                targetItem.referenceDevEui = chosen?.devEui || '';
+                targetItem.referenceSerialNumber = chosen?.serialNumber || '';
+                targetItem.referenceDevice = chosen || null;
+                row.referenceDeviceId = targetItem.referenceDeviceId;
+                row.referenceDevEui = targetItem.referenceDevEui;
+                row.referenceSerialNumber = targetItem.referenceSerialNumber;
+                row.referenceDevice = targetItem.referenceDevice;
+              }
+              row.referenceDevicesMap = targetItem.referenceDevicesMap;
+            }
+          }
+        });
+
+        wrapper.appendChild(select);
+        return wrapper;
+      },
+    };
+  });
+}
+
 function initBatchTabulator() {
   if (!batchTableRef.value) return;
   if (batchTabulator) {
@@ -1017,81 +1204,6 @@ function initBatchTabulator() {
         minWidth: 115,
         formatter: (cell) => `<span class="font-mono text-xs text-base-content/80">${cell.getValue() || '—'}</span>`,
       },
-      ...(requiresReferenceDevice.value
-        ? [
-            {
-              title: 'Thiết Bị Tham Chiếu (REF)',
-              field: 'referenceDevEui',
-              widthGrow: 2.2,
-              minWidth: 200,
-              formatter: (cell: any) => {
-                const row = cell.getRow().getData();
-                const curEui = (row.referenceDevEui || '').toUpperCase();
-                const curId = row.referenceDeviceId || '';
-                const refList = availableRefDevices.value;
-
-                const wrapper = document.createElement('div');
-                wrapper.className = 'w-full flex items-center gap-1';
-
-                const select = document.createElement('select');
-                select.className = 'select select-bordered select-xs w-full font-mono text-xs';
-                if (isTesting.value) select.disabled = true;
-
-                const defaultOpt = document.createElement('option');
-                defaultOpt.value = '';
-                defaultOpt.textContent = '-- Chọn thiết bị REF --';
-                select.appendChild(defaultOpt);
-
-                refList.forEach((ref) => {
-                  const opt = document.createElement('option');
-                  opt.value = ref.devEui || ref.id;
-                  opt.textContent = `${ref.serialNumber ? ref.serialNumber + ' - ' : ''}${ref.devEui}`;
-                  if (curEui === ref.devEui || (curId && curId === ref.id)) {
-                    opt.selected = true;
-                  }
-                  select.appendChild(opt);
-                });
-
-                select.addEventListener('change', (e) => {
-                  e.stopPropagation();
-                  const chosenVal = select.value;
-                  const chosen = refList.find((r) => r.devEui === chosenVal || r.id === chosenVal);
-
-                  if (isSharedRefBatch.value) {
-                    selectedDevices.value.forEach((targetItem) => {
-                      targetItem.referenceDeviceId = chosen?.id || null;
-                      targetItem.referenceDevEui = chosen?.devEui || '';
-                      targetItem.referenceSerialNumber = chosen?.serialNumber || '';
-                      targetItem.referenceDevice = chosen || null;
-                    });
-                    updateTabulatorData();
-                    if (chosen?.devEui) {
-                      cyberToast.info(`Đã gán chung thiết bị REF ${chosen.devEui} cho toàn bộ ${selectedDevices.value.length} thiết bị trong Batch.`);
-                    }
-                  } else {
-                    const dutId = getDeviceIdentifier(row.device || row);
-                    const targetItem = selectedDevices.value.find(
-                      (d) => getDeviceIdentifier(d.device || d) === dutId
-                    );
-                    if (targetItem) {
-                      targetItem.referenceDeviceId = chosen?.id || null;
-                      targetItem.referenceDevEui = chosen?.devEui || '';
-                      targetItem.referenceSerialNumber = chosen?.serialNumber || '';
-                      targetItem.referenceDevice = chosen || null;
-                      row.referenceDeviceId = targetItem.referenceDeviceId;
-                      row.referenceDevEui = targetItem.referenceDevEui;
-                      row.referenceSerialNumber = targetItem.referenceSerialNumber;
-                      row.referenceDevice = targetItem.referenceDevice;
-                    }
-                  }
-                });
-
-                wrapper.appendChild(select);
-                return wrapper;
-              },
-            },
-          ]
-        : []),
       {
         title: 'Gói',
         field: 'packetsCount',
@@ -1142,6 +1254,7 @@ function initBatchTabulator() {
           return '<span class="text-xs text-base-content/40 font-mono">—</span>';
         },
       },
+      ...buildReferenceDeviceColumns(),
       {
         title: 'Bỏ',
         width: 50,
@@ -1265,26 +1378,44 @@ function addSingleDeviceToBatch(deviceRow: any) {
 
   if (requiresReferenceDevice.value && availableRefDevices.value.length > 0) {
     const idx = selectedDevices.value.length - 1;
-    let refDev = null;
+    const targetItem = selectedDevices.value[idx];
+    if (!targetItem.referenceDevicesMap) targetItem.referenceDevicesMap = {};
+
+    const refDefs = configuredFlowReferenceDevices.value;
+    let commonRef = null;
     if (isSharedRefBatch.value) {
       if (sharedReferenceDevEui.value) {
-        refDev = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
+        commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
       }
-      if (!refDev && selectedDevices.value.length > 1) {
+      if (!commonRef && selectedDevices.value.length > 1) {
         const firstEui = selectedDevices.value[0]?.referenceDevEui;
-        if (firstEui) refDev = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === firstEui.toUpperCase()) || null;
+        if (firstEui) commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === firstEui.toUpperCase()) || null;
       }
-      if (!refDev) refDev = availableRefDevices.value[0];
-    } else {
-      refDev = availableRefDevices.value[idx % availableRefDevices.value.length];
+      if (!commonRef) commonRef = availableRefDevices.value[0];
     }
 
-    if (refDev) {
-      selectedDevices.value[idx].referenceDeviceId = refDev.id;
-      selectedDevices.value[idx].referenceDevEui = refDev.devEui;
-      selectedDevices.value[idx].referenceSerialNumber = refDev.serialNumber;
-      selectedDevices.value[idx].referenceDevice = refDev;
-    }
+    refDefs.forEach((refDef, rIdx) => {
+      const refDev = isSharedRefBatch.value
+        ? (commonRef || availableRefDevices.value[rIdx % availableRefDevices.value.length])
+        : availableRefDevices.value[(idx + rIdx) % availableRefDevices.value.length];
+
+      if (refDev) {
+        targetItem.referenceDevicesMap[refDef.name] = {
+          id: refDev.id,
+          devEui: refDev.devEui,
+          serialNumber: refDev.serialNumber,
+          device: refDev,
+          name: refDef.name,
+        };
+
+        if (rIdx === 0) {
+          targetItem.referenceDeviceId = refDev.id;
+          targetItem.referenceDevEui = refDev.devEui;
+          targetItem.referenceSerialNumber = refDev.serialNumber;
+          targetItem.referenceDevice = refDev;
+        }
+      }
+    });
   }
 
   selectedAvailableRows.value = selectedAvailableRows.value.filter(
@@ -1345,16 +1476,34 @@ function addSelectedAvailableRowsToBatch() {
       if (!commonRef) commonRef = availableRefDevices.value[0];
     }
 
+    const refDefs = configuredFlowReferenceDevices.value;
     selectedDevices.value.forEach((item, idx) => {
-      if (!item.referenceDevEui || isSharedRefBatch.value) {
-        const refDev = isSharedRefBatch.value ? commonRef : availableRefDevices.value[idx % availableRefDevices.value.length];
-        if (refDev) {
-          item.referenceDeviceId = refDev.id;
-          item.referenceDevEui = refDev.devEui;
-          item.referenceSerialNumber = refDev.serialNumber;
-          item.referenceDevice = refDev;
+      if (!item.referenceDevicesMap) item.referenceDevicesMap = {};
+
+      refDefs.forEach((refDef, rIdx) => {
+        const currentAssigned = item.referenceDevicesMap[refDef.name];
+        if (!currentAssigned || isSharedRefBatch.value) {
+          const refDev = isSharedRefBatch.value
+            ? (commonRef || availableRefDevices.value[rIdx % availableRefDevices.value.length])
+            : availableRefDevices.value[(idx + rIdx) % availableRefDevices.value.length];
+          if (refDev) {
+            item.referenceDevicesMap[refDef.name] = {
+              id: refDev.id,
+              devEui: refDev.devEui,
+              serialNumber: refDev.serialNumber,
+              device: refDev,
+              name: refDef.name,
+            };
+
+            if (rIdx === 0) {
+              item.referenceDeviceId = refDev.id;
+              item.referenceDevEui = refDev.devEui;
+              item.referenceSerialNumber = refDev.serialNumber;
+              item.referenceDevice = refDev;
+            }
+          }
         }
-      }
+      });
     });
   }
 
@@ -1413,6 +1562,7 @@ function autoAssignReferenceDevices() {
     return;
   }
 
+  const refDefs = configuredFlowReferenceDevices.value;
   let commonRef = null;
   if (isSharedRefBatch.value) {
     if (sharedReferenceDevEui.value) {
@@ -1422,13 +1572,29 @@ function autoAssignReferenceDevices() {
   }
 
   selectedDevices.value.forEach((item, idx) => {
-    const refDev = isSharedRefBatch.value ? commonRef : availableRefDevices.value[idx % availableRefDevices.value.length];
-    if (refDev) {
-      item.referenceDeviceId = refDev.id;
-      item.referenceDevEui = refDev.devEui;
-      item.referenceSerialNumber = refDev.serialNumber;
-      item.referenceDevice = refDev;
-    }
+    if (!item.referenceDevicesMap) item.referenceDevicesMap = {};
+
+    refDefs.forEach((refDef, rIdx) => {
+      const refDev = isSharedRefBatch.value
+        ? (commonRef || availableRefDevices.value[rIdx % availableRefDevices.value.length])
+        : availableRefDevices.value[(idx + rIdx) % availableRefDevices.value.length];
+      if (refDev) {
+        item.referenceDevicesMap[refDef.name] = {
+          id: refDev.id,
+          devEui: refDev.devEui,
+          serialNumber: refDev.serialNumber,
+          device: refDev,
+          name: refDef.name,
+        };
+
+        if (rIdx === 0) {
+          item.referenceDeviceId = refDev.id;
+          item.referenceDevEui = refDev.devEui;
+          item.referenceSerialNumber = refDev.serialNumber;
+          item.referenceDevice = refDev;
+        }
+      }
+    });
   });
   updateTabulatorData();
   cyberToast.success('Đã tự động gán thiết bị tham chiếu cho các thiết bị trong batch');
@@ -1449,14 +1615,31 @@ async function startBatchTest() {
 
   // Nếu flow yêu cầu thiết bị tham chiếu (REF), mỗi DUT phải chọn thiết bị tham chiếu với DevEUI hợp lệ
   if (requiresReferenceDevice.value) {
-    const invalidRefDev = selectedDevices.value.find(
-      (d) => !/^[0-9a-fA-F]{16}$/.test((d.referenceDevEui || '').trim())
-    );
-    if (invalidRefDev) {
-      cyberToast.warning(
-        `Thiết bị ${invalidRefDev.serialNumber} chưa chọn thiết bị tham chiếu với DevEUI hợp lệ (16 ký tự HEX)!`
+    const refDefs = configuredFlowReferenceDevices.value;
+    if (refDefs.length > 0) {
+      for (const refDef of refDefs) {
+        const invalidDev = selectedDevices.value.find((d) => {
+          const assigned = d.referenceDevicesMap?.[refDef.name];
+          const eui = assigned?.devEui || (refDef.index === 0 ? d.referenceDevEui : '');
+          return !/^[0-9a-fA-F]{16}$/.test((eui || '').trim());
+        });
+        if (invalidDev) {
+          cyberToast.warning(
+            `Thiết bị ${invalidDev.serialNumber} chưa chọn thiết bị tham chiếu [${refDef.name}] với DevEUI hợp lệ (16 ký tự HEX)!`
+          );
+          return;
+        }
+      }
+    } else {
+      const invalidRefDev = selectedDevices.value.find(
+        (d) => !/^[0-9a-fA-F]{16}$/.test((d.referenceDevEui || '').trim())
       );
-      return;
+      if (invalidRefDev) {
+        cyberToast.warning(
+          `Thiết bị ${invalidRefDev.serialNumber} chưa chọn thiết bị tham chiếu với DevEUI hợp lệ (16 ký tự HEX)!`
+        );
+        return;
+      }
     }
   }
 
@@ -1480,17 +1663,33 @@ async function startBatchTest() {
     soNumber: selectedSoNumber.value,
     waNumber: selectedBatchConfig.value?.waNumber || '',
     requiresReferenceDevice: requiresReferenceDevice.value,
-    devices: selectedDevices.value.map((item) => ({
-      serialNumber: item.serialNumber,
-      devEui: item.devEui,
-      itemCode: item.itemCode,
-      fwVersion: item.fwVersion,
-      soNumber: selectedSoNumber.value,
-      referenceDeviceId: item.referenceDeviceId || null,
-      referenceDevEui: (item.referenceDevEui || '').trim() || null,
-      referenceSerialNumber: item.referenceSerialNumber || item.referenceDevEui || null,
-      referenceDeviceName: item.referenceDeviceName || null,
-    })),
+    devices: selectedDevices.value.map((item) => {
+      const refDefs = configuredFlowReferenceDevices.value;
+      const refData = refDefs.map((refDef) => {
+        const assigned = item.referenceDevicesMap?.[refDef.name];
+        return {
+          referenceName: refDef.name,
+          reference_name: refDef.name,
+          devEui: (assigned?.devEui || (refDef.index === 0 ? item.referenceDevEui : '') || '').trim().toUpperCase(),
+          serialNumber: assigned?.serialNumber || (refDef.index === 0 ? item.referenceSerialNumber : '') || '',
+          id: assigned?.id || (refDef.index === 0 ? item.referenceDeviceId : null),
+        };
+      });
+
+      return {
+        serialNumber: item.serialNumber,
+        devEui: item.devEui,
+        itemCode: item.itemCode,
+        fwVersion: item.fwVersion,
+        soNumber: selectedSoNumber.value,
+        referenceDeviceId: item.referenceDeviceId || null,
+        referenceDevEui: (item.referenceDevEui || '').trim() || null,
+        referenceSerialNumber: item.referenceSerialNumber || item.referenceDevEui || null,
+        referenceDeviceName: item.referenceDeviceName || null,
+        referenceDevicesData: refData,
+        simulationDevicesData: refData,
+      };
+    }),
   };
 
   try {
