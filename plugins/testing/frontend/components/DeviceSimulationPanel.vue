@@ -536,8 +536,10 @@
                 <input
                   v-model="rule.measurement_window_id"
                   type="text"
+                  list="autocheck-flow-windows"
                   class="input input-bordered input-xs w-full font-mono text-xs uppercase"
                   placeholder=""
+                  @input="onAutoCheckWindowInput(rule)"
                 />
               </div>
               <div class="form-control">
@@ -584,8 +586,10 @@
                   v-else
                   v-model="rule.measurement_window_id"
                   type="text"
+                  list="autocheck-flow-windows"
                   class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-                  placeholder=""
+                  placeholder="Mã Window ID..."
+                  @input="onAutoCheckWindowInput(rule)"
                 />
               </div>
             </template>
@@ -618,6 +622,16 @@
             </template>
           </div>
         </div>
+
+        <datalist id="autocheck-flow-windows">
+          <option
+            v-for="w in availableFlowWindows"
+            :key="w.windowId"
+            :value="w.windowId"
+          >
+            {{ w.windowId }} ({{ w.targetDevice }} · {{ w.metric || 'Đo lường' }})
+          </option>
+        </datalist>
       </div>
 
       <!-- So Sánh Dung Sai DUT vs Reference Devices (Tolerance Comparisons) -->
@@ -961,6 +975,34 @@ async function fetchSimulatorFields() {
 // Flow Blocks state
 const flowBlocks = ref<FlowBlock[]>([]);
 
+const availableFlowWindows = computed(() => {
+  const list: Array<{ windowId: string; metric?: string; targetDevice?: string }> = [];
+  const seen = new Set<string>();
+  flowBlocks.value.forEach((b: FlowBlock) => {
+    if (b.functionType === 'start_measurement' && b.windowId && b.windowId.trim()) {
+      const w = b.windowId.trim();
+      if (!seen.has(w.toUpperCase())) {
+        seen.add(w.toUpperCase());
+        list.push({
+          windowId: w,
+          metric: b.metric,
+          targetDevice: b.targetDevice || 'DUT',
+        });
+      }
+    }
+  });
+  return list;
+});
+
+function onAutoCheckWindowInput(rule: any) {
+  if (!rule.measurement_window_id) return;
+  const clean = rule.measurement_window_id.trim().toUpperCase();
+  const matched = availableFlowWindows.value.find((w) => w.windowId.toUpperCase() === clean);
+  if (matched && matched.metric && (!rule.parameter_name || rule.parameter_name === 'metric')) {
+    rule.parameter_name = matched.metric;
+  }
+}
+
 // Simulation Variables Extraction
 export interface SimulationVariableInfo {
   name: string;
@@ -1038,11 +1080,11 @@ const simulationVariables = computed<SimulationVariableInfo[]>(() => {
         seen.add(vName);
         vars.push({
           name: vName,
-          sourceBlock: `Block #${idx + 1}: Measurement Window`,
+          sourceBlock: `Block #${idx + 1}: ${fnType === 'start_measurement' ? 'Start' : 'Stop'} Measurement`,
           sourceType: 'window',
           blockIndex: idx + 1,
           target: b.targetDevice || 'DUT',
-          details: `Window ID đo lường đếm gói`,
+          details: `Cửa sổ đo lường FIELD_DATA [${b.metric || 'fcnt'}]`,
         });
       }
     } else if (b.outputVar && b.outputVar.trim()) {

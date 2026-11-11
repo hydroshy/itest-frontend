@@ -145,7 +145,7 @@
                 🎯 Mốc {{ block.offsetSeconds || 0 }}s
               </span>
               <span v-else-if="block.windowId" class="badge badge-sm badge-ghost font-mono text-[10px]">
-                Window: {{ block.windowId }}
+                Window: {{ block.windowId }}<template v-if="block.metric"> ({{ block.metric }})</template>
               </span>
             </div>
 
@@ -404,25 +404,26 @@
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs uppercase"
                   placeholder=""
-                  @input="emitUpdate"
+                  @input="onMeasurementWindowInput(block)"
                 />
               </div>
               <div class="form-control md:col-span-4">
                 <label class="label py-0.5 flex items-center justify-between">
-                  <span class="label-text text-xs font-semibold text-base-content/80">Trường Đếm Gói (Counter Field)</span>
-                  <span class="badge badge-xs badge-ghost text-[9px] font-mono">Mặc định: fcnt</span>
+                  <span class="label-text text-xs font-semibold text-base-content/80">Trường FIELD_DATA</span>
+                  <span v-if="getFieldDataOptions(block.targetDevice).length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
+                    {{ getFieldDataOptions(block.targetDevice).length }} fields
+                  </span>
                 </label>
                 <div class="relative w-full">
                   <input
-                    v-model="block.counterField"
+                    v-model="block.metric"
                     type="text"
-                    :list="`counter-options-${block.id}`"
-                    class="input input-bordered input-sm w-full font-mono text-xs"
-                    placeholder="Mặc định: fcnt (Frame Counter)"
-                    @input="emitUpdate"
+                    :list="`field-options-${block.id}`"
+                    class="input input-bordered input-sm w-full font-mono text-xs pr-7"
+                    placeholder=""
+                    @input="onMeasurementMetricChange(block)"
                   />
-                  <datalist :id="`counter-options-${block.id}`">
-                    <option value="fcnt">fcnt (LoRaWAN Frame Counter chuẩn)</option>
+                  <datalist :id="`field-options-${block.id}`">
                     <option
                       v-for="f in getFieldDataOptions(block.targetDevice)"
                       :key="f.name"
@@ -438,16 +439,38 @@
             <!-- BLOCK: STOP_MEASUREMENT -->
             <template v-if="block.functionType === 'stop_measurement'">
               <div class="form-control md:col-span-8">
-                <label class="label py-0.5">
+                <label class="label py-0.5 flex items-center justify-between">
                   <span class="label-text text-xs font-semibold text-base-content/80">Mã Cửa Sổ Cần Đóng (Window ID)</span>
+                  <span v-if="availableMeasurementWindows.length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
+                    {{ availableMeasurementWindows.length }} cửa sổ mở
+                  </span>
                 </label>
-                <input
-                  v-model="block.windowId"
-                  type="text"
-                  class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-                  placeholder=""
-                  @input="emitUpdate"
-                />
+                <div class="space-y-1">
+                  <select
+                    v-if="availableMeasurementWindows.length > 0"
+                    :value="getAverageWindowSelectValue(block.windowId)"
+                    class="select select-bordered select-sm w-full font-mono text-xs uppercase"
+                    @change="(e) => { const v = (e.target as HTMLSelectElement).value; block.windowId = v === '__CUSTOM__' ? '' : v; emitUpdate(); }"
+                  >
+                    <option value="" disabled>-- Chọn Cửa Sổ Cần Đóng --</option>
+                    <option
+                      v-for="win in availableMeasurementWindows"
+                      :key="win.windowId"
+                      :value="win.windowId"
+                    >
+                      🪟 {{ win.windowId }} ({{ win.targetDevice }} · {{ win.metric || 'Đo lường' }})
+                    </option>
+                    <option value="__CUSTOM__">✏️ Nhập Window ID khác...</option>
+                  </select>
+                  <input
+                    v-if="availableMeasurementWindows.length === 0 || isCustomAverageWindow(block.windowId)"
+                    v-model="block.windowId"
+                    type="text"
+                    class="input input-bordered input-sm w-full font-mono text-xs uppercase"
+                    placeholder=""
+                    @input="emitUpdate"
+                  />
+                </div>
               </div>
             </template>
 
@@ -468,78 +491,194 @@
                 </select>
               </div>
 
-              <div class="form-control md:col-span-3">
-                <label class="label py-0.5 flex items-center justify-between">
-                  <span class="label-text text-xs font-semibold text-base-content/80">Trường FIELD_DATA</span>
-                  <span v-if="getFieldDataOptions(block.targetDevice).length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
-                    {{ getFieldDataOptions(block.targetDevice).length }} fields
-                  </span>
-                </label>
-                <div class="relative w-full">
+              <!-- Mode: MEASUREMENT_WINDOW -> Chọn Window ID & tự động lấy FIELD_DATA -->
+              <template v-if="block.averageMode === 'MEASUREMENT_WINDOW'">
+                <div class="form-control md:col-span-3">
+                  <label class="label py-0.5 flex items-center justify-between">
+                    <span class="label-text text-xs font-semibold text-base-content/80">Cửa Sổ Đo Lường (Window ID)</span>
+                    <span v-if="availableMeasurementWindows.length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
+                      {{ availableMeasurementWindows.length }} cửa sổ
+                    </span>
+                    <span v-else class="badge badge-xs badge-warning text-[9px]">Chưa tạo cửa sổ</span>
+                  </label>
+                  <div class="space-y-1">
+                    <select
+                      v-if="availableMeasurementWindows.length > 0"
+                      :value="getAverageWindowSelectValue(block.windowId)"
+                      class="select select-bordered select-sm w-full font-mono text-xs uppercase"
+                      @change="(e) => onSelectAverageWindow(block, (e.target as HTMLSelectElement).value)"
+                    >
+                      <option value="" disabled>-- Chọn Cửa Sổ Đo Lường --</option>
+                      <option
+                        v-for="win in availableMeasurementWindows"
+                        :key="win.windowId"
+                        :value="win.windowId"
+                      >
+                        🪟 {{ win.windowId }} ({{ win.targetDevice }} · {{ win.metric || 'Chưa gắn FIELD_DATA' }})
+                      </option>
+                      <option value="__CUSTOM__">✏️ Nhập Window ID khác...</option>
+                    </select>
+                    <div v-if="availableMeasurementWindows.length === 0 || isCustomAverageWindow(block.windowId)" class="join w-full">
+                      <input
+                        v-model="block.windowId"
+                        type="text"
+                        class="input input-bordered input-sm join-item w-full font-mono text-xs uppercase"
+                        placeholder=""
+                        @input="onAverageWindowInput(block)"
+                      />
+                      <button
+                        v-if="availableMeasurementWindows.length > 0"
+                        type="button"
+                        class="btn btn-sm btn-ghost join-item text-xs"
+                        title="Quay lại danh sách chọn"
+                        @click="onSelectAverageWindow(block, availableMeasurementWindows[0]?.windowId || '')"
+                      >
+                        Chọn
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-control md:col-span-3">
+                  <label class="label py-0.5 flex items-center justify-between">
+                    <span class="label-text text-xs font-semibold text-base-content/80">Trường FIELD_DATA</span>
+                    <span
+                      v-if="getLinkedWindow(block.windowId)?.metric && block.metric === getLinkedWindow(block.windowId)?.metric"
+                      class="badge badge-xs badge-success font-mono text-[9px]"
+                      title="FIELD_DATA đã liên kết chính xác từ Cửa Sổ Đo Lường"
+                    >
+                      ✓ Từ {{ block.windowId }}
+                    </span>
+                    <button
+                      v-else-if="getLinkedWindow(block.windowId)?.metric"
+                      type="button"
+                      class="badge badge-xs badge-warning font-mono text-[9px] cursor-pointer hover:opacity-80"
+                      title="Nhấn để tự động điền FIELD_DATA từ Cửa Sổ Đo Lường này"
+                      @click="() => { block.metric = getLinkedWindow(block.windowId)?.metric || ''; emitUpdate(); }"
+                    >
+                      ↺ Lấy {{ getLinkedWindow(block.windowId)?.metric }}
+                    </button>
+                    <span v-else-if="getFieldDataOptions(block.targetDevice).length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
+                      {{ getFieldDataOptions(block.targetDevice).length }} fields
+                    </span>
+                  </label>
+                  <div class="relative w-full">
+                    <input
+                      v-model="block.metric"
+                      type="text"
+                      :list="`field-options-${block.id}`"
+                      class="input input-bordered input-sm w-full font-mono text-xs pr-7"
+                      placeholder=""
+                      @input="emitUpdate"
+                    />
+                    <datalist :id="`field-options-${block.id}`">
+                      <option
+                        v-for="f in getFieldDataOptions(block.targetDevice)"
+                        :key="f.name"
+                        :value="f.name"
+                      >
+                        {{ f.label }}
+                      </option>
+                    </datalist>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Mode: SAMPLE_COUNT -->
+              <template v-else-if="block.averageMode === 'SAMPLE_COUNT'">
+                <div class="form-control md:col-span-3">
+                  <label class="label py-0.5">
+                    <span class="label-text text-xs font-semibold text-base-content/80">Số Mẫu (N)</span>
+                  </label>
                   <input
-                    v-model="block.metric"
-                    type="text"
-                    :list="`field-options-${block.id}`"
-                    class="input input-bordered input-sm w-full font-mono text-xs pr-7"
-                    placeholder="Chọn hoặc nhập FIELD_DATA..."
+                    v-model.number="block.sampleCount"
+                    type="number"
+                    min="1"
+                    class="input input-bordered input-sm w-full font-mono text-xs"
+                    placeholder=""
                     @input="emitUpdate"
                   />
-                  <datalist :id="`field-options-${block.id}`">
-                    <option
-                      v-for="f in getFieldDataOptions(block.targetDevice)"
-                      :key="f.name"
-                      :value="f.name"
-                    >
-                      {{ f.label }}
-                    </option>
-                  </datalist>
                 </div>
-              </div>
 
-              <div v-if="block.averageMode === 'MEASUREMENT_WINDOW'" class="form-control md:col-span-3">
-                <label class="label py-0.5">
-                  <span class="label-text text-xs font-semibold text-base-content/80">Thuộc Window ID</span>
-                </label>
-                <input
-                  v-model="block.windowId"
-                  type="text"
-                  class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-                  placeholder=""
-                  @input="emitUpdate"
-                />
-              </div>
+                <div class="form-control md:col-span-3">
+                  <label class="label py-0.5 flex items-center justify-between">
+                    <span class="label-text text-xs font-semibold text-base-content/80">Trường FIELD_DATA</span>
+                    <span v-if="getFieldDataOptions(block.targetDevice).length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
+                      {{ getFieldDataOptions(block.targetDevice).length }} fields
+                    </span>
+                  </label>
+                  <div class="relative w-full">
+                    <input
+                      v-model="block.metric"
+                      type="text"
+                      :list="`field-options-${block.id}`"
+                      class="input input-bordered input-sm w-full font-mono text-xs pr-7"
+                      placeholder=""
+                      @input="emitUpdate"
+                    />
+                    <datalist :id="`field-options-${block.id}`">
+                      <option
+                        v-for="f in getFieldDataOptions(block.targetDevice)"
+                        :key="f.name"
+                        :value="f.name"
+                      >
+                        {{ f.label }}
+                      </option>
+                    </datalist>
+                  </div>
+                </div>
+              </template>
 
-              <div v-else-if="block.averageMode === 'SAMPLE_COUNT'" class="form-control md:col-span-3">
-                <label class="label py-0.5">
-                  <span class="label-text text-xs font-semibold text-base-content/80">Số Mẫu (N)</span>
-                </label>
-                <input
-                  v-model.number="block.sampleCount"
-                  type="number"
-                  min="1"
-                  class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder=""
-                  @input="emitUpdate"
-                />
-              </div>
+              <!-- Mode: TIME_WINDOW -->
+              <template v-else>
+                <div class="form-control md:col-span-3">
+                  <label class="label py-0.5">
+                    <span class="label-text text-xs font-semibold text-base-content/80">Khoảng Giây (Duration)</span>
+                  </label>
+                  <input
+                    v-model.number="block.delaySeconds"
+                    type="number"
+                    min="1"
+                    class="input input-bordered input-sm w-full font-mono text-xs"
+                    placeholder=""
+                    @input="emitUpdate"
+                  />
+                </div>
 
-              <div v-else class="form-control md:col-span-3">
-                <label class="label py-0.5">
-                  <span class="label-text text-xs font-semibold text-base-content/80">Khoảng Giây (Duration)</span>
-                </label>
-                <input
-                  v-model.number="block.delaySeconds"
-                  type="number"
-                  min="1"
-                  class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder=""
-                  @input="emitUpdate"
-                />
-              </div>
+                <div class="form-control md:col-span-3">
+                  <label class="label py-0.5 flex items-center justify-between">
+                    <span class="label-text text-xs font-semibold text-base-content/80">Trường FIELD_DATA</span>
+                    <span v-if="getFieldDataOptions(block.targetDevice).length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
+                      {{ getFieldDataOptions(block.targetDevice).length }} fields
+                    </span>
+                  </label>
+                  <div class="relative w-full">
+                    <input
+                      v-model="block.metric"
+                      type="text"
+                      :list="`field-options-${block.id}`"
+                      class="input input-bordered input-sm w-full font-mono text-xs pr-7"
+                      placeholder=""
+                      @input="emitUpdate"
+                    />
+                    <datalist :id="`field-options-${block.id}`">
+                      <option
+                        v-for="f in getFieldDataOptions(block.targetDevice)"
+                        :key="f.name"
+                        :value="f.name"
+                      >
+                        {{ f.label }}
+                      </option>
+                    </datalist>
+                  </div>
+                </div>
+              </template>
 
+              <!-- Biến Lưu Kết Quả Output -->
               <div class="form-control md:col-span-3">
-                <label class="label py-0.5">
+                <label class="label py-0.5 flex items-center justify-between">
                   <span class="label-text text-xs font-semibold text-base-content/80">Lưu Vào Biến Output</span>
+                  <span class="badge badge-xs badge-ghost text-[9px] font-mono">Dùng cho Linear</span>
                 </label>
                 <input
                   v-model="block.outputVar"
@@ -1038,6 +1177,114 @@ function onTargetSelectChange(block: FlowBlock, selectedValue: string) {
   } else {
     block.targetDevice = selectedValue;
   }
+  if (block.functionType === 'start_measurement') {
+    const opts = getFieldDataOptions(block.targetDevice);
+    if (!block.metric && opts.length > 0) {
+      block.metric = opts[0].name;
+    }
+    onMeasurementMetricChange(block);
+  } else {
+    emitUpdate();
+  }
+}
+
+export interface MeasurementWindowOption {
+  windowId: string;
+  metric?: string;
+  targetDevice: string;
+  counterField?: string;
+  stepIndex: number;
+}
+
+const availableMeasurementWindows = computed<MeasurementWindowOption[]>(() => {
+  const result: MeasurementWindowOption[] = [];
+  const seen = new Set<string>();
+  blocks.value.forEach((b, idx) => {
+    if (b.functionType === 'start_measurement' && b.windowId && b.windowId.trim()) {
+      const wId = b.windowId.trim();
+      const upper = wId.toUpperCase();
+      if (!seen.has(upper)) {
+        seen.add(upper);
+        result.push({
+          windowId: wId,
+          metric: b.metric || '',
+          targetDevice: b.targetDevice || 'DUT',
+          counterField: b.counterField || 'fcnt',
+          stepIndex: idx + 1,
+        });
+      }
+    }
+  });
+  return result;
+});
+
+function getLinkedWindow(windowId?: string): MeasurementWindowOption | undefined {
+  if (!windowId) return undefined;
+  const clean = windowId.trim().toUpperCase();
+  return availableMeasurementWindows.value.find((w) => w.windowId.toUpperCase() === clean);
+}
+
+function isCustomAverageWindow(windowId?: string): boolean {
+  if (!windowId) return false;
+  const clean = windowId.trim().toUpperCase();
+  return !availableMeasurementWindows.value.some((w) => w.windowId.toUpperCase() === clean);
+}
+
+function getAverageWindowSelectValue(windowId?: string): string {
+  if (!windowId) return '';
+  const clean = windowId.trim().toUpperCase();
+  const matched = availableMeasurementWindows.value.find((w) => w.windowId.toUpperCase() === clean);
+  return matched ? matched.windowId : '__CUSTOM__';
+}
+
+function onSelectAverageWindow(block: FlowBlock, selectedWinId: string) {
+  if (selectedWinId === '__CUSTOM__') {
+    block.windowId = '';
+    emitUpdate();
+    return;
+  }
+  block.windowId = selectedWinId;
+  const win = getLinkedWindow(selectedWinId);
+  if (win) {
+    if (win.metric) {
+      block.metric = win.metric;
+    }
+    if (win.targetDevice) {
+      block.targetDevice = win.targetDevice;
+    }
+    cyberToast.success(`Đã lấy Cửa Sổ '${win.windowId}' với FIELD_DATA '${win.metric || 'fcnt'}' (${win.targetDevice})`);
+  }
+  emitUpdate();
+}
+
+function onAverageWindowInput(block: FlowBlock) {
+  const win = getLinkedWindow(block.windowId);
+  if (win && win.metric && (!block.metric || block.metric === 'gas_raw')) {
+    block.metric = win.metric;
+    if (win.targetDevice) {
+      block.targetDevice = win.targetDevice;
+    }
+  }
+  emitUpdate();
+}
+
+function onMeasurementWindowInput(block: FlowBlock) {
+  emitUpdate();
+}
+
+function onMeasurementMetricChange(block: FlowBlock) {
+  if (block.windowId && block.metric) {
+    blocks.value.forEach((b) => {
+      if (
+        b.functionType === 'average' &&
+        b.averageMode === 'MEASUREMENT_WINDOW' &&
+        b.windowId?.trim().toUpperCase() === block.windowId?.trim().toUpperCase()
+      ) {
+        b.metric = block.metric;
+        if (block.targetDevice) b.targetDevice = block.targetDevice;
+      }
+    });
+  }
   emitUpdate();
 }
 
@@ -1069,7 +1316,7 @@ function normalizeBlock(b: any): FlowBlock {
     offsetSeconds: fnType === 'wait_until_offset' ? (Number(b.offsetSeconds) || 0) : undefined,
     windowId: b.windowId || b.window_id || '',
     counterField: b.counterField || b.counter_field || (fnType === 'start_measurement' ? 'fcnt' : ''),
-    metric: b.metric || '',
+    metric: b.metric || b.field_data || b.fieldData || '',
     averageMode: b.averageMode || b.average_mode || 'MEASUREMENT_WINDOW',
     sampleCount: Number(b.sampleCount || b.sample_count) || undefined,
     outputVar: b.outputVar || b.output_var || '',
@@ -1163,17 +1410,28 @@ function onFunctionTypeChanged(block: FlowBlock) {
     block.targetDevice = undefined;
   } else if (block.functionType === 'start_measurement') {
     block.targetDevice = block.targetDevice || 'DUT';
-    block.windowId = block.windowId || 'WINDOW_01';
+    block.windowId = block.windowId || `WINDOW_0${availableMeasurementWindows.value.length + 1}`;
     block.counterField = block.counterField || 'fcnt';
+    const opts = getFieldDataOptions(block.targetDevice);
+    block.metric = block.metric || opts[0]?.name || 'gas_raw';
   } else if (block.functionType === 'stop_measurement') {
     block.targetDevice = block.targetDevice || 'DUT';
-    block.windowId = block.windowId || 'WINDOW_01';
+    const lastWin = availableMeasurementWindows.value[availableMeasurementWindows.value.length - 1];
+    block.windowId = block.windowId || lastWin?.windowId || 'WINDOW_01';
   } else if (block.functionType === 'average') {
-    block.targetDevice = block.targetDevice || 'DUT';
     block.averageMode = block.averageMode || 'MEASUREMENT_WINDOW';
-    block.metric = block.metric || 'gas_raw';
-    block.windowId = block.windowId || 'WINDOW_01';
-    block.outputVar = block.outputVar || 'x1';
+    const lastWin = availableMeasurementWindows.value[availableMeasurementWindows.value.length - 1];
+    if (lastWin) {
+      block.windowId = lastWin.windowId;
+      block.targetDevice = lastWin.targetDevice || 'DUT';
+      block.metric = lastWin.metric || 'gas_raw';
+      cyberToast.info(`Hàm Average: Tự động nhận Cửa Sổ '${lastWin.windowId}' với FIELD_DATA '${block.metric}'`);
+    } else {
+      block.targetDevice = block.targetDevice || 'DUT';
+      block.windowId = block.windowId || 'WINDOW_01';
+      block.metric = block.metric || 'gas_raw';
+    }
+    block.outputVar = block.outputVar || `x${blocks.value.filter((b) => b.functionType === 'average').length + 1}`;
   } else if (block.functionType === 'calculate_linear') {
     block.targetDevice = undefined;
     block.point1X = block.point1X || '{{x1}}';
@@ -1248,17 +1506,24 @@ function getFunctionLabel(type: string) {
 
 // Block Actions
 function addBlock(type: string) {
+  const lastWin = availableMeasurementWindows.value[availableMeasurementWindows.value.length - 1];
   const newBlock: FlowBlock = {
     id: `block-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     functionType: type,
-    targetDevice: hasDeviceTarget(type) ? 'DUT' : undefined,
+    targetDevice: type === 'average' && lastWin ? (lastWin.targetDevice || 'DUT') : (hasDeviceTarget(type) ? 'DUT' : undefined),
     delaySeconds: type === 'delay' ? 30 : undefined,
     offsetSeconds: type === 'wait_until_offset' ? 120 : undefined,
-    windowId: ['start_measurement', 'stop_measurement', 'average'].includes(type) ? 'WINDOW_01' : undefined,
-    counterField: type === 'start_measurement' ? 'fcnt' : undefined,
-    metric: type === 'average' ? 'gas_raw' : undefined,
+    windowId: type === 'average'
+      ? (lastWin?.windowId || 'WINDOW_01')
+      : (type === 'start_measurement'
+        ? `WINDOW_0${availableMeasurementWindows.value.length + 1}`
+        : (type === 'stop_measurement' ? (lastWin?.windowId || 'WINDOW_01') : undefined)),
+    counterField: type === 'start_measurement' ? (getFieldDataOptions('DUT')[0]?.name || 'fcnt') : undefined,
+    metric: type === 'start_measurement'
+      ? (getFieldDataOptions('DUT')[0]?.name || 'gas_raw')
+      : (type === 'average' ? (lastWin?.metric || 'gas_raw') : undefined),
     averageMode: type === 'average' ? 'MEASUREMENT_WINDOW' : undefined,
-    outputVar: type === 'average' ? 'x1' : (type === 'convert_to_hex' ? 'x' : undefined),
+    outputVar: type === 'average' ? `x${blocks.value.filter((b) => b.functionType === 'average').length + 1}` : (type === 'convert_to_hex' ? 'x' : undefined),
     sourceVar: type === 'convert_to_hex' ? 'a' : undefined,
     dataType: type === 'convert_to_hex' ? 'float32_be' : undefined,
     point1X: type === 'calculate_linear' ? '{{x1}}' : undefined,
