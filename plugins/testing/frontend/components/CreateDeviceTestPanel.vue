@@ -34,7 +34,7 @@
           class="step font-bold font-mono"
           :class="[
             currentStep >= 1 ? 'step-primary' : '',
-            currentStep === 3 ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+            currentStep === 3 ? 'cursor-not-allowed' : 'cursor-pointer'
           ]"
           @click="goToStep(1)"
         >
@@ -44,7 +44,7 @@
           class="step font-bold font-mono"
           :class="[
             currentStep >= 2 ? 'step-primary' : '',
-            currentStep === 3 ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+            currentStep === 3 ? 'cursor-not-allowed' : 'cursor-pointer'
           ]"
           @click="goToStep(2)"
         >
@@ -1735,11 +1735,16 @@ onMounted(() => {
 }
 
 /* Ensure step indicator circle always stays above the line */
-:deep(.steps .step::before) {
-  z-index: 1 !important;
+.steps {
+  isolation: isolate;
 }
+.steps .step::before,
+:deep(.steps .step::before) {
+  z-index: 0 !important;
+}
+.steps .step::after,
 :deep(.steps .step::after) {
-  z-index: 2 !important;
+  z-index: 10 !important;
   position: relative !important;
 }
 </style>

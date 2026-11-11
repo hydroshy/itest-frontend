@@ -113,10 +113,13 @@ pre,
 }
 
 /* DaisyUI Steps: Ensure step indicator circle always stays above connecting line */
+.steps {
+  isolation: isolate;
+}
 .steps .step::before {
-  z-index: 1 !important;
+  z-index: 0 !important;
 }
 .steps .step::after {
-  z-index: 2 !important;
+  z-index: 10 !important;
   position: relative !important;
 }

@@ -1956,7 +1956,7 @@ async function refreshDeviceOnlineStatus() {
   const currentAvailable = availableDevices.value || [];
   if (currentAvailable.length === 0) return;
   const euis = currentAvailable
-    .map((d) => d.devEui || d.dev_eui)
+    .map((d) => (d.devEui || d.dev_eui || '').toUpperCase())
     .filter(Boolean)
     .join(',');
   if (!euis) return;
