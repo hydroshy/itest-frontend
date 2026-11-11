@@ -1738,13 +1738,30 @@ onMounted(() => {
 .steps {
   isolation: isolate;
 }
+.steps .step,
+:deep(.steps .step) {
+  position: relative;
+}
+.steps .step:nth-child(1),
+:deep(.steps .step:nth-child(1)) {
+  z-index: 30;
+}
+.steps .step:nth-child(2),
+:deep(.steps .step:nth-child(2)) {
+  z-index: 20;
+}
+.steps .step:nth-child(3),
+:deep(.steps .step:nth-child(3)) {
+  z-index: 10;
+}
+
 .steps .step::before,
 :deep(.steps .step::before) {
-  z-index: 0 !important;
+  z-index: 1 !important;
 }
 .steps .step::after,
 :deep(.steps .step::after) {
-  z-index: 10 !important;
+  z-index: 2 !important;
   position: relative !important;
 }
 </style>

@@ -116,10 +116,21 @@ pre,
 .steps {
   isolation: isolate;
 }
+.steps .step {
+  position: relative;
+}
+/* Step trước phải có z-index cao hơn Step sau để vòng tròn step trước không bị line kéo sang trái của step sau đè lên */
+.steps .step:nth-child(1) { z-index: 50; }
+.steps .step:nth-child(2) { z-index: 40; }
+.steps .step:nth-child(3) { z-index: 30; }
+.steps .step:nth-child(4) { z-index: 20; }
+.steps .step:nth-child(5) { z-index: 10; }
+.steps .step:nth-child(6) { z-index: 5; }
+
 .steps .step::before {
-  z-index: 0 !important;
+  z-index: 1 !important;
 }
 .steps .step::after {
-  z-index: 10 !important;
+  z-index: 2 !important;
   position: relative !important;
 }
