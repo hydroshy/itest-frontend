@@ -31,6 +31,27 @@
             Làm Mới
           </button>
 
+          <!-- Nút Export All Flows -->
+          <button
+            class="btn btn-sm btn-outline btn-neutral gap-1.5"
+            :disabled="loading || flowProfiles.length === 0"
+            title="Xuất tất cả kịch bản ra file JSON"
+            @click="exportAllFlows"
+          >
+            <Download class="w-3.5 h-3.5" />
+            Export Tất Cả
+          </button>
+
+          <!-- Nút Import Flow -->
+          <button
+            class="btn btn-sm btn-outline btn-info gap-1.5"
+            title="Nhập kịch bản từ file JSON hoặc dán mã JSON"
+            @click="openImportModal"
+          >
+            <Upload class="w-3.5 h-3.5" />
+            Import Flow
+          </button>
+
           <button
             class="btn btn-sm btn-primary gap-1.5"
             @click="$emit('switch-tab', 'device-simulation')"
@@ -202,6 +223,14 @@
                     Blocks
                   </button>
                   <button
+                    class="btn btn-ghost btn-xs text-secondary gap-1"
+                    title="Xuất kịch bản này ra file JSON"
+                    @click="exportSingleFlow(flow)"
+                  >
+                    <Download class="w-3.5 h-3.5" />
+                    Export
+                  </button>
+                  <button
                     class="btn btn-ghost btn-xs text-success gap-1"
                     title="Sử Dụng Cho Test Batch"
                     @click="useInBatch(flow)"
@@ -301,6 +330,14 @@
         <div class="modal-action">
           <button class="btn btn-sm btn-ghost" @click="showDetailModal = false">Đóng</button>
           <button
+            class="btn btn-sm btn-outline btn-secondary gap-1"
+            title="Xuất kịch bản ra JSON"
+            @click="exportSingleFlow(selectedFlow)"
+          >
+            <Download class="w-3.5 h-3.5" />
+            Xuất JSON
+          </button>
+          <button
             class="btn btn-sm btn-info gap-1"
             @click="showDetailModal = false; onEditFlowClick(selectedFlow)"
           >
@@ -320,6 +357,152 @@
         <button @click="showDetailModal = false">close</button>
       </form>
     </dialog>
+
+    <!-- Modal: Nhập Kịch Bản Simulation (Import JSON) -->
+    <dialog class="modal" :class="{ 'modal-open': showImportModal }">
+      <div class="modal-box bg-base-100 border border-base-300 max-w-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-base-300">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-info/20 text-info flex items-center justify-center font-bold">
+              <Upload class="w-4 h-4" />
+            </div>
+            <div>
+              <h3 class="font-bold text-sm uppercase">Nhập Kịch Bản Simulation (Import JSON)</h3>
+              <p class="text-xs text-base-content/60">
+                Tải lên file .json hoặc dán nội dung JSON kịch bản mô phỏng
+              </p>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-circle btn-ghost" @click="showImportModal = false">✕</button>
+        </div>
+
+        <!-- Mode Tabs: Chọn File vs Dán JSON -->
+        <div class="tabs tabs-boxed bg-base-200 p-1">
+          <a
+            class="tab tab-sm"
+            :class="{ 'tab-active !bg-primary !text-primary-content font-bold': importMode === 'file' }"
+            @click="importMode = 'file'"
+          >
+            📁 Tải Lên File JSON
+          </a>
+          <a
+            class="tab tab-sm"
+            :class="{ 'tab-active !bg-primary !text-primary-content font-bold': importMode === 'paste' }"
+            @click="importMode = 'paste'"
+          >
+            📋 Dán Nội Dung JSON
+          </a>
+        </div>
+
+        <!-- Mode 1: File Upload -->
+        <div v-if="importMode === 'file'" class="space-y-3">
+          <div
+            class="border-2 border-dashed border-base-300 hover:border-primary/50 rounded-xl p-6 text-center cursor-pointer transition-all bg-base-200/40"
+            @click="triggerFileInput"
+            @dragover.prevent
+            @drop.prevent="onFileDrop"
+          >
+            <FileJson class="w-10 h-10 text-primary/70 mx-auto mb-2" />
+            <p class="text-xs font-semibold text-base-content">
+              Nhấn để chọn file <span class="text-primary font-mono font-bold">.json</span> hoặc kéo thả vào đây
+            </p>
+            <p class="text-[11px] text-base-content/50 mt-1">
+              Hỗ trợ kịch bản đơn lẻ (Single Flow) hoặc gói kịch bản (Bundle Flows)
+            </p>
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept=".json,application/json"
+              class="hidden"
+              @change="onFileSelected"
+            />
+          </div>
+          <div v-if="selectedFileName" class="flex items-center justify-between p-2 rounded-lg bg-base-200 text-xs font-mono">
+            <span class="text-primary font-semibold truncate max-w-md">📄 {{ selectedFileName }}</span>
+            <button class="btn btn-ghost btn-xs text-error" @click="clearImportFile">Xóa</button>
+          </div>
+        </div>
+
+        <!-- Mode 2: Paste JSON -->
+        <div v-else class="space-y-2">
+          <label class="label py-0 flex items-center justify-between">
+            <span class="label-text text-xs font-semibold">Nội dung JSON:</span>
+            <span class="text-[10px] text-base-content/50 font-mono">JSON format</span>
+          </label>
+          <textarea
+            v-model="rawJsonInput"
+            class="textarea textarea-bordered w-full font-mono text-xs h-36"
+            placeholder=""
+            @input="onPasteInput"
+          ></textarea>
+        </div>
+
+        <!-- Validation & Preview Results -->
+        <div v-if="parseStatus !== 'idle'" class="space-y-2">
+          <!-- Error State -->
+          <div v-if="parseStatus === 'error'" class="alert alert-error text-xs p-3">
+            <AlertCircle class="w-4 h-4 shrink-0" />
+            <span>{{ parseErrorMessage }}</span>
+          </div>
+
+          <!-- Success Preview -->
+          <div v-else-if="parseStatus === 'valid'" class="space-y-2">
+            <div class="flex items-center justify-between text-xs font-semibold">
+              <span class="flex items-center gap-1.5 text-success">
+                <CheckCircle2 class="w-4 h-4" />
+                Hợp lệ: Sẵn sàng nhập {{ parsedProfiles.length }} kịch bản
+              </span>
+              <label class="label cursor-pointer gap-2 py-0">
+                <input
+                  v-model="generateNewSimuId"
+                  type="checkbox"
+                  class="checkbox checkbox-xs checkbox-primary"
+                />
+                <span class="label-text text-[11px]">Tạo mới Simu ID (tránh ghi đè)</span>
+              </label>
+            </div>
+
+            <!-- List Preview Cards -->
+            <div class="max-h-44 overflow-y-auto space-y-2 pr-1">
+              <div
+                v-for="(p, pIdx) in parsedProfiles"
+                :key="pIdx"
+                class="p-2.5 rounded-lg border border-base-300 bg-base-200/60 text-xs font-mono space-y-1"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-primary">{{ p.profileName || p.name || `Kịch bản #${pIdx + 1}` }}</span>
+                  <span class="badge badge-xs badge-info font-mono">{{ p.simuId || 'Tự sinh ID' }}</span>
+                </div>
+                <div class="flex items-center gap-3 text-[11px] text-base-content/70">
+                  <span>ITEM: <strong>{{ p.itemCode || '--' }}</strong></span>
+                  <span>FW: <strong>{{ p.longFw || p.fwVersion || '--' }}</strong></span>
+                  <span class="text-success font-semibold">{{ (p.flowBlocks || []).length }} blocks</span>
+                  <span v-if="p.autoCheckCriteria" class="badge badge-xs badge-success">AutoCheck</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="modal-action">
+          <button class="btn btn-sm btn-ghost" :disabled="importing" @click="showImportModal = false">
+            Hủy
+          </button>
+          <button
+            class="btn btn-sm btn-primary gap-1.5"
+            :disabled="parseStatus !== 'valid' || parsedProfiles.length === 0 || importing"
+            @click="executeImport"
+          >
+            <Upload class="w-3.5 h-3.5" :class="{ 'animate-spin': importing }" />
+            {{ importing ? 'Đang Nhập...' : `Xác Nhận Nhập (${parsedProfiles.length} Kịch Bản)` }}
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button @click="showImportModal = false">close</button>
+      </form>
+    </dialog>
   </div>
 </template>
 
@@ -335,6 +518,11 @@ import {
   FolderPlus,
   Clock,
   Edit3,
+  Download,
+  Upload,
+  FileJson,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
@@ -357,6 +545,257 @@ const searchQuery = ref('');
 // Modal detail state
 const showDetailModal = ref(false);
 const selectedFlow = ref<any>(null);
+
+// Import & Export State
+const showImportModal = ref(false);
+const importMode = ref<'file' | 'paste'>('file');
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const selectedFileName = ref('');
+const rawJsonInput = ref('');
+const parseStatus = ref<'idle' | 'valid' | 'error'>('idle');
+const parseErrorMessage = ref('');
+const parsedProfiles = ref<any[]>([]);
+const generateNewSimuId = ref(false);
+const importing = ref(false);
+
+function downloadJsonFile(filename: string, data: any) {
+  const jsonStr = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportSingleFlow(flow: any) {
+  if (!flow) return;
+  const nameClean = (flow.profileName || flow.name || 'flow').replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]/g, '_');
+  const filename = `${flow.simuId || flow.id || 'flow'}_${nameClean}.json`;
+  const exportData = {
+    version: '2.0',
+    type: 'itest_simulation_flow',
+    exportedAt: new Date().toISOString(),
+    profile: {
+      profileName: flow.profileName || flow.name,
+      name: flow.profileName || flow.name,
+      simuId: flow.simuId || flow.id,
+      itemCode: flow.itemCode || flow.item_code,
+      longFw: flow.longFw || flow.long_fw || flow.fwVersion,
+      fwVersion: flow.longFw || flow.long_fw || flow.fwVersion,
+      sku: flow.sku || '',
+      sensorConnectivity: flow.sensorConnectivity || flow.protocol || 'LoRaWAN',
+      flowBlocks: getBlocksList(flow),
+      referenceDevices: flow.referenceDevices || flow.reference_devices || [],
+      autoCheckCriteria: flow.autoCheckCriteria || flow.criteria || null,
+      simulatorDevice: flow.simulatorDevice || null,
+      description: flow.description || '',
+    },
+  };
+  downloadJsonFile(filename, exportData);
+  cyberToast.success(`Đã xuất kịch bản "${flow.profileName || flow.simuId}" thành công!`);
+}
+
+function exportAllFlows() {
+  if (flowProfiles.value.length === 0) {
+    cyberToast.warning('Không có kịch bản nào để xuất!');
+    return;
+  }
+  const filename = `itest_simulation_flows_all_${new Date().toISOString().slice(0, 10)}.json`;
+  const exportData = {
+    version: '2.0',
+    type: 'itest_simulation_flow_bundle',
+    exportedAt: new Date().toISOString(),
+    totalProfiles: flowProfiles.value.length,
+    profiles: flowProfiles.value.map((flow) => ({
+      profileName: flow.profileName || flow.name,
+      name: flow.profileName || flow.name,
+      simuId: flow.simuId || flow.id,
+      itemCode: flow.itemCode || flow.item_code,
+      longFw: flow.longFw || flow.long_fw || flow.fwVersion,
+      fwVersion: flow.longFw || flow.long_fw || flow.fwVersion,
+      sku: flow.sku || '',
+      sensorConnectivity: flow.sensorConnectivity || flow.protocol || 'LoRaWAN',
+      flowBlocks: getBlocksList(flow),
+      referenceDevices: flow.referenceDevices || flow.reference_devices || [],
+      autoCheckCriteria: flow.autoCheckCriteria || flow.criteria || null,
+      simulatorDevice: flow.simulatorDevice || null,
+      description: flow.description || '',
+    })),
+  };
+  downloadJsonFile(filename, exportData);
+  cyberToast.success(`Đã xuất thành công ${flowProfiles.value.length} kịch bản!`);
+}
+
+function openImportModal() {
+  showImportModal.value = true;
+  clearImportFile();
+}
+
+function triggerFileInput() {
+  fileInputRef.value?.click();
+}
+
+function clearImportFile() {
+  selectedFileName.value = '';
+  rawJsonInput.value = '';
+  parseStatus.value = 'idle';
+  parseErrorMessage.value = '';
+  parsedProfiles.value = [];
+  if (fileInputRef.value) fileInputRef.value.value = '';
+}
+
+function onFileSelected(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  selectedFileName.value = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const content = (e.target?.result as string) || '';
+    rawJsonInput.value = content;
+    parseAndValidateJson(content);
+  };
+  reader.readAsText(file);
+}
+
+function onFileDrop(event: DragEvent) {
+  const file = event.dataTransfer?.files?.[0];
+  if (!file) return;
+  selectedFileName.value = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const content = (e.target?.result as string) || '';
+    rawJsonInput.value = content;
+    parseAndValidateJson(content);
+  };
+  reader.readAsText(file);
+}
+
+function onPasteInput() {
+  parseAndValidateJson(rawJsonInput.value);
+}
+
+function parseAndValidateJson(content: string) {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    parseStatus.value = 'idle';
+    parseErrorMessage.value = '';
+    parsedProfiles.value = [];
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    let list: any[] = [];
+
+    if (parsed && typeof parsed === 'object') {
+      if (Array.isArray(parsed.profiles)) {
+        list = parsed.profiles;
+      } else if (parsed.profile && typeof parsed.profile === 'object') {
+        list = [parsed.profile];
+      } else if (Array.isArray(parsed)) {
+        if (parsed.length > 0 && parsed[0]?.functionType) {
+          // Array of flowBlocks
+          list = [{
+            profileName: `Imported Flow ${new Date().toISOString().slice(0, 10)}`,
+            flowBlocks: parsed,
+          }];
+        } else {
+          list = parsed;
+        }
+      } else {
+        list = [parsed];
+      }
+    }
+
+    if (!Array.isArray(list) || list.length === 0) {
+      parseStatus.value = 'error';
+      parseErrorMessage.value = 'Không tìm thấy kịch bản hợp lệ trong file JSON.';
+      parsedProfiles.value = [];
+      return;
+    }
+
+    // Normalize each profile
+    const validProfiles: any[] = [];
+    for (const p of list) {
+      const blocks = Array.isArray(p.flowBlocks) ? p.flowBlocks : (Array.isArray(p.blocks) ? p.blocks : (Array.isArray(p.flow_blocks) ? p.flow_blocks : []));
+      validProfiles.push({
+        profileName: p.profileName || p.name || p.simuId || 'Imported Flow',
+        name: p.profileName || p.name || p.simuId || 'Imported Flow',
+        simuId: p.simuId || p.id || '',
+        itemCode: (p.itemCode || p.item_code || '').toUpperCase(),
+        longFw: p.longFw || p.long_fw || p.fwVersion || '',
+        fwVersion: p.fwVersion || p.longFw || p.long_fw || '',
+        sku: p.sku || '',
+        sensorConnectivity: p.sensorConnectivity || p.protocol || 'LoRaWAN',
+        flowBlocks: blocks,
+        referenceDevices: Array.isArray(p.referenceDevices) ? p.referenceDevices : (Array.isArray(p.reference_devices) ? p.reference_devices : []),
+        autoCheckCriteria: p.autoCheckCriteria || p.criteria || null,
+        simulatorDevice: p.simulatorDevice || null,
+        description: p.description || '',
+      });
+    }
+
+    parsedProfiles.value = validProfiles;
+    parseStatus.value = 'valid';
+    parseErrorMessage.value = '';
+  } catch (err: any) {
+    parseStatus.value = 'error';
+    parseErrorMessage.value = `Cú pháp JSON không hợp lệ: ${err.message}`;
+    parsedProfiles.value = [];
+  }
+}
+
+async function executeImport() {
+  if (parsedProfiles.value.length === 0) return;
+  importing.value = true;
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const prof of parsedProfiles.value) {
+    try {
+      const simuId = generateNewSimuId.value || !prof.simuId
+        ? `SIMU-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+        : prof.simuId;
+
+      const payload = {
+        name: prof.profileName || prof.name || simuId,
+        profileName: prof.profileName || prof.name || simuId,
+        simuId,
+        sensorConnectivity: prof.sensorConnectivity || prof.protocol || 'LoRaWAN',
+        sku: prof.sku || '',
+        longFw: prof.longFw || prof.long_fw || prof.fwVersion || '',
+        fwVersion: prof.fwVersion || prof.longFw || prof.long_fw || '',
+        itemCode: (prof.itemCode || prof.item_code || '').toUpperCase(),
+        flowBlocks: Array.isArray(prof.flowBlocks) ? prof.flowBlocks : [],
+        referenceDevices: Array.isArray(prof.referenceDevices) ? prof.referenceDevices : [],
+        simulatorDevice: prof.simulatorDevice || null,
+        autoCheckCriteria: prof.autoCheckCriteria || null,
+        description: prof.description || '',
+      };
+
+      await httpClient.post('/plugins/testing/simulation/profiles', payload);
+      successCount++;
+    } catch (err: any) {
+      errorCount++;
+      console.error('Import profile error:', err);
+    }
+  }
+
+  importing.value = false;
+  if (successCount > 0) {
+    cyberToast.success(`Đã nhập thành công ${successCount} kịch bản simulation!`);
+    showImportModal.value = false;
+    clearImportFile();
+    await loadFlowProfiles();
+  }
+  if (errorCount > 0) {
+    cyberToast.error(`Có ${errorCount} kịch bản gặp lỗi khi lưu vào hệ thống.`);
+  }
+}
 
 const filteredFlows = computed(() => {
   if (!searchQuery.value.trim()) return flowProfiles.value;
