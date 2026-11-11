@@ -864,6 +864,7 @@ async function loadAvailableDevicesForSo(soNumber: string) {
 
     selectedAvailableRows.value = [];
     updateTabulatorData();
+    refreshDeviceOnlineStatus();
   } catch (err: any) {
     console.warn('[DeviceTestBatchPanel] Error loading devices for SO:', err.message);
     availableDevices.value = [];
@@ -911,6 +912,21 @@ function initAvailableTabulator() {
         headerSort: false,
       },
       {
+        title: 'STATUS',
+        field: 'isOnline',
+        width: 80,
+        hozAlign: 'center',
+        headerHozAlign: 'center',
+        headerSort: true,
+        formatter: (cell: any) => {
+          const val = cell.getValue();
+          if (val === true) {
+            return '<span class="inline-flex items-center gap-1.5 text-success font-semibold text-xs"><span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>ON</span>';
+          }
+          return '<span class="inline-flex items-center gap-1.5 text-base-content/40 text-xs"><span class="w-2 h-2 rounded-full bg-base-content/30"></span>OFF</span>';
+        },
+      },
+      {
         title: 'Serial Number',
         field: 'serialNumber',
         widthGrow: 1.8,
@@ -942,28 +958,6 @@ function initAvailableTabulator() {
         hozAlign: 'center',
         headerHozAlign: 'center',
         formatter: (cell) => `<span class="font-mono text-xs">${cell.getValue() || '—'}</span>`,
-      },
-      {
-        title: 'Chuyển',
-        width: 65,
-        hozAlign: 'center',
-        headerHozAlign: 'center',
-        headerSort: false,
-        formatter: (cell) => {
-          const rowData = cell.getRow().getData();
-          if (rowData.isRunningBatch) {
-            return '<span class="text-[10px] text-warning font-semibold cursor-not-allowed">Đang chạy</span>';
-          }
-          return '<button class="btn btn-xs btn-primary btn-outline font-bold px-1.5" title="Chuyển vào Test Batch">→</button>';
-        },
-        cellClick: (_e, cell) => {
-          const rowData = cell.getRow().getData();
-          if (rowData.isRunningBatch) {
-            cyberToast.warning(`Thiết bị ${rowData.serialNumber} đang chạy test batch khác (${rowData.runningBatchCode || ''}), không thể thêm!`);
-            return;
-          }
-          addSingleDeviceToBatch(rowData);
-        },
       },
     ],
     rowDblClick: (_e, row) => {
@@ -1008,20 +1002,6 @@ function initBatchTabulator() {
         hozAlign: 'center',
         headerHozAlign: 'center',
         headerSort: false,
-      },
-      {
-        title: 'Online',
-        field: 'isOnline',
-        width: 75,
-        hozAlign: 'center',
-        headerHozAlign: 'center',
-        formatter: (cell: any) => {
-          const val = cell.getValue();
-          if (val === true) {
-            return '<span class="inline-flex items-center gap-1.5 text-success font-semibold text-xs"><span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>ON</span>';
-          }
-          return '<span class="inline-flex items-center gap-1.5 text-base-content/40 text-xs"><span class="w-2 h-2 rounded-full bg-base-content/30"></span>OFF</span>';
-        },
       },
       {
         title: 'Serial Number',
@@ -1973,8 +1953,9 @@ onMounted(async () => {
 });
 
 async function refreshDeviceOnlineStatus() {
-  if (selectedDevices.value.length === 0) return;
-  const euis = selectedDevices.value
+  const currentAvailable = availableDevices.value || [];
+  if (currentAvailable.length === 0) return;
+  const euis = currentAvailable
     .map((d) => d.devEui || d.dev_eui)
     .filter(Boolean)
     .join(',');
@@ -1986,7 +1967,7 @@ async function refreshDeviceOnlineStatus() {
     });
     const statusMap = res?.data || res || {};
     let changed = false;
-    selectedDevices.value.forEach((d) => {
+    currentAvailable.forEach((d) => {
       const eui = (d.devEui || d.dev_eui || '').toUpperCase();
       if (statusMap[eui]) {
         const itemStatus = statusMap[eui];
@@ -1997,8 +1978,8 @@ async function refreshDeviceOnlineStatus() {
         }
       }
     });
-    if (changed) {
-      updateTabulatorData();
+    if (changed && availableTabulator) {
+      availableTabulator.replaceData(getFilteredAvailableDevices());
     }
   } catch (err) {
     console.debug('[DeviceTestBatchPanel] Error fetching devices status:', err);
@@ -2031,10 +2012,12 @@ function setupBatchRealtimeSse() {
 
         if (incomingEui) {
           const clean = incomingEui.toUpperCase().trim();
-          const target = selectedDevices.value.find((d) => (d.devEui || d.dev_eui || '').toUpperCase().trim() === clean);
+          const target = availableDevices.value.find((d) => (d.devEui || d.dev_eui || '').toUpperCase().trim() === clean);
           if (target && !target.isOnline) {
             target.isOnline = true;
-            updateTabulatorData();
+            if (availableTabulator) {
+              availableTabulator.replaceData(getFilteredAvailableDevices());
+            }
           }
         }
       } catch (e) {
