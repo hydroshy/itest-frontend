@@ -58,8 +58,28 @@ export const deviceTraceabilityPlugin: FrontendPluginDefinition = {
       id: 'menu-device-traceability',
       title: 'DEVICE TRACEABILITY',
       path: '/plugins/device-traceability',
-      icon: 'Files',
+      icon: 'barcode',
       order: 25,
+      children: [
+        {
+          id: 'device-traceability-menu-so',
+          title: 'SALES ORDERS & WORK ORDERS',
+          path: '/plugins/device-traceability?tab=so',
+          icon: 'list',
+        },
+        {
+          id: 'device-traceability-menu-devices',
+          title: 'DEVICE TRACEABILITY LIST',
+          path: '/plugins/device-traceability?tab=devices',
+          icon: 'magnifying-glass',
+        },
+        {
+          id: 'device-traceability-menu-final-config',
+          title: 'FINAL CONFIG DEVICES LIST',
+          path: '/plugins/device-traceability?tab=final-config',
+          icon: 'clipboard-check',
+        },
+      ],
     });
 
     context.logger.info('Device Traceability frontend plugin initialized');

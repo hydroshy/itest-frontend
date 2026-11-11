@@ -64,14 +64,41 @@ defineEmits<{
 }>();
 
 function resolveIcon(card: any): string {
-  if (card.icon) return card.icon;
-  if (card.id?.includes('trace')) return 'barcode';
-  if (card.id?.includes('config') || card.id?.includes('cpu')) return 'cpu';
-  if (card.id?.includes('chirp') || card.id?.includes('lora')) return 'radio';
-  if (card.id?.includes('memmap')) return 'layers';
-  if (card.id?.includes('user')) return 'users';
-  if (card.id?.includes('role')) return 'shield';
-  if (card.id?.includes('dash')) return 'monitor';
+  const icon = card.icon;
+  const id = (card.id || '').toLowerCase();
+  const title = (card.title || '').toLowerCase();
+  const route = (card.route || '').toLowerCase();
+
+  // Ưu tiên các icon đặc thù cho từng plugin và tính năng nghiệp vụ
+  if (id.includes('device:manage') || route.includes('/plugins/device') || title.includes('thiết bị (devices)')) return 'microchip';
+  if (id.includes('decoder') || title.includes('decoder')) return 'file-code';
+  if (id.includes('dis') || route.includes('dis-manager')) return 'truck-ramp-box';
+  if (id.includes('payload') || title.includes('payload')) return 'chart-line';
+  if (id.includes('create-device') || title.includes('create device')) return 'circle-plus';
+  if (id.includes('list-device-testing') || title.includes('list device testing')) return 'list-check';
+  if (id.includes('list-device-simulation') || title.includes('list device simulation')) return 'microchip';
+  if (id.includes('list-flow') || title.includes('list flow')) return 'diagram-project';
+  if (id.includes('device-simulation') || title.includes('simulation flow')) return 'wand-magic-sparkles';
+  if (id.includes('create-test-batch') || title.includes('create test batch')) return 'folder-plus';
+  if (id.includes('list-test-batch') || title.includes('list test batch')) return 'boxes-stacked';
+  if (id.includes('so-test-batch') || title.includes('so test batch')) return 'file-invoice';
+  if (id.includes('test-batch') || title.includes('test batch')) return 'boxes-stacked';
+  if (id.includes('gateway') || title.includes('gateway')) return 'tower-broadcast';
+  if (id.includes('packet') || title.includes('packet')) return 'satellite-dish';
+
+  if (icon && icon !== 'desktop' && icon !== 'monitor' && icon !== 'Platform' && icon !== 'platform') {
+    return icon;
+  }
+
+  if (id.includes('trace')) return 'barcode';
+  if (id.includes('config')) return 'sliders';
+  if (id.includes('chirp') || id.includes('lora')) return 'tower-broadcast';
+  if (id.includes('memmap')) return 'layer-group';
+  if (id.includes('user')) return 'users';
+  if (id.includes('role')) return 'shield';
+  if (id.includes('dash')) return 'dashboard';
+  if (id.includes('plugin')) return 'plugins';
+
   return 'cubes';
 }
 </script>

@@ -74,14 +74,21 @@ const showSidebar = computed(() => {
 });
 
 const currentRouteTitle = computed(() => {
-  if (isFromMenu.value && route.query.tab) {
+  if (route.query.tab) {
     const tab = String(route.query.tab);
     const tabMap: Record<string, string> = {
+      'device-payload': 'DEVICE PAYLOAD',
+      'create-device-testing': 'CREATE DEVICE TESTING',
+      'list-device-testing': 'LIST DEVICE TESTING',
+      'list-test-batch': 'LIST TEST BATCH',
+      'list-flow-simulation': 'LIST FLOW SIMULATION',
+      'list-device-simulation': 'LIST DEVICE SIMULATION',
+      'simulation-devices': 'LIST DEVICE SIMULATION',
+      'so-test-batch': 'SO TEST BATCH',
+      'create-test-batch': 'CREATE TEST BATCH',
+      'device-simulation': 'CREATE SIMULATION FLOW',
       'test-batch': 'Device Test Batch',
       'device-test-batch': 'Device Test Batch',
-      'create-test-batch': 'Create Test Batch',
-      'list-test-batch': 'LIST TEST BATCH',
-      'device-payload': 'Device Payload Live Stream',
       'tool': 'Final Config Tool',
       'manager': 'Final Config Manager',
       'create': 'Tạo Final Config',
@@ -97,10 +104,23 @@ const currentRouteTitle = computed(() => {
     }
   }
 
+  if (route.path === '/plugins/testing') {
+    return 'LORAWAN TESTING';
+  }
+  if (route.path === '/plugins/decoder') {
+    return 'DECODER';
+  }
+  if (route.path === '/plugins/device') {
+    return 'Thiết Bị (Devices)';
+  }
+
   if (route.meta?.title) {
     const t = String(route.meta.title);
-    if (t === 'LoRaWAN Testing') {
-      return 'Device Testing';
+    if (t === 'LoRaWAN Testing' || t === 'LoRaWan Testing') {
+      return 'LORAWAN TESTING';
+    }
+    if (t === 'Bộ Giải Mã (Decoder)' || t === 'Bộ giải mã (decoder)') {
+      return 'DECODER';
     }
     return t;
   }
@@ -116,11 +136,33 @@ const canAccessAdmin = computed(() => {
 });
 
 const filteredPluginMenus = computed(() => {
-  return (pluginStore.menus || []).map((m: any) => ({
+  const list = (pluginStore.menus || []).map((m: any) => ({
     ...m,
     title: m.title || m.label || m.id,
     path: m.path || m.route || '',
+    children: Array.isArray(m.children)
+      ? m.children.map((c: any) => ({
+          ...c,
+          title: c.title || c.label || c.id,
+          path: c.path || c.route || '',
+          icon: c.icon,
+        }))
+      : undefined,
   }));
+
+  // Đảm bảo plugin "Thiết Bị (Devices)" luôn hiển thị trên sidebar
+  const hasDeviceMenu = list.some((m: any) => m.id === 'menu-device' || m.path === '/plugins/device');
+  if (!hasDeviceMenu) {
+    list.push({
+      id: 'menu-device',
+      title: 'Thiết Bị (Devices)',
+      icon: 'microchip',
+      path: '/plugins/device',
+      order: 10,
+    });
+  }
+
+  return list.sort((a: any, b: any) => (a.order || 100) - (b.order || 100));
 });
 
 function toggleSidebar() {

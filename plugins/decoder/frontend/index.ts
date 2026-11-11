@@ -48,34 +48,34 @@ export const decoderPlugin: FrontendPluginDefinition = {
       name: 'decoder-plugin',
       component: DecoderView,
       meta: {
-        title: 'Bộ Giải Mã (Decoder)',
+        title: 'DECODER',
         requiresAuth: true,
       },
     });
 
     context.registerMenu({
       id: 'decoder-menu',
-      title: 'Bộ Giải Mã (Decoder)',
-      icon: 'Cpu',
+      title: 'DECODER',
+      icon: 'file-code',
       path: '/plugins/decoder',
       order: 16,
       children: [
         {
           id: 'decoder-menu-scripts',
-          title: 'Danh Sách Scripts',
-          icon: 'Cpu',
+          title: 'DANH SÁCH SCRIPTS',
+          icon: 'file-code',
           path: '/plugins/decoder?tab=list',
         },
         {
           id: 'decoder-menu-memmaps',
-          title: 'Tra Cứu MemMap',
-          icon: 'Document',
+          title: 'TRA CỨU MEMMAP',
+          icon: 'table-list',
           path: '/plugins/decoder?tab=memmaps',
         },
         {
           id: 'decoder-menu-sandbox',
-          title: 'Sandbox Thử Nghiệm',
-          icon: 'VideoPlay',
+          title: 'SANDBOX THỬ NGHIỆM',
+          icon: 'flask',
           path: '/plugins/decoder?tab=sandbox',
         },
       ],

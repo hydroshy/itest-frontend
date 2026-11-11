@@ -1,6 +1,6 @@
 {
   "name": "decoder",
-  "displayName": "Bộ Giải Mã (Decoder)",
+  "displayName": "DECODER",
   "version": "1.0.0",
   "description": "Quản lý và thực thi script JS giải mã payload LoRaWAN theo SKU & LONG_FW từ MemMap",
   "author": "ITEST Team",
@@ -13,7 +13,7 @@
       "name": "DecoderManagement",
       "component": "frontend/views/DecoderView.vue",
       "meta": {
-        "title": "Bộ Giải Mã (Decoder)",
+        "title": "DECODER",
         "icon": "Cpu",
         "requiresAuth": true,
         "permissions": ["decoder.view"]
@@ -23,7 +23,7 @@
   "menuItems": [
     {
       "id": "decoder-management",
-      "title": "Bộ Giải Mã (Decoder)",
+      "title": "DECODER",
       "path": "/decoder",
       "icon": "Cpu",
       "order": 5,

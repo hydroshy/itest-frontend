@@ -113,23 +113,23 @@
           <template v-for="menu in filteredPluginMenus" :key="menu.id">
             <!-- Nested submenus -->
             <li v-if="menu.children && menu.children.length > 0">
-              <details v-if="!isCollapse" :open="activeRoute.startsWith(menu.path)">
-                <summary class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5">
+              <details v-if="!isCollapse" :open="isParentActive(menu.path)">
+                <summary class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
                   <div class="flex items-center gap-3 min-w-0">
-                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" class="flex-shrink-0" />
+                    <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="isParentActive(menu.path) ? '#2563eb' : 'currentColor'" class="flex-shrink-0" />
                     <span class="truncate">{{ menu.title }}</span>
                   </div>
                 </summary>
-                <ul class="pl-4 mt-1 space-y-1">
+                <ul class="pl-4 mt-1 space-y-1 border-l border-[var(--owl-border-light)] ml-4">
                   <li v-for="sub in menu.children" :key="sub.id">
                     <a
-                      class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs"
-                      :class="activeRoute === sub.path
+                      class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors duration-150"
+                      :class="isSubActive(sub.path)
                         ? 'active font-bold bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                         : 'font-semibold text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'"
                       @click="router.push(sub.path)"
                     >
-                      <CyberIcon v-if="sub.icon" :name="resolveCyberIconName(sub.icon)" :size="14" :color="activeRoute === sub.path ? '#2563eb' : 'currentColor'" class="flex-shrink-0" />
+                      <CyberIcon v-if="sub.icon" :name="resolveCyberIconName(sub.icon)" :size="14" :color="isSubActive(sub.path) ? '#2563eb' : 'currentColor'" class="flex-shrink-0" />
                       <span class="truncate">{{ sub.title }}</span>
                     </a>
                   </li>
@@ -139,13 +139,13 @@
               <a
                 v-else
                 class="flex items-center justify-center px-3 py-2.5 rounded-xl transition-colors duration-150"
-                :class="activeRoute.startsWith(menu.path)
+                :class="isParentActive(menu.path)
                   ? 'active bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                   : 'text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'"
                 :title="menu.title"
                 @click="router.push(menu.children[0]?.path || menu.path)"
               >
-                <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute.startsWith(menu.path) ? '#2563eb' : 'currentColor'" class="flex-shrink-0" />
+                <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="isParentActive(menu.path) ? '#2563eb' : 'currentColor'" class="flex-shrink-0" />
               </a>
             </li>
 
@@ -153,14 +153,14 @@
             <li v-else>
               <a
                 class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 text-xs"
-                :class="activeRoute === menu.path
+                :class="isSubActive(menu.path) || (activeRoute === menu.path && (!route.query || Object.keys(route.query).length === 0))
                   ? 'active font-bold bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                   : 'font-semibold text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'"
                 :title="isCollapse ? menu.title : undefined"
                 @click="router.push(menu.path)"
               >
                 <div class="flex items-center gap-3 min-w-0">
-                  <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="activeRoute === menu.path ? '#2563eb' : 'currentColor'" class="flex-shrink-0" />
+                  <CyberIcon :name="resolveCyberIconName(menu.icon)" :size="18" :color="isSubActive(menu.path) || activeRoute === menu.path ? '#2563eb' : 'currentColor'" class="flex-shrink-0" />
                   <span v-show="!isCollapse" class="truncate">{{ menu.title }}</span>
                 </div>
                 <span
@@ -179,7 +179,7 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 
 defineProps<{
@@ -191,10 +191,23 @@ defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 
 function resolveCyberIconName(iconName?: string): string {
   if (!iconName) return 'monitor';
   return iconName;
+}
+
+function isParentActive(menuPath?: string): boolean {
+  if (!menuPath) return false;
+  return route.path === menuPath || route.path.startsWith(`${menuPath}/`);
+}
+
+function isSubActive(subPath?: string): boolean {
+  if (!subPath) return false;
+  if (route.fullPath === subPath) return true;
+  if (route.path === subPath && (!route.query || Object.keys(route.query).length === 0)) return true;
+  return false;
 }
 </script>
 

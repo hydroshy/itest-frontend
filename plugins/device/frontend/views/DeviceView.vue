@@ -374,8 +374,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import {
   Cpu,
   Search,
@@ -388,6 +388,17 @@ import { cyberToast, cyberConfirm } from '@/cyber/hud';
 import { httpClient } from '@/api/client';
 
 const router = useRouter();
+const route = useRoute();
+
+watch(
+  () => route.query,
+  (q) => {
+    if (q.tab === 'register' || q.action === 'register') {
+      openRegisterDialog();
+    }
+  },
+  { immediate: true }
+);
 
 // Devices State
 const loadingDevices = ref(false);

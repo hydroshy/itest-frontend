@@ -29,8 +29,28 @@ export const disManagerPlugin: FrontendPluginDefinition = {
       id: 'menu-dis-manager',
       title: 'DIS Odoo Integration',
       path: '/plugins/dis-manager',
-      icon: 'Connection',
+      icon: 'network-wired',
       order: 25,
+      children: [
+        {
+          id: 'dis-menu-diagnostics',
+          title: 'KIỂM TRA KẾT NỐI',
+          icon: 'link',
+          path: '/plugins/dis-manager?tab=diagnostics',
+        },
+        {
+          id: 'dis-menu-orders',
+          title: 'SALES ORDERS (DIS ODOO)',
+          icon: 'list-check',
+          path: '/plugins/dis-manager?tab=orders',
+        },
+        {
+          id: 'dis-menu-sandbox',
+          title: 'SANDBOX THỬ NGHIỆM',
+          icon: 'flask',
+          path: '/plugins/dis-manager?tab=sandbox',
+        },
+      ],
     });
 
     context.logger.info('DIS Manager frontend plugin initialized');

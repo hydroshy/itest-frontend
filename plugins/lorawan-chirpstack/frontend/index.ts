@@ -31,8 +31,46 @@ export const lorawanChirpStackPlugin: FrontendPluginDefinition = {
       id: 'menu-lorawan-chirpstack',
       title: 'ChirpStack LoRaWAN',
       path: '/plugins/lorawan-chirpstack',
-      icon: 'Connection',
+      icon: 'tower-broadcast',
       order: 21,
+      children: [
+        {
+          id: 'chirpstack-menu-servers',
+          title: 'SERVERS',
+          path: '/plugins/lorawan-chirpstack?tab=servers',
+          icon: 'server',
+        },
+        {
+          id: 'chirpstack-menu-tenants',
+          title: 'TENANTS',
+          path: '/plugins/lorawan-chirpstack?tab=tenants',
+          icon: 'building',
+        },
+        {
+          id: 'chirpstack-menu-applications',
+          title: 'APPLICATIONS',
+          path: '/plugins/lorawan-chirpstack?tab=applications',
+          icon: 'cubes',
+        },
+        {
+          id: 'chirpstack-menu-gateways',
+          title: 'GATEWAYS',
+          path: '/plugins/lorawan-chirpstack?tab=gateways',
+          icon: 'tower-broadcast',
+        },
+        {
+          id: 'chirpstack-menu-devices',
+          title: 'DEVICES',
+          path: '/plugins/lorawan-chirpstack?tab=devices',
+          icon: 'microchip',
+        },
+        {
+          id: 'chirpstack-menu-telemetry',
+          title: 'TELEMETRY FRAMES',
+          path: '/plugins/lorawan-chirpstack?tab=telemetry',
+          icon: 'chart-line',
+        },
+      ],
     });
 
     context.registerWidget({

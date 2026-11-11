@@ -50,9 +50,23 @@ export const memmapManagerPlugin: FrontendPluginDefinition = {
     context.registerMenu({
       id: 'menu-memmap-payload',
       title: 'MEMMAP PAYLOAD',
-      path: '/plugins/memmap-manager?tab=manager',
-      icon: 'Files',
+      path: '/plugins/memmap-manager',
+      icon: 'layer-group',
       order: 22,
+      children: [
+        {
+          id: 'memmap-menu-manager',
+          title: 'DANH SÁCH MEMMAP',
+          path: '/plugins/memmap-manager?tab=manager',
+          icon: 'table-list',
+        },
+        {
+          id: 'memmap-menu-upload',
+          title: 'TẢI LÊN MEMMAP',
+          path: '/plugins/memmap-manager?tab=upload',
+          icon: 'cloud-arrow-up',
+        },
+      ],
     });
 
     context.logger.info('MemMap Manager frontend plugin initialized');

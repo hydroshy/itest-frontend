@@ -58,8 +58,28 @@ export const finalConfigPlugin: FrontendPluginDefinition = {
       id: 'menu-final-config',
       title: 'FINAL CONFIG',
       path: '/plugins/final-config',
-      icon: 'Setting',
+      icon: 'sliders',
       order: 23,
+      children: [
+        {
+          id: 'final-config-menu-tool',
+          title: 'FINAL CONFIG TOOL',
+          path: '/plugins/final-config?tab=tool',
+          icon: 'wrench',
+        },
+        {
+          id: 'final-config-menu-manager',
+          title: 'FINAL CONFIG MANAGER',
+          path: '/plugins/final-config?tab=manager',
+          icon: 'file-lines',
+        },
+        {
+          id: 'final-config-menu-create',
+          title: 'TẠO FINAL CONFIG',
+          path: '/plugins/final-config?tab=create',
+          icon: 'plus',
+        },
+      ],
     });
 
     context.logger.info('Final Config frontend plugin initialized');

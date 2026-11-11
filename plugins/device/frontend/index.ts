@@ -30,18 +30,42 @@ export const devicePlugin: FrontendPluginDefinition = {
       component: DeviceView,
       meta: {
         title: 'Thiết Bị (Devices)',
-        icon: 'Cpu',
+        icon: 'microchip',
         requiresAuth: true,
-        permissions: ['device:device:view'],
+      },
+    });
+
+    context.registerRoute({
+      path: '/plugins/devices',
+      name: 'devices-plugin-alias',
+      component: DeviceView,
+      meta: {
+        title: 'Thiết Bị (Devices)',
+        icon: 'microchip',
+        requiresAuth: true,
       },
     });
 
     context.registerMenu({
       id: 'menu-device',
       title: 'Thiết Bị (Devices)',
-      icon: 'Cpu',
+      icon: 'microchip',
       path: '/plugins/device',
       order: 10,
+      children: [
+        {
+          id: 'menu-device-list',
+          title: 'DANH SÁCH THIẾT BỊ',
+          icon: 'list-check',
+          path: '/plugins/device?tab=list',
+        },
+        {
+          id: 'menu-device-register',
+          title: 'ĐĂNG KÝ THIẾT BỊ',
+          icon: 'circle-plus',
+          path: '/plugins/device?tab=register',
+        },
+      ],
     });
 
     context.logger.info('Device Management plugin initialized successfully');
