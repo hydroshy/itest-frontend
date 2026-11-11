@@ -903,6 +903,8 @@ async function loadAvailableDevicesForSo(soNumber: string) {
     const res: any = await httpClient.get('/plugins/testing/test-batches/available-devices', {
       params: {
         soNumber: soNumber.trim(),
+        batchId: selectedBatchId.value || undefined,
+        itemCode: filterItemCode.value || undefined,
         limit: 200,
       },
     });
@@ -912,7 +914,7 @@ async function loadAvailableDevicesForSo(soNumber: string) {
       id: d.id,
       serialNumber: d.serialNumber || d.serial_number || d.registrationCode || d.registration_code || d.networkId || d.id,
       devEui: d.devEui || d.dev_eui || d.networkId || d.network_id || '—',
-      itemCode: d.itemCode || d.item_code || filterItemCode.value || '—',
+      itemCode: d.itemCode || d.item_code || d.raw?.itemCode || d.raw?.item_code || '—',
       fwVersion: d.fwVersion || d.fw_version || d.longFw || d.long_fw || filterFwVersion.value || '—',
       status: d.status || 'READY',
       isRunningBatch: d.isRunningBatch === true || d.isTestingInBatch === true || d.status === 'RUNNING_BATCH',
@@ -1273,6 +1275,14 @@ function initBatchTabulator() {
 
 function getFilteredAvailableDevices() {
   let list = availableDevices.value || [];
+  // 0. Chi hien thi thiet bi khop ITEM_CODE cua Test Batch da chon
+  if (filterItemCode.value && filterItemCode.value.trim() && filterItemCode.value !== '—') {
+    const expectedItem = filterItemCode.value.trim().toUpperCase();
+    list = list.filter((d) => {
+      const it = (d.itemCode || d.raw?.itemCode || d.raw?.item_code || '').trim().toUpperCase();
+      return !it || it === '—' || it === expectedItem;
+    });
+  }
 
   // 1. Chỉ hiển thị thiết bị CHƯA TEST
   list = list.filter((d) => {
@@ -1324,6 +1334,14 @@ function updateTabulatorData() {
 // 5. BATCH DEVICE OPERATIONS
 // ============================================================================
 function addSingleDeviceToBatch(deviceRow: any) {
+  if (filterItemCode.value && filterItemCode.value.trim() && filterItemCode.value !== '—') {
+    const devItem = (deviceRow.itemCode || deviceRow.raw?.itemCode || deviceRow.raw?.item_code || '').trim().toUpperCase();
+    const batchItem = filterItemCode.value.trim().toUpperCase();
+    if (devItem && devItem !== '—' && devItem !== batchItem) {
+      cyberToast.error('Thiết bị có mã hàng ' + devItem + ' không khớp với ITEM_CODE của Test Batch (' + batchItem + ')!');
+      return;
+    }
+  }
   if (isTesting.value) {
     cyberToast.warning('Batch đang chạy kiểm thử!');
     return;
@@ -1420,6 +1438,14 @@ function addSelectedAvailableRowsToBatch() {
   let addedCount = 0;
   for (const row of selectedAvailableRows.value) {
     if (row.isRunningBatch) continue;
+    if (filterItemCode.value && filterItemCode.value.trim() && filterItemCode.value !== '—') {
+      const devItem = (row.itemCode || row.raw?.itemCode || row.raw?.item_code || '').trim().toUpperCase();
+      const batchItem = filterItemCode.value.trim().toUpperCase();
+      if (devItem && devItem !== '—' && devItem !== batchItem) {
+        cyberToast.error('Thiết bị ' + row.serialNumber + ' (' + devItem + ') không khớp với ITEM_CODE của Test Batch (' + batchItem + ')!');
+        continue;
+      }
+    }
     if (selectedDevices.value.length >= maxAllowedDevices.value) {
       cyberToast.warning(`Đã đạt giới hạn tối đa ${maxAllowedDevices.value} thiết bị của đợt test!`);
       break;
