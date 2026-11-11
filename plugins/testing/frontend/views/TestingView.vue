@@ -155,12 +155,20 @@
 
     <!-- TAB: List Flow Simulation (Kịch Bản Mô Phỏng) -->
     <div v-if="activeTab === 'list-flow-simulation'">
-      <ListFlowSimulationPanel @switch-tab="selectTab" />
+      <ListFlowSimulationPanel
+        @switch-tab="onSwitchTabWithPayload"
+        @edit-flow="onEditFlow"
+      />
     </div>
 
     <!-- TAB 3: Device Simulation (Giả Lập Thiết Bị & Tạo Flow) -->
     <div v-if="activeTab === 'device-simulation'">
-      <DeviceSimulationPanel @packet-emitted="onDevicePacketEmitted" @switch-tab="selectTab" />
+      <DeviceSimulationPanel
+        :edit-flow-data="selectedFlowToEdit"
+        @packet-emitted="onDevicePacketEmitted"
+        @switch-tab="selectTab"
+        @clear-edit-flow="selectedFlowToEdit = null"
+      />
     </div>
 
     <!-- TAB: List Device Simulation (Danh Sách Thiết Bị Simulation) -->
@@ -362,9 +370,17 @@ const loading = ref(false);
 const autoCheckPanelRef = ref<any>(null);
 const listDevicePanelRef = ref<any>(null);
 const selectedBatchPayload = ref<any>(null);
+const selectedFlowToEdit = ref<any>(null);
+
+function onEditFlow(flow: any) {
+  selectedFlowToEdit.value = flow;
+  selectTab('device-simulation');
+}
 
 function onSwitchTabWithPayload(tabName: string, payload?: any) {
-  if (payload) {
+  if (tabName === 'device-simulation' && payload) {
+    selectedFlowToEdit.value = payload;
+  } else if (payload) {
     selectedBatchPayload.value = payload;
   }
   selectTab(tabName);

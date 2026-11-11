@@ -98,15 +98,34 @@
                 <Cpu class="w-3.5 h-3.5 text-primary" />
                 Mã Sản Phẩm (ITEM-CODE) <span class="text-error">*</span>
               </span>
-              <span class="label-text-alt text-[10px] text-base-content/60">Dòng sản phẩm</span>
+              <span class="label-text-alt text-[10px] text-base-content/60">Chọn có sẵn hoặc tự nhập</span>
             </label>
-            <input
-              v-model="batchForm.itemCode"
-              type="text"
-              placeholder="VD: WSSFC-ATH, WSLRW-TH..."
-              class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
-              @input="onItemCodeInput"
-            />
+            <div class="relative">
+              <input
+                v-model="batchForm.itemCode"
+                type="text"
+                placeholder="Chọn hoặc nhập ITEM-CODE..."
+                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
+                @focus="showItemCodeDropdown = true"
+                @click="showItemCodeDropdown = true"
+                @blur="closeItemCodeDropdown"
+                @input="onItemCodeInput"
+              />
+              <div
+                v-if="showItemCodeDropdown && filteredItemCodes.length > 0"
+                class="absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto z-50 bg-base-100 rounded-lg shadow-xl border border-base-300 p-1 font-mono text-xs"
+              >
+                <div
+                  v-for="code in filteredItemCodes"
+                  :key="code"
+                  class="px-2.5 py-1.5 rounded hover:bg-primary/20 hover:text-primary cursor-pointer transition-colors flex items-center justify-between"
+                  @mousedown.prevent="selectItemCode(code)"
+                >
+                  <span class="font-bold">{{ code }}</span>
+                  <span class="text-[10px] text-base-content/50">ITEM_CODE</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- 4. Phiên Bản Firmware (FW_VERSION: có cấu trúc XXFXXXX với XX có thể là từ 1 đến 32 nói chung x là số) -->
@@ -123,15 +142,34 @@
                 {{ isFwVersionValid ? 'Cấu trúc: XXFXXXX (VD: 4F0505, 32F0505)' : 'Chưa đúng chuẩn XXFXXXX' }}
               </span>
             </label>
-            <input
-              v-model="batchForm.longFw"
-              type="text"
-              maxlength="35"
-              placeholder=""
-              class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
-              :class="{ 'input-error': !isFwVersionValid && batchForm.longFw }"
-              @input="onFwVersionInput"
-            />
+            <div class="relative">
+              <input
+                v-model="batchForm.longFw"
+                type="text"
+                maxlength="35"
+                placeholder="Chọn hoặc nhập FW_VERSION..."
+                class="input input-sm input-bordered w-full font-mono text-xs uppercase bg-base-100 focus:border-primary"
+                :class="{ 'input-error': !isFwVersionValid && batchForm.longFw }"
+                @focus="showFwDropdown = true"
+                @click="showFwDropdown = true"
+                @blur="closeFwDropdown"
+                @input="onFwVersionInput"
+              />
+              <div
+                v-if="showFwDropdown && filteredFwList.length > 0"
+                class="absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto z-50 bg-base-100 rounded-lg shadow-xl border border-base-300 p-1 font-mono text-xs"
+              >
+                <div
+                  v-for="fw in filteredFwList"
+                  :key="fw"
+                  class="px-2.5 py-1.5 rounded hover:bg-primary/20 hover:text-primary cursor-pointer transition-colors flex items-center justify-between"
+                  @mousedown.prevent="selectFw(fw)"
+                >
+                  <span class="font-bold">{{ fw }}</span>
+                  <span class="text-[10px] text-base-content/50">FW_VERSION</span>
+                </div>
+              </div>
+            </div>
             <div v-if="!isFwVersionValid && batchForm.longFw" class="text-[11px] text-error mt-1 flex items-center gap-1">
               <AlertTriangle class="w-3.5 h-3.5 flex-shrink-0" />
               <span>FW_VERSION có cấu trúc XXFXXXX với XX có thể là từ 1 đến 32 nói chung x là số muốn nằm ở mức nào cũng được</span>
@@ -343,12 +381,59 @@ import {
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/httpClient';
 import { cyberToast } from '@/services/cyberToast';
+import { useItemFwCatalog } from '../composables/useItemFwCatalog';
 
 const emit = defineEmits<{
   (e: 'switch-tab', tab: string, payload?: any): void;
 }>();
 
 const saving = ref(false);
+
+const { itemCodes, getFwListForItem, loadCatalog } = useItemFwCatalog();
+
+const showItemCodeDropdown = ref(false);
+const showFwDropdown = ref(false);
+
+const filteredItemCodes = computed(() => {
+  const q = (batchForm.itemCode || '').trim().toUpperCase();
+  if (!q) return itemCodes.value;
+  return itemCodes.value.filter((c) => c.includes(q));
+});
+
+const filteredFwList = computed(() => {
+  const list = getFwListForItem(batchForm.itemCode);
+  const q = (batchForm.longFw || '').trim().toUpperCase();
+  if (!q) return list;
+  return list.filter((f) => f.includes(q));
+});
+
+function selectItemCode(code: string) {
+  batchForm.itemCode = code.toUpperCase();
+  showItemCodeDropdown.value = false;
+  const fws = getFwListForItem(code);
+  if (fws.length > 0 && (!batchForm.longFw || !fws.includes(batchForm.longFw))) {
+    batchForm.longFw = fws[0];
+  }
+  generateBatchCode();
+}
+
+function selectFw(fw: string) {
+  batchForm.longFw = fw.toUpperCase();
+  showFwDropdown.value = false;
+  generateBatchCode();
+}
+
+function closeItemCodeDropdown() {
+  setTimeout(() => {
+    showItemCodeDropdown.value = false;
+  }, 200);
+}
+
+function closeFwDropdown() {
+  setTimeout(() => {
+    showFwDropdown.value = false;
+  }, 200);
+}
 
 const batchForm = reactive({
   itemCode: '',
@@ -687,5 +772,6 @@ async function loadFlows() {
 onMounted(() => {
   loadFlows();
   loadSimulationDevices();
+  loadCatalog();
 });
 </script>

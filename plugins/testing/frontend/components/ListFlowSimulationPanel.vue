@@ -188,7 +188,7 @@
                   <button
                     class="btn btn-ghost btn-xs text-info gap-1"
                     title="Chỉnh Sửa Kịch Bản"
-                    @click="openEditFlowModal(flow)"
+                    @click="onEditFlowClick(flow)"
                   >
                     <Edit3 class="w-3.5 h-3.5" />
                     Sửa
@@ -302,10 +302,10 @@
           <button class="btn btn-sm btn-ghost" @click="showDetailModal = false">Đóng</button>
           <button
             class="btn btn-sm btn-info gap-1"
-            @click="showDetailModal = false; openEditFlowModal(selectedFlow)"
+            @click="showDetailModal = false; onEditFlowClick(selectedFlow)"
           >
             <Edit3 class="w-3.5 h-3.5" />
-            Chỉnh Sửa
+            Chỉnh Sửa Flow
           </button>
           <button
             class="btn btn-sm btn-success gap-1.5"
@@ -318,102 +318,6 @@
       </div>
       <form method="dialog" class="modal-backdrop">
         <button @click="showDetailModal = false">close</button>
-      </form>
-    </dialog>
-
-    <!-- Modal: Chỉnh Sửa Flow Simulation -->
-    <dialog class="modal" :class="{ 'modal-open': showEditModal }">
-      <div class="modal-box bg-base-100 border border-base-300 max-w-4xl p-5">
-        <div class="flex items-center justify-between pb-3 mb-4 border-b border-base-300">
-          <div class="flex items-center gap-2">
-            <Edit3 class="w-5 h-5 text-info" />
-            <div>
-              <h3 class="font-bold text-sm uppercase">Chỉnh Sửa Kịch Bản Flow Simulation</h3>
-              <p class="text-xs text-base-content/60 font-mono">
-                {{ editFlowForm.simuId }} &bull; Cập nhật quy trình 3 hàm chuẩn
-              </p>
-            </div>
-          </div>
-          <button class="btn btn-sm btn-circle btn-ghost" @click="showEditModal = false">✕</button>
-        </div>
-
-        <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-          <!-- Thông tin cơ bản -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div class="form-control">
-              <label class="label py-0.5">
-                <span class="label-text text-xs font-semibold">Tên Kịch Bản</span>
-              </label>
-              <input
-                v-model="editFlowForm.profileName"
-                type="text"
-                class="input input-sm input-bordered w-full text-xs"
-                placeholder="Nhập tên kịch bản..."
-              />
-            </div>
-
-            <div class="form-control">
-              <label class="label py-0.5">
-                <span class="label-text text-xs font-semibold">ITEM-CODE</span>
-              </label>
-              <input
-                v-model="editFlowForm.itemCode"
-                type="text"
-                class="input input-sm input-bordered w-full font-mono text-xs uppercase"
-                placeholder="VD: WSLRW-01"
-              />
-            </div>
-
-            <div class="form-control">
-              <label class="label py-0.5">
-                <span class="label-text text-xs font-semibold">FW Version</span>
-              </label>
-              <input
-                v-model="editFlowForm.longFw"
-                type="text"
-                class="input input-sm input-bordered w-full font-mono text-xs uppercase"
-                placeholder="VD: 1F0001"
-              />
-            </div>
-
-            <div class="form-control">
-              <label class="label py-0.5">
-                <span class="label-text text-xs font-semibold">Loại Kết Nối</span>
-              </label>
-              <select
-                v-model="editFlowForm.sensorConnectivity"
-                class="select select-sm select-bordered w-full text-xs font-mono"
-              >
-                <option value="LoRaWAN">LoRaWAN</option>
-                <option value="Sigfox">Sigfox</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Function Blocks Builder -->
-          <div class="pt-2">
-            <SimulationFlowBuilder
-              v-model="editFlowBlocks"
-              :reference-devices="selectedFlow?.reference_devices || selectedFlow?.referenceDevices"
-              :dut-name="editFlowForm.profileName || editFlowForm.itemCode || 'DUT'"
-            />
-          </div>
-        </div>
-
-        <div class="modal-action pt-3 border-t border-base-300">
-          <button class="btn btn-sm btn-ghost" :disabled="savingEdit" @click="showEditModal = false">Hủy</button>
-          <button
-            class="btn btn-sm btn-primary gap-1.5"
-            :disabled="savingEdit"
-            @click="submitEditFlow"
-          >
-            <span v-if="savingEdit" class="loading loading-spinner loading-xs"></span>
-            Lưu Thay Đổi Kịch Bản
-          </button>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button @click="showEditModal = false">close</button>
       </form>
     </dialog>
   </div>
@@ -438,7 +342,13 @@ import SimulationFlowBuilder, { type FlowBlock } from './SimulationFlowBuilder.v
 
 const emit = defineEmits<{
   (e: 'switch-tab', tab: string, payload?: any): void;
+  (e: 'edit-flow', flow: any): void;
 }>();
+
+function onEditFlowClick(flow: any) {
+  emit('edit-flow', flow);
+  emit('switch-tab', 'device-simulation', flow);
+}
 
 const loading = ref(false);
 const flowProfiles = ref<any[]>([]);
@@ -447,21 +357,6 @@ const searchQuery = ref('');
 // Modal detail state
 const showDetailModal = ref(false);
 const selectedFlow = ref<any>(null);
-
-// Modal edit state
-const showEditModal = ref(false);
-const savingEdit = ref(false);
-const editFlowBlocks = ref<FlowBlock[]>([]);
-const editFlowForm = reactive({
-  id: '',
-  simuId: '',
-  profileName: '',
-  itemCode: '',
-  longFw: '',
-  sku: '',
-  sensorConnectivity: 'LoRaWAN',
-  referenceDevices: [] as any[],
-});
 
 const filteredFlows = computed(() => {
   if (!searchQuery.value.trim()) return flowProfiles.value;
@@ -545,65 +440,6 @@ async function loadFlowProfiles() {
 function viewFlowDetails(flow: any) {
   selectedFlow.value = flow;
   showDetailModal.value = true;
-}
-
-function openEditFlowModal(flow: any) {
-  editFlowForm.id = flow.id || flow.simuId;
-  editFlowForm.simuId = flow.simuId || flow.id;
-  editFlowForm.profileName = flow.profileName || flow.name || '';
-  editFlowForm.itemCode = flow.itemCode || flow.item_code || '';
-  editFlowForm.longFw = flow.longFw || flow.long_fw || flow.fwVersion || '';
-  editFlowForm.sku = flow.sku || '';
-  editFlowForm.sensorConnectivity = flow.sensorConnectivity || 'LoRaWAN';
-  const refDevs = flow.reference_devices || flow.referenceDevices || flow.autoCheckCriteria?.reference_devices || flow.criteria?.reference_devices || [];
-  editFlowForm.referenceDevices = Array.isArray(refDevs) ? refDevs : [];
-
-  const rawBlocks = getBlocksList(flow);
-  editFlowBlocks.value = JSON.parse(JSON.stringify(rawBlocks));
-  showEditModal.value = true;
-}
-
-async function submitEditFlow() {
-  if (!editFlowForm.profileName.trim() && !editFlowForm.itemCode.trim()) {
-    cyberToast.warning('Vui lòng nhập Tên kịch bản hoặc ITEM_CODE!');
-    return;
-  }
-
-  savingEdit.value = true;
-  const payload = {
-    simuId: editFlowForm.simuId,
-    name: editFlowForm.profileName,
-    profileName: editFlowForm.profileName,
-    itemCode: editFlowForm.itemCode,
-    longFw: editFlowForm.longFw,
-    sku: editFlowForm.sku,
-    sensorConnectivity: editFlowForm.sensorConnectivity,
-    flowBlocks: editFlowBlocks.value,
-  };
-
-  try {
-    const targetId = encodeURIComponent(editFlowForm.id || editFlowForm.simuId);
-    let updated: any;
-    try {
-      updated = await httpClient.put(`/plugins/testing/simulation/profiles/${targetId}`, payload);
-    } catch (putErr: any) {
-      const status = putErr?.response?.status || putErr?.status;
-      if (status === 404 || putErr?.message?.includes('404') || putErr?.message?.includes('Cannot PUT')) {
-        // Fallback post if put is not enabled or backend not redeployed yet
-        updated = await httpClient.post('/plugins/testing/simulation/profiles', payload);
-      } else {
-        throw putErr;
-      }
-    }
-    cyberToast.success('Cập nhật kịch bản Simulation thành công!');
-    showEditModal.value = false;
-    await loadFlowProfiles();
-  } catch (err: any) {
-    const msg = err?.response?.data?.message || err?.message || 'Lỗi khi cập nhật kịch bản';
-    cyberToast.error(msg);
-  } finally {
-    savingEdit.value = false;
-  }
 }
 
 function useInBatch(flow: any) {

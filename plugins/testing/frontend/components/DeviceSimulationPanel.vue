@@ -49,6 +49,26 @@
       </div>
     </div>
 
+    <!-- Banner chỉnh sửa kịch bản từ List Flow Simulation -->
+    <div
+      v-if="editingFlowId"
+      class="p-3 bg-info/15 border border-info/40 rounded-xl flex items-center justify-between flex-wrap gap-2 shadow-sm"
+    >
+      <div class="flex items-center gap-2">
+        <Edit3 class="w-4 h-4 text-info flex-shrink-0" />
+        <span class="text-xs font-semibold text-base-content">
+          Đang chỉnh sửa kịch bản: <b class="font-mono text-info">{{ editingFlowId }}</b> — {{ profileForm.name || 'Chưa đặt tên' }}
+        </span>
+      </div>
+      <button
+        type="button"
+        class="btn btn-xs btn-outline btn-neutral"
+        @click="cancelEditMode"
+      >
+        Tạo Mới Kịch Bản
+      </button>
+    </div>
+
     <!-- Section 1: Cấu hình Thiết Bị Cần Test (DUT) -->
     <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 space-y-3">
       <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
@@ -74,31 +94,15 @@
           />
         </div>
 
-        <!-- ITEM_CODE -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">ITEM_CODE</span>
-          </label>
-          <input
-            v-model="profileForm.itemCode"
-            type="text"
-            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder=""
-            @input="onDutInputChanged"
-          />
-        </div>
-
-        <!-- FW_VERSION -->
-        <div class="form-control">
-          <label class="label py-1">
-            <span class="label-text text-xs font-semibold">FW_VERSION</span>
-          </label>
-          <input
-            v-model="profileForm.fwVersion"
-            type="text"
-            class="input input-bordered input-sm w-full font-mono text-xs uppercase"
-            placeholder=""
-            @input="onDutInputChanged"
+        <!-- ITEM_CODE & FW_VERSION -->
+        <div class="col-span-1 sm:col-span-2 lg:col-span-2">
+          <ItemCodeFwInput
+            v-model:model-item-code="profileForm.itemCode"
+            v-model:model-fw-version="profileForm.fwVersion"
+            item-label="ITEM_CODE DUT *"
+            fw-label="FW_VERSION DUT *"
+            size="sm"
+            @change="onDutInputChanged"
           />
         </div>
 
@@ -225,28 +229,14 @@
                 placeholder=""
               />
             </div>
-            <div class="form-control">
-              <label class="label py-0.5">
-                <span class="label-text text-[11px] font-semibold">ITEM_CODE</span>
-              </label>
-              <input
-                v-model="refDev.item_code"
-                type="text"
-                class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-                placeholder=""
-                @input="onRefInputChanged(refDev)"
-              />
-            </div>
-            <div class="form-control">
-              <label class="label py-0.5">
-                <span class="label-text text-[11px] font-semibold">FW_VERSION</span>
-              </label>
-              <input
-                v-model="refDev.fw_version"
-                type="text"
-                class="input input-bordered input-xs w-full font-mono text-xs uppercase"
-                placeholder=""
-                @input="onRefInputChanged(refDev)"
+            <div class="sm:col-span-2">
+              <ItemCodeFwInput
+                v-model:model-item-code="refDev.item_code"
+                v-model:model-fw-version="refDev.fw_version"
+                item-label="ITEM_CODE Tham Chiếu"
+                fw-label="FW_VERSION Tham Chiếu"
+                size="xs"
+                @change="onRefInputChanged(refDev)"
               />
             </div>
             <div class="form-control flex justify-end pb-0.5">
@@ -713,7 +703,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import {
   Cpu,
   RotateCcw,
@@ -724,6 +714,7 @@ import {
   Trash2,
   Variable,
   Info,
+  Edit3,
 } from 'lucide-vue-next';
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
@@ -731,11 +722,19 @@ import SimulationFlowBuilder, {
   type FlowBlock,
   type SimulationDeviceItem,
 } from './SimulationFlowBuilder.vue';
+import ItemCodeFwInput from './ItemCodeFwInput.vue';
+
+const props = defineProps<{
+  editFlowData?: any;
+}>();
 
 const emit = defineEmits<{
   (e: 'packet-emitted', packet: any): void;
   (e: 'switch-tab', tab: string, payload?: any): void;
+  (e: 'clear-edit-flow'): void;
 }>();
+
+const editingFlowId = ref<string>('');
 
 // DUT Form state
 const profileForm = reactive({
@@ -756,8 +755,9 @@ const fullSku = computed(() => {
   return suffix ? `${skuPrefix.value}${suffix}` : '';
 });
 
-// SIMU ID auto-generated from ITEM_CODE and FW
+// SIMU ID auto-generated from ITEM_CODE and FW, or preserved when editing
 const generatedSimuId = computed(() => {
+  if (editingFlowId.value) return editingFlowId.value;
   const item = profileForm.itemCode.trim();
   const fw = profileForm.fwVersion.trim();
   if (!item && !fw) return '';
@@ -1202,15 +1202,73 @@ function resetForm() {
   profileForm.itemCode = '';
   dutFields.value = [];
   referenceDevices.value = [];
-  simulatorEnabled.value = false;
-  simulatorForm.name = '';
-  simulatorForm.item_code = '';
-  simulatorForm.dev_eui = '';
   flowBlocks.value = [];
   dutRules.value = [];
   comparisons.value = [];
   cyberToast.info('Đã làm mới form');
 }
+
+function cancelEditMode() {
+  editingFlowId.value = '';
+  emit('clear-edit-flow');
+  resetForm();
+}
+
+function loadFlowData(flow: any) {
+  if (!flow) return;
+  editingFlowId.value = flow.simuId || flow.id || '';
+  profileForm.name = flow.name || flow.profileName || '';
+  profileForm.sensorConnectivity = flow.sensorConnectivity || flow.protocol || 'LoRaWAN';
+  profileForm.itemCode = (flow.itemCode || flow.item_code || '').toUpperCase();
+  profileForm.fwVersion = (flow.fwVersion || flow.fw_version || flow.longFw || flow.long_fw || '').toUpperCase();
+  profileForm.skuSuffix = flow.skuSuffix || (flow.sku ? flow.sku.replace(/^(WSSFC-|WSLRW-)/, '') : '');
+
+  // Flow blocks
+  const blocks = flow.flowBlocks || flow.blocks || flow.flow_blocks || [];
+  flowBlocks.value = Array.isArray(blocks) ? JSON.parse(JSON.stringify(blocks)) : [];
+
+  // Reference devices
+  const refDevs = flow.referenceDevices || flow.reference_devices || flow.autoCheckCriteria?.reference_devices || flow.criteria?.reference_devices || [];
+  if (Array.isArray(refDevs)) {
+    referenceDevices.value = refDevs.map((r: any, idx: number) => ({
+      id: r.id || `ref-${Date.now()}-${idx}`,
+      reference_name: r.reference_name || r.name || `Reference Device ${idx + 1}`,
+      item_code: r.item_code || r.itemCode || '',
+      fw_version: r.fw_version || r.fwVersion || '',
+      fields: r.fields || [],
+      loading: false,
+    }));
+    referenceDevices.value.forEach((r) => {
+      if (r.item_code || r.fw_version) fetchRefDeviceFields(r);
+    });
+  }
+
+  // AutoCheck criteria
+  const criteria = flow.autoCheckCriteria || flow.criteria;
+  if (criteria) {
+    if (Array.isArray(criteria.rules)) {
+      dutRules.value = JSON.parse(JSON.stringify(criteria.rules));
+    }
+    if (Array.isArray(criteria.comparisons)) {
+      comparisons.value = JSON.parse(JSON.stringify(criteria.comparisons));
+    }
+  }
+
+  if (profileForm.itemCode || profileForm.fwVersion) {
+    fetchDutFields();
+  }
+  cyberToast.info(`Đã nạp thông tin kịch bản: ${profileForm.name || editingFlowId.value}`);
+}
+
+watch(
+  () => props.editFlowData,
+  (newVal) => {
+    if (newVal) {
+      loadFlowData(newVal);
+    }
+  },
+  { immediate: true }
+);
 
 // Simulation devices for target dropdown
 const simulationDevices = ref<any[]>([]);
@@ -1226,13 +1284,15 @@ const simulationDeviceItems = computed<SimulationDeviceItem[]>(() => {
 
 const allSimulationDeviceItems = computed<SimulationDeviceItem[]>(() => {
   const list = [...simulationDeviceItems.value];
-  if (simulatorEnabled.value && simulatorForm.name.trim()) {
-    list.unshift({
-      devEui: simulatorForm.dev_eui || '',
-      name: simulatorForm.name.trim(),
-      itemCode: simulatorForm.item_code,
-    });
-  }
+  referenceDevices.value.forEach((r) => {
+    if (r.reference_name?.trim()) {
+      list.unshift({
+        devEui: '',
+        name: r.reference_name.trim(),
+        itemCode: r.item_code,
+      });
+    }
+  });
   return list;
 });
 
@@ -1258,7 +1318,7 @@ async function saveSimulationProfile() {
   }
 
   savingProfile.value = true;
-  const simuId = generatedSimuId.value || `SIMU-${Date.now()}`;
+  const simuId = editingFlowId.value || generatedSimuId.value || `SIMU-${Date.now()}`;
   const profileName = profileForm.name.trim() || simuId;
 
   const autoCheckCriteriaPayload = {
@@ -1292,13 +1352,19 @@ async function saveSimulationProfile() {
       item_code: r.item_code,
       fw_version: r.fw_version,
     })),
-    simulatorDevice: simulatorEnabled.value && simulatorForm.item_code ? simulatorForm : null,
+    simulatorDevice: referenceDevices.value.length > 0 ? {
+      name: referenceDevices.value[0].reference_name,
+      item_code: referenceDevices.value[0].item_code,
+      fw_version: referenceDevices.value[0].fw_version,
+    } : null,
     autoCheckCriteria: autoCheckCriteriaPayload,
   };
 
   try {
     await httpClient.post('/plugins/testing/simulation/profiles', payload);
-    cyberToast.success('Đã lưu kịch bản Unified Simulation & Auto Check thành công!');
+    cyberToast.success(editingFlowId.value ? 'Đã cập nhật kịch bản Simulation Flow thành công!' : 'Đã lưu kịch bản Unified Simulation & Auto Check thành công!');
+    editingFlowId.value = '';
+    emit('clear-edit-flow');
     emit('switch-tab', 'list-flow-simulation');
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || 'Lỗi khi lưu kịch bản';
