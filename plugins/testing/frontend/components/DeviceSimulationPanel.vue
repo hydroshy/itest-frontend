@@ -1017,6 +1017,19 @@ const simulationVariables = computed<SimulationVariableInfo[]>(() => {
           });
         }
       }
+    } else if (fnType === 'convert_to_hex' && b.outputVar && b.outputVar.trim()) {
+      const vName = b.outputVar.trim();
+      if (!seen.has(vName)) {
+        seen.add(vName);
+        vars.push({
+          name: vName,
+          sourceBlock: `Block #${idx + 1}: Convert to HEX`,
+          sourceType: 'convert_to_hex',
+          blockIndex: idx + 1,
+          target: 'DUT',
+          details: `HEX [${b.dataType || 'float32_be'}] của '${b.sourceVar || 'biến'}'`,
+        });
+      }
     } else if ((fnType === 'start_measurement' || fnType === 'stop_measurement') && b.windowId && b.windowId.trim()) {
       const vName = b.windowId.trim();
       if (!seen.has(vName)) {
@@ -1108,6 +1121,8 @@ function getVariableBadgeClass(type: string): string {
       return 'badge-primary text-primary-content';
     case 'calculate_linear':
       return 'badge-secondary text-secondary-content';
+    case 'convert_to_hex':
+      return 'badge-accent text-accent-content';
     case 'window':
       return 'badge-info text-info-content';
     default:

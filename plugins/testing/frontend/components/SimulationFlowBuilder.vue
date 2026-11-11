@@ -54,6 +54,7 @@
               <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement Window</a></li>
               <li><a @click="addBlock('average')">📊 Average Function (Trung bình)</a></li>
               <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear (y = ax + b)</a></li>
+              <li><a @click="addBlock('convert_to_hex')">🔢 Convert to HEX (Đổi Biến Sang Hex)</a></li>
             </ul>
           </div>
         </div>
@@ -88,6 +89,7 @@
             <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement Window</a></li>
             <li><a @click="addBlock('average')">📊 Average Function (Trung bình)</a></li>
             <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear (y = ax + b)</a></li>
+            <li><a @click="addBlock('convert_to_hex')">🔢 Convert to HEX (Đổi Biến Sang Hex)</a></li>
           </ul>
         </div>
       </div>
@@ -198,6 +200,7 @@
                   <option value="stop_measurement">Stop Measurement Window</option>
                   <option value="average">Average Function (Tính trung bình)</option>
                   <option value="calculate_linear">Calculate Linear (y = ax + b)</option>
+                  <option value="convert_to_hex">Convert to HEX (Đổi Biến Sang Hex)</option>
                 </optgroup>
               </select>
             </div>
@@ -600,6 +603,66 @@
               </div>
             </template>
 
+            <!-- BLOCK: CONVERT_TO_HEX -->
+            <template v-if="block.functionType === 'convert_to_hex'">
+              <div class="form-control md:col-span-4">
+                <label class="label py-0.5">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Biến Nguồn Đầu Vào</span>
+                </label>
+                <input
+                  v-model="block.sourceVar"
+                  type="text"
+                  class="input input-bordered input-sm w-full font-mono text-xs"
+                  placeholder="Ví dụ: a hoặc {{a}}"
+                  @input="emitUpdate"
+                />
+              </div>
+
+              <div class="form-control md:col-span-4">
+                <label class="label py-0.5">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Định Dạng Mã Hóa (Data Type)</span>
+                </label>
+                <select
+                  v-model="block.dataType"
+                  class="select select-bordered select-sm w-full font-mono text-xs"
+                  @change="emitUpdate"
+                >
+                  <option value="float32_be">Float32 Big Endian (IEEE-754)</option>
+                  <option value="float32_le">Float32 Little Endian (IEEE-754)</option>
+                  <option value="int16_be">Int16 Big Endian (2 bytes)</option>
+                  <option value="int16_le">Int16 Little Endian (2 bytes)</option>
+                  <option value="uint16_be">UInt16 Big Endian (2 bytes)</option>
+                  <option value="uint16_le">UInt16 Little Endian (2 bytes)</option>
+                  <option value="int32_be">Int32 Big Endian (4 bytes)</option>
+                  <option value="int32_le">Int32 Little Endian (4 bytes)</option>
+                  <option value="uint32_be">UInt32 Big Endian (4 bytes)</option>
+                  <option value="uint32_le">UInt32 Little Endian (4 bytes)</option>
+                </select>
+              </div>
+
+              <div class="form-control md:col-span-4">
+                <label class="label py-0.5">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Lưu Vào Biến HEX Output</span>
+                </label>
+                <input
+                  v-model="block.outputVar"
+                  type="text"
+                  class="input input-bordered input-sm w-full font-mono text-xs text-primary font-bold"
+                  placeholder="Ví dụ: x"
+                  @input="emitUpdate"
+                />
+              </div>
+
+              <div class="form-control md:col-span-12">
+                <div class="p-2 bg-base-100 rounded border border-primary/20 text-[11px] text-base-content/70 flex items-center justify-between">
+                  <span>
+                    💡 Biến <code class="text-primary font-bold">{{ block.outputVar || 'x' }}</code> sẽ mang chuỗi HEX, có thể chèn trực tiếp vào Downlink: <code class="text-secondary font-mono">4E04&#123;&#123;{{ block.outputVar || 'x' }}&#125;&#125;0005</code>
+                  </span>
+                  <span class="font-mono text-[10px] text-base-content/50">VD: 1000 ➔ 447a0000</span>
+                </div>
+              </div>
+            </template>
+
             <!-- Description / Ghi chú chung cho block -->
             <div class="form-control md:col-span-12">
               <label class="label py-0.5">
@@ -708,6 +771,7 @@ export interface FlowBlock {
     | 'stop_measurement'
     | 'average'
     | 'calculate_linear'
+    | 'convert_to_hex'
     | string;
   targetDevice?: string;
   delaySeconds?: number;
@@ -718,6 +782,8 @@ export interface FlowBlock {
   averageMode?: 'SAMPLE_COUNT' | 'TIME_WINDOW' | 'MEASUREMENT_WINDOW';
   sampleCount?: number;
   outputVar?: string;
+  sourceVar?: string;
+  dataType?: string;
   point1X?: string | number;
   point1Y?: string | number;
   point2X?: string | number;
@@ -879,6 +945,8 @@ function normalizeBlock(b: any): FlowBlock {
     point2Y: b.point2Y ?? b.point2_y ?? 20,
     coeffAVar: b.coeffAVar || b.coeff_a_var || 'a',
     coeffBVar: b.coeffBVar || b.coeff_b_var || 'b',
+    sourceVar: b.sourceVar || b.source_var || '',
+    dataType: b.dataType || b.data_type || (fnType === 'convert_to_hex' ? 'float32_be' : undefined),
     payloadHex: fnType === 'downlink' ? (b.payloadHex || b.payload || '') : '',
     fPort: fnType === 'downlink' ? (Number(b.fPort || b.fport) || 1) : undefined,
     confirmed: Boolean(b.confirmed || b.isConfirmed),
@@ -980,6 +1048,11 @@ function onFunctionTypeChanged(block: FlowBlock) {
     block.point2Y = block.point2Y ?? 20;
     block.coeffAVar = block.coeffAVar || 'a';
     block.coeffBVar = block.coeffBVar || 'b';
+  } else if (block.functionType === 'convert_to_hex') {
+    block.targetDevice = undefined;
+    block.sourceVar = block.sourceVar || 'a';
+    block.dataType = block.dataType || 'float32_be';
+    block.outputVar = block.outputVar || 'x';
   } else if (block.functionType === 'downlink') {
     block.targetDevice = block.targetDevice || 'DUT';
     block.fPort = block.fPort || 1;
@@ -1007,6 +1080,8 @@ function getFunctionBadgeClass(type: string) {
       return 'badge-warning text-warning-content';
     case 'calculate_linear':
       return 'badge-info text-info-content';
+    case 'convert_to_hex':
+      return 'badge-accent text-accent-content';
     default:
       return 'badge-neutral';
   }
@@ -1030,6 +1105,8 @@ function getFunctionLabel(type: string) {
       return 'AVERAGE FUNCTION';
     case 'calculate_linear':
       return 'CALCULATE LINEAR (y = ax + b)';
+    case 'convert_to_hex':
+      return 'CONVERT TO HEX (ĐỔI SANG HEX)';
     default:
       return 'FUNCTION';
   }
@@ -1047,7 +1124,9 @@ function addBlock(type: string) {
     counterField: type === 'start_measurement' ? 'fcnt' : undefined,
     metric: type === 'average' ? 'gas_raw' : undefined,
     averageMode: type === 'average' ? 'MEASUREMENT_WINDOW' : undefined,
-    outputVar: type === 'average' ? 'x1' : undefined,
+    outputVar: type === 'average' ? 'x1' : (type === 'convert_to_hex' ? 'x' : undefined),
+    sourceVar: type === 'convert_to_hex' ? 'a' : undefined,
+    dataType: type === 'convert_to_hex' ? 'float32_be' : undefined,
     point1X: type === 'calculate_linear' ? '{{x1}}' : undefined,
     point1Y: type === 'calculate_linear' ? 0 : undefined,
     point2X: type === 'calculate_linear' ? '{{x2}}' : undefined,
