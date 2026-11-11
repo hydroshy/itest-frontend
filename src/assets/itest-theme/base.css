@@ -111,3 +111,12 @@ pre,
   color: var(--owl-text-primary);
   transition: background-color 0.25s ease, color 0.25s ease;
 }
+
+/* DaisyUI Steps: Ensure step indicator circle always stays above connecting line */
+.steps .step::before {
+  z-index: 1 !important;
+}
+.steps .step::after {
+  z-index: 2 !important;
+  position: relative !important;
+}

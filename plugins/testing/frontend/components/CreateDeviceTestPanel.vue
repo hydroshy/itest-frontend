@@ -565,16 +565,6 @@
         <div class="flex items-center justify-end pt-2">
           <div class="flex items-center gap-2">
             <button
-              v-if="step3Result.status === 'ERROR'"
-              type="button"
-              class="btn btn-sm btn-warning gap-1.5"
-              @click="executeChirpstackRegistration"
-            >
-              <RotateCcw class="w-3.5 h-3.5" />
-              <span>Thử Đăng Ký Lại</span>
-            </button>
-
-            <button
               v-if="step3Result.status === 'SUCCESS'"
               type="button"
               class="btn btn-sm btn-outline gap-1.5"
@@ -585,13 +575,13 @@
             </button>
 
             <button
-              v-if="step3Result.status === 'SUCCESS'"
+              v-if="step3Result.status === 'SUCCESS' || step3Result.status === 'ERROR'"
               type="button"
               class="btn btn-sm btn-primary gap-1.5"
-              @click="finishAndReset"
+              @click="createNewDeviceForSameSoWa"
             >
               <Plus class="w-3.5 h-3.5" />
-              <span>Tạo Thiết Bị Tiếp Theo</span>
+              <span>TẠO THÊM DEVICE CHO SO, WA</span>
             </button>
           </div>
         </div>
@@ -1664,6 +1654,33 @@ function goToStep(step: number) {
   currentStep.value = step;
 }
 
+function createNewDeviceForSameSoWa() {
+  // Reset Step 2 hardware register reading data
+  registerData.FW_CODE = '';
+  registerData.FW_VERSION = '';
+  registerData.HW_VERSION = '';
+  registerData.ME_VERSION = '';
+  registerData.deviceEUI = '';
+  registerData['LRW appEUI'] = '';
+  registerData['LRW appKey'] = '';
+  registerData['region code'] = '';
+  registerData.class = '';
+  registerData['sensor type'] = '';
+  registerData.SERIAL_NUMBER = '';
+  registerData.ITEM_CODE = '';
+  readCompleted.value = false;
+  readProgress.value = 0;
+  readingStatusText.value = 'Sẵn sàng';
+
+  // Reset Step 3 result
+  step3Result.status = 'IDLE';
+  step3Result.message = '';
+
+  // Quay lại Step 2 để đọc dữ liệu cảm biến mới
+  currentStep.value = 2;
+  cyberToast.info('Đã giữ lại thông tin SO/WA, vui lòng đọc dữ liệu cảm biến mới');
+}
+
 function finishAndReset() {
   resetAll();
   currentStep.value = 1;
@@ -1715,5 +1732,14 @@ onMounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Ensure step indicator circle always stays above the line */
+:deep(.steps .step::before) {
+  z-index: 1 !important;
+}
+:deep(.steps .step::after) {
+  z-index: 2 !important;
+  position: relative !important;
 }
 </style>
