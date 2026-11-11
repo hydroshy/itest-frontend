@@ -1038,7 +1038,7 @@ function buildReferenceDeviceColumns(): any[] {
 
   return refList.map((refDef, refIndex) => {
     const isMultiple = refList.length > 1;
-    const title = isMultiple ? `Tham Chiếu (${refDef.name})` : 'Thiết Bị Tham Chiếu (REF)';
+    const title = refDef.name || 'REF';
     const fieldKey = `refDevEui_${refDef.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
     return {
@@ -1205,7 +1205,7 @@ function initBatchTabulator() {
         formatter: (cell) => `<span class="font-mono text-xs text-base-content/80">${cell.getValue() || '—'}</span>`,
       },
       {
-        title: 'Gói',
+        title: 'PACKETS',
         field: 'packetsCount',
         width: 50,
         hozAlign: 'center',
@@ -1255,22 +1255,6 @@ function initBatchTabulator() {
         },
       },
       ...buildReferenceDeviceColumns(),
-      {
-        title: 'Bỏ',
-        width: 50,
-        hozAlign: 'center',
-        headerHozAlign: 'center',
-        headerSort: false,
-        formatter: () => '<button class="btn btn-xs btn-ghost text-error px-1 font-bold" title="Bỏ khỏi batch trả về SO">✕</button>',
-        cellClick: (_e, cell) => {
-          if (isTesting.value) {
-            cyberToast.warning('Batch đang chạy kiểm thử!');
-            return;
-          }
-          const rowData = cell.getRow().getData();
-          removeDeviceFromBatch(getDeviceIdentifier(rowData.device || rowData));
-        },
-      },
     ],
     rowDblClick: (_e, row) => {
       if (isTesting.value) {
