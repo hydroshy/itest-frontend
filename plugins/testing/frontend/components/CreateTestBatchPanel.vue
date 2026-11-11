@@ -249,43 +249,71 @@
           </div>
         </div>
 
-        <!-- Tích chọn danh sách thiết bị simulation / tham chiếu cho Batch -->
-        <div v-if="selectedFlowData" class="p-3 bg-base-100/90 border border-base-300 rounded-lg space-y-2.5">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-base-content flex items-center gap-1.5">
-              <Layers class="w-3.5 h-3.5 text-primary" />
-              Cấu Hình Thiết Bị Simulation / Tham Chiếu
-            </span>
-          </div>
-
-          <div class="space-y-2">
-            <p class="text-[11px] text-base-content/70">
-              Chọn danh sách các thiết bị simulation sẽ dùng cho đợt test batch này.
-            </p>
-            <div class="form-control">
-              <select
-                class="select select-sm select-bordered w-full font-mono text-xs bg-base-100"
-                @change="addSimulationDevice($event)"
-              >
-                <option value="">-- Thêm thiết bị simulation vào danh sách --</option>
-                <option
-                  v-for="simDev in simulationDevicesList.filter(d => !batchForm.selectedSimulationDevices.some(s => s.devEui === d.devEui))"
-                  :key="simDev.devEui"
-                  :value="simDev.devEui"
-                >
-                  {{ simDev.devEui }} - {{ simDev.name || simDev.serialNumber || 'Thiết bị' }}
-                </option>
-              </select>
+        <!-- Cấu Hình Thiết Bị Simulation / Tham Chiếu (Chỉ hiển thị khi flow có thiết bị tham chiếu) -->
+        <div
+          v-if="selectedFlowData && flowReferenceDevices.length > 0"
+          class="p-4 bg-base-100/90 border border-base-300 rounded-xl space-y-3"
+        >
+          <div class="flex items-center justify-between border-b border-base-content/10 pb-2 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <span class="badge badge-sm badge-warning font-mono font-bold">REF / SIMU</span>
+              <span class="text-xs font-bold text-base-content uppercase tracking-wide flex items-center gap-1.5">
+                <Layers class="w-3.5 h-3.5 text-primary" />
+                Cấu Hình Thiết Bị Simulation / Tham Chiếu
+              </span>
+              <span class="badge badge-xs badge-info font-mono">
+                {{ flowReferenceDevices.length }} thiết bị
+              </span>
             </div>
 
-            <div class="flex flex-wrap gap-2 pt-1">
-              <div
-                v-for="dev in batchForm.selectedSimulationDevices"
-                :key="dev.devEui"
-                class="badge badge-primary badge-outline text-[11px] gap-1.5 py-3"
-              >
-                {{ dev.devEui }}
-                <button type="button" @click="removeSimulationDevice(dev.devEui)">✕</button>
+            <!-- Ô tick box về Chung cho toàn batch, để trống là không -->
+            <label class="label cursor-pointer gap-2 py-0">
+              <input
+                v-model="batchForm.shareReferenceDevice"
+                type="checkbox"
+                class="checkbox checkbox-sm checkbox-primary"
+              />
+              <span class="text-xs font-semibold text-base-content/90">
+                Chung cho toàn batch
+              </span>
+            </label>
+          </div>
+
+          <p class="text-[11px] text-base-content/70">
+            Kịch bản yêu cầu thiết bị tham chiếu có sẵn trong Flow Simulation. Gán DevEUI tương ứng cho từng thiết bị:
+          </p>
+
+          <div class="space-y-2.5">
+            <!-- Hiển thị chi tiết từng thiết bị tham chiếu có sẵn trong flow simulation -->
+            <div
+              v-for="(refDev, idx) in flowReferenceDevices"
+              :key="idx"
+              class="p-3 bg-base-200/60 border border-base-300 rounded-lg space-y-2"
+            >
+              <div class="flex items-center justify-between flex-wrap gap-1">
+                <span class="text-xs font-bold text-warning flex items-center gap-1.5 font-mono">
+                  ⭐ {{ refDev.reference_name || refDev.name || `REF_${idx + 1}` }}
+                </span>
+                <div class="flex items-center gap-2 text-[11px] font-mono text-base-content/60">
+                  <span v-if="refDev.item_code">ITEM: <b class="text-base-content/80">{{ refDev.item_code }}</b></span>
+                  <span v-if="refDev.fw_version">FW: <b class="text-base-content/80">{{ refDev.fw_version }}</b></span>
+                </div>
+              </div>
+
+              <div class="form-control">
+                <select
+                  v-model="batchForm.assignedRefDevices[refDev.reference_name || refDev.name || `REF_${idx + 1}`]"
+                  class="select select-sm select-bordered w-full font-mono text-xs bg-base-100"
+                >
+                  <option value="">-- Chọn DevEUI thiết bị tham chiếu --</option>
+                  <option
+                    v-for="simDev in simulationDevicesList"
+                    :key="simDev.devEui"
+                    :value="simDev.devEui"
+                  >
+                    {{ simDev.devEui }} - {{ simDev.name || simDev.serialNumber || 'Thiết bị' }}
+                  </option>
+                </select>
               </div>
             </div>
           </div>
@@ -330,6 +358,8 @@ const batchForm = reactive({
   maxDevices: 10,
   flowDurationSeconds: 0,
   simuId: '',
+  shareReferenceDevice: false, // Ô tick box về Chung cho toàn batch, để trống là không
+  assignedRefDevices: {} as Record<string, string>,
   selectedSimulationDevices: [] as any[], // Danh sách thiết bị simulation đã chọn
 });
 
@@ -424,6 +454,35 @@ const selectedFlowData = computed(() => {
   return availableFlows.value.find((f) => f.id === batchForm.simuId);
 });
 
+// Danh sách thiết bị tham chiếu có sẵn trong flow simulation
+const flowReferenceDevices = computed<any[]>(() => {
+  const f = selectedFlowData.value;
+  if (!f) return [];
+  let list: any[] = [];
+  if (Array.isArray(f.referenceDevices) && f.referenceDevices.length > 0) {
+    list = f.referenceDevices;
+  } else if (typeof f.referenceDevices === 'string') {
+    try { list = JSON.parse(f.referenceDevices); } catch {}
+  } else if (Array.isArray(f.reference_devices) && f.reference_devices.length > 0) {
+    list = f.reference_devices;
+  } else if (typeof f.reference_devices === 'string') {
+    try { list = JSON.parse(f.reference_devices); } catch {}
+  } else if (Array.isArray(f.autoCheckCriteria?.reference_devices) && f.autoCheckCriteria.reference_devices.length > 0) {
+    list = f.autoCheckCriteria.reference_devices;
+  }
+  // Check if flowBlocks has targetDevice === 'REF' or other named ref devices
+  if (list.length === 0 && Array.isArray(f.flowBlocks)) {
+    const refBlocks = f.flowBlocks.filter((b: any) => {
+      const target = (b.targetDevice || b.target || '').toUpperCase();
+      return target === 'REF' || target === 'SIMU';
+    });
+    if (refBlocks.length > 0) {
+      list = [{ reference_name: 'REF', name: 'REF' }];
+    }
+  }
+  return list;
+});
+
 function onSimulationFlowSelected() {
   const flow = availableFlows.value.find((f) => f.id === batchForm.simuId);
   if (flow) {
@@ -450,6 +509,8 @@ function resetForm() {
   batchForm.maxDevices = 10;
   batchForm.simuId = '';
   batchForm.flowDurationSeconds = 0;
+  batchForm.shareReferenceDevice = false;
+  batchForm.assignedRefDevices = {};
   batchForm.selectedSimulationDevices = [];
   cyberToast.info('Đã làm mới form tạo Test Batch');
 }
@@ -481,6 +542,39 @@ async function saveTestBatch() {
     return;
   }
 
+  // Thu thập danh sách thiết bị tham chiếu và simulation devices được gán
+  const refDevicesPayload: any[] = [];
+  const simDevicesPayload: any[] = [];
+  let sharedDevEui = '';
+
+  for (const refDev of flowReferenceDevices.value) {
+    const key = refDev.reference_name || refDev.name || 'REF';
+    const devEui = batchForm.assignedRefDevices[key];
+    if (devEui) {
+      const foundDev = simulationDevicesList.value.find((d) => d.devEui === devEui);
+      const entry = {
+        id: foundDev?.id || devEui,
+        devEui,
+        serialNumber: foundDev?.serialNumber || devEui,
+        name: foundDev?.name || key,
+        reference_name: key,
+        itemCode: foundDev?.itemCode || refDev.item_code,
+        fwVersion: refDev.fw_version,
+      };
+      refDevicesPayload.push(entry);
+      simDevicesPayload.push(entry);
+      if (!sharedDevEui) {
+        sharedDevEui = devEui;
+      }
+    }
+  }
+
+  batchForm.selectedSimulationDevices.forEach((d) => {
+    if (!simDevicesPayload.some((s) => s.devEui === d.devEui)) {
+      simDevicesPayload.push(d);
+    }
+  });
+
   saving.value = true;
   const payload = {
     batchCode: batchForm.batchCode,
@@ -493,7 +587,11 @@ async function saveTestBatch() {
     simuId: batchForm.simuId,
     simulationFlow: selectedFlowData.value?.flowBlocks || selectedFlowData.value || (batchForm.simuId ? { id: batchForm.simuId } : undefined),
     autoCheckCriteria: selectedFlowData.value?.autoCheckCriteria || selectedFlowData.value?.criteria || undefined,
-    simulationDevices: batchForm.selectedSimulationDevices,
+    referenceDevices: refDevicesPayload,
+    simulationDevices: simDevicesPayload,
+    shareReferenceDevice: batchForm.shareReferenceDevice,
+    sharedReferenceDevEui: batchForm.shareReferenceDevice ? sharedDevEui : undefined,
+    requiresReferenceDevice: flowReferenceDevices.value.length > 0,
     status: 'READY',
   };
 
@@ -553,12 +651,25 @@ async function loadFlows() {
       availableFlows.value = items.map((f: any) => {
         const blocks = getFlowBlocks(f);
         const duration = getFlowDuration(blocks, f.duration || f.flowDurationSeconds || f.durationSeconds);
+        let refDevs: any[] = [];
+        if (Array.isArray(f.referenceDevices)) {
+          refDevs = f.referenceDevices;
+        } else if (typeof f.referenceDevices === 'string') {
+          try { refDevs = JSON.parse(f.referenceDevices); } catch {}
+        } else if (Array.isArray(f.reference_devices)) {
+          refDevs = f.reference_devices;
+        } else if (typeof f.reference_devices === 'string') {
+          try { refDevs = JSON.parse(f.reference_devices); } catch {}
+        } else if (Array.isArray(f.autoCheckCriteria?.reference_devices)) {
+          refDevs = f.autoCheckCriteria.reference_devices;
+        }
         return {
           id: f.simuId || f.id,
           name: f.name || f.profileName || f.simuId || f.id,
           duration,
           blocksCount: blocks.length,
           flowBlocks: blocks,
+          referenceDevices: refDevs,
           description: f.description || `Kịch bản mô phỏng cho ${f.itemCode || 'thiết bị'}`,
           steps: blocks.map((b: any) => getBlockStepLabel(b)),
           autoCheckCriteria: f.autoCheckCriteria || f.criteria || undefined,

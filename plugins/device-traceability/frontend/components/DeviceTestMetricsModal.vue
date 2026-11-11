@@ -120,7 +120,7 @@
           </div>
         </div>
 
-        <!-- Tab Selector: Tolerance vs Timeline vs Raw -->
+        <!-- Tab Selector: Tolerance vs Timeline vs Variables vs Raw -->
         <div class="tabs tabs-boxed bg-base-200/60 p-1 rounded-xl">
           <button
             class="tab tab-sm font-bold text-xs"
@@ -135,6 +135,13 @@
             @click="activeTab = 'timeline'"
           >
             Timeline Gói Tin ({{ allTimelinePackets.length }})
+          </button>
+          <button
+            class="tab tab-sm font-bold text-xs"
+            :class="{ 'tab-active !bg-primary !text-primary-content': activeTab === 'variables' }"
+            @click="activeTab = 'variables'"
+          >
+            Biến Mô Phỏng ({{ flowVariablesList.length }})
           </button>
           <button
             class="tab tab-sm font-bold text-xs"
@@ -261,6 +268,41 @@
           </div>
         </div>
 
+        <!-- PANEL: Biến Mô Phỏng (Simulation Flow Variables & Metadata) -->
+        <div v-show="activeTab === 'variables'" class="space-y-3">
+          <div v-if="flowVariablesList.length > 0" class="overflow-x-auto rounded-xl border border-base-300">
+            <table class="table table-xs w-full">
+              <thead>
+                <tr class="bg-base-200 text-xs">
+                  <th>Tên Biến</th>
+                  <th class="text-center">Nguồn Tạo (Source Block)</th>
+                  <th class="text-center">Kiểu Dữ Liệu</th>
+                  <th class="text-right">Giá Trị Lưu Trữ</th>
+                </tr>
+              </thead>
+              <tbody class="font-mono text-xs">
+                <tr v-for="(v, idx) in flowVariablesList" :key="idx" class="hover:bg-base-200/50">
+                  <td class="font-bold text-primary">{{ v.name }}</td>
+                  <td class="text-center">
+                    <span class="badge badge-xs font-mono font-semibold badge-outline">
+                      {{ v.sourceBlock || 'Flow Step' }}
+                    </span>
+                  </td>
+                  <td class="text-center text-base-content/70">
+                    {{ v.dataType || 'string' }}
+                  </td>
+                  <td class="text-right font-bold text-success font-mono">
+                    {{ v.value != null ? v.value : '—' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="text-center py-6 text-xs text-base-content/50">
+            Chưa có thông tin biến mô phỏng được lưu trữ trong đợt kiểm thử này.
+          </div>
+        </div>
+
         <!-- PANEL 3: Raw JSON Data -->
         <div v-show="activeTab === 'raw'" class="space-y-2">
           <div class="flex items-center justify-between text-xs pb-1">
@@ -308,7 +350,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const activeTab = ref<'tolerance' | 'timeline' | 'raw'>('tolerance');
+const activeTab = ref<'tolerance' | 'timeline' | 'variables' | 'raw'>('tolerance');
 
 // Raw parsed test metrics
 const rawMetrics = computed(() => {
@@ -323,6 +365,45 @@ const rawMetrics = computed(() => {
     }
   }
   return raw;
+});
+
+// Danh sách các biến mô phỏng lưu trong Traceability
+const flowVariablesList = computed(() => {
+  const vars =
+    rawMetrics.value?.variables ||
+    rawMetrics.value?.flowVariables ||
+    rawMetrics.value?.simulationVariables ||
+    props.device?.variables ||
+    props.device?.testRawData?.variables ||
+    [];
+
+  if (Array.isArray(vars)) {
+    return vars.map((v: any) => ({
+      name: v.name || v.key || v.varName || 'var',
+      value: v.value ?? v.val ?? v.hex ?? '',
+      sourceBlock: v.sourceBlock || v.sourceType || v.source || v.functionType || 'Flow Step',
+      dataType: v.dataType || v.data_type || v.type || 'string',
+    }));
+  }
+  if (vars && typeof vars === 'object') {
+    return Object.entries(vars).map(([name, val]: [string, any]) => {
+      if (val && typeof val === 'object') {
+        return {
+          name,
+          value: val.value ?? val.val ?? val.hex ?? JSON.stringify(val),
+          sourceBlock: val.sourceBlock || val.sourceType || val.source || val.functionType || 'Flow Step',
+          dataType: val.dataType || val.data_type || typeof (val.value ?? val),
+        };
+      }
+      return {
+        name,
+        value: val,
+        sourceBlock: 'Flow Step',
+        dataType: typeof val,
+      };
+    });
+  }
+  return [];
 });
 
 const comparisonData = computed(() => {

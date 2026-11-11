@@ -45,16 +45,16 @@
             </label>
             <ul tabindex="0" class="dropdown-content z-[10] menu p-2 shadow-lg bg-base-100 rounded-box w-64 border border-base-300 text-xs space-y-1">
               <li class="menu-title text-[10px] uppercase font-bold text-primary">Điều Khiển &amp; Thời Gian</li>
-              <li><a @click="addBlock('downlink')">📡 Downlink (Gửi lệnh vô tuyến)</a></li>
-              <li><a @click="addBlock('clear_downlink')">🧹 Clear Downlink (FlushQueue)</a></li>
-              <li><a @click="addBlock('delay')">⏱️ Delay (Chờ thời gian)</a></li>
-              <li><a @click="addBlock('wait_until_offset')">🎯 Wait Until Offset (Mốc thời gian)</a></li>
+              <li><a @click="addBlock('downlink')">📡 Downlink</a></li>
+              <li><a @click="addBlock('clear_downlink')">🧹 Clear Downlink</a></li>
+              <li><a @click="addBlock('delay')">⏱️ Delay</a></li>
+              <li><a @click="addBlock('wait_until_offset')">🎯 Wait Until Offset</a></li>
               <li class="menu-title text-[10px] uppercase font-bold text-primary mt-1">Đo Lường &amp; Hiệu Chuẩn</li>
-              <li><a @click="addBlock('start_measurement')">🟢 Start Measurement Window</a></li>
-              <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement Window</a></li>
-              <li><a @click="addBlock('average')">📊 Average Function (Trung bình)</a></li>
-              <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear (y = ax + b)</a></li>
-              <li><a @click="addBlock('convert_to_hex')">🔢 Convert to HEX (Đổi Biến Sang Hex)</a></li>
+              <li><a @click="addBlock('start_measurement')">🟢 Start Measurement</a></li>
+              <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement</a></li>
+              <li><a @click="addBlock('average')">📊 Average</a></li>
+              <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear</a></li>
+              <li><a @click="addBlock('convert_to_hex')">🔢 Convert to HEX</a></li>
             </ul>
           </div>
         </div>
@@ -80,16 +80,16 @@
           </label>
           <ul tabindex="0" class="dropdown-content z-[10] menu p-2 shadow-lg bg-base-100 rounded-box w-64 border border-base-300 text-xs space-y-1">
             <li class="menu-title text-[10px] uppercase font-bold text-primary">Điều Khiển &amp; Thời Gian</li>
-            <li><a @click="addBlock('downlink')">📡 Downlink (Gửi lệnh vô tuyến)</a></li>
-            <li><a @click="addBlock('clear_downlink')">🧹 Clear Downlink (FlushQueue)</a></li>
-            <li><a @click="addBlock('delay')">⏱️ Delay (Chờ thời gian)</a></li>
-            <li><a @click="addBlock('wait_until_offset')">🎯 Wait Until Offset (Mốc thời gian)</a></li>
+            <li><a @click="addBlock('downlink')">📡 Downlink</a></li>
+            <li><a @click="addBlock('clear_downlink')">🧹 Clear Downlink</a></li>
+            <li><a @click="addBlock('delay')">⏱️ Delay</a></li>
+            <li><a @click="addBlock('wait_until_offset')">🎯 Wait Until Offset</a></li>
             <li class="menu-title text-[10px] uppercase font-bold text-primary mt-1">Đo Lường &amp; Hiệu Chuẩn</li>
-            <li><a @click="addBlock('start_measurement')">🟢 Start Measurement Window</a></li>
-            <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement Window</a></li>
-            <li><a @click="addBlock('average')">📊 Average Function (Trung bình)</a></li>
-            <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear (y = ax + b)</a></li>
-            <li><a @click="addBlock('convert_to_hex')">🔢 Convert to HEX (Đổi Biến Sang Hex)</a></li>
+            <li><a @click="addBlock('start_measurement')">🟢 Start Measurement</a></li>
+            <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement</a></li>
+            <li><a @click="addBlock('average')">📊 Average</a></li>
+            <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear</a></li>
+            <li><a @click="addBlock('convert_to_hex')">🔢 Convert to HEX</a></li>
           </ul>
         </div>
       </div>
@@ -190,17 +190,17 @@
                 @change="onFunctionTypeChanged(block)"
               >
                 <optgroup label="Điều Khiển &amp; Thời Gian">
-                  <option value="downlink">Downlink (Gửi lệnh vô tuyến)</option>
-                  <option value="clear_downlink">Clear Downlink (FlushQueue)</option>
-                  <option value="delay">Delay (Thời gian chờ kịch bản)</option>
-                  <option value="wait_until_offset">Wait Until Offset (Mốc thời gian)</option>
+                  <option value="downlink">Downlink</option>
+                  <option value="clear_downlink">Clear Downlink</option>
+                  <option value="delay">Delay</option>
+                  <option value="wait_until_offset">Wait Until Offset</option>
                 </optgroup>
                 <optgroup label="Đo Lường &amp; Hiệu Chuẩn">
-                  <option value="start_measurement">Start Measurement Window</option>
-                  <option value="stop_measurement">Stop Measurement Window</option>
-                  <option value="average">Average Function (Tính trung bình)</option>
-                  <option value="calculate_linear">Calculate Linear (y = ax + b)</option>
-                  <option value="convert_to_hex">Convert to HEX (Đổi Biến Sang Hex)</option>
+                  <option value="start_measurement">Start Measurement</option>
+                  <option value="stop_measurement">Stop Measurement</option>
+                  <option value="average">Average</option>
+                  <option value="calculate_linear">Calculate Linear</option>
+                  <option value="convert_to_hex">Convert to HEX</option>
                 </optgroup>
               </select>
             </div>
@@ -231,7 +231,7 @@
                     </option>
                   </optgroup>
 
-                  <optgroup v-if="availableRefDeviceNames.length > 0" label="Thiết Bị Tham Chiếu (REF)">
+                  <optgroup v-if="availableRefDeviceNames.length > 0" label="Thiết Bị Tham Chiếu / Mô Phỏng (REF / SIMU)">
                     <option
                       v-for="refName in availableRefDeviceNames"
                       :key="refName"
@@ -240,21 +240,9 @@
                       ⭐ {{ refName }}
                     </option>
                   </optgroup>
-                  <optgroup v-else label="Thiết Bị Tham Chiếu (REF)">
-                    <option value="REF">⭐ Thiết bị chuẩn đối chiếu (REF)</option>
-                  </optgroup>
-
-                  <optgroup v-if="mergedSimDevices.length > 0" label="Thiết Bị Mô Phỏng (SIMULATION)">
-                    <option
-                      v-for="sim in mergedSimDevices"
-                      :key="sim.name || sim.devEui"
-                      :value="sim.name || sim.devEui"
-                    >
-                      🤖 {{ sim.name || 'SIMU' }} {{ sim.devEui ? `(${sim.devEui})` : '' }}
-                    </option>
-                  </optgroup>
-                  <optgroup v-else label="Thiết Bị Mô Phỏng (SIMULATION)">
-                    <option value="SIMU">🤖 Thiết bị mô phỏng (SIMU)</option>
+                  <optgroup v-else label="Thiết Bị Tham Chiếu / Mô Phỏng (REF / SIMU)">
+                    <option value="REF">⭐ REF (Thiết bị tham chiếu)</option>
+                    <option value="SIMU">🤖 SIMU (Thiết bị mô phỏng)</option>
                   </optgroup>
 
                   <optgroup label="Tùy Chọn Khác">
@@ -642,6 +630,19 @@
 
               <div class="form-control md:col-span-4">
                 <label class="label py-0.5">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Nguồn Traceability (Optional)</span>
+                </label>
+                <input
+                  v-model="block.sourceBlock"
+                  type="text"
+                  class="input input-bordered input-sm w-full font-mono text-xs"
+                  placeholder="Ví dụ: Block #1"
+                  @input="emitUpdate"
+                />
+              </div>
+
+              <div class="form-control md:col-span-4">
+                <label class="label py-0.5">
                   <span class="label-text text-xs font-semibold text-base-content/80">Lưu Vào Biến HEX Output</span>
                 </label>
                 <input
@@ -651,15 +652,6 @@
                   placeholder="Ví dụ: x"
                   @input="emitUpdate"
                 />
-              </div>
-
-              <div class="form-control md:col-span-12">
-                <div class="p-2 bg-base-100 rounded border border-primary/20 text-[11px] text-base-content/70 flex items-center justify-between">
-                  <span>
-                    💡 Biến <code class="text-primary font-bold">{{ block.outputVar || 'x' }}</code> sẽ mang chuỗi HEX, có thể chèn trực tiếp vào Downlink: <code class="text-secondary font-mono">4E04&#123;&#123;{{ block.outputVar || 'x' }}&#125;&#125;0005</code>
-                  </span>
-                  <span class="font-mono text-[10px] text-base-content/50">VD: 1000 ➔ 447a0000</span>
-                </div>
               </div>
             </template>
 
@@ -784,6 +776,7 @@ export interface FlowBlock {
   outputVar?: string;
   sourceVar?: string;
   dataType?: string;
+  sourceBlock?: string;
   point1X?: string | number;
   point1Y?: string | number;
   point2X?: string | number;
@@ -1090,11 +1083,11 @@ function getFunctionBadgeClass(type: string) {
 function getFunctionLabel(type: string) {
   switch (type) {
     case 'downlink':
-      return 'GỬI DOWNLINK';
+      return 'DOWNLINK';
     case 'clear_downlink':
-      return 'CLEAR DOWNLINK (FLUSH)';
+      return 'CLEAR DOWNLINK';
     case 'delay':
-      return 'DELAY (CHỜ)';
+      return 'DELAY';
     case 'wait_until_offset':
       return 'WAIT UNTIL OFFSET';
     case 'start_measurement':
@@ -1102,11 +1095,11 @@ function getFunctionLabel(type: string) {
     case 'stop_measurement':
       return 'STOP MEASUREMENT';
     case 'average':
-      return 'AVERAGE FUNCTION';
+      return 'AVERAGE';
     case 'calculate_linear':
-      return 'CALCULATE LINEAR (y = ax + b)';
+      return 'CALCULATE LINEAR';
     case 'convert_to_hex':
-      return 'CONVERT TO HEX (ĐỔI SANG HEX)';
+      return 'CONVERT TO HEX';
     default:
       return 'FUNCTION';
   }

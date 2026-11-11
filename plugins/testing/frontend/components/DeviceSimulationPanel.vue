@@ -166,11 +166,12 @@
       </div>
     </div>
 
-    <!-- Section 2: Thiết Bị Tham Chiếu (Reference Devices) & Thiết Bị Mô Phỏng (Simulator) -->
+    <!-- Section 2: Cấu Hình Thiết Bị Tham Chiếu / Mô Phỏng (Reference / Simulator Devices) -->
     <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 space-y-3">
       <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
         <div class="flex items-center gap-2">
-          <span class="badge badge-sm badge-warning font-mono font-bold">REF DEVICE</span>
+          <span class="badge badge-sm badge-warning font-mono font-bold">REF / SIMULATOR DEVICE</span>
+          <span class="text-xs text-base-content/70">Khai báo thiết bị chuẩn / mô phỏng</span>
         </div>
         <button
           type="button"
@@ -178,13 +179,13 @@
           @click="addReferenceDevice"
         >
           <Plus class="w-4 h-4" />
-          <span>Thêm Thiết Bị Tham Chiếu</span>
+          <span>Thêm Thiết Bị</span>
         </button>
       </div>
 
       <!-- Danh sách Reference Devices -->
       <div v-if="referenceDevices.length === 0" class="p-3 bg-base-100/60 rounded-lg border border-dashed border-base-300 text-center text-xs text-base-content/50 italic">
-        Không có thiết bị tham chiếu nào.
+        Chưa có thiết bị tham chiếu / mô phỏng nào.
       </div>
 
       <div v-else class="space-y-2">
@@ -195,7 +196,7 @@
         >
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-warning flex items-center gap-1.5 font-mono">
-              ⭐ THIẾT BỊ THAM CHIẾU #{{ idx + 1 }}
+              ⭐ THIẾT BỊ THAM CHIẾU / MÔ PHỎNG #{{ idx + 1 }}
             </span>
             <div class="flex items-center gap-2">
               <span v-if="refDev.fields?.length" class="badge badge-xs badge-success font-mono">
@@ -1023,7 +1024,7 @@ const simulationVariables = computed<SimulationVariableInfo[]>(() => {
         seen.add(vName);
         vars.push({
           name: vName,
-          sourceBlock: `Block #${idx + 1}: Convert to HEX`,
+          sourceBlock: b.sourceBlock || `Block #${idx + 1}: Convert to HEX`,
           sourceType: 'convert_to_hex',
           blockIndex: idx + 1,
           target: 'DUT',
