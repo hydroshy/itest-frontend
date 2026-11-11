@@ -338,7 +338,7 @@ import {
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
-import SimulationFlowBuilder, { type FlowBlock } from './SimulationFlowBuilder.vue';
+import type { FlowBlock } from './SimulationFlowBuilder.vue';
 
 const emit = defineEmits<{
   (e: 'switch-tab', tab: string, payload?: any): void;

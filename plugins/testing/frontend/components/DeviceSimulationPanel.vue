@@ -317,6 +317,7 @@
         :devices="allSimulationDeviceItems"
         :reference-devices="referenceDevices"
         :dut-name="profileForm.name || profileForm.itemCode || 'DUT'"
+        :dut-fields="dutFields"
       />
     </div>
 

@@ -101,12 +101,23 @@
         v-for="(block, index) in blocks"
         :key="block.id"
         class="relative transition-all"
+        :class="{ 'opacity-50 ring-2 ring-primary ring-dashed rounded-box': draggedIndex === index }"
+        @dragover="onDragOver(index, $event)"
+        @drop="onDrop(index, $event)"
       >
         <!-- Block Card -->
         <div class="card bg-base-200 border border-base-content/10 rounded-box shadow-sm p-4 hover:border-primary/40 transition-colors">
           <!-- Block Header -->
-          <div class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10 gap-2 flex-wrap">
+          <div
+            class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10 gap-2 flex-wrap"
+            draggable="true"
+            @dragstart="onDragStart(index, $event)"
+            @dragend="onDragEnd"
+          >
             <div class="flex items-center gap-2 flex-wrap">
+              <span class="cursor-grab active:cursor-grabbing p-1 -ml-1 text-base-content/40 hover:text-primary transition-colors" title="Kéo thả để di chuyển bước này">
+                <GripVertical class="w-4 h-4" />
+              </span>
               <span class="badge badge-sm font-mono font-bold bg-base-300">
                 #{{ index + 1 }}
               </span>
@@ -147,7 +158,7 @@
                 @click="moveBlockUp(index)"
                 title="Di chuyển lên trên"
               >
-                <ArrowUp class="w-3.5 h-3.5" />
+                <ChevronUp class="w-4 h-4" />
               </button>
               <button
                 type="button"
@@ -156,7 +167,7 @@
                 @click="moveBlockDown(index)"
                 title="Di chuyển xuống dưới"
               >
-                <ArrowDown class="w-3.5 h-3.5" />
+                <ChevronDown class="w-4 h-4" />
               </button>
               <button
                 type="button"
@@ -397,16 +408,30 @@
                 />
               </div>
               <div class="form-control md:col-span-4">
-                <label class="label py-0.5">
-                  <span class="label-text text-xs font-semibold text-base-content/80">Trường Đếm (Counter Field)</span>
+                <label class="label py-0.5 flex items-center justify-between">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Trường Đếm Gói (Counter Field)</span>
+                  <span class="badge badge-xs badge-ghost text-[9px] font-mono">Mặc định: fcnt</span>
                 </label>
-                <input
-                  v-model="block.counterField"
-                  type="text"
-                  class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder=""
-                  @input="emitUpdate"
-                />
+                <div class="relative w-full">
+                  <input
+                    v-model="block.counterField"
+                    type="text"
+                    :list="`counter-options-${block.id}`"
+                    class="input input-bordered input-sm w-full font-mono text-xs"
+                    placeholder="Mặc định: fcnt (Frame Counter)"
+                    @input="emitUpdate"
+                  />
+                  <datalist :id="`counter-options-${block.id}`">
+                    <option value="fcnt">fcnt (LoRaWAN Frame Counter chuẩn)</option>
+                    <option
+                      v-for="f in getFieldDataOptions(block.targetDevice)"
+                      :key="f.name"
+                      :value="f.name"
+                    >
+                      {{ f.label }}
+                    </option>
+                  </datalist>
+                </div>
               </div>
             </template>
 
@@ -444,16 +469,31 @@
               </div>
 
               <div class="form-control md:col-span-3">
-                <label class="label py-0.5">
-                  <span class="label-text text-xs font-semibold text-base-content/80">Trường Metric (Sensor/RF)</span>
+                <label class="label py-0.5 flex items-center justify-between">
+                  <span class="label-text text-xs font-semibold text-base-content/80">Trường FIELD_DATA</span>
+                  <span v-if="getFieldDataOptions(block.targetDevice).length > 0" class="badge badge-xs badge-info font-mono text-[9px]">
+                    {{ getFieldDataOptions(block.targetDevice).length }} fields
+                  </span>
                 </label>
-                <input
-                  v-model="block.metric"
-                  type="text"
-                  class="input input-bordered input-sm w-full font-mono text-xs"
-                  placeholder=""
-                  @input="emitUpdate"
-                />
+                <div class="relative w-full">
+                  <input
+                    v-model="block.metric"
+                    type="text"
+                    :list="`field-options-${block.id}`"
+                    class="input input-bordered input-sm w-full font-mono text-xs pr-7"
+                    placeholder="Chọn hoặc nhập FIELD_DATA..."
+                    @input="emitUpdate"
+                  />
+                  <datalist :id="`field-options-${block.id}`">
+                    <option
+                      v-for="f in getFieldDataOptions(block.targetDevice)"
+                      :key="f.name"
+                      :value="f.name"
+                    >
+                      {{ f.label }}
+                    </option>
+                  </datalist>
+                </div>
               </div>
 
               <div v-if="block.averageMode === 'MEASUREMENT_WINDOW'" class="form-control md:col-span-3">
@@ -671,6 +711,29 @@
           </div>
         </div>
       </div>
+
+      <!-- Nút Thêm Function Block luôn nằm ở dưới function block cuối cùng -->
+      <div class="flex items-center justify-center pt-2 pb-2">
+        <div class="dropdown dropdown-top dropdown-center">
+          <label tabindex="0" role="button" class="btn btn-sm btn-primary gap-1.5 shadow-md">
+            <Plus class="w-4 h-4" />
+            <span>Thêm Function Block</span>
+          </label>
+          <ul tabindex="0" class="dropdown-content z-[20] menu p-2 shadow-xl bg-base-100 rounded-box w-64 border border-base-300 text-xs space-y-1 mb-2">
+            <li class="menu-title text-[10px] uppercase font-bold text-primary">Điều Khiển &amp; Thời Gian</li>
+            <li><a @click="addBlock('downlink')">📡 Downlink</a></li>
+            <li><a @click="addBlock('clear_downlink')">🧹 Clear Downlink</a></li>
+            <li><a @click="addBlock('delay')">⏱️ Delay</a></li>
+            <li><a @click="addBlock('wait_until_offset')">🎯 Wait Until Offset</a></li>
+            <li class="menu-title text-[10px] uppercase font-bold text-primary mt-1">Đo Lường &amp; Hiệu Chuẩn</li>
+            <li><a @click="addBlock('start_measurement')">🟢 Start Measurement</a></li>
+            <li><a @click="addBlock('stop_measurement')">🔴 Stop Measurement</a></li>
+            <li><a @click="addBlock('average')">📊 Average</a></li>
+            <li><a @click="addBlock('calculate_linear')">📐 Calculate Linear</a></li>
+            <li><a @click="addBlock('convert_to_hex')">🔢 Convert to HEX</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <!-- JSON Preview / Import Modal -->
@@ -748,6 +811,9 @@ import {
   ArrowDown,
   Clock,
   Code,
+  ChevronUp,
+  ChevronDown,
+  GripVertical,
 } from 'lucide-vue-next';
 import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
@@ -803,14 +869,16 @@ const props = withDefaults(
   defineProps<{
     modelValue: FlowBlock[];
     devices?: SimulationDeviceItem[];
-    referenceDevices?: string[] | Array<{ name?: string; reference_name?: string }>;
+    referenceDevices?: string[] | Array<{ name?: string; reference_name?: string; fields?: any[] }>;
     dutName?: string;
+    dutFields?: Array<{ name: string; label?: string; unit?: string }>;
   }>(),
   {
     modelValue: () => [],
     devices: () => [],
     referenceDevices: () => [],
     dutName: 'DUT',
+    dutFields: () => [],
   }
 );
 
@@ -821,6 +889,79 @@ const emit = defineEmits<{
 const blocks = ref<FlowBlock[]>([]);
 const showJsonModal = ref(false);
 const rawJsonInput = ref('');
+const draggedIndex = ref<number | null>(null);
+
+function onDragStart(index: number, event: DragEvent) {
+  draggedIndex.value = index;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+  }
+}
+
+function onDragOver(index: number, event: DragEvent) {
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+}
+
+function onDrop(dropIndex: number, event: DragEvent) {
+  event.preventDefault();
+  const sourceIndex = draggedIndex.value ?? Number(event.dataTransfer?.getData('text/plain'));
+  if (sourceIndex !== null && sourceIndex !== dropIndex && !isNaN(sourceIndex)) {
+    const item = blocks.value.splice(sourceIndex, 1)[0];
+    blocks.value.splice(dropIndex, 0, item);
+    emitUpdate();
+    cyberToast.info(`Đã di chuyển block #${sourceIndex + 1} tới vị trí #${dropIndex + 1}`);
+  }
+  draggedIndex.value = null;
+}
+
+function onDragEnd() {
+  draggedIndex.value = null;
+}
+
+function getFieldDataOptions(targetDevice?: string): Array<{ name: string; label: string }> {
+  const target = (targetDevice || 'DUT').trim().toUpperCase();
+  let baseFields: Array<{ name: string; label: string }> = [];
+
+  if (target === 'DUT' || target === props.dutName?.toUpperCase()) {
+    baseFields = (props.dutFields || []).map((f) => ({
+      name: f.name,
+      label: f.label ? `${f.name} (${f.label})` : f.name,
+    }));
+  } else {
+    // Check reference devices
+    const foundRef = (props.referenceDevices || []).find((r: any) => {
+      if (typeof r === 'string') return r.toUpperCase() === target || target === 'REF';
+      const rName = (r.reference_name || r.name || '').trim().toUpperCase();
+      return rName === target || target === 'REF' || target === 'SIMU';
+    });
+    if (foundRef && typeof foundRef === 'object' && Array.isArray((foundRef as any).fields)) {
+      baseFields = (foundRef as any).fields.map((f: any) => ({
+        name: f.name,
+        label: f.label ? `${f.name} (${f.label})` : f.name,
+      }));
+    }
+  }
+
+  // Standard RF/network telemetry fields always available
+  const standardMetrics = [
+    { name: 'rssi', label: 'rssi (Chất lượng sóng RSSI dBm)' },
+    { name: 'snr', label: 'snr (Tỷ số tín hiệu / nhiễu SNR dB)' },
+    { name: 'fcnt', label: 'fcnt (Frame Counter / Bộ đếm gói)' },
+  ];
+
+  const merged = [...baseFields];
+  standardMetrics.forEach((sm) => {
+    if (!merged.some((m) => m.name.toLowerCase() === sm.name.toLowerCase())) {
+      merged.push(sm);
+    }
+  });
+
+  return merged;
+}
 
 // Auto-fetch simulation devices if props.devices is empty
 const internalSimDevices = ref<SimulationDeviceItem[]>([]);
