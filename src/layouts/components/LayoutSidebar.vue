@@ -56,7 +56,7 @@
         <!-- System Administration Group (ADMIN / SUPER_ADMIN) -->
         <template v-if="canAccessAdmin">
           <li v-show="!isCollapse" class="menu-title px-3 pt-4 pb-1 text-[11px] font-bold text-[var(--owl-text-muted)] uppercase tracking-wider">
-            Quản trị hệ thống
+            SYSTEM
           </li>
           <div v-show="isCollapse" class="divider my-1 border-[var(--owl-border-light)]"></div>
 
@@ -106,7 +106,7 @@
         <!-- Dynamic Plugin Navigation Items -->
         <template v-if="filteredPluginMenus.length > 0">
           <li v-show="!isCollapse" class="menu-title px-3 pt-4 pb-1 text-[11px] font-bold text-[var(--owl-text-muted)] uppercase tracking-wider">
-            Chức năng nghiệp vụ
+            PLUGINS
           </li>
           <div v-show="isCollapse" class="divider my-1 border-[var(--owl-border-light)]"></div>
 

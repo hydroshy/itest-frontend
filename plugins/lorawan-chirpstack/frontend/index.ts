@@ -21,7 +21,7 @@ export const lorawanChirpStackPlugin: FrontendPluginDefinition = {
       name: 'LoRaWanChirpStack',
       component: LoRaWanChirpStackView,
       meta: {
-        title: 'ChirpStack LoRaWAN',
+        title: 'CHIRPSTACK',
         icon: 'Connection',
         requiresAuth: true,
       },
@@ -29,7 +29,7 @@ export const lorawanChirpStackPlugin: FrontendPluginDefinition = {
 
     context.registerMenu({
       id: 'menu-lorawan-chirpstack',
-      title: 'ChirpStack LoRaWAN',
+      title: 'CHIRPSTACK',
       path: '/plugins/lorawan-chirpstack',
       icon: 'tower-broadcast',
       order: 21,

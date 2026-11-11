@@ -334,7 +334,7 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'lorawan-chirpstack:integration',
-    title: 'ChirpStack Integration',
+    title: 'CHIRPSTACK',
     description: 'Giám sát trạm Gateway LoRaWAN, thiết bị Node và tích hợp ChirpStack v4.',
     icon: 'tower-broadcast',
     route: '/plugins/lorawan-chirpstack?tab=servers',
@@ -463,6 +463,8 @@ async function initCardsForUser() {
             title = 'DECODER';
           } else if (title === 'LoRaWAN Testing' || title === 'LoRaWan Testing') {
             title = 'LORAWAN TESTING';
+          } else if (title === 'ChirpStack LoRaWAN' || title === 'Chirpstack lorawan' || title === 'LoRaWAN ChirpStack Integration' || title === 'ChirpStack Integration') {
+            title = 'CHIRPSTACK';
           }
           list.push({
             id: c.id,

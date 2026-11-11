@@ -113,6 +113,9 @@ const currentRouteTitle = computed(() => {
   if (route.path === '/plugins/device') {
     return 'Thiết Bị (Devices)';
   }
+  if (route.path === '/plugins/lorawan-chirpstack') {
+    return 'CHIRPSTACK';
+  }
 
   if (route.meta?.title) {
     const t = String(route.meta.title);
@@ -121,6 +124,9 @@ const currentRouteTitle = computed(() => {
     }
     if (t === 'Bộ Giải Mã (Decoder)' || t === 'Bộ giải mã (decoder)') {
       return 'DECODER';
+    }
+    if (t === 'ChirpStack LoRaWAN' || t === 'Chirpstack lorawan' || t === 'ChirpStack Integration') {
+      return 'CHIRPSTACK';
     }
     return t;
   }

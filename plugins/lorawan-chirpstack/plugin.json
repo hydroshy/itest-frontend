@@ -1,6 +1,6 @@
 {
   "id": "lorawan-chirpstack",
-  "name": "LoRaWAN ChirpStack Network Manager",
+  "name": "CHIRPSTACK",
   "version": "1.0.0",
   "sdkVersion": "^1.0.0",
   "type": "HYBRID",
