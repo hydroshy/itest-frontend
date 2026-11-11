@@ -170,6 +170,38 @@ const filteredPluginMenus = computed(() => {
     return true;
   });
 
+  // Đảm bảo DIS Odoo Integration luôn hiển thị trên sidebar
+  const hasDisMenu = list.some((m: any) => m.id === 'menu-dis-manager' || m.id === 'dis-manager:main' || m.path === '/plugins/dis-manager');
+  if (!hasDisMenu) {
+    list.push({
+      id: 'menu-dis-manager',
+      title: 'DIS Odoo Integration',
+      icon: 'network-wired',
+      path: '/plugins/dis-manager',
+      order: 25,
+      children: [
+        {
+          id: 'dis-menu-diagnostics',
+          title: 'KIỂM TRA KẾT NỐI',
+          icon: 'link',
+          path: '/plugins/dis-manager?tab=diagnostics',
+        },
+        {
+          id: 'dis-menu-orders',
+          title: 'SALES ORDERS (DIS ODOO)',
+          icon: 'list-check',
+          path: '/plugins/dis-manager?tab=orders',
+        },
+        {
+          id: 'dis-menu-sandbox',
+          title: 'SANDBOX THỬ NGHIỆM',
+          icon: 'flask',
+          path: '/plugins/dis-manager?tab=sandbox',
+        },
+      ],
+    });
+  }
+
   return list.sort((a: any, b: any) => (a.order || 100) - (b.order || 100));
 });
 

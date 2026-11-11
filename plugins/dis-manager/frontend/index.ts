@@ -22,7 +22,6 @@ export const disManagerPlugin: FrontendPluginDefinition = {
         title: 'DIS Odoo Integration',
         icon: 'Connection',
         requiresAuth: true,
-        permissions: ['dis:orders:read', 'dis:connection:manage', 'dis:sync:execute'],
       },
     });
 
@@ -32,28 +31,24 @@ export const disManagerPlugin: FrontendPluginDefinition = {
       path: '/plugins/dis-manager',
       icon: 'network-wired',
       order: 25,
-      permissions: ['dis:orders:read', 'dis:connection:manage', 'dis:sync:execute'],
       children: [
         {
           id: 'dis-menu-diagnostics',
           title: 'KIỂM TRA KẾT NỐI',
           icon: 'link',
           path: '/plugins/dis-manager?tab=diagnostics',
-          permissions: ['dis:connection:manage'],
         },
         {
           id: 'dis-menu-orders',
           title: 'SALES ORDERS (DIS ODOO)',
           icon: 'list-check',
           path: '/plugins/dis-manager?tab=orders',
-          permissions: ['dis:orders:read'],
         },
         {
           id: 'dis-menu-sandbox',
           title: 'SANDBOX THỬ NGHIỆM',
           icon: 'flask',
           path: '/plugins/dis-manager?tab=sandbox',
-          permissions: ['dis:connection:manage'],
         },
       ],
     });
