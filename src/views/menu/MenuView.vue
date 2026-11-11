@@ -480,34 +480,6 @@ async function initCardsForUser() {
         }
       }
 
-      // Đảm bảo Thiết Bị (Devices) luôn có mặt
-      if (!list.some(c => c.id === 'device:manage' || c.route === '/plugins/device')) {
-        list.push({
-          id: 'device:manage',
-          title: 'Thiết Bị (Devices)',
-          description: 'Quản lý danh sách thiết bị IoT, liên kết dữ liệu Traceability (SO/WA/Item Code) và trạng thái hoạt động độc lập.',
-          icon: 'microchip',
-          route: '/plugins/device',
-          pluginId: 'device',
-          category: 'plugin',
-          order: 5,
-        });
-      }
-
-      // Đảm bảo DIS Odoo Integration luôn có mặt
-      if (!list.some(c => c.id === 'dis-manager:main' || c.route === '/plugins/dis-manager')) {
-        list.push({
-          id: 'dis-manager:main',
-          title: 'DIS Odoo Integration',
-          description: 'Quản trị kết nối DIS API (Odoo), kiểm thử API Sandbox và đồng bộ Sales Orders vào iTest.',
-          icon: 'truck-ramp-box',
-          route: '/plugins/dis-manager',
-          pluginId: 'dis-manager',
-          category: 'plugin',
-          order: 11,
-        });
-      }
-
       list.sort((a, b) => (a.order || 0) - (b.order || 0));
       cards.value = list;
       return;

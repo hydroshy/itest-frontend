@@ -142,7 +142,7 @@ const canAccessAdmin = computed(() => {
 });
 
 const filteredPluginMenus = computed(() => {
-  const list = (pluginStore.menus || []).map((m: any) => ({
+  let list = (pluginStore.menus || []).map((m: any) => ({
     ...m,
     title: m.title || m.label || m.id,
     path: m.path || m.route || '',
@@ -156,17 +156,19 @@ const filteredPluginMenus = computed(() => {
       : undefined,
   }));
 
-  // Đảm bảo plugin "Thiết Bị (Devices)" luôn hiển thị trên sidebar
-  const hasDeviceMenu = list.some((m: any) => m.id === 'menu-device' || m.path === '/plugins/device');
-  if (!hasDeviceMenu) {
-    list.push({
-      id: 'menu-device',
-      title: 'Thiết Bị (Devices)',
-      icon: 'microchip',
-      path: '/plugins/device',
-      order: 10,
-    });
-  }
+  // Loại bỏ hoàn toàn phần Devices khỏi thanh sidebar bên trái
+  list = list.filter((m: any) => {
+    const id = (m.id || '').toLowerCase();
+    const path = (m.path || '').toLowerCase();
+    const title = (m.title || '').toLowerCase();
+    const isDeviceMenu =
+      id === 'menu-device' ||
+      id === 'device:manage' ||
+      path === '/plugins/device' ||
+      title === 'thiết bị (devices)';
+    if (isDeviceMenu) return false;
+    return true;
+  });
 
   return list.sort((a: any, b: any) => (a.order || 100) - (b.order || 100));
 });
