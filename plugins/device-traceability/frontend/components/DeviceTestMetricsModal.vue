@@ -127,6 +127,7 @@
         <!-- Tab Selector: Tolerance vs Timeline vs Variables vs Raw -->
         <div class="tabs tabs-boxed bg-base-200/60 p-1 rounded-xl">
           <button
+            v-if="hasComparison"
             class="tab tab-sm font-bold text-xs"
             :class="{ 'tab-active !bg-primary !text-primary-content': activeTab === 'tolerance' }"
             @click="activeTab = 'tolerance'"
@@ -157,7 +158,7 @@
         </div>
 
         <!-- PANEL 1: Đối Soát Thiết Bị Chuẩn (Golden Reference Tolerance) -->
-        <div v-show="activeTab === 'tolerance'" class="space-y-3">
+        <div v-show="activeTab === 'tolerance' && hasComparison" class="space-y-3">
           <div v-if="referenceDevices.length" class="space-y-2">
             <div v-for="(reference, index) in referenceDevices" :key="reference.devEui || index" class="card bg-base-200/50 border border-base-300 p-3">
               <div class="font-bold text-primary">{{ reference.name || reference.serialNumber || reference.devEui || `Thiết bị chuẩn ${index + 1}` }}</div>
@@ -249,8 +250,7 @@
                   <th class="text-center">FCnt</th>
                   <th class="text-center">RSSI</th>
                   <th class="text-center">SNR</th>
-                  <th class="text-center">Nhiệt Độ</th>
-                  <th class="text-center">Độ Ẩm</th>
+                  <th>Dữ liệu decoder</th>
                 </tr>
               </thead>
               <tbody class="font-mono text-xs">
@@ -268,8 +268,7 @@
                   <td class="text-center">{{ pkt.fCnt ?? pkt.fcnt ?? pkt.f_cnt ?? '—' }}</td>
                   <td class="text-center text-primary font-bold">{{ pkt.rssi != null ? `${pkt.rssi} dBm` : '—' }}</td>
                   <td class="text-center text-success font-bold">{{ pkt.snr != null ? `${pkt.snr} dB` : '—' }}</td>
-                  <td class="text-center font-bold text-info">{{ pkt.temperature != null || pkt.temp != null ? `${pkt.temperature ?? pkt.temp}°C` : '—' }}</td>
-                  <td class="text-center font-bold">{{ pkt.humidity != null || pkt.hum != null ? `${pkt.humidity ?? pkt.hum}%` : '—' }}</td>
+                  <td class="whitespace-pre-wrap break-all">{{ formatDecodedData(pkt.data) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -342,7 +341,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import {
   Activity,
   X,
@@ -361,7 +360,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const activeTab = ref<'tolerance' | 'timeline' | 'variables' | 'raw'>('tolerance');
+const activeTab = ref<'tolerance' | 'timeline' | 'variables' | 'raw'>('timeline');
 
 // Raw parsed test metrics
 const rawMetrics = computed(() => {
@@ -422,6 +421,22 @@ const referenceDevices = computed<any[]>(() =>
 const comparisonData = computed(() => {
   return rawMetrics.value?.comparisonResult || props.device?.comparisonResult || null;
 });
+
+// Only show the legacy tolerance panel when an actual comparison result exists.
+const hasComparison = computed(() => {
+  const result = comparisonData.value;
+  return !!result && ['tolerance_pass', 'temp_pass', 'hum_pass', 'temp_delta', 'hum_delta']
+    .some((key) => result[key] != null);
+});
+watch(hasComparison, (available) => {
+  if (!available && activeTab.value === 'tolerance') activeTab.value = 'timeline';
+});
+
+function formatDecodedData(data: unknown): string {
+  if (data == null) return '—';
+  if (typeof data === 'object' && Object.keys(data).length === 0) return '—';
+  return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+}
 
 const testVerdict = computed(() => {
   const v = (props.device?.testResult || props.device?.test_result || rawMetrics.value?.itemVerdict || '').toUpperCase();
