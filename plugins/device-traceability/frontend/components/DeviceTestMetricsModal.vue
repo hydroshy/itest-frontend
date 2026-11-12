@@ -46,7 +46,7 @@
           </div>
           <div>
             <span class="text-base-content/60 block text-[11px]">HW / FW VER:</span>
-            <span class="font-bold text-base-content">{{ device?.hwVersion || '—' }} / {{ device?.fwVersion || '—' }}</span>
+            <span class="font-bold text-base-content">{{ device?.hwVersion || device?.hw_version || rawMetrics?.hwVersion || '—' }} / {{ device?.fwVersion || device?.fw_version || rawMetrics?.fwVersion || '—' }}</span>
           </div>
           <div>
             <span class="text-base-content/60 block text-[11px]">TESTED BY:</span>
@@ -55,6 +55,10 @@
           <div>
             <span class="text-base-content/60 block text-[11px]">TIME TEST:</span>
             <span class="font-bold text-base-content">{{ formattedTestTime }}</span>
+          </div>
+          <div>
+            <span class="text-base-content/60 block text-[11px]">TEST BATCH ID:</span>
+            <span class="font-bold text-primary">{{ device?.testBatchId || device?.test_batch_id || '—' }}</span>
           </div>
           <div>
             <span class="text-base-content/60 block text-[11px]">BATCH CODE:</span>
@@ -154,6 +158,13 @@
 
         <!-- PANEL 1: Đối Soát Thiết Bị Chuẩn (Golden Reference Tolerance) -->
         <div v-show="activeTab === 'tolerance'" class="space-y-3">
+          <div v-if="referenceDevices.length" class="space-y-2">
+            <div v-for="(reference, index) in referenceDevices" :key="reference.devEui || index" class="card bg-base-200/50 border border-base-300 p-3">
+              <div class="font-bold text-primary">{{ reference.name || reference.serialNumber || reference.devEui || `Thiết bị chuẩn ${index + 1}` }}</div>
+              <div class="text-xs font-mono text-base-content/70">{{ reference.serialNumber || '—' }} · {{ reference.devEui || '—' }} · {{ reference.packets?.length || 0 }} gói</div>
+              <pre class="text-xs font-mono whitespace-pre-wrap break-all mt-2">{{ JSON.stringify(reference.values || {}, null, 2) }}</pre>
+            </div>
+          </div>
           <div v-if="comparisonData" class="space-y-3">
             <div class="flex items-center justify-between text-xs">
               <div class="text-base-content/80">
@@ -164,9 +175,9 @@
               </div>
               <div
                 class="badge badge-sm font-mono font-bold"
-                :class="comparisonData.tolerance_pass ? 'badge-success' : 'badge-error'"
+                :class="comparisonData.tolerance_pass == null ? 'badge-ghost' : comparisonData.tolerance_pass ? 'badge-success' : 'badge-error'"
               >
-                Dung sai: {{ comparisonData.tolerance_pass ? 'ĐẠT (PASS)' : 'KHÔNG ĐẠT (FAIL)' }}
+                Dung sai: {{ comparisonData.tolerance_pass == null ? 'CHƯA CÓ DỮ LIỆU' : comparisonData.tolerance_pass ? 'ĐẠT (PASS)' : 'KHÔNG ĐẠT (FAIL)' }}
               </div>
             </div>
 
@@ -194,9 +205,9 @@
                     <td class="text-center">
                       <span
                         class="badge badge-xs font-bold"
-                        :class="comparisonData.temp_pass ? 'badge-success' : 'badge-error'"
+                        :class="comparisonData.temp_pass == null ? 'badge-ghost' : comparisonData.temp_pass ? 'badge-success' : 'badge-error'"
                       >
-                        {{ comparisonData.temp_pass ? 'PASS' : 'FAIL' }}
+                        {{ comparisonData.temp_pass == null ? '—' : comparisonData.temp_pass ? 'PASS' : 'FAIL' }}
                       </span>
                     </td>
                   </tr>
@@ -211,9 +222,9 @@
                     <td class="text-center">
                       <span
                         class="badge badge-xs font-bold"
-                        :class="comparisonData.hum_pass ? 'badge-success' : 'badge-error'"
+                        :class="comparisonData.hum_pass == null ? 'badge-ghost' : comparisonData.hum_pass ? 'badge-success' : 'badge-error'"
                       >
-                        {{ comparisonData.hum_pass ? 'PASS' : 'FAIL' }}
+                        {{ comparisonData.hum_pass == null ? '—' : comparisonData.hum_pass ? 'PASS' : 'FAIL' }}
                       </span>
                     </td>
                   </tr>
@@ -221,7 +232,7 @@
               </table>
             </div>
           </div>
-          <div v-else class="text-center py-6 text-xs text-base-content/50">
+          <div v-else-if="!referenceDevices.length" class="text-center py-6 text-xs text-base-content/50">
             Không có dữ liệu đối chiếu với thiết bị chuẩn cho thiết bị này.
           </div>
         </div>
@@ -251,7 +262,7 @@
                       class="badge badge-xs font-bold font-mono"
                       :class="pkt.source === 'REF' ? 'badge-warning text-warning-content' : 'badge-primary text-primary-content'"
                     >
-                      {{ pkt.source === 'REF' ? 'REFERENCE' : 'DUT' }}
+                      {{ pkt.source === 'REF' ? `REFERENCE ${pkt.referenceLabel || ''}` : 'DUT' }}
                     </span>
                   </td>
                   <td class="text-center">{{ pkt.fCnt ?? pkt.fcnt ?? pkt.f_cnt ?? '—' }}</td>
@@ -370,12 +381,10 @@ const rawMetrics = computed(() => {
 // Danh sách các biến mô phỏng lưu trong Traceability
 const flowVariablesList = computed(() => {
   const vars =
-    rawMetrics.value?.variables ||
-    rawMetrics.value?.flowVariables ||
-    rawMetrics.value?.simulationVariables ||
-    props.device?.variables ||
-    props.device?.testRawData?.variables ||
-    [];
+    [rawMetrics.value?.variables, rawMetrics.value?.flowVariables,
+      rawMetrics.value?.simulationVariables, rawMetrics.value?.simulationVars,
+      rawMetrics.value?.simulation_vars, props.device?.variables]
+      .find((value) => value && typeof value === 'object' && Object.keys(value).length > 0) || [];
 
   if (Array.isArray(vars)) {
     return vars.map((v: any) => ({
@@ -405,6 +414,10 @@ const flowVariablesList = computed(() => {
   }
   return [];
 });
+
+const referenceDevices = computed<any[]>(() =>
+  Array.isArray(rawMetrics.value?.referenceDevices) ? rawMetrics.value.referenceDevices : []
+);
 
 const comparisonData = computed(() => {
   return rawMetrics.value?.comparisonResult || props.device?.comparisonResult || null;
@@ -464,7 +477,9 @@ const allTimelinePackets = computed(() => {
     ? comparisonData.value.dut_packets.map((p: any) => ({ ...p, source: 'DUT' }))
     : [];
 
-  const ref = Array.isArray(rawMetrics.value?.referencePackets)
+  const ref = referenceDevices.value.length
+    ? referenceDevices.value.flatMap((device: any) => (Array.isArray(device.packets) ? device.packets : []).map((p: any) => ({ ...p, source: 'REF', referenceLabel: device.name || device.serialNumber || device.devEui })))
+    : Array.isArray(rawMetrics.value?.referencePackets)
     ? rawMetrics.value.referencePackets.map((p: any) => ({ ...p, source: 'REF' }))
     : Array.isArray(comparisonData.value?.reference_packets)
     ? comparisonData.value.reference_packets.map((p: any) => ({ ...p, source: 'REF' }))
