@@ -1287,15 +1287,9 @@ function loadFlowData(flow: any) {
   }
 
   // AutoCheck criteria
-  const criteria = flow.autoCheckCriteria || flow.criteria;
-  if (criteria) {
-    if (Array.isArray(criteria.rules)) {
-      dutRules.value = JSON.parse(JSON.stringify(criteria.rules));
-    }
-    if (Array.isArray(criteria.comparisons)) {
-      comparisons.value = JSON.parse(JSON.stringify(criteria.comparisons));
-    }
-  }
+  const criteria = flow.autoCheckCriteria || flow.auto_check_criteria || flow.criteria;
+  dutRules.value = JSON.parse(JSON.stringify(criteria?.dut?.function_rules || criteria?.rules || []));
+  comparisons.value = JSON.parse(JSON.stringify(criteria?.comparisons || []));
 
   if (profileForm.itemCode || profileForm.fwVersion) {
     fetchDutFields();

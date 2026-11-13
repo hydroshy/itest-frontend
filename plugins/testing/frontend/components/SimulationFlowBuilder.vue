@@ -388,7 +388,7 @@
                   type="text"
                   class="input input-bordered input-sm w-full font-mono text-xs"
                   placeholder=""
-                  @input="onPayloadInput(block)"
+                  @input="emitUpdate"
                 />
               </div>
             </template>
@@ -1387,18 +1387,6 @@ function getHexValidation(hexStr: string): { valid: boolean; bytes: number } {
     valid: isHex && isEven,
     bytes: isEven ? clean.length / 2 : Math.floor(clean.length / 2),
   };
-}
-
-function onPayloadInput(block: FlowBlock) {
-  if (!block.payloadHex) {
-    emitUpdate();
-    return;
-  }
-  if (!isDynamicPayload(block.payloadHex)) {
-    const clean = block.payloadHex.replace(/[^0-9A-Fa-f\s]/g, '').toUpperCase();
-    block.payloadHex = clean;
-  }
-  emitUpdate();
 }
 
 function onFunctionTypeChanged(block: FlowBlock) {
