@@ -763,6 +763,30 @@ function matchDeviceProfileByRegion(): any {
   const isClassB = ['B', '1'].includes(classCode);
   const isClassC = ['C', '2'].includes(classCode);
 
+  // ── PRIORITY: match by profile name containing "{REGION}_{CLASS}" ──────────
+  // e.g. region="EU868" class="A" → look for profile whose name contains "EU868_A"
+  //      region="EU868" class="C" → look for profile whose name contains "EU868_C"
+  // The raw region string is used for the name pattern (e.g. "EU868", "AS923", "AU915")
+  // so that sub-band variants like "AU915-1" also yield a sensible target "AU915_A".
+  const baseRegionForName = rawRegion.trim().toUpperCase().replace(/[-_\s].*$/, ''); // "EU868", "AS923", "AU915"
+  const nameTarget = `${baseRegionForName}_${classCode}`; // e.g. "EU868_A", "EU868_C"
+  const nameMatches = availableDeviceProfiles.value.filter((p: any) =>
+    typeof p.name === 'string' && p.name.toUpperCase().includes(nameTarget)
+  );
+  if (nameMatches.length === 1) {
+    // Exact name-based hit — auto-select without requiring supportsClass flags
+    matchedDeviceProfile.value = nameMatches[0];
+    step1.deviceProfileId = nameMatches[0].id;
+    return nameMatches[0];
+  }
+  if (nameMatches.length > 1) {
+    // Multiple name-based candidates — show picker
+    candidateDeviceProfiles.value = nameMatches;
+    profileMatchError.value = `Tìm thấy ${nameMatches.length} Device Profile có tên chứa "${nameTarget}". Vui lòng chọn cụ thể 1 profile bên dưới:`;
+    return null;
+  }
+  // ── END PRIORITY ──────────────────────────────────────────────────────────
+
   const regionMatches = availableDeviceProfiles.value.filter((p: any) => {
     const profileRegion = normalizeRegion(p.region);
     // ChirpStack v4 API already filters profiles by tenantId on server; do not drop when p.tenantId is omitted
