@@ -759,30 +759,57 @@ function matchDeviceProfileByRegion(): any {
   // Exact region match or base region match (e.g. AU915-1 matches AU915)
   const normalizeRegion = (val: unknown) => String(val || '').toUpperCase().replace(/[-_\s]/g, '');
   const region = normalizeRegion(rawRegion);
-  const classCode = rawClass.toUpperCase().replace(/^CLASS[_\s-]?/, '');
+  const classCode = rawClass.toUpperCase().replace(/^CLASS[_\s-]?/, '').trim();
   const isClassB = ['B', '1'].includes(classCode);
   const isClassC = ['C', '2'].includes(classCode);
+  const targetClass = isClassC ? 'C' : (isClassB ? 'B' : 'A');
 
   // ── PRIORITY: match by profile name containing "{REGION}_{CLASS}" ──────────
   // e.g. region="EU868" class="A" → look for profile whose name contains "EU868_A"
   //      region="EU868" class="C" → look for profile whose name contains "EU868_C"
   // The raw region string is used for the name pattern (e.g. "EU868", "AS923", "AU915")
-  // so that sub-band variants like "AU915-1" also yield a sensible target "AU915_A".
+  // so that sub-band variants like "AU915-1" also yield a sensible target "AU915_A" / "AU915-1_A".
   const baseRegionForName = rawRegion.trim().toUpperCase().replace(/[-_\s].*$/, ''); // "EU868", "AS923", "AU915"
-  const nameTarget = `${baseRegionForName}_${classCode}`; // e.g. "EU868_A", "EU868_C"
-  const nameMatches = availableDeviceProfiles.value.filter((p: any) =>
-    typeof p.name === 'string' && p.name.toUpperCase().includes(nameTarget)
-  );
+  const fullRegionForName = rawRegion.trim().toUpperCase();
+  const nameTargets = Array.from(new Set([
+    `${baseRegionForName}_${targetClass}`,
+    `${fullRegionForName}_${targetClass}`,
+    `${baseRegionForName}-${targetClass}`,
+    `${fullRegionForName}-${targetClass}`,
+  ]));
+
+  const isTenantOk = (p: any) => !p.tenantId || !step1.tenantId ||
+    String(p.tenantId).trim().toLowerCase() === String(step1.tenantId).trim().toLowerCase();
+
+  const nameMatches = availableDeviceProfiles.value.filter((p: any) => {
+    if (typeof p.id !== 'string' || !p.id.trim() || !isTenantOk(p)) return false;
+    const pName = String(p.name || '').toUpperCase();
+    return nameTargets.some((target) => pName.includes(target));
+  });
+
   if (nameMatches.length === 1) {
-    // Exact name-based hit — auto-select without requiring supportsClass flags
+    // Exact name-based hit — auto-select without requiring manual candidate selection
     matchedDeviceProfile.value = nameMatches[0];
     step1.deviceProfileId = nameMatches[0].id;
     return nameMatches[0];
   }
   if (nameMatches.length > 1) {
+    // If multiple name-matches exist, check if capability flags differentiate them
+    const refined = nameMatches.filter((p: any) => {
+      const pSupportsB = Boolean(p.supportsClassB === true || p.supportsClassB === 'true' || p.supports_class_b === true);
+      const pSupportsC = Boolean(p.supportsClassC === true || p.supportsClassC === 'true' || p.supports_class_c === true);
+      if (targetClass === 'C') return pSupportsC;
+      if (targetClass === 'B') return pSupportsB;
+      return !pSupportsC && !pSupportsB;
+    });
+    if (refined.length === 1) {
+      matchedDeviceProfile.value = refined[0];
+      step1.deviceProfileId = refined[0].id;
+      return refined[0];
+    }
     // Multiple name-based candidates — show picker
-    candidateDeviceProfiles.value = nameMatches;
-    profileMatchError.value = `Tìm thấy ${nameMatches.length} Device Profile có tên chứa "${nameTarget}". Vui lòng chọn cụ thể 1 profile bên dưới:`;
+    candidateDeviceProfiles.value = refined.length > 0 ? refined : nameMatches;
+    profileMatchError.value = `Tìm thấy ${candidateDeviceProfiles.value.length} Device Profile có tên khớp "${baseRegionForName}_${targetClass}". Vui lòng chọn cụ thể 1 profile bên dưới:`;
     return null;
   }
   // ── END PRIORITY ──────────────────────────────────────────────────────────
@@ -822,6 +849,19 @@ function matchDeviceProfileByRegion(): any {
   }
 
   if (matches.length > 1) {
+    // If device is Class A and we have multiple matches, prefer profiles that are strictly Class A (not Class B or C)
+    if (targetClass === 'A') {
+      const pureClassA = matches.filter((p: any) => {
+        const pSupportsB = Boolean(p.supportsClassB === true || p.supportsClassB === 'true' || p.supports_class_b === true);
+        const pSupportsC = Boolean(p.supportsClassC === true || p.supportsClassC === 'true' || p.supports_class_c === true);
+        return !pSupportsB && !pSupportsC;
+      });
+      if (pureClassA.length === 1) {
+        matchedDeviceProfile.value = pureClassA[0];
+        step1.deviceProfileId = pureClassA[0].id;
+        return pureClassA[0];
+      }
+    }
     candidateDeviceProfiles.value = matches;
     profileMatchError.value = `Tìm thấy ${matches.length} Device Profile cùng khớp với Region "${rawRegion}" và hỗ trợ Class ${rawClass}. Vui lòng chọn cụ thể 1 profile bên dưới:`;
     return null;
