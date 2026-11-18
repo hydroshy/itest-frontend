@@ -776,6 +776,12 @@ function matchDeviceProfileByRegion(): any {
     `${fullRegionForName}_${targetClass}`,
     `${baseRegionForName}-${targetClass}`,
     `${fullRegionForName}-${targetClass}`,
+    `${baseRegionForName} ${targetClass}`,
+    `${fullRegionForName} ${targetClass}`,
+    `${baseRegionForName}_CLASS_${targetClass}`,
+    `${baseRegionForName}_CLASS${targetClass}`,
+    `${fullRegionForName}_CLASS_${targetClass}`,
+    `${fullRegionForName}_CLASS${targetClass}`,
   ]));
 
   const isTenantOk = (p: any) => !p.tenantId || !step1.tenantId ||
@@ -786,6 +792,17 @@ function matchDeviceProfileByRegion(): any {
     const pName = String(p.name || '').toUpperCase();
     return nameTargets.some((target) => pName.includes(target));
   });
+
+  // Priority 1.1: Exact name match (e.g. p.name === "EU868_A" or "EU868_C")
+  const exactNameMatch = nameMatches.find((p: any) => {
+    const pName = String(p.name || '').trim().toUpperCase();
+    return nameTargets.includes(pName);
+  });
+  if (exactNameMatch) {
+    matchedDeviceProfile.value = exactNameMatch;
+    step1.deviceProfileId = exactNameMatch.id;
+    return exactNameMatch;
+  }
 
   if (nameMatches.length === 1) {
     // Exact name-based hit — auto-select without requiring manual candidate selection
@@ -878,6 +895,15 @@ function selectCandidateProfile(profile: any) {
   matchedDeviceProfile.value = profile;
   step1.deviceProfileId = profile.id;
   profileMatchError.value = '';
+  // Keep registerData.class synchronized if user selects candidate
+  const pName = String(profile?.name || '').toUpperCase();
+  if (profile?.supportsClassC || pName.includes('_C') || pName.includes('-C')) {
+    registerData.class = 'C';
+  } else if (profile?.supportsClassB || pName.includes('_B') || pName.includes('-B')) {
+    registerData.class = 'B';
+  } else if (pName.includes('_A') || pName.includes('-A')) {
+    registerData.class = 'A';
+  }
 }
 
 function formatServerName(ns?: any): string {
@@ -1530,6 +1556,24 @@ async function startFastRead0To259() {
   }
 }
 
+function decodeClass(bytes: number[]): string {
+  const str = bytesToString(bytes).toUpperCase().replace(/^CLASS[_\s-]?/, '').trim();
+  if (['A', 'B', 'C'].includes(str)) {
+    return str;
+  }
+  if (bytes && bytes.length >= 2) {
+    const num16 = (bytes[0] << 8) | bytes[1];
+    if (num16 === 2 || bytes[0] === 2 || bytes[1] === 2) return 'C';
+    if (num16 === 1 || bytes[0] === 1 || bytes[1] === 1) return 'B';
+    if (num16 === 0 || bytes[0] === 0 || bytes[1] === 0) return 'A';
+  } else if (bytes && bytes.length === 1) {
+    if (bytes[0] === 2) return 'C';
+    if (bytes[0] === 1) return 'B';
+    if (bytes[0] === 0) return 'A';
+  }
+  return str || 'A';
+}
+
 function decodeRegistersFromMemory(rawMemory: Map<number, [number, number]>) {
   function getBytes(start: number, count: number): number[] {
     const bytes: number[] = [];
@@ -1548,7 +1592,7 @@ function decodeRegistersFromMemory(rawMemory: Map<number, [number, number]>) {
   registerData['LRW appEUI'] = bytesToHex(getBytes(31, 4));
   registerData['LRW appKey'] = bytesToHex(getBytes(35, 8));
   registerData['region code'] = bytesToString(getBytes(69, 3));
-  registerData.class = bytesToString(getBytes(85, 1));
+  registerData.class = decodeClass(getBytes(85, 1));
   const stBytes = getBytes(103, 1);
   registerData['sensor type'] = stBytes.length >= 2 ? String((stBytes[0] << 8) | stBytes[1]) : '';
   registerData.SERIAL_NUMBER = bytesToString(getBytes(259, 9));
@@ -1643,6 +1687,8 @@ async function executeChirpstackRegistration() {
     appKey: registerData['LRW appKey'],
     regionCode: registerData['region code'],
     classMode: registerData.class,
+    class: registerData.class,
+    deviceClass: registerData.class,
     sensorType: registerData['sensor type'],
     serialNumber: registerData.SERIAL_NUMBER,
     itemCode: registerData.ITEM_CODE || step1.itemCode,
