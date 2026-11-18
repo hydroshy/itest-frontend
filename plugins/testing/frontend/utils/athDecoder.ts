@@ -57,6 +57,26 @@ export function bytesToString(bytes: number[] | Uint8Array): string {
   ).trim();
 }
 
+// Decode register 85 to LoRaWAN device class ('A', 'B', or 'C')
+export function decodeDeviceClass(bytes: number[] | Uint8Array): string {
+  const str = bytesToString(bytes).toUpperCase().replace(/^CLASS[_\s-]?/, '').trim();
+  if (['A', 'B', 'C'].includes(str)) {
+    return str;
+  }
+  const arr = Array.from(bytes || []);
+  if (arr.length >= 2) {
+    const num16 = (arr[0] << 8) | arr[1];
+    if (num16 === 2 || arr[0] === 2 || arr[1] === 2) return 'C';
+    if (num16 === 1 || arr[0] === 1 || arr[1] === 1) return 'B';
+    if (num16 === 0 || arr[0] === 0 || arr[1] === 0) return 'A';
+  } else if (arr.length === 1) {
+    if (arr[0] === 2) return 'C';
+    if (arr[0] === 1) return 'B';
+    if (arr[0] === 0) return 'A';
+  }
+  return str || 'A';
+}
+
 // Convert byte slice to Upper Hex string
 export function bytesToHex(bytes: number[] | Uint8Array): string {
   if (!bytes || !bytes.length) return '';
@@ -107,7 +127,7 @@ export function decodeATHRegisters(regMap: Map<number, number>): ATHRegistersRes
     appEui: bytesToHex(appEuiBytes),
     appKey: bytesToHex(appKeyBytes),
     regionCode: bytesToString(regionCodeBytes) || 'AS923-1',
-    deviceClass: bytesToString(classBytes) || 'A',
+    deviceClass: decodeDeviceClass(classBytes),
     sensorType: sensorTypeVal,
     serialNumber: bytesToString(serialBytes),
     itemCode: bytesToString(itemCodeBytes),
