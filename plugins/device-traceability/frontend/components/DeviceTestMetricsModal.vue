@@ -124,7 +124,7 @@
           </div>
         </div>
 
-        <!-- Tab Selector: Tolerance vs Timeline vs Variables vs Raw -->
+        <!-- Tabs for comparison, separate DUT/REF timelines, charts and raw data -->
         <div class="tabs tabs-boxed bg-base-200/60 p-1 rounded-xl">
           <button
             v-if="hasComparison"
@@ -136,10 +136,17 @@
           </button>
           <button
             class="tab tab-sm font-bold text-xs"
-            :class="{ 'tab-active !bg-primary !text-primary-content': activeTab === 'timeline' }"
-            @click="activeTab = 'timeline'"
+            :class="{ 'tab-active !bg-primary !text-primary-content': activeTab === 'timeline-dut' }"
+            @click="activeTab = 'timeline-dut'"
           >
-            Timeline Gói Tin ({{ allTimelinePackets.length }})
+            Timeline DUT ({{ dutPackets.length }})
+          </button>
+          <button
+            class="tab tab-sm font-bold text-xs"
+            :class="{ 'tab-active !bg-primary !text-primary-content': activeTab === 'timeline-ref' }"
+            @click="activeTab = 'timeline-ref'"
+          >
+            Timeline REF ({{ referencePackets.length }})
           </button>
           <button
             class="tab tab-sm font-bold text-xs"
@@ -245,9 +252,9 @@
           </div>
         </div>
 
-        <!-- PANEL 2: Timeline Gói Tin Có Timestamp -->
-        <div v-show="activeTab === 'timeline'" class="space-y-2">
-          <div v-if="allTimelinePackets.length > 0" class="overflow-x-auto rounded-xl border border-base-300 max-h-[300px]">
+        <!-- Separate DUT and reference packet timelines -->
+        <div v-for="source in (['DUT', 'REF'] as const)" :key="source" v-show="activeTab === (source === 'DUT' ? 'timeline-dut' : 'timeline-ref')" class="space-y-2">
+          <div v-if="(source === 'DUT' ? dutPackets : referencePackets).length > 0" class="overflow-x-auto rounded-xl border border-base-300 max-h-[300px]">
             <table class="table table-xs w-full table-pin-rows">
               <thead>
                 <tr class="bg-base-200 text-xs">
@@ -261,7 +268,7 @@
                 </tr>
               </thead>
               <tbody class="font-mono text-xs">
-                <tr v-for="(pkt, idx) in allTimelinePackets" :key="idx" class="hover:bg-base-200/50">
+                <tr v-for="(pkt, idx) in (source === 'DUT' ? dutTimelinePackets : referencePackets)" :key="idx" class="hover:bg-base-200/50">
                   <td class="text-center text-base-content/50">{{ idx + 1 }}</td>
                   <td class="font-bold text-base-content whitespace-nowrap">{{ formatPacketTime(pkt.timestamp || pkt.createdAt || pkt.created_at) }}</td>
                   <td>
@@ -281,7 +288,7 @@
             </table>
           </div>
           <div v-else class="text-center py-6 text-xs text-base-content/50">
-            Chưa có gói tin uplink nào được ghi nhận trong phiên kiểm thử này.
+            Chưa có gói tin {{ source }} nào được ghi nhận trong phiên kiểm thử này.
           </div>
         </div>
 
@@ -390,7 +397,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const activeTab = ref<'tolerance' | 'timeline' | 'charts' | 'variables' | 'raw'>('timeline');
+const activeTab = ref<'tolerance' | 'timeline-dut' | 'timeline-ref' | 'charts' | 'variables' | 'raw'>('timeline-dut');
 
 // Raw parsed test metrics
 const rawMetrics = computed(() => {
@@ -459,7 +466,7 @@ const hasComparison = computed(() => {
     .some((key) => result[key] != null);
 });
 watch(hasComparison, (available) => {
-  if (!available && activeTab.value === 'tolerance') activeTab.value = 'timeline';
+  if (!available && activeTab.value === 'tolerance') activeTab.value = 'timeline-dut';
 });
 
 function formatDecodedData(data: unknown): string {
@@ -511,7 +518,7 @@ const avgSnrDisplay = computed(() => {
 });
 
 const totalUplinks = computed(() => {
-  return rawMetrics.value?.packetsReceived ?? comparisonData.value?.packets_received ?? allTimelinePackets.value.length ?? 0;
+  return rawMetrics.value?.packetsReceived ?? comparisonData.value?.packets_received ?? dutPackets.value.length;
 });
 
 // Packets Timeline List
@@ -551,25 +558,20 @@ const dutFieldCharts = computed(() => {
   });
 });
 
-const allTimelinePackets = computed(() => {
-  const dut = dutPackets.value.map((p: any) => ({ ...p, source: 'DUT' }));
+function newestFirst(packets: any[]) {
+  return [...packets].sort((a, b) =>
+    new Date(b.timestamp || b.createdAt || b.created_at || 0).getTime() -
+    new Date(a.timestamp || a.createdAt || a.created_at || 0).getTime());
+}
 
-  const ref = referenceDevices.value.length
-    ? referenceDevices.value.flatMap((device: any) => (Array.isArray(device.packets) ? device.packets : []).map((p: any) => ({ ...p, source: 'REF', referenceLabel: device.name || device.serialNumber || device.devEui })))
-    : Array.isArray(rawMetrics.value?.referencePackets)
-    ? rawMetrics.value.referencePackets.map((p: any) => ({ ...p, source: 'REF' }))
+const dutTimelinePackets = computed(() => newestFirst(dutPackets.value.map((packet) => ({ ...packet, source: 'DUT' }))));
+const referencePackets = computed(() => newestFirst(referenceDevices.value.length
+  ? referenceDevices.value.flatMap((device: any) => (Array.isArray(device.packets) ? device.packets : []).map((packet: any) => ({ ...packet, source: 'REF', referenceLabel: device.name || device.serialNumber || device.devEui })))
+  : Array.isArray(rawMetrics.value?.referencePackets)
+    ? rawMetrics.value.referencePackets.map((packet: any) => ({ ...packet, source: 'REF' }))
     : Array.isArray(comparisonData.value?.reference_packets)
-    ? comparisonData.value.reference_packets.map((p: any) => ({ ...p, source: 'REF' }))
-    : [];
-
-  const combined = [...dut, ...ref];
-  combined.sort((a, b) => {
-    const ta = new Date(a.timestamp || a.createdAt || a.created_at || 0).getTime();
-    const tb = new Date(b.timestamp || b.createdAt || b.created_at || 0).getTime();
-    return tb - ta; // Newest first
-  });
-  return combined;
-});
+      ? comparisonData.value.reference_packets.map((packet: any) => ({ ...packet, source: 'REF' }))
+      : []));
 
 function formatPacketTime(t: any): string {
   if (!t) return '—';
