@@ -143,6 +143,13 @@
           </button>
           <button
             class="tab tab-sm font-bold text-xs"
+            :class="{ 'tab-active !bg-primary !text-primary-content': activeTab === 'charts' }"
+            @click="activeTab = 'charts'"
+          >
+            Biểu Đồ DUT ({{ dutFieldCharts.length }})
+          </button>
+          <button
+            class="tab tab-sm font-bold text-xs"
             :class="{ 'tab-active !bg-primary !text-primary-content': activeTab === 'variables' }"
             @click="activeTab = 'variables'"
           >
@@ -278,6 +285,29 @@
           </div>
         </div>
 
+        <!-- Numeric telemetry from DUT packets only; one chart per decoded field. -->
+        <div v-show="activeTab === 'charts'" class="space-y-3">
+          <div v-if="dutFieldCharts.length" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div v-for="chart in dutFieldCharts" :key="chart.name" class="card bg-base-200/50 border border-base-300 p-3 space-y-2 min-w-0">
+              <h4 class="font-semibold text-sm text-base-content break-all">{{ chart.name }}</h4>
+              <svg viewBox="0 0 360 150" class="w-full h-40" role="img" :aria-label="`Biểu đồ ${chart.name} theo thời gian, ${chart.points.length} gói DUT`">
+                <line x1="38" y1="12" x2="38" y2="124" stroke="currentColor" class="text-base-content/50" />
+                <line x1="38" y1="124" x2="350" y2="124" stroke="currentColor" class="text-base-content/50" />
+                <text x="34" y="15" text-anchor="end" class="fill-base-content text-[10px]">{{ chart.max }}</text>
+                <text x="34" y="124" text-anchor="end" class="fill-base-content text-[10px]">{{ chart.min }}</text>
+                <polyline v-if="chart.points.length > 1" :points="chart.line" fill="none" stroke="currentColor" stroke-width="2" class="text-primary" />
+                <circle v-for="(point, index) in chart.points" :key="index" :cx="point.x" :cy="point.y" r="3" fill="currentColor" class="text-primary">
+                  <title>{{ formatPacketTime(point.timestamp) }}: {{ point.value }}</title>
+                </circle>
+                <text x="38" y="143" class="fill-base-content text-[10px]">{{ formatPacketTime(chart.firstTime) }}</text>
+                <text x="350" y="143" text-anchor="end" class="fill-base-content text-[10px]">{{ formatPacketTime(chart.lastTime) }}</text>
+              </svg>
+              <div class="text-xs text-base-content">{{ chart.points.length }} gói DUT · Giá trị gần nhất: {{ chart.points[chart.points.length - 1]?.value }}</div>
+            </div>
+          </div>
+          <p v-else class="text-center py-6 text-sm text-base-content">Chưa có field số trong gói DUT để vẽ biểu đồ.</p>
+        </div>
+
         <!-- PANEL: Biến Mô Phỏng (Simulation Flow Variables & Metadata) -->
         <div v-show="activeTab === 'variables'" class="space-y-3">
           <div v-if="flowVariablesList.length > 0" class="overflow-x-auto rounded-xl border border-base-300">
@@ -360,7 +390,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const activeTab = ref<'tolerance' | 'timeline' | 'variables' | 'raw'>('timeline');
+const activeTab = ref<'tolerance' | 'timeline' | 'charts' | 'variables' | 'raw'>('timeline');
 
 // Raw parsed test metrics
 const rawMetrics = computed(() => {
@@ -485,12 +515,44 @@ const totalUplinks = computed(() => {
 });
 
 // Packets Timeline List
+const dutPackets = computed<any[]>(() => Array.isArray(rawMetrics.value?.dutPackets)
+  ? rawMetrics.value.dutPackets
+  : Array.isArray(comparisonData.value?.dut_packets) ? comparisonData.value.dut_packets : []);
+
+const dutFieldCharts = computed(() => {
+  const samples = new Map<string, Array<{ timestamp: string; time: number; value: number }>>();
+  dutPackets.value.forEach((packet, index) => {
+    const raw = packet.data;
+    const data = typeof raw === 'string' ? (() => { try { return JSON.parse(raw); } catch { return null; } })() : raw;
+    const fields = data?.field_data && typeof data.field_data === 'object' ? data.field_data : data;
+    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return;
+    const timestamp = packet.timestamp || packet.createdAt || packet.created_at;
+    const parsedTime = new Date(timestamp).getTime();
+    const time = Number.isFinite(parsedTime) ? parsedTime : index;
+    Object.entries(fields).forEach(([name, value]) => {
+      const numeric = typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN;
+      if (!Number.isFinite(numeric)) return;
+      if (!samples.has(name)) samples.set(name, []);
+      samples.get(name)!.push({ timestamp, time, value: numeric });
+    });
+  });
+  return Array.from(samples, ([name, values]) => {
+    values.sort((a, b) => a.time - b.time);
+    const min = Math.min(...values.map((point) => point.value));
+    const max = Math.max(...values.map((point) => point.value));
+    const minTime = values[0].time;
+    const maxTime = values[values.length - 1].time;
+    const points = values.map((point, index) => ({
+      ...point,
+      x: maxTime === minTime ? 38 + (index / Math.max(1, values.length - 1)) * 312 : 38 + ((point.time - minTime) / (maxTime - minTime)) * 312,
+      y: max === min ? 68 : 124 - ((point.value - min) / (max - min)) * 112,
+    }));
+    return { name, min, max, points, line: points.map((point) => `${point.x},${point.y}`).join(' '), firstTime: values[0].timestamp, lastTime: values[values.length - 1].timestamp };
+  });
+});
+
 const allTimelinePackets = computed(() => {
-  const dut = Array.isArray(rawMetrics.value?.dutPackets)
-    ? rawMetrics.value.dutPackets.map((p: any) => ({ ...p, source: 'DUT' }))
-    : Array.isArray(comparisonData.value?.dut_packets)
-    ? comparisonData.value.dut_packets.map((p: any) => ({ ...p, source: 'DUT' }))
-    : [];
+  const dut = dutPackets.value.map((p: any) => ({ ...p, source: 'DUT' }));
 
   const ref = referenceDevices.value.length
     ? referenceDevices.value.flatMap((device: any) => (Array.isArray(device.packets) ? device.packets : []).map((p: any) => ({ ...p, source: 'REF', referenceLabel: device.name || device.serialNumber || device.devEui })))

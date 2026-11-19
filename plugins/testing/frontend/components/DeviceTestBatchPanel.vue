@@ -654,10 +654,9 @@ const requiresReferenceDevice = computed(() => {
 const isSharedRefBatch = computed(() => {
   const b = selectedBatchConfig.value;
   if (!b) return false;
-  // Hỗ trợ cả cơ chế dùng chung cũ (shareReferenceDevice) và cơ chế danh sách mới (simulationDevices)
+  // Chỉ chia sẻ REF khi cấu hình batch yêu cầu, không suy ra từ danh sách simulationDevices.
   return Boolean(
     b.shareReferenceDevice ||
-    (Array.isArray(b.simulationDevices) && b.simulationDevices.length > 0) ||
     b.sharedReferenceDevEui ||
     b.autoCheckCriteria?.shareReferenceDevice ||
     b.autoCheckCriteria?.sharedReferenceDevEui ||
@@ -700,7 +699,7 @@ const configuredFlowReferenceDevices = computed<Array<{ id?: string; name: strin
   if (list.length > 0) {
     return list.map((item, idx) => {
       const name = item.reference_name || item.referenceName || item.name || `REF ${idx + 1}`;
-      const id = item.id || item.devEui || item.dev_eui || '';
+      const id = item.devEui || item.dev_eui || item.id || '';
       return {
         id,
         name,
@@ -751,6 +750,41 @@ const flowReferenceCount = computed(() => {
 const availableRefDevices = computed(() => {
   return goldenReferenceDevices.value || [];
 });
+
+function configuredReferenceDevice(refDef: { name: string; id?: string }) {
+  const configuredId = (refDef.id || '').trim().toUpperCase();
+  if (!configuredId) return null;
+  return availableRefDevices.value.find((device) =>
+    [device.devEui, device.id].some((value) => String(value || '').trim().toUpperCase() === configuredId)
+  ) || (/^[0-9A-F]{16}$/.test(configuredId) ? {
+    id: refDef.id,
+    devEui: configuredId,
+    serialNumber: refDef.name,
+    name: refDef.name,
+  } : null);
+}
+
+function assignConfiguredReferenceDevices(item: any) {
+  if (!requiresReferenceDevice.value) return;
+  if (!item.referenceDevicesMap) item.referenceDevicesMap = {};
+  configuredFlowReferenceDevices.value.forEach((refDef, index) => {
+    const refDevice = configuredReferenceDevice(refDef);
+    if (!refDevice) return;
+    item.referenceDevicesMap[refDef.name] = {
+      id: refDevice.id,
+      devEui: refDevice.devEui,
+      serialNumber: refDevice.serialNumber,
+      device: refDevice,
+      name: refDef.name,
+    };
+    if (index === 0) {
+      item.referenceDeviceId = refDevice.id;
+      item.referenceDevEui = refDevice.devEui;
+      item.referenceSerialNumber = refDevice.serialNumber;
+      item.referenceDevice = refDevice;
+    }
+  });
+}
 
 const isSharedReferenceDevice = isSharedRefBatch;
 
@@ -876,6 +910,7 @@ async function fetchBatchDetail(batchId: string) {
     const res: any = await httpClient.get(`/plugins/testing/test-batches/${batchId}`);
     const data = res?.data || res;
     if (data) {
+      if (selectedBatchId.value !== batchId) return;
       selectedBatchConfig.value = { ...selectedBatchConfig.value, ...data };
       if (data.maxDevices) maxAllowedDevices.value = data.maxDevices;
       if (data.flowDurationSeconds) {
@@ -1100,6 +1135,13 @@ function buildReferenceDeviceColumns(): any[] {
           }
           select.appendChild(opt);
         });
+        if (curEui && !refListOptions.some((ref) => ref.devEui === curEui)) {
+          const configuredOpt = document.createElement('option');
+          configuredOpt.value = curEui;
+          configuredOpt.textContent = `${assigned?.serialNumber || refDef.name} - ${curEui}`;
+          configuredOpt.selected = true;
+          select.appendChild(configuredOpt);
+        }
 
         select.addEventListener('change', (e) => {
           e.stopPropagation();
@@ -1388,47 +1430,7 @@ function addSingleDeviceToBatch(deviceRow: any) {
     avgSnr: null,
   });
 
-  if (requiresReferenceDevice.value && availableRefDevices.value.length > 0) {
-    const idx = selectedDevices.value.length - 1;
-    const targetItem = selectedDevices.value[idx];
-    if (!targetItem.referenceDevicesMap) targetItem.referenceDevicesMap = {};
-
-    const refDefs = configuredFlowReferenceDevices.value;
-    let commonRef = null;
-    if (isSharedRefBatch.value) {
-      if (sharedReferenceDevEui.value) {
-        commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
-      }
-      if (!commonRef && selectedDevices.value.length > 1) {
-        const firstEui = selectedDevices.value[0]?.referenceDevEui;
-        if (firstEui) commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === firstEui.toUpperCase()) || null;
-      }
-      if (!commonRef) commonRef = availableRefDevices.value[0];
-    }
-
-    refDefs.forEach((refDef, rIdx) => {
-      const refDev = isSharedRefBatch.value
-        ? (commonRef || availableRefDevices.value[rIdx % availableRefDevices.value.length])
-        : availableRefDevices.value[(idx + rIdx) % availableRefDevices.value.length];
-
-      if (refDev) {
-        targetItem.referenceDevicesMap[refDef.name] = {
-          id: refDev.id,
-          devEui: refDev.devEui,
-          serialNumber: refDev.serialNumber,
-          device: refDev,
-          name: refDef.name,
-        };
-
-        if (rIdx === 0) {
-          targetItem.referenceDeviceId = refDev.id;
-          targetItem.referenceDevEui = refDev.devEui;
-          targetItem.referenceSerialNumber = refDev.serialNumber;
-          targetItem.referenceDevice = refDev;
-        }
-      }
-    });
-  }
+  assignConfiguredReferenceDevices(selectedDevices.value[selectedDevices.value.length - 1]);
 
   selectedAvailableRows.value = selectedAvailableRows.value.filter(
     (r) => getDeviceIdentifier(r.raw || r) !== devId
@@ -1484,49 +1486,11 @@ function addSelectedAvailableRowsToBatch() {
     }
   }
 
-  if (requiresReferenceDevice.value && availableRefDevices.value.length > 0) {
-    let commonRef = null;
-    if (isSharedRefBatch.value) {
-      if (sharedReferenceDevEui.value) {
-        commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
-      }
-      if (!commonRef) {
-        const firstEui = selectedDevices.value.find((d) => d.referenceDevEui)?.referenceDevEui;
-        if (firstEui) commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === firstEui.toUpperCase()) || null;
-      }
-      if (!commonRef) commonRef = availableRefDevices.value[0];
+  selectedDevices.value.forEach((item) => {
+    if (!item.referenceDevicesMap || Object.keys(item.referenceDevicesMap).length === 0) {
+      assignConfiguredReferenceDevices(item);
     }
-
-    const refDefs = configuredFlowReferenceDevices.value;
-    selectedDevices.value.forEach((item, idx) => {
-      if (!item.referenceDevicesMap) item.referenceDevicesMap = {};
-
-      refDefs.forEach((refDef, rIdx) => {
-        const currentAssigned = item.referenceDevicesMap[refDef.name];
-        if (!currentAssigned || isSharedRefBatch.value) {
-          const refDev = isSharedRefBatch.value
-            ? (commonRef || availableRefDevices.value[rIdx % availableRefDevices.value.length])
-            : availableRefDevices.value[(idx + rIdx) % availableRefDevices.value.length];
-          if (refDev) {
-            item.referenceDevicesMap[refDef.name] = {
-              id: refDev.id,
-              devEui: refDev.devEui,
-              serialNumber: refDev.serialNumber,
-              device: refDev,
-              name: refDef.name,
-            };
-
-            if (rIdx === 0) {
-              item.referenceDeviceId = refDev.id;
-              item.referenceDevEui = refDev.devEui;
-              item.referenceSerialNumber = refDev.serialNumber;
-              item.referenceDevice = refDev;
-            }
-          }
-        }
-      });
-    });
-  }
+  });
 
   selectedAvailableRows.value = [];
   updateTabulatorData();
@@ -1585,20 +1549,15 @@ function autoAssignReferenceDevices() {
 
   const refDefs = configuredFlowReferenceDevices.value;
   let commonRef = null;
-  if (isSharedRefBatch.value) {
-    if (sharedReferenceDevEui.value) {
-      commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
-    }
-    if (!commonRef) commonRef = availableRefDevices.value[0];
+  if (isSharedRefBatch.value && sharedReferenceDevEui.value) {
+    commonRef = availableRefDevices.value.find((r) => r.devEui?.toUpperCase() === sharedReferenceDevEui.value) || null;
   }
 
-  selectedDevices.value.forEach((item, idx) => {
+  selectedDevices.value.forEach((item) => {
     if (!item.referenceDevicesMap) item.referenceDevicesMap = {};
 
     refDefs.forEach((refDef, rIdx) => {
-      const refDev = isSharedRefBatch.value
-        ? (commonRef || availableRefDevices.value[rIdx % availableRefDevices.value.length])
-        : availableRefDevices.value[(idx + rIdx) % availableRefDevices.value.length];
+      const refDev = configuredReferenceDevice(refDef) || commonRef;
       if (refDev) {
         item.referenceDevicesMap[refDef.name] = {
           id: refDev.id,
@@ -2036,6 +1995,8 @@ async function onSelectRunningBatch(id: string) {
       maxDevices: statusData.devices?.length || 5,
       flowDurationSeconds: statusData.flowDurationSeconds || 300,
     };
+    await fetchBatchDetail(id);
+    const savedItems = selectedBatchConfig.value?.items || [];
 
     if (statusData.soNumber) {
       selectedSoNumber.value = statusData.soNumber;
@@ -2047,7 +2008,17 @@ async function onSelectRunningBatch(id: string) {
     remainingSeconds.value = statusData.remainingSeconds || 0;
 
     if (Array.isArray(statusData.devices) && statusData.devices.length > 0) {
-      selectedDevices.value = statusData.devices.map((d: any) => ({
+      selectedDevices.value = statusData.devices.map((d: any) => {
+        const saved = savedItems.find((item: any) => item.devEui === d.devEui) || {};
+        const references = saved.referenceDevicesData || d.referenceDevicesData || [];
+        return {
+        referenceDevEui: saved.referenceDevEui || d.referenceDevEui || '',
+        referenceDeviceId: saved.referenceDeviceId || d.referenceDeviceId || '',
+        referenceSerialNumber: saved.referenceSerialNumber || d.referenceSerialNumber || '',
+        referenceDevicesMap: Object.fromEntries((Array.isArray(references) ? references : []).map((ref: any) => [
+          ref.referenceName || ref.reference_name,
+          ref,
+        ])),
         serialNumber: d.serialNumber,
         devEui: d.devEui,
         itemCode: d.itemCode || filterItemCode.value || '',
@@ -2058,7 +2029,8 @@ async function onSelectRunningBatch(id: string) {
         avgCycle: d.avgCycle ?? d.comparisonResult?.avg_cycle ?? null,
         avgRssi: d.avgRssi ?? d.comparisonResult?.avg_rssi ?? null,
         avgSnr: d.avgSnr ?? d.comparisonResult?.avg_snr ?? null,
-      }));
+      };
+      });
 
       if (statusData.devices[0]?.itemCode) {
         filterItemCode.value = statusData.devices[0].itemCode;
