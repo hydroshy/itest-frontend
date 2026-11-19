@@ -591,7 +591,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import {
   Cpu,
   RotateCcw,
@@ -1154,6 +1154,46 @@ const readProgress = ref(0);
 const readingStatusText = ref('Sẵn sàng');
 const readCompleted = ref(false);
 let activeSerialPort: any = null;
+let manuallyDisconnected = false;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnecting = false;
+
+function clearSerialReconnect() {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+}
+
+function scheduleSerialReconnect() {
+  if (manuallyDisconnected || reconnecting || reconnectTimer || !activeSerialPort) return;
+  reconnectTimer = setTimeout(async () => {
+    reconnectTimer = null;
+    reconnecting = true;
+    try {
+      const ports = await (navigator as any).serial.getPorts();
+      const port = ports.find((candidate: any) => candidate === activeSerialPort);
+      if (port && !manuallyDisconnected) {
+        activeSerialPort = port;
+        await openActivePort(true);
+      }
+    } catch {} finally {
+      reconnecting = false;
+      if (!serialConnected.value) scheduleSerialReconnect();
+    }
+  }, 1000);
+}
+
+function handleSerialDisconnect(event: any) {
+  if (event.target !== activeSerialPort) return;
+  serialConnected.value = false;
+  scheduleSerialReconnect();
+}
+
+function handleSerialConnect() {
+  if (!serialConnected.value) {
+    clearSerialReconnect();
+    scheduleSerialReconnect();
+  }
+}
 
 // Extracted 12 Register fields
 const registerData = reactive<Record<string, string>>({
@@ -1227,6 +1267,8 @@ async function selectAndConnectPort() {
   try {
     const port = await (navigator as any).serial.requestPort();
     if (!port) return;
+    clearSerialReconnect();
+    manuallyDisconnected = false;
     activeSerialPort = port;
     const info = port.getInfo ? port.getInfo() : {};
     let desc = 'COM Port (USB)';
@@ -1244,10 +1286,14 @@ async function selectAndConnectPort() {
   }
 }
 
-async function openActivePort() {
-  if (!activeSerialPort) return;
+async function openActivePort(isReconnect = false) {
+  const port = activeSerialPort;
+  if (!port) return;
   try {
-    await activeSerialPort.open({
+    if (isReconnect) {
+      try { await port.close(); } catch {}
+    }
+    await port.open({
       baudRate: Number(serialBaudRate.value) || 9600,
       dataBits: 8,
       stopBits: 1,
@@ -1255,31 +1301,38 @@ async function openActivePort() {
       flowControl: 'none',
       bufferSize: 255,
     });
-    if (activeSerialPort.setSignals) {
+    if (port !== activeSerialPort || manuallyDisconnected) {
+      try { await port.close(); } catch {}
+      return;
+    }
+    if (port.setSignals) {
       try {
-        await activeSerialPort.setSignals({
+        await port.setSignals({
           dataTerminalReady: true,
           requestToSend: true,
         });
       } catch (e) {}
     }
     serialConnected.value = true;
-    cyberToast.success(`Đã kết nối ${selectedPortName.value || 'cổng COM'} @ ${serialBaudRate.value} bps. Hãy nhấn START để đọc.`);
+    if (isReconnect) cyberToast.success('Đã kết nối lại cổng Serial.');
+    else cyberToast.success(`Đã kết nối ${selectedPortName.value || 'cổng COM'} @ ${serialBaudRate.value} bps. Hãy nhấn START để đọc.`);
   } catch (err: any) {
     serialConnected.value = false;
-    cyberToast.error(`Không thể kết nối cổng: ${err.message}`);
+    if (!isReconnect) cyberToast.error(`Không thể kết nối cổng: ${err.message}`);
+    if (!manuallyDisconnected) scheduleSerialReconnect();
   }
 }
 
 async function disconnectSerialPort() {
-  if (activeSerialPort) {
-    try {
-      await activeSerialPort.close();
-    } catch {}
-    activeSerialPort = null;
-  }
+  manuallyDisconnected = true;
+  clearSerialReconnect();
+  const port = activeSerialPort;
+  activeSerialPort = null;
   serialConnected.value = false;
   selectedPortName.value = '';
+  if (port) {
+    try { await port.close(); } catch {}
+  }
   cyberToast.info('Đã ngắt kết nối cổng Serial');
 }
 
@@ -1307,6 +1360,7 @@ async function flushUartRxBuffer(flushTimeoutMs = 100) {
         }
       }
     } finally {
+      try { await reader.cancel(); } catch {}
       reader.releaseLock();
     }
   } catch (e) {}
@@ -1826,6 +1880,22 @@ function resetAll() {
 onMounted(() => {
   loadSalesOrders();
   loadNetworkServers();
+  if ('serial' in navigator) {
+    (navigator as any).serial.addEventListener('disconnect', handleSerialDisconnect);
+    (navigator as any).serial.addEventListener('connect', handleSerialConnect);
+  }
+});
+
+onUnmounted(() => {
+  manuallyDisconnected = true;
+  clearSerialReconnect();
+  const port = activeSerialPort;
+  activeSerialPort = null;
+  if (port) void port.close().catch(() => {});
+  if ('serial' in navigator) {
+    (navigator as any).serial.removeEventListener('disconnect', handleSerialDisconnect);
+    (navigator as any).serial.removeEventListener('connect', handleSerialConnect);
+  }
 });
 </script>
 
