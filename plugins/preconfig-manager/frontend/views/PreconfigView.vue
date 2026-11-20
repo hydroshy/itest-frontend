@@ -210,7 +210,20 @@ interface Row {
   [key: string]: any;
 }
 
-const activeTab = ref<'manager' | 'create'>('manager');
+const props = withDefaults(
+  defineProps<{
+    initialTab?: 'manager' | 'create';
+  }>(),
+  {
+    initialTab: 'manager',
+  }
+);
+
+const activeTab = ref<'manager' | 'create'>(props.initialTab);
+
+watch(() => props.initialTab, (newTab) => {
+  if (newTab) activeTab.value = newTab;
+});
 const loading = ref(false);
 const saving = ref(false);
 const optionsLoading = ref(false);

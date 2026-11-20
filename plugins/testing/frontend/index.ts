@@ -146,6 +146,18 @@ export const testingPlugin: FrontendPluginDefinition = {
           path: '/plugins/testing?tab=create-device-testing',
         },
         {
+          id: 'testing-menu-create-preconfig',
+          title: 'CREATE PRECONFIG',
+          icon: 'plus',
+          path: '/plugins/testing?tab=create-preconfig',
+        },
+        {
+          id: 'testing-menu-list-preconfig',
+          title: 'LIST PRECONFIG',
+          icon: 'list',
+          path: '/plugins/testing?tab=list-preconfig',
+        },
+        {
           id: 'testing-menu-list-device-testing',
           title: 'LIST DEVICE TESTING',
           icon: 'list-check',

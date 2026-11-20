@@ -206,6 +206,16 @@
       <SoTestBatchPanel />
     </div>
 
+    <!-- TAB: Create Preconfig (Tạo Cấu Hình Preconfig từ Memmap) -->
+    <div v-if="activeTab === 'create-preconfig'">
+      <PreconfigView initial-tab="create" />
+    </div>
+
+    <!-- TAB: List Preconfig (Danh Sách Preconfig Profiles) -->
+    <div v-if="activeTab === 'list-preconfig'">
+      <PreconfigView initial-tab="manager" />
+    </div>
+
     <!-- TAB 4: Device Auto Check (Kiểm Tra Tự Động) -->
     <div v-if="activeTab === 'device-auto-check'">
       <DeviceAutoCheckPanel ref="autoCheckPanelRef" />
@@ -328,6 +338,7 @@ import DeviceTestBatchPanel from '../components/DeviceTestBatchPanel.vue';
 import DevicePayloadPanel from '../components/DevicePayloadPanel.vue';
 import ListFlowSimulationPanel from '../components/ListFlowSimulationPanel.vue';
 import SoTestBatchPanel from '../components/SoTestBatchPanel.vue';
+import PreconfigView from '../../../preconfig-manager/frontend/views/PreconfigView.vue';
 
 const route = useRoute();
 const isIsolatedView = computed(() => route.query.from === 'menu' || route.query.isolated === 'true');
@@ -338,6 +349,8 @@ const VALID_TABS = [
   'device-payload',
   'create-device-testing',
   'list-device-testing',
+  'create-preconfig',
+  'list-preconfig',
   'test-batch',
   'device-test-batch',
   'create-test-batch',
@@ -356,6 +369,8 @@ const tabList = [
   { name: 'device-payload', label: 'Device Payload (ChirpStack)', icon: Radio },
   { name: 'create-device-testing', label: 'Create Device Testing', icon: FlaskConical },
   { name: 'list-device-testing', label: 'List Device Testing', icon: List },
+  { name: 'create-preconfig', label: 'CREATE PRECONFIG', icon: Plus },
+  { name: 'list-preconfig', label: 'LIST PRECONFIG', icon: ListFilter },
   { name: 'test-batch', label: 'Device Test Batch', icon: Boxes },
   { name: 'create-test-batch', label: 'Create Test Batch', icon: FolderPlus },
   { name: 'list-test-batch', label: 'LIST TEST BATCH', icon: ListFilter },
