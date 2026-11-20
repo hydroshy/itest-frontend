@@ -1759,21 +1759,38 @@ async function startFastRead0To259() {
           cIdx++;
           readingStatusText.value = `Đang ghi Preconfig Chunk ${cIdx}/${chunks.length} (Reg ${chunk.startAddress}, ${chunk.registerCount} regs)...`;
           await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values);
-          await new Promise((r) => setTimeout(r, 120)); // Delay cho MCU lưu flash
+          await new Promise((r) => setTimeout(r, 500)); // Delay cho MCU ghi flash
         }
 
-        // Đọc lại xác thực
+        // Chờ MCU hoàn tất lưu flash/EEPROM và ổn định lại bộ thu phát
+        readingStatusText.value = 'Đang chờ MCU lưu bộ nhớ Flash & ổn định (1.2s)...';
+        await new Promise((r) => setTimeout(r, 1200));
+        await flushUartRxBuffer(50);
+
+        // Đọc lại xác thực với timeout 2500ms và retry
         readingStatusText.value = 'Đang đọc lại để xác thực giá trị Preconfig vừa ghi...';
         readProgress.value = 55;
         const actualMemory = new Map<number, number>();
 
         for (const chunk of chunks) {
-          const actualBytes = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount, 1200);
-          for (let i = 0; i < chunk.registerCount; i++) {
-            const word = ((actualBytes[i * 2] & 0xff) << 8) | (actualBytes[i * 2 + 1] & 0xff);
-            actualMemory.set(chunk.startAddress + i, word);
+          let actualBytes: number[] | null = null;
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              actualBytes = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount, 2500);
+              if (actualBytes && actualBytes.length >= chunk.registerCount * 2) break;
+            } catch (err: any) {
+              if (attempt >= 3) throw new Error(`Lỗi đọc lại thanh ghi ${chunk.startAddress} sau ghi: ${err.message}`);
+              await new Promise((r) => setTimeout(r, 600));
+              await flushUartRxBuffer(50);
+            }
           }
-          await new Promise((r) => setTimeout(r, 50));
+          if (actualBytes) {
+            for (let i = 0; i < chunk.registerCount; i++) {
+              const word = ((actualBytes[i * 2] & 0xff) << 8) | (actualBytes[i * 2 + 1] & 0xff);
+              actualMemory.set(chunk.startAddress + i, word);
+            }
+          }
+          await new Promise((r) => setTimeout(r, 100));
         }
 
         const vResult = verifyReadBackValues(

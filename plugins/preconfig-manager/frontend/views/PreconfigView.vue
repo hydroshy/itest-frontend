@@ -544,7 +544,7 @@ async function resolveMemmap() {
         comment: val(r, 'comment') || '',
         endUserDefault: sourceDefault ?? '',
         inputConfig,
-        selected: !/spare/i.test(description),
+        selected: false,
         configCheck: check.valid ? 'PASS' : 'FAIL',
         configError: check.error || ''
       };
