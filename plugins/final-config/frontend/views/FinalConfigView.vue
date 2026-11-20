@@ -52,50 +52,29 @@
           <div class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">Sensor connectivity <span class="text-error">*</span></span></label>
-                <select v-model="form.connectivity" class="select select-bordered select-sm w-full">
-                  <option value="LoRaWAN">LoRaWAN</option>
-                  <option value="Sigfox">Sigfox</option>
+                <label class="label py-1" for="final-so"><span class="label-text font-semibold">SO_NUMBER *</span></label>
+                <select id="final-so" v-model="form.soNumber" class="select select-bordered w-full" :disabled="optionsLoading">
+                  <option value="">Chọn SO_NUMBER</option>
+                  <option v-for="so in options.soNumbers" :key="so" :value="so">{{ so }}</option>
                 </select>
               </div>
               <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">SKU <span class="text-error">*</span></span></label>
-                <div class="join w-full">
-                  <span class="join-item btn btn-sm btn-neutral no-animation font-mono">{{ skuPrefix }}</span>
-                  <input v-model="form.skuSuffix" type="text" class="input input-bordered input-sm join-item flex-1" placeholder="Nhập suffix..." />
-                </div>
+                <label class="label py-1" for="final-wa"><span class="label-text font-semibold">WA_NUMBER *</span></label>
+                <select id="final-wa" v-model="form.waNumber" class="select select-bordered w-full" :disabled="!form.soNumber || optionsLoading">
+                  <option value="">Chọn WA_NUMBER</option>
+                  <option v-for="wa in options.waNumbers" :key="wa" :value="wa">{{ wa }}</option>
+                </select>
               </div>
               <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">LONG_FW (5FXXXX) <span class="text-error">*</span></span></label>
-                <input
-                  v-model="form.longFw"
-                  maxlength="6"
-                  @input="normalizeLongFw"
-                  type="text"
-                  class="input input-bordered input-sm w-full font-mono"
-                  :class="{ 'input-error': longFwError }"
-                  placeholder="5F..."
-                />
-                <span v-if="longFwError" class="text-error text-xs mt-1">{{ longFwError }}</span>
+                <label class="label py-1" for="final-item"><span class="label-text font-semibold">ITEM_CODE *</span></label>
+                <select id="final-item" v-model="form.itemCode" class="select select-bordered w-full" :disabled="!form.waNumber || optionsLoading">
+                  <option value="">Chọn ITEM_CODE</option>
+                  <option v-for="item in options.itemCodes" :key="item" :value="item">{{ item }}</option>
+                </select>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">SO_NUMBER <span class="text-error">*</span></span></label>
-                <input
-                  v-model="form.soNumber"
-                  placeholder="SO/2026/12345"
-                  type="text"
-                  class="input input-bordered input-sm w-full font-mono"
-                  :class="{ 'input-error': soError }"
-                />
-                <span v-if="soError" class="text-error text-xs mt-1">{{ soError }}</span>
-              </div>
-              <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">ITEM_CODE <span class="text-error">*</span></span></label>
-                <input v-model="form.itemCode" placeholder="WSLRW-ATH-11" type="text" class="input input-bordered input-sm w-full font-mono" />
-              </div>
-            </div>
+            <div v-if="optionsLoading || resolving" role="status" class="text-sm">Đang tải dữ liệu cấu hình...</div>
+            <div v-if="createError" role="alert" class="alert alert-warning text-sm">{{ createError }}</div>
           </div>
 
           <div v-if="form.memmapId && !registers.length" class="alert alert-warning text-sm mt-4">
@@ -221,50 +200,29 @@
           <div class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">Sensor connectivity <span class="text-error">*</span></span></label>
-                <select v-model="form.connectivity" class="select select-bordered select-sm w-full">
-                  <option value="LoRaWAN">LoRaWAN</option>
-                  <option value="Sigfox">Sigfox</option>
+                <label class="label py-1" for="final-so"><span class="label-text font-semibold">SO_NUMBER *</span></label>
+                <select id="final-so" v-model="form.soNumber" class="select select-bordered w-full" :disabled="optionsLoading">
+                  <option value="">Chọn SO_NUMBER</option>
+                  <option v-for="so in options.soNumbers" :key="so" :value="so">{{ so }}</option>
                 </select>
               </div>
               <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">SKU <span class="text-error">*</span></span></label>
-                <div class="join w-full">
-                  <span class="join-item btn btn-sm btn-neutral no-animation font-mono">{{ skuPrefix }}</span>
-                  <input v-model="form.skuSuffix" type="text" class="input input-bordered input-sm join-item flex-1" placeholder="Nhập suffix..." />
-                </div>
+                <label class="label py-1" for="final-wa"><span class="label-text font-semibold">WA_NUMBER *</span></label>
+                <select id="final-wa" v-model="form.waNumber" class="select select-bordered w-full" :disabled="!form.soNumber || optionsLoading">
+                  <option value="">Chọn WA_NUMBER</option>
+                  <option v-for="wa in options.waNumbers" :key="wa" :value="wa">{{ wa }}</option>
+                </select>
               </div>
               <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">LONG_FW (5FXXXX) <span class="text-error">*</span></span></label>
-                <input
-                  v-model="form.longFw"
-                  maxlength="6"
-                  @input="normalizeLongFw"
-                  type="text"
-                  class="input input-bordered input-sm w-full font-mono"
-                  :class="{ 'input-error': longFwError }"
-                  placeholder="5F..."
-                />
-                <span v-if="longFwError" class="text-error text-xs mt-1">{{ longFwError }}</span>
+                <label class="label py-1" for="final-item"><span class="label-text font-semibold">ITEM_CODE *</span></label>
+                <select id="final-item" v-model="form.itemCode" class="select select-bordered w-full" :disabled="!form.waNumber || optionsLoading">
+                  <option value="">Chọn ITEM_CODE</option>
+                  <option v-for="item in options.itemCodes" :key="item" :value="item">{{ item }}</option>
+                </select>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">SO_NUMBER <span class="text-error">*</span></span></label>
-                <input
-                  v-model="form.soNumber"
-                  placeholder="SO/2026/12345"
-                  type="text"
-                  class="input input-bordered input-sm w-full font-mono"
-                  :class="{ 'input-error': soError }"
-                />
-                <span v-if="soError" class="text-error text-xs mt-1">{{ soError }}</span>
-              </div>
-              <div class="form-control">
-                <label class="label py-1"><span class="label-text font-semibold">ITEM_CODE <span class="text-error">*</span></span></label>
-                <input v-model="form.itemCode" placeholder="WSLRW-ATH-11" type="text" class="input input-bordered input-sm w-full font-mono" />
-              </div>
-            </div>
+            <div v-if="optionsLoading || resolving" role="status" class="text-sm">Đang tải dữ liệu cấu hình...</div>
+            <div v-if="createError" role="alert" class="alert alert-warning text-sm">{{ createError }}</div>
           </div>
 
           <div v-if="form.memmapId && !registers.length" class="alert alert-warning text-sm mt-4">
@@ -404,20 +362,24 @@ function goBackToMenu() {
 }
 
 const API = '/api/plugins/final-config';
-const MEMMAP_API = '/api/plugins/memmap-manager';
 const activeTab = ref(route.query.tab === 'tool' ? 'tool' : (route.query.tab === 'create' ? 'create' : 'manager'));
 const loading = ref(false);
 const saving = ref(false);
 const errorMessage = ref('');
 const searchQuery = ref('');
 const profiles = ref<Row[]>([]);
-const memmapProfiles = ref<Row[]>([]);
+const options = ref<{ soNumbers: string[]; waNumbers: string[]; itemCodes: string[] }>({ soNumbers: [], waNumbers: [], itemCodes: [] });
+const optionsLoading = ref(false);
+const resolving = ref(false);
+const createError = ref('');
+let optionsRequest = 0;
+let resolveRequest = 0;
 const registers = ref<Row[]>([]);
 const detail = ref<Row | null>(null);
 const detailVisible = ref(false);
 const detailLoading = ref(false);
 
-const form = ref({ connectivity: 'LoRaWAN', skuSuffix: '', longFw: '', soNumber: '', itemCode: '', memmapId: '' });
+const form = ref({ soNumber: '', waNumber: '', itemCode: '', memmapId: '', connectivity: '' });
 const profileTableEl = ref<HTMLElement>();
 const registerTableEl = ref<HTMLElement>();
 const detailTableEl = ref<HTMLElement>();
@@ -425,11 +387,6 @@ let profileTable: Tabulator | undefined;
 let registerTable: Tabulator | undefined;
 let detailTable: Tabulator | undefined;
 
-const skuPrefix = computed(() => form.value.connectivity === 'Sigfox' ? 'WSSFC-' : 'WSLRW-');
-const sku = computed(() => `${skuPrefix.value}${form.value.skuSuffix.trim()}`);
-const shortFw = computed(() => /^5F[A-Z0-9]{4}$/.test(form.value.longFw) ? form.value.longFw.charAt(0) : '');
-const longFwError = computed(() => form.value.longFw && !/^5F[A-Z0-9]{4}$/.test(form.value.longFw) ? 'LONG_FW phải đúng mẫu 5FXXXX.' : '');
-const soError = computed(() => form.value.soNumber && !/^SO\/\d{4}\/\d{5}$/.test(form.value.soNumber) ? 'SO_NUMBER phải đúng mẫu SO/2026/12345.' : '');
 
 const selectedCount = computed(() => registers.value.filter(r => r.selected).length);
 const invalidSelectedCount = computed(() => registers.value.filter(r => r.selected && r.configCheck === 'FAIL').length);
@@ -437,11 +394,12 @@ const hasInvalidSelected = computed(() => invalidSelectedCount.value > 0);
 const invalidSelectedMessage = computed(() => `Có ${invalidSelectedCount.value} register được chọn nhưng cấu hình không hợp lệ.`);
 
 const canCreate = computed(() => Boolean(
-  sku.value &&
-  shortFw.value &&
-  /^SO\/\d{4}\/\d{5}$/.test(form.value.soNumber) &&
-  form.value.itemCode.trim() &&
+  form.value.soNumber &&
+  form.value.waNumber &&
+  form.value.itemCode &&
   form.value.memmapId &&
+  !createError.value &&
+  !resolving.value &&
   registers.value.length &&
   selectedCount.value &&
   !hasInvalidSelected.value
@@ -451,10 +409,6 @@ function val(row: Row | undefined | null, ...keys: string[]) {
   if (!row) return '';
   const hit = keys.map(k => row[k]).find(v => v !== undefined && v !== null && v !== '');
   return hit !== undefined ? hit : '';
-}
-
-function normalizeLongFw() {
-  form.value.longFw = form.value.longFw.toUpperCase().replace(/\s/g, '');
 }
 
 async function request<T>(base: string, endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -641,12 +595,8 @@ async function fetchProfiles() {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const [finalRows, maps] = await Promise.all([
-      request<unknown>(API, '/profiles'),
-      request<unknown>(MEMMAP_API, '/profiles')
-    ]);
+    const finalRows = await request<unknown>(API, '/profiles');
     profiles.value = Array.isArray(finalRows) ? (finalRows as Row[]) : [];
-    memmapProfiles.value = Array.isArray(maps) ? (maps as Row[]) : [];
     await nextTick();
     renderProfiles();
   } catch (e) {
@@ -656,13 +606,49 @@ async function fetchProfiles() {
   }
 }
 
-async function loadMemmap() {
+function clearResolved() {
+  resolveRequest++;
+  resolving.value = false;
+  form.value.memmapId = '';
+  form.value.connectivity = '';
   registers.value = [];
   destroy(registerTable);
   registerTable = undefined;
-  if (!form.value.memmapId) return;
+}
+
+async function loadOptions() {
+  const soNumber = form.value.soNumber;
+  const waNumber = form.value.waNumber;
+  const requestId = ++optionsRequest;
+  optionsLoading.value = true;
+  createError.value = '';
   try {
-    const source = await request<Row>(MEMMAP_API, `/profiles/${form.value.memmapId}`);
+    const params = new URLSearchParams();
+    if (soNumber) params.set('soNumber', soNumber);
+    if (waNumber) params.set('waNumber', waNumber);
+    const data = await request<{ soNumbers: string[]; waNumbers: string[]; itemCodes: string[] }>(API, `/options?${params}`);
+    if (requestId !== optionsRequest) return;
+    options.value = data;
+  } catch (e) {
+    if (requestId === optionsRequest) createError.value = e instanceof Error ? e.message : 'Không thể tải SO/WA/ITEM_CODE';
+  } finally {
+    if (requestId === optionsRequest) optionsLoading.value = false;
+  }
+}
+
+async function resolveMemmap() {
+  clearResolved();
+  createError.value = '';
+  const { soNumber, waNumber, itemCode } = form.value;
+  if (!soNumber || !waNumber || !itemCode) return;
+  const requestId = ++resolveRequest;
+  resolving.value = true;
+  try {
+    const params = new URLSearchParams({ soNumber, waNumber, itemCode });
+    const source = await request<Row>(API, `/resolve?${params}`);
+    if (requestId !== resolveRequest) return;
+    form.value.memmapId = String(source.memmapId || '');
+    form.value.connectivity = String(source.connectivity || '');
     registers.value = (source.registers || []).map((r: Row, index: number) => {
       const dec = Number(val(r, 'modbusRegisterDecimal', 'modbusRegisterDec', 'modbus_register_dec', 'address'));
       const description = String(val(r, 'description', 'name') || '');
@@ -689,29 +675,9 @@ async function loadMemmap() {
     await nextTick();
     renderRegisters();
   } catch (e) {
-    cyberToast.error(e instanceof Error ? e.message : 'Không thể đọc Memmap Payload');
-  }
-}
-
-function matchMemmap() {
-  const longFw = form.value.longFw.trim().toUpperCase();
-  if (!sku.value || !/^5F[A-Z0-9]{4}$/.test(longFw)) {
-    form.value.memmapId = '';
-    registers.value = [];
-    destroy(registerTable);
-    registerTable = undefined;
-    return;
-  }
-  const match = memmapProfiles.value.find(profile =>
-    String(val(profile, 'sku')).trim().toUpperCase() === sku.value.toUpperCase() &&
-    String(val(profile, 'longFw', 'long_fw')).trim().toUpperCase() === longFw
-  );
-  form.value.memmapId = match ? String(match.id) : '';
-  if (match) void loadMemmap();
-  else {
-    registers.value = [];
-    destroy(registerTable);
-    registerTable = undefined;
+    if (requestId === resolveRequest) createError.value = e instanceof Error ? e.message : 'Vui lòng liên hệ ENGINEERING';
+  } finally {
+    if (requestId === resolveRequest) resolving.value = false;
   }
 }
 
@@ -721,11 +687,9 @@ async function createProfile() {
   try {
     const payload = {
       connectivity: form.value.connectivity,
-      sku: sku.value,
-      longFw: form.value.longFw,
-      shortFw: shortFw.value,
       soNumber: form.value.soNumber,
-      itemCode: form.value.itemCode.trim(),
+      waNumber: form.value.waNumber,
+      itemCode: form.value.itemCode,
       registers: registers.value.map(r => ({
         rowNumber: r.rowNumber,
         modbusRegisterDec: r.modbusRegisterDec,
@@ -746,17 +710,17 @@ async function createProfile() {
     activeTab.value = 'manager';
     await fetchProfiles();
   } catch (e) {
-    cyberToast.error(e instanceof Error ? e.message : 'Không thể tạo Final Config');
+    createError.value = e instanceof Error ? e.message : 'Không thể tạo Final Config';
+    cyberToast.error(createError.value);
   } finally {
     saving.value = false;
   }
 }
 
 function resetCreate() {
-  form.value = { connectivity: 'LoRaWAN', skuSuffix: '', longFw: '', soNumber: '', itemCode: '', memmapId: '' };
-  registers.value = [];
-  destroy(registerTable);
-  registerTable = undefined;
+  form.value = { soNumber: '', waNumber: '', itemCode: '', memmapId: '', connectivity: '' };
+  createError.value = '';
+  clearResolved();
 }
 
 async function viewProfile(id: string) {
@@ -831,8 +795,25 @@ function handleTabChange(tab: string | number) {
 }
 
 watch(searchQuery, filterProfiles);
-watch([sku, () => form.value.longFw, memmapProfiles], matchMemmap);
-onMounted(fetchProfiles);
+watch(() => form.value.soNumber, () => {
+  form.value.waNumber = '';
+  form.value.itemCode = '';
+  options.value.waNumbers = [];
+  options.value.itemCodes = [];
+  clearResolved();
+  void loadOptions();
+});
+watch(() => form.value.waNumber, () => {
+  form.value.itemCode = '';
+  options.value.itemCodes = [];
+  clearResolved();
+  if (form.value.soNumber) void loadOptions();
+});
+watch(() => form.value.itemCode, () => void resolveMemmap());
+onMounted(() => {
+  void fetchProfiles();
+  void loadOptions();
+});
 onBeforeUnmount(() => {
   destroy(profileTable);
   destroy(registerTable);
