@@ -1793,51 +1793,66 @@ async function startFastRead0To259() {
         for (const chunk of chunks) {
           cIdx++;
           readingStatusText.value = `Đang ghi Preconfig Chunk ${cIdx}/${chunks.length} (Reg ${chunk.startAddress}, ${chunk.registerCount} regs)...`;
-          await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values, 4000);
-          await new Promise((r) => setTimeout(r, 600)); // Delay cho MCU ghi flash
+          await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values, 6000);
+          await new Promise((r) => setTimeout(r, 1500)); // Delay 1.5s cho MCU commit flash và mở khóa thanh ghi
+          await flushUartRxBuffer(60);
         }
 
-        // Chờ MCU hoàn tất lưu flash/EEPROM và ổn định lại bộ thu phát
-        readingStatusText.value = 'Đang chờ MCU lưu bộ nhớ Flash & ổn định (1.5s)...';
-        await new Promise((r) => setTimeout(r, 1500));
+        // Chờ MCU hoàn tất lưu flash/EEPROM và ổn định lại bộ thu phát (3.0s)
+        readingStatusText.value = 'Đang chờ MCU lưu bộ nhớ Flash & cam kết thanh ghi (3.0s)...';
+        await new Promise((r) => setTimeout(r, 3000));
         await flushUartRxBuffer(60);
 
-        // Đọc lại xác thực với timeout 4000ms và retry
+        // Đọc lại xác thực với timeout 6000ms và retry loop (tối đa 3 vòng verify)
         readingStatusText.value = 'Đang đọc lại để xác thực giá trị Preconfig vừa ghi (lần 2)...';
         readProgress.value = 55;
-        const actualMemory = new Map<number, number>();
+        let vResult: any = { pass: false, mismatches: [], summaryMessage: '' };
 
-        for (const chunk of chunks) {
-          let actualBytes: number[] | null = null;
-          for (let attempt = 1; attempt <= 3; attempt++) {
-            try {
-              readingStatusText.value = `Đang đọc xác thực Chunk ${chunk.startAddress} (thử lần ${attempt}/3)...`;
-              actualBytes = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount, 4000);
-              if (actualBytes && actualBytes.length >= chunk.registerCount * 2) break;
-            } catch (err: any) {
-              if (attempt >= 3) throw new Error(`Lỗi đọc lại thanh ghi ${chunk.startAddress} sau ghi: ${err.message}`);
-              await new Promise((r) => setTimeout(r, 800));
-              await flushUartRxBuffer(60);
+        for (let vRound = 1; vRound <= 3; vRound++) {
+          const actualMemory = new Map<number, number>();
+
+          for (const chunk of chunks) {
+            let actualBytes: number[] | null = null;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                readingStatusText.value = `Đang đọc xác thực Chunk ${chunk.startAddress} (vòng ${vRound}/3, lần ${attempt}/3)...`;
+                actualBytes = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount, 6000);
+                if (actualBytes && actualBytes.length >= chunk.registerCount * 2) break;
+              } catch (err: any) {
+                if (attempt >= 3 && vRound >= 3) throw new Error(`Lỗi đọc lại thanh ghi ${chunk.startAddress} sau ghi: ${err.message}`);
+                await new Promise((r) => setTimeout(r, 1000));
+                await flushUartRxBuffer(60);
+              }
             }
-          }
-          if (actualBytes) {
-            for (let i = 0; i < chunk.registerCount; i++) {
-              const word = ((actualBytes[i * 2] & 0xff) << 8) | (actualBytes[i * 2 + 1] & 0xff);
-              actualMemory.set(chunk.startAddress + i, word);
+            if (actualBytes) {
+              for (let i = 0; i < chunk.registerCount; i++) {
+                const word = ((actualBytes[i * 2] & 0xff) << 8) | (actualBytes[i * 2 + 1] & 0xff);
+                actualMemory.set(chunk.startAddress + i, word);
+              }
             }
+            await new Promise((r) => setTimeout(r, 150));
           }
-          await new Promise((r) => setTimeout(r, 100));
+
+          vResult = verifyReadBackValues(
+            targets.map((t: any) => ({
+              address: t.address,
+              count: t.count,
+              expectedValues: t.values,
+              description: t.description,
+            })),
+            actualMemory,
+          );
+
+          if (vResult.pass) {
+            break;
+          }
+
+          if (vRound < 3) {
+            readingStatusText.value = `Chờ MCU đồng bộ lại giá trị Flash (thử lại sau 1.5s)...`;
+            await new Promise((r) => setTimeout(r, 1500));
+            await flushUartRxBuffer(60);
+          }
         }
-
-        const vResult = verifyReadBackValues(
-          targets.map((t: any) => ({
-            address: t.address,
-            count: t.count,
-            expectedValues: t.values,
-            description: t.description,
-          })),
-          actualMemory,
-        );
 
         if (!vResult.pass) {
           preconfigVerificationFailed.value = true;
