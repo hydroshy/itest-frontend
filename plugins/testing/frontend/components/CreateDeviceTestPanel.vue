@@ -615,6 +615,8 @@ import {
 import { httpClient } from '@/api/client';
 import { cyberToast } from '@/services/cyberToast';
 import { useAuthStore } from '@/stores/auth';
+import { createContiguousChunks, encodeValueToWords } from '../../../preconfig-manager/frontend/utils/modbus-chunker';
+import { verifyReadBackValues } from '../../../preconfig-manager/frontend/utils/read-back-verifier';
 
 const authStore = useAuthStore();
 
@@ -1470,6 +1472,86 @@ async function readModbusRaw(
   return validFrame.slice(3, 3 + byteCount);
 }
 
+// Low-level Modbus FC 16 write with CRC validation
+async function writeModbusRegisters(
+  slave: number,
+  startReg: number,
+  values: number[],
+  timeoutMs = 1500
+): Promise<void> {
+  if (!activeSerialPort || !activeSerialPort.readable || !activeSerialPort.writable) {
+    throw new Error('Cổng Serial không khả dụng');
+  }
+
+  await flushUartRxBuffer(30);
+
+  const numRegs = values.length;
+  const byteCount = numRegs * 2;
+  const frame = [
+    slave & 0xff,
+    0x10, // FC 16
+    (startReg >> 8) & 0xff,
+    startReg & 0xff,
+    (numRegs >> 8) & 0xff,
+    numRegs & 0xff,
+    byteCount & 0xff,
+  ];
+
+  for (const val of values) {
+    frame.push((val >> 8) & 0xff, val & 0xff);
+  }
+
+  const crc = calcModbusCRC16(frame);
+  frame.push(crc & 0xff, (crc >> 8) & 0xff);
+
+  const writer = activeSerialPort.writable.getWriter();
+  try {
+    await writer.write(new Uint8Array(frame));
+  } finally {
+    try { writer.releaseLock(); } catch {}
+  }
+
+  // Response: 8 bytes
+  const reader = activeSerialPort.readable.getReader();
+  const expectedBytes = 8;
+  const rxBuffer: number[] = [];
+  const startTime = Date.now();
+
+  try {
+    while (rxBuffer.length < expectedBytes && Date.now() - startTime < timeoutMs) {
+      const remaining = Math.max(10, timeoutMs - (Date.now() - startTime));
+      let timeoutId: any;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('TIMEOUT')), remaining);
+      });
+      let res: any;
+      try {
+        res = await Promise.race([reader.read(), timeoutPromise]);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      if (res.done) break;
+      if (res.value) {
+        rxBuffer.push(...(Array.from(res.value) as number[]));
+      }
+    }
+  } finally {
+    try { await reader.cancel(); } catch {}
+    try { reader.releaseLock(); } catch {}
+  }
+
+  if (rxBuffer.length < expectedBytes) {
+    throw new Error(`Ghi FC16 thất bại: không nhận đủ phản hồi từ thanh ghi ${startReg}`);
+  }
+
+  // Verify response CRC
+  const calcCrc = calcModbusCRC16(rxBuffer.slice(0, 6));
+  const rxCrc = rxBuffer[6] | (rxBuffer[7] << 8);
+  if (calcCrc !== rxCrc) {
+    throw new Error(`Ghi FC16 thất bại: Sai CRC phản hồi tại thanh ghi ${startReg}`);
+  }
+}
+
 // Fast Chunk Read 0..259 & 386 (Safe chunking & Dual Slave 0/1 wake-up probe)
 async function startFastRead0To259() {
   if (!serialConnected.value || !activeSerialPort) {
@@ -1609,15 +1691,63 @@ async function startFastRead0To259() {
       });
       const profile = res?.data || res;
       
-      if (profile) {
+      if (profile && profile.registers?.length > 0) {
         readingStatusText.value = 'Đang thực hiện ghi Preconfig & Xác thực...';
-        // Logic ghi FC 16 và verify đọc lại sẽ được thêm tại đây
         cyberToast.info('Đã tìm thấy Preconfig Profile, đang thực thi cấu hình...');
+        
+        // 1. Chuẩn bị dữ liệu ghi
+        const targets = profile.registers.map((r: any) => ({
+          address: r.modbusRegisterDec,
+          count: r.registerCount || 1,
+          values: r.inputConfig ? encodeValueToWords(r.inputConfig, r.format, r.registerCount) : new Array(r.registerCount || 1).fill(0),
+          description: r.description
+        }));
+        
+        // 2. Gom chunk và Ghi Modbus FC 16
+        const chunks = createContiguousChunks(targets.map(t => ({
+           address: t.address,
+           count: t.count,
+           values: t.values,
+           description: t.description
+        })));
+
+        for (const chunk of chunks) {
+          readingStatusText.value = `Đang ghi Chunk ${chunk.startAddress}...`;
+          await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values);
+        }
+
+        // 3. Đọc lại để Verify
+        readingStatusText.value = 'Đang đọc lại kiểm tra...';
+        const actualMemory = new Map<number, number>();
+        for (const chunk of chunks) {
+          const actuals = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount);
+          for (let i = 0; i < chunk.registerCount; i++) {
+             actualMemory.set(chunk.startAddress + i, (actuals[i*2] << 8) | actuals[i*2+1]);
+          }
+        }
+
+        // 4. Verify
+        const result = verifyReadBackValues(targets.map(t => ({
+          address: t.address,
+          count: t.count,
+          expectedValues: t.values,
+          description: t.description
+        })), actualMemory);
+
+        if (!result.pass) {
+          readingStatusText.value = `Lỗi xác thực: ${result.summaryMessage}`;
+          cyberToast.error('Preconfig Verification thất bại! Đã khóa tiến trình.');
+          // Fail-closed: Ngăn chuyển Step 3
+          throw new Error('Verification failed');
+        }
+        cyberToast.success('Preconfig thành công!');
       } else {
         cyberToast.info('Không có Preconfig Profile, bypass sang Step 3.');
       }
-    } catch (e) {
-      console.warn('Preconfig lookup failed, bypassing:', e);
+    } catch (e: any) {
+      console.warn('Preconfig process stopped:', e);
+      // Dừng nếu lỗi (Fail-Closed)
+      return; 
     }
 
     // Khi start đọc đủ thông tin rồi sẽ tự động chuyển qua step 3
