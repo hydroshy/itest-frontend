@@ -262,10 +262,7 @@ const detailVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<Row | null>(null);
 
-const selectedCount = computed(() => {
-  const selectedFromTable = (registerTable && registerTable.getSelectedData) ? registerTable.getSelectedData() : [];
-  return selectedFromTable.length > 0 ? selectedFromTable.length : registers.value.filter(r => r.selected).length;
-});
+const selectedCount = ref(0);
 
 const invalidSelected = computed(() =>
   registers.value.filter(r => r.selected && r.configCheck === 'FAIL')
@@ -398,9 +395,6 @@ function registerColumns(editable: boolean) {
     width: 45,
     hozAlign: 'center',
     headerSort: false,
-    cellClick: (_e: any, cell: any) => {
-      cell.getRow().toggleSelect();
-    }
   }] : [];
   return [
     ...selectionColumn,
@@ -440,12 +434,13 @@ function renderRegisters() {
       selectableRows: true,
       selectableRowsPersistence: false,
       columns: registerColumns(true) as any,
-      rowSelectionChanged: (selectedData: any[]) => {
-        const selectedDecs = new Set((selectedData || []).map((d: any) => d?.modbusRegisterDec));
-        registers.value.forEach(item => {
-          item.selected = selectedDecs.has(item.modbusRegisterDec);
-        });
-      },
+    });
+    registerTable.on('rowSelectionChanged', (selectedData: any[]) => {
+      selectedCount.value = (selectedData || []).length;
+      const selectedDecs = new Set((selectedData || []).map((d: any) => d?.modbusRegisterDec));
+      registers.value.forEach(item => {
+        item.selected = selectedDecs.has(item.modbusRegisterDec);
+      });
     });
     registerTable.on('tableBuilt', () => {
       try {
@@ -492,6 +487,7 @@ function clearResolved() {
   resolving.value = false;
   form.value.memmapId = '';
   registers.value = [];
+  selectedCount.value = 0;
   destroy(registerTable);
   registerTable = undefined;
 }

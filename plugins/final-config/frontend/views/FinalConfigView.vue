@@ -388,7 +388,7 @@ let registerTable: Tabulator | undefined;
 let detailTable: Tabulator | undefined;
 
 
-const selectedCount = computed(() => registers.value.filter(r => r.selected).length);
+const selectedCount = ref(0);
 const invalidSelectedCount = computed(() => registers.value.filter(r => r.selected && r.configCheck === 'FAIL').length);
 const hasInvalidSelected = computed(() => invalidSelectedCount.value > 0);
 const invalidSelectedMessage = computed(() => `Có ${invalidSelectedCount.value} register được chọn nhưng cấu hình không hợp lệ.`);
@@ -521,9 +521,6 @@ function registerColumns(editable: boolean) {
     width: 45,
     hozAlign: 'center',
     headerSort: false,
-    cellClick: (_e: any, cell: any) => {
-      cell.getRow().toggleSelect();
-    }
   }] : [];
   return [
     ...selectionColumn,
@@ -563,16 +560,17 @@ function renderRegisters() {
       selectableRows: true,
       selectableRowsPersistence: false,
       columns: registerColumns(true) as any,
-      rowSelectionChanged: (selectedData: any[]) => {
-        const selectedDecs = new Set((selectedData || []).map((d: any) => d?.modbusRegisterDec));
-        registers.value.forEach(item => {
-          item.selected = selectedDecs.has(item.modbusRegisterDec);
-        });
-      },
       rowFormatter: (row: any) => {
         const d = row.getData();
         if (d) row.getElement().classList.toggle('invalid-row', d.configCheck === 'FAIL' && d.selected);
       }
+    });
+    registerTable.on('rowSelectionChanged', (selectedData: any[]) => {
+      selectedCount.value = (selectedData || []).length;
+      const selectedDecs = new Set((selectedData || []).map((d: any) => d?.modbusRegisterDec));
+      registers.value.forEach(item => {
+        item.selected = selectedDecs.has(item.modbusRegisterDec);
+      });
     });
     registerTable.on('tableBuilt', () => {
       try {
@@ -621,6 +619,7 @@ function clearResolved() {
   form.value.memmapId = '';
   form.value.connectivity = '';
   registers.value = [];
+  selectedCount.value = 0;
   destroy(registerTable);
   registerTable = undefined;
 }
