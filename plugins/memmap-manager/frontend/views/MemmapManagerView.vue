@@ -139,7 +139,7 @@
               <input
                 v-model="uploadForm.fwVersion"
                 type="text"
-                maxlength="6"
+                maxlength="7"
                 class="input input-sm input-bordered bg-base-100 w-full font-mono uppercase"
                 :class="{ 'input-error': fwVersionError }"
                 placeholder=""
@@ -339,8 +339,8 @@ let profileTable: Tabulator | undefined;
 let previewTable: Tabulator | undefined;
 let detailTable: Tabulator | undefined;
 
-const fwVersionValid = computed(() => /^[0-9]+F[0-9]+$/i.test(uploadForm.value.fwVersion.trim()));
-const fwVersionError = computed(() => uploadForm.value.fwVersion && !fwVersionValid.value ? 'FW_VERSION không hợp lệ (mẫu XXFXXXX với X là số, ví dụ 4F0505, 32F0505).' : '');
+const fwVersionValid = computed(() => /^[0-9]{2}F[0-9]{4}$/i.test(uploadForm.value.fwVersion.trim()) || /^[0-9]+F[0-9]+$/i.test(uploadForm.value.fwVersion.trim()));
+const fwVersionError = computed(() => uploadForm.value.fwVersion && !fwVersionValid.value ? 'FW_VERSION không hợp lệ (mẫu XXFXXXX với X là số, F cố định, ví dụ: 01F0001, 04F0505).' : '');
 const canPreview = computed(() => Boolean(uploadForm.value.itemCode.trim() && fwVersionValid.value && selectedFile.value));
 const canUpload = computed(() => canPreview.value && previewResult.value?.valid === true && previewInvalidRowsCount.value === 0 && (previewResult.value?.errors?.length ?? 0) === 0);
 const previewInvalidRowsCount = computed(() => (previewResult.value?.registers || []).filter((r: RecordRow) => r.decimalValid === false || r.hexValid === false).length);
