@@ -262,7 +262,10 @@ const detailVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<Row | null>(null);
 
-const selectedCount = computed(() => registers.value.filter(r => r.selected).length);
+const selectedCount = computed(() => {
+  const selectedFromTable = (registerTable && registerTable.getSelectedData) ? registerTable.getSelectedData() : [];
+  return selectedFromTable.length > 0 ? selectedFromTable.length : registers.value.filter(r => r.selected).length;
+});
 
 const invalidSelected = computed(() =>
   registers.value.filter(r => r.selected && r.configCheck === 'FAIL')
@@ -284,7 +287,7 @@ const canCreate = computed(() => (
   !createError.value &&
   !resolving.value &&
   registers.value.length &&
-  selectedCount.value &&
+  selectedCount.value > 0 &&
   !hasInvalidSelected.value
 ));
 
@@ -559,7 +562,14 @@ async function resolveMemmap() {
 }
 
 async function createProfile() {
-  if (!canCreate.value) return;
+  const selectedRows = (registerTable && registerTable.getSelectedData)
+    ? registerTable.getSelectedData()
+    : registers.value.filter(r => r.selected === true);
+
+  if (selectedRows.length === 0) {
+    cyberToast.warning('Vui lòng tích chọn ít nhất 1 thanh ghi cần cấu hình!');
+    return;
+  }
   saving.value = true;
   try {
     const payload = {
@@ -567,24 +577,22 @@ async function createProfile() {
       soNumber: form.value.soNumber,
       waNumber: form.value.waNumber,
       itemCode: form.value.itemCode,
-      registers: registers.value
-        .filter(r => r.selected === true)
-        .map(r => ({
-          rowNumber: r.rowNumber,
-          modbusRegisterDec: r.modbusRegisterDec,
-          modbusRegisterHex: r.modbusRegisterHex,
-          registerCount: r.registerCount,
-          description: r.description,
-          format: r.format,
-          comment: r.comment,
-          endUserDefault: r.endUserDefault,
-          inputConfig: r.inputConfig,
-          configCheck: r.configCheck,
-          selected: true
-        }))
+      registers: selectedRows.map((r: any, idx: number) => ({
+        rowNumber: idx + 1,
+        modbusRegisterDec: r.modbusRegisterDec,
+        modbusRegisterHex: r.modbusRegisterHex,
+        registerCount: r.registerCount,
+        description: r.description,
+        format: r.format,
+        comment: r.comment,
+        endUserDefault: r.endUserDefault,
+        inputConfig: r.inputConfig || r.endUserDefault,
+        configCheck: r.configCheck || 'PASS',
+        selected: true
+      }))
     };
     await request(API, '/profiles', { method: 'POST', body: JSON.stringify(payload) });
-    cyberToast.success('Đã tạo Preconfig Profile thành công');
+    cyberToast.success(`Đã tạo Preconfig Profile thành công (${selectedRows.length} thanh ghi được chọn)`);
     resetCreate();
     activeTab.value = 'manager';
     await fetchProfiles();

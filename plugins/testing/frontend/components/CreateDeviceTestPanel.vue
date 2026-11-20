@@ -1823,6 +1823,8 @@ async function startFastRead0To259() {
     // GIAI ĐOẠN 3: ĐỌC TOÀN BỘ THÔNG TIN ĐỂ ĐĂNG KÝ NETWORK SERVER
     // (Sau khi Preconfig hoàn tất, các thông số Region, Class... đã cập nhật)
     // =========================================================================
+    await new Promise((r) => setTimeout(r, 800));
+    await flushUartRxBuffer(50);
     readingStatusText.value = `Đang đọc toàn bộ thông tin cảm biến để đăng ký Network Server...`;
     readProgress.value = 70;
 
