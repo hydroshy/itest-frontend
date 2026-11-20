@@ -1189,6 +1189,7 @@ const readProgress = ref(0);
 const readingStatusText = ref('Sẵn sàng');
 const readCompleted = ref(false);
 let activeSerialPort: any = null;
+let savedPortInfo: any = null;
 let manuallyDisconnected = false;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnecting = false;
@@ -1199,34 +1200,62 @@ function clearSerialReconnect() {
 }
 
 function scheduleSerialReconnect() {
-  if (manuallyDisconnected || reconnecting || reconnectTimer || !activeSerialPort) return;
+  if (manuallyDisconnected || reconnecting || reconnectTimer) return;
   reconnectTimer = setTimeout(async () => {
     reconnectTimer = null;
     reconnecting = true;
     try {
+      if (!('serial' in navigator)) return;
       const ports = await (navigator as any).serial.getPorts();
-      const port = ports.find((candidate: any) => candidate === activeSerialPort);
-      if (port && !manuallyDisconnected) {
-        activeSerialPort = port;
+      if (!ports || ports.length === 0) return;
+
+      let matchedPort: any = null;
+      if (savedPortInfo && savedPortInfo.usbVendorId) {
+        matchedPort = ports.find((p: any) => {
+          const info = p.getInfo ? p.getInfo() : {};
+          return info.usbVendorId === savedPortInfo.usbVendorId &&
+            info.usbProductId === savedPortInfo.usbProductId;
+        });
+      }
+
+      if (!matchedPort && ports.length === 1) {
+        matchedPort = ports[0];
+      }
+
+      if (matchedPort && !manuallyDisconnected) {
+        activeSerialPort = matchedPort;
         await openActivePort(true);
       }
-    } catch {} finally {
+    } catch (e) {
+      console.warn('Auto-reconnect error:', e);
+    } finally {
       reconnecting = false;
-      if (!serialConnected.value) scheduleSerialReconnect();
+      if (!serialConnected.value && !manuallyDisconnected) scheduleSerialReconnect();
     }
   }, 1000);
 }
 
-function handleSerialDisconnect(event: any) {
-  if (event.target !== activeSerialPort) return;
+function handleSerialDisconnect(_event: any) {
   serialConnected.value = false;
+  if (activeSerialPort) {
+    try { activeSerialPort.close().catch(() => {}); } catch {}
+  }
+  cyberToast.warning('Cổng Serial bị ngắt kết nối. Đang tự động đợi kết nối lại...');
   scheduleSerialReconnect();
 }
 
-function handleSerialConnect() {
-  if (!serialConnected.value) {
-    clearSerialReconnect();
-    scheduleSerialReconnect();
+async function handleSerialConnect(event: any) {
+  console.log('Web Serial connect event detected:', event?.target);
+  const port = event?.port || event?.target;
+  if (port) {
+    activeSerialPort = port;
+    savedPortInfo = port.getInfo ? port.getInfo() : savedPortInfo;
+  }
+  clearSerialReconnect();
+  cyberToast.info('Phát hiện cổng COM được cắm lại. Đang tự động kết nối...');
+  await new Promise((r) => setTimeout(r, 800));
+  if (!manuallyDisconnected) {
+    await openActivePort(true);
   }
 }
 
@@ -1306,6 +1335,7 @@ async function selectAndConnectPort() {
     manuallyDisconnected = false;
     activeSerialPort = port;
     const info = port.getInfo ? port.getInfo() : {};
+    savedPortInfo = info;
     let desc = 'COM Port (USB)';
     if (info.usbVendorId) {
       desc = `USB (VID: 0x${info.usbVendorId.toString(16).toUpperCase()} PID: 0x${(info.usbProductId || 0).toString(16).toUpperCase()})`;
@@ -1510,13 +1540,13 @@ async function writeModbusRegisters(
   slave: number,
   startReg: number,
   values: number[],
-  timeoutMs = 1500
+  timeoutMs = 4000
 ): Promise<void> {
   if (!activeSerialPort || !activeSerialPort.readable || !activeSerialPort.writable) {
     throw new Error('Cổng Serial không khả dụng');
   }
 
-  await flushUartRxBuffer(30);
+  await flushUartRxBuffer(40);
 
   const numRegs = values.length;
   const byteCount = numRegs * 2;
@@ -1544,7 +1574,7 @@ async function writeModbusRegisters(
     try { writer.releaseLock(); } catch {}
   }
 
-  // Response: 8 bytes
+  // Response: 8 bytes (chờ tối đa timeoutMs để MCU lưu Flash)
   const reader = activeSerialPort.readable.getReader();
   const expectedBytes = 8;
   const rxBuffer: number[] = [];
@@ -1560,11 +1590,14 @@ async function writeModbusRegisters(
       let res: any;
       try {
         res = await Promise.race([reader.read(), timeoutPromise]);
+      } catch (err) {
+        // Nếu timeout khi chờ response FC 16, không ngắt luồng mà để bước đọc lại xác thực kiểm tra
+        break;
       } finally {
         clearTimeout(timeoutId);
       }
-      if (res.done) break;
-      if (res.value) {
+      if (res?.done) break;
+      if (res?.value) {
         rxBuffer.push(...(Array.from(res.value) as number[]));
       }
     }
@@ -1573,8 +1606,10 @@ async function writeModbusRegisters(
     try { reader.releaseLock(); } catch {}
   }
 
+  // Nếu MCU không trả về response FC 16 hoặc timeout, ta ghi log cảnh báo và để bước đọc lại (FC 03) kiểm chứng
   if (rxBuffer.length < 5) {
-    throw new Error(`Ghi FC16 thất bại: không nhận đủ phản hồi từ thanh ghi ${startReg}`);
+    console.warn(`[Modbus FC16] Không nhận đủ phản hồi từ thanh ghi ${startReg}. Chuyển sang bước đọc lại xác thực.`);
+    return;
   }
 
   // Find valid Modbus frame header in rxBuffer to strip RS485 line noise bytes
@@ -1758,17 +1793,17 @@ async function startFastRead0To259() {
         for (const chunk of chunks) {
           cIdx++;
           readingStatusText.value = `Đang ghi Preconfig Chunk ${cIdx}/${chunks.length} (Reg ${chunk.startAddress}, ${chunk.registerCount} regs)...`;
-          await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values);
-          await new Promise((r) => setTimeout(r, 500)); // Delay cho MCU ghi flash
+          await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values, 4000);
+          await new Promise((r) => setTimeout(r, 600)); // Delay cho MCU ghi flash
         }
 
         // Chờ MCU hoàn tất lưu flash/EEPROM và ổn định lại bộ thu phát
-        readingStatusText.value = 'Đang chờ MCU lưu bộ nhớ Flash & ổn định (1.2s)...';
-        await new Promise((r) => setTimeout(r, 1200));
-        await flushUartRxBuffer(50);
+        readingStatusText.value = 'Đang chờ MCU lưu bộ nhớ Flash & ổn định (1.5s)...';
+        await new Promise((r) => setTimeout(r, 1500));
+        await flushUartRxBuffer(60);
 
-        // Đọc lại xác thực với timeout 2500ms và retry
-        readingStatusText.value = 'Đang đọc lại để xác thực giá trị Preconfig vừa ghi...';
+        // Đọc lại xác thực với timeout 4000ms và retry
+        readingStatusText.value = 'Đang đọc lại để xác thực giá trị Preconfig vừa ghi (lần 2)...';
         readProgress.value = 55;
         const actualMemory = new Map<number, number>();
 
@@ -1776,12 +1811,13 @@ async function startFastRead0To259() {
           let actualBytes: number[] | null = null;
           for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-              actualBytes = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount, 2500);
+              readingStatusText.value = `Đang đọc xác thực Chunk ${chunk.startAddress} (thử lần ${attempt}/3)...`;
+              actualBytes = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount, 4000);
               if (actualBytes && actualBytes.length >= chunk.registerCount * 2) break;
             } catch (err: any) {
               if (attempt >= 3) throw new Error(`Lỗi đọc lại thanh ghi ${chunk.startAddress} sau ghi: ${err.message}`);
-              await new Promise((r) => setTimeout(r, 600));
-              await flushUartRxBuffer(50);
+              await new Promise((r) => setTimeout(r, 800));
+              await flushUartRxBuffer(60);
             }
           }
           if (actualBytes) {
@@ -1820,39 +1856,40 @@ async function startFastRead0To259() {
     }
 
     // =========================================================================
-    // GIAI ĐOẠN 3: ĐỌC TOÀN BỘ THÔNG TIN ĐỂ ĐĂNG KÝ NETWORK SERVER
+    // GIAI ĐOẠN 3: ĐỌC TOÀN BỘ THÔNG TIN LẦN 2 ĐỂ ĐĂNG KÝ NETWORK SERVER
     // (Sau khi Preconfig hoàn tất, các thông số Region, Class... đã cập nhật)
     // =========================================================================
-    await new Promise((r) => setTimeout(r, 800));
+    readingStatusText.value = `Chờ cảm biến ổn định và chuẩn bị đọc toàn bộ thông tin lần 2 (1.5s)...`;
+    await new Promise((r) => setTimeout(r, 1500));
     await flushUartRxBuffer(50);
-    readingStatusText.value = `Đang đọc toàn bộ thông tin cảm biến để đăng ký Network Server...`;
+    readingStatusText.value = `Đang đọc toàn bộ thông tin cảm biến lần 2 để đăng ký Network Server...`;
     readProgress.value = 70;
 
     // Khối 1: Reg 0..42 (Hardware & Keys)
     try {
-      const b1 = await readModbusRaw(activeSlave, 3, 0, 43, 1200);
+      const b1 = await readModbusRaw(activeSlave, 3, 0, 43, 2000);
       for (let i = 0; i < 43; i++) rawMemory.set(i, [b1[i * 2], b1[i * 2 + 1]]);
     } catch {
-      const bFwCode = await readModbusRaw(activeSlave, 3, 0, 5, 1000);
+      const bFwCode = await readModbusRaw(activeSlave, 3, 0, 5, 1200);
       for (let i = 0; i < 5; i++) rawMemory.set(i, [bFwCode[i * 2], bFwCode[i * 2 + 1]]);
-      const bFwVer = await readModbusRaw(activeSlave, 3, 5, 4, 1000);
+      const bFwVer = await readModbusRaw(activeSlave, 3, 5, 4, 1200);
       for (let i = 0; i < 4; i++) rawMemory.set(5 + i, [bFwVer[i * 2], bFwVer[i * 2 + 1]]);
-      const bHwVer = await readModbusRaw(activeSlave, 3, 9, 2, 1000);
+      const bHwVer = await readModbusRaw(activeSlave, 3, 9, 2, 1200);
       for (let i = 0; i < 2; i++) rawMemory.set(9 + i, [bHwVer[i * 2], bHwVer[i * 2 + 1]]);
-      const bMeVer = await readModbusRaw(activeSlave, 3, 15, 2, 1000);
+      const bMeVer = await readModbusRaw(activeSlave, 3, 15, 2, 1200);
       for (let i = 0; i < 2; i++) rawMemory.set(15 + i, [bMeVer[i * 2], bMeVer[i * 2 + 1]]);
-      const bDevEui = await readModbusRaw(activeSlave, 3, 27, 4, 1000);
+      const bDevEui = await readModbusRaw(activeSlave, 3, 27, 4, 1200);
       for (let i = 0; i < 4; i++) rawMemory.set(27 + i, [bDevEui[i * 2], bDevEui[i * 2 + 1]]);
-      const bAppEui = await readModbusRaw(activeSlave, 3, 31, 4, 1000);
+      const bAppEui = await readModbusRaw(activeSlave, 3, 31, 4, 1200);
       for (let i = 0; i < 4; i++) rawMemory.set(31 + i, [bAppEui[i * 2], bAppEui[i * 2 + 1]]);
-      const bAppKey = await readModbusRaw(activeSlave, 3, 35, 8, 1000);
+      const bAppKey = await readModbusRaw(activeSlave, 3, 35, 8, 1200);
       for (let i = 0; i < 8; i++) rawMemory.set(35 + i, [bAppKey[i * 2], bAppKey[i * 2 + 1]]);
     }
 
     // Khối 2: Reg 69..85 (Region code & Class - VỪA ĐƯỢC PRECONFIG CẬP NHẬT)
     readProgress.value = 85;
     try {
-      const b2 = await readModbusRaw(activeSlave, 3, 69, 17, 1200);
+      const b2 = await readModbusRaw(activeSlave, 3, 69, 17, 2000);
       for (let i = 0; i < 17; i++) rawMemory.set(69 + i, [b2[i * 2], b2[i * 2 + 1]]);
     } catch {
       const bReg = await readModbusRaw(activeSlave, 3, 69, 3, 1000);
