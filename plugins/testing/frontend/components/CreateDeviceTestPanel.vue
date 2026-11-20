@@ -423,6 +423,37 @@
           </div>
         </div>
 
+        <!-- Cảnh báo Lỗi Xác Thực Preconfig (Fail-Closed) -->
+        <div v-if="preconfigVerificationFailed" class="alert alert-error text-xs p-3 rounded-lg border border-error/30 space-y-2">
+          <div class="flex items-start gap-2">
+            <AlertCircle class="w-4 h-4 text-error flex-shrink-0 mt-0.5" />
+            <div class="flex-1">
+              <span class="font-bold uppercase tracking-wider block">LỖI XÁC THỰC PRECONFIG (ĐÃ CHẶN ĐĂNG KÝ):</span>
+              <p class="mt-0.5 font-mono text-[11px]">{{ readingStatusText }}</p>
+            </div>
+          </div>
+          <div v-if="preconfigMismatches.length > 0" class="overflow-x-auto rounded border border-error/20 bg-base-100">
+            <table class="table table-xs w-full font-mono">
+              <thead class="bg-error/10 text-error font-bold">
+                <tr>
+                  <th>Địa chỉ Dec</th>
+                  <th>Tên tham số</th>
+                  <th>Giá trị kỳ vọng</th>
+                  <th>Giá trị đọc được</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="m in preconfigMismatches" :key="m.address">
+                  <td>{{ m.address }}</td>
+                  <td>{{ m.description || 'Thanh ghi' }}</td>
+                  <td class="text-success font-bold">{{ m.expectedHex }}</td>
+                  <td class="text-error font-bold">{{ m.actualHex }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Actions -->
         <div class="flex items-center justify-between pt-2">
           <button
@@ -437,7 +468,7 @@
           <button
             type="button"
             class="btn btn-sm btn-primary gap-2"
-            :disabled="!hasRequiredRegisters"
+            :disabled="!hasRequiredRegisters || preconfigVerificationFailed"
             @click="nextToStep3"
           >
             <span>Tiếp Tục: STEP 3</span>
@@ -623,6 +654,8 @@ const authStore = useAuthStore();
 // Flow Step State (1, 2, 3)
 const currentStep = ref(1);
 const showDebugRegisters = ref(false);
+const preconfigVerificationFailed = ref(false);
+const preconfigMismatches = ref<any[]>([]);
 
 // ============================================================================
 // BƯỚC 1: SO, WA, Network Server
@@ -1540,25 +1573,49 @@ async function writeModbusRegisters(
     try { reader.releaseLock(); } catch {}
   }
 
-  if (rxBuffer.length < expectedBytes) {
+  if (rxBuffer.length < 5) {
     throw new Error(`Ghi FC16 thất bại: không nhận đủ phản hồi từ thanh ghi ${startReg}`);
   }
 
-  // Verify response CRC
-  const calcCrc = calcModbusCRC16(rxBuffer.slice(0, 6));
-  const rxCrc = rxBuffer[6] | (rxBuffer[7] << 8);
-  if (calcCrc !== rxCrc) {
-    throw new Error(`Ghi FC16 thất bại: Sai CRC phản hồi tại thanh ghi ${startReg}`);
+  // Find valid Modbus frame header in rxBuffer to strip RS485 line noise bytes
+  let validFrame: number[] | null = null;
+  for (let i = 0; i <= rxBuffer.length - 8; i++) {
+    const s = rxBuffer[i];
+    const f = rxBuffer[i + 1];
+    if ((s === slave || s === 0 || s === 1) && f === 0x10) {
+      const candidate = rxBuffer.slice(i, i + 8);
+      const calcCrc = calcModbusCRC16(candidate.slice(0, 6));
+      const rxCrc = candidate[6] | (candidate[7] << 8);
+      if (calcCrc === rxCrc) {
+        validFrame = candidate;
+        break;
+      }
+    }
+  }
+
+  if (!validFrame && rxBuffer.length >= 8) {
+    const candidate = rxBuffer.slice(0, 8);
+    const calcCrc = calcModbusCRC16(candidate.slice(0, 6));
+    const rxCrc = candidate[6] | (candidate[7] << 8);
+    if (calcCrc === rxCrc) {
+      validFrame = candidate;
+    }
+  }
+
+  if (!validFrame) {
+    console.warn(`[Modbus FC16] Phản hồi có nhiễu tại thanh ghi ${startReg}, tiếp tục bước xác thực đọc lại.`);
   }
 }
 
-// Fast Chunk Read 0..259 & 386 (Safe chunking & Dual Slave 0/1 wake-up probe)
+// Fast Chunk Read 0..259 & 386 with 3-Phase Preconfig flow
 async function startFastRead0To259() {
   if (!serialConnected.value || !activeSerialPort) {
     cyberToast.warning('Vui lòng chọn cổng Serial trước khi đọc!');
     return;
   }
 
+  preconfigVerificationFailed.value = false;
+  preconfigMismatches.value = [];
   readingRegisters.value = true;
   readProgress.value = 0;
   readingStatusText.value = 'Đang kích hoạt / đánh thức cảm biến (MCU Wake-up probe)...';
@@ -1566,10 +1623,9 @@ async function startFastRead0To259() {
   try {
     // Giai đoạn 0: MCU Wake-up probe (thử cả Slave 0 theo ATH_TEMPLATE.csv và Slave 1 tiêu chuẩn)
     let mcuAwake = false;
-    let activeSlave = 0; // Ưu tiên Slave 0 theo ATH_TEMPLATE.csv
+    let activeSlave = 0;
 
     for (let attempt = 1; attempt <= 6; attempt++) {
-      // Thử xen kẽ Slave 0 và Slave 1
       const slaveToTry = attempt % 2 === 1 ? 0 : 1;
       try {
         readingStatusText.value = `Đang đánh thức cảm biến (Slave ${slaveToTry}, Lần thử ${attempt}/6)...`;
@@ -1585,7 +1641,6 @@ async function startFastRead0To259() {
     }
 
     if (!mcuAwake) {
-      // Thử đọc với slave 1 lần cuối trước khi báo lỗi
       try {
         const testBytes = await readModbusRaw(1, 3, 0, 5, 1000);
         if (testBytes && testBytes.length >= 10) {
@@ -1596,21 +1651,169 @@ async function startFastRead0To259() {
     }
 
     if (!mcuAwake) {
-      throw new Error('Cảm biến không phản hồi sau 6 lần thử. Vui lòng kiểm tra cáp UART/RS485, baudrate (9600/115200) và nguồn cấp cảm biến.');
+      throw new Error('Cảm biến không phản hồi sau 6 lần thử. Vui lòng kiểm tra cáp UART/RS485, baudrate và nguồn cấp cảm biến.');
     }
 
     const rawMemory = new Map<number, [number, number]>();
 
-    // Giai đoạn 1: Đọc nhanh theo khối an toàn (< 45 regs/khối) với activeSlave đã phát hiện
-    readingStatusText.value = `Đang đọc Khối 1: Cấu hình Hardware & Keys (Slave ${activeSlave}, Reg 0..42)...`;
-    readProgress.value = 20;
+    function getQuickBytes(start: number, count: number): number[] {
+      const bytes: number[] = [];
+      for (let i = 0; i < count; i++) {
+        const pair = rawMemory.get(start + i);
+        if (pair) bytes.push(pair[0], pair[1]);
+      }
+      return bytes;
+    }
+
+    // =========================================================================
+    // GIAI ĐOẠN 1: ĐỌC NHANH ĐỂ XÁC ĐỊNH ITEM CODE VÀ FIRMWARE
+    // =========================================================================
+    readingStatusText.value = `Đang đọc nhanh nhận diện thiết bị (Slave ${activeSlave})...`;
+    readProgress.value = 15;
+
+    // Đọc Khối FW/HW (Reg 0..10)
+    try {
+      const bFw = await readModbusRaw(activeSlave, 3, 0, 11, 1000);
+      for (let i = 0; i < 11; i++) rawMemory.set(i, [bFw[i * 2], bFw[i * 2 + 1]]);
+    } catch {}
+
+    // Đọc DevEUI (Reg 27..30)
+    try {
+      const bDev = await readModbusRaw(activeSlave, 3, 27, 4, 1000);
+      for (let i = 0; i < 4; i++) rawMemory.set(27 + i, [bDev[i * 2], bDev[i * 2 + 1]]);
+    } catch {}
+
+    // Đọc Item Code (Reg 386..399)
+    try {
+      const bItem = await readModbusRaw(activeSlave, 3, 386, 14, 1000);
+      for (let i = 0; i < 14; i++) rawMemory.set(386 + i, [bItem[i * 2], bItem[i * 2 + 1]]);
+    } catch {}
+
+    const readFwCode = bytesToString(getQuickBytes(0, 5)).trim();
+    const readFwVer = bytesToString(getQuickBytes(5, 4)).trim();
+    const readDevEui = bytesToHex(getQuickBytes(27, 4)).trim();
+    const readItemCode = bytesToString(getQuickBytes(386, 14)).trim();
+
+    if (readFwCode) registerData.FW_CODE = readFwCode;
+    if (readFwVer) registerData.FW_VERSION = readFwVer;
+    if (readDevEui) registerData.deviceEUI = readDevEui;
+    if (readItemCode) registerData.ITEM_CODE = readItemCode;
+
+    const targetItemCode = (readItemCode || step1.itemCode || '').trim();
+    const targetFwVer = (readFwVer || registerData.FW_VERSION || '').trim();
+
+    // =========================================================================
+    // GIAI ĐOẠN 2: PRECONFIG (GHI CHUNK FC 16 VÀ ĐỌC LẠI XÁC THỰC)
+    // =========================================================================
+    readingStatusText.value = 'Đang kiểm tra cấu hình Preconfig...';
+    readProgress.value = 30;
+
+    let preconfigProfile: any = null;
+    try {
+      const res = await httpClient.get('/plugins/preconfig/profile-by-device', {
+        params: {
+          soNumber: cleanSoNumber(step1.soNumber),
+          waNumber: cleanWaNumber(step1.waNumber),
+          itemCode: targetItemCode,
+          fwVersion: targetFwVer,
+        },
+      });
+      preconfigProfile = res?.data || res;
+    } catch (err: any) {
+      console.warn('Lỗi tra cứu preconfig profile:', err);
+    }
+
+    if (preconfigProfile && Array.isArray(preconfigProfile.registers)) {
+      // Chỉ lấy các parameter ĐƯỢC TÍCH CHỌN (selected !== false) và có giá trị cấu hình
+      const writeTargets = preconfigProfile.registers.filter((r: any) =>
+        r.selected !== false &&
+        ((r.inputConfig !== null && r.inputConfig !== undefined && String(r.inputConfig).trim() !== '') ||
+         (r.endUserDefault !== null && r.endUserDefault !== undefined && String(r.endUserDefault).trim() !== ''))
+      );
+
+      if (writeTargets.length > 0) {
+        readingStatusText.value = `Đang chuẩn bị ghi ${writeTargets.length} tham số Preconfig (FC 16)...`;
+        readProgress.value = 40;
+        cyberToast.info(`Phát hiện Preconfig (${writeTargets.length} thanh ghi được chọn). Bắt đầu ghi...`);
+
+        const targets = writeTargets.map((r: any) => {
+          const valStr = (r.inputConfig !== null && r.inputConfig !== undefined && String(r.inputConfig).trim() !== '')
+            ? String(r.inputConfig).trim()
+            : String(r.endUserDefault || '').trim();
+          const count = Number(r.registerCount || 1);
+          return {
+            address: Number(r.modbusRegisterDec),
+            count,
+            values: encodeValueToWords(valStr, r.format, count),
+            description: r.description,
+            format: r.format,
+            rawInput: valStr,
+          };
+        });
+
+        const chunks = createContiguousChunks(targets, 32);
+        console.log(`[Preconfig] Ghi ${chunks.length} chunks FC 16:`, chunks);
+
+        let cIdx = 0;
+        for (const chunk of chunks) {
+          cIdx++;
+          readingStatusText.value = `Đang ghi Preconfig Chunk ${cIdx}/${chunks.length} (Reg ${chunk.startAddress}, ${chunk.registerCount} regs)...`;
+          await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values);
+          await new Promise((r) => setTimeout(r, 120)); // Delay cho MCU lưu flash
+        }
+
+        // Đọc lại xác thực
+        readingStatusText.value = 'Đang đọc lại để xác thực giá trị Preconfig vừa ghi...';
+        readProgress.value = 55;
+        const actualMemory = new Map<number, number>();
+
+        for (const chunk of chunks) {
+          const actualBytes = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount, 1200);
+          for (let i = 0; i < chunk.registerCount; i++) {
+            const word = ((actualBytes[i * 2] & 0xff) << 8) | (actualBytes[i * 2 + 1] & 0xff);
+            actualMemory.set(chunk.startAddress + i, word);
+          }
+          await new Promise((r) => setTimeout(r, 50));
+        }
+
+        const vResult = verifyReadBackValues(
+          targets.map((t: any) => ({
+            address: t.address,
+            count: t.count,
+            expectedValues: t.values,
+            description: t.description,
+          })),
+          actualMemory,
+        );
+
+        if (!vResult.pass) {
+          preconfigVerificationFailed.value = true;
+          preconfigMismatches.value = vResult.mismatches;
+          readingStatusText.value = `LỖI XÁC THỰC PRECONFIG: ${vResult.summaryMessage}`;
+          cyberToast.error(`Xác thực Preconfig thất bại! ${vResult.summaryMessage}`);
+          throw new Error('Preconfig verification failed');
+        }
+
+        cyberToast.success(`Xác thực Preconfig thành công 100% (${writeTargets.length} thanh ghi khớp)!`);
+      } else {
+        console.log('[Preconfig] Profile có nhưng không có thanh ghi nào được chọn ghi.');
+      }
+    } else {
+      console.log('[Preconfig] Không tìm thấy Profile, tự động bypass sang đọc đầy đủ.');
+    }
+
+    // =========================================================================
+    // GIAI ĐOẠN 3: ĐỌC TOÀN BỘ THÔNG TIN ĐỂ ĐĂNG KÝ NETWORK SERVER
+    // (Sau khi Preconfig hoàn tất, các thông số Region, Class... đã cập nhật)
+    // =========================================================================
+    readingStatusText.value = `Đang đọc toàn bộ thông tin cảm biến để đăng ký Network Server...`;
+    readProgress.value = 70;
+
+    // Khối 1: Reg 0..42 (Hardware & Keys)
     try {
       const b1 = await readModbusRaw(activeSlave, 3, 0, 43, 1200);
-      for (let i = 0; i < 43; i++) {
-        rawMemory.set(i, [b1[i * 2], b1[i * 2 + 1]]);
-      }
+      for (let i = 0; i < 43; i++) rawMemory.set(i, [b1[i * 2], b1[i * 2 + 1]]);
     } catch {
-      // Fallback đọc từng dải thanh ghi nếu khối 43 regs bị từ chối
       const bFwCode = await readModbusRaw(activeSlave, 3, 0, 5, 1000);
       for (let i = 0; i < 5; i++) rawMemory.set(i, [bFwCode[i * 2], bFwCode[i * 2 + 1]]);
       const bFwVer = await readModbusRaw(activeSlave, 3, 5, 4, 1000);
@@ -1627,14 +1830,11 @@ async function startFastRead0To259() {
       for (let i = 0; i < 8; i++) rawMemory.set(35 + i, [bAppKey[i * 2], bAppKey[i * 2 + 1]]);
     }
 
-    // Khối 2: Reg 69..85 (17 regs = 34 bytes response -> lấy region code, class)
-    readingStatusText.value = `Đang đọc Khối 2: LoRaWAN Region & Class (Slave ${activeSlave}, Reg 69..85)...`;
-    readProgress.value = 45;
+    // Khối 2: Reg 69..85 (Region code & Class - VỪA ĐƯỢC PRECONFIG CẬP NHẬT)
+    readProgress.value = 85;
     try {
       const b2 = await readModbusRaw(activeSlave, 3, 69, 17, 1200);
-      for (let i = 0; i < 17; i++) {
-        rawMemory.set(69 + i, [b2[i * 2], b2[i * 2 + 1]]);
-      }
+      for (let i = 0; i < 17; i++) rawMemory.set(69 + i, [b2[i * 2], b2[i * 2 + 1]]);
     } catch {
       const bReg = await readModbusRaw(activeSlave, 3, 69, 3, 1000);
       for (let i = 0; i < 3; i++) rawMemory.set(69 + i, [bReg[i * 2], bReg[i * 2 + 1]]);
@@ -1642,115 +1842,34 @@ async function startFastRead0To259() {
       rawMemory.set(85, [bCls[0], bCls[1]]);
     }
 
-    // Khối 3: Reg 103 (1 reg -> sensor type)
-    readingStatusText.value = `Đang đọc Khối 3: Sensor Type (Slave ${activeSlave}, Reg 103)...`;
-    readProgress.value = 65;
+    // Khối 3: Reg 103 (Sensor Type)
     try {
       const b3 = await readModbusRaw(activeSlave, 3, 103, 1, 1000);
       rawMemory.set(103, [b3[0], b3[1]]);
     } catch {}
 
-    // Khối 4: Reg 259..267 (9 regs = 18 bytes -> SERIAL_NUMBER)
-    readingStatusText.value = `Đang đọc Khối 4: Serial Number (Slave ${activeSlave}, Reg 259)...`;
-    readProgress.value = 85;
+    // Khối 4: Reg 259..267 (Serial Number)
+    readProgress.value = 92;
     try {
       const b4 = await readModbusRaw(activeSlave, 3, 259, 9, 1000);
-      for (let i = 0; i < 9; i++) {
-        rawMemory.set(259 + i, [b4[i * 2], b4[i * 2 + 1]]);
-      }
+      for (let i = 0; i < 9; i++) rawMemory.set(259 + i, [b4[i * 2], b4[i * 2 + 1]]);
     } catch {}
 
-    // Khối 5: Reg 386..399 (14 regs = 28 bytes -> ITEM_CODE)
-    readingStatusText.value = `Đang đọc Khối 5: Item Code (Slave ${activeSlave}, Reg 386)...`;
-    readProgress.value = 95;
+    // Khối 5: Reg 386..399 (Item Code)
     try {
       const b5 = await readModbusRaw(activeSlave, 3, 386, 14, 1000);
-      for (let i = 0; i < 14; i++) {
-        rawMemory.set(386 + i, [b5[i * 2], b5[i * 2 + 1]]);
-      }
+      for (let i = 0; i < 14; i++) rawMemory.set(386 + i, [b5[i * 2], b5[i * 2 + 1]]);
     } catch {}
 
     readProgress.value = 100;
 
-    // Decode to registerData
+    // Decode toàn bộ thông tin vào registerData
     decodeRegistersFromMemory(rawMemory);
     readCompleted.value = true;
-    readingStatusText.value = 'Đọc thành công thông tin';
-    cyberToast.success('Đọc thành công thông tin');
+    readingStatusText.value = 'Đọc thành công đầy đủ thông tin thiết bị';
+    cyberToast.success('Đọc thành công đầy đủ thông tin thiết bị');
 
-    // Đọc xong, kiểm tra Preconfig
-    readingStatusText.value = 'Đang kiểm tra Preconfig Profile...';
-    try {
-      const res = await httpClient.get('/plugins/preconfig/profile-by-device', {
-        params: {
-          soNumber: step1.soNumber,
-          waNumber: step1.waNumber,
-          itemCode: registerData.ITEM_CODE,
-          fwVersion: registerData.FW_VERSION
-        }
-      });
-      const profile = res?.data || res;
-      
-      if (profile && profile.registers?.length > 0) {
-        readingStatusText.value = 'Đang thực hiện ghi Preconfig & Xác thực...';
-        cyberToast.info('Đã tìm thấy Preconfig Profile, đang thực thi cấu hình...');
-        
-        // 1. Chuẩn bị dữ liệu ghi
-        const targets = profile.registers.map((r: any) => ({
-          address: r.modbusRegisterDec,
-          count: r.registerCount || 1,
-          values: r.inputConfig ? encodeValueToWords(r.inputConfig, r.format, r.registerCount) : new Array(r.registerCount || 1).fill(0),
-          description: r.description
-        }));
-        
-        // 2. Gom chunk và Ghi Modbus FC 16
-        const chunks = createContiguousChunks(targets.map(t => ({
-           address: t.address,
-           count: t.count,
-           values: t.values,
-           description: t.description
-        })));
-
-        for (const chunk of chunks) {
-          readingStatusText.value = `Đang ghi Chunk ${chunk.startAddress}...`;
-          await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values);
-        }
-
-        // 3. Đọc lại để Verify
-        readingStatusText.value = 'Đang đọc lại kiểm tra...';
-        const actualMemory = new Map<number, number>();
-        for (const chunk of chunks) {
-          const actuals = await readModbusRaw(activeSlave, 3, chunk.startAddress, chunk.registerCount);
-          for (let i = 0; i < chunk.registerCount; i++) {
-             actualMemory.set(chunk.startAddress + i, (actuals[i*2] << 8) | actuals[i*2+1]);
-          }
-        }
-
-        // 4. Verify
-        const result = verifyReadBackValues(targets.map(t => ({
-          address: t.address,
-          count: t.count,
-          expectedValues: t.values,
-          description: t.description
-        })), actualMemory);
-
-        if (!result.pass) {
-          readingStatusText.value = `Lỗi xác thực: ${result.summaryMessage}`;
-          cyberToast.error('Preconfig Verification thất bại! Đã khóa tiến trình.');
-          // Fail-closed: Ngăn chuyển Step 3
-          throw new Error('Verification failed');
-        }
-        cyberToast.success('Preconfig thành công!');
-      } else {
-        cyberToast.info('Không có Preconfig Profile, bypass sang Step 3.');
-      }
-    } catch (e: any) {
-      console.warn('Preconfig process stopped:', e);
-      // Dừng nếu lỗi (Fail-Closed)
-      return; 
-    }
-
-    // Khi start đọc đủ thông tin rồi sẽ tự động chuyển qua step 3
+    // Chuyển sang Step 3 nếu có đủ thông tin
     if (hasRequiredRegisters.value) {
       setTimeout(() => {
         nextToStep3();

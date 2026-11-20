@@ -515,20 +515,29 @@ function renderProfiles() {
 }
 
 function registerColumns(editable: boolean) {
-  const selectionColumn = editable ? [{ formatter: 'rowSelection', titleFormatter: 'rowSelection', width: 42, hozAlign: 'center', headerSort: false }] : [];
+  const selectionColumn = editable ? [{
+    formatter: 'rowSelection',
+    titleFormatter: 'rowSelection',
+    width: 45,
+    hozAlign: 'center',
+    headerSort: false,
+    cellClick: (_e: any, cell: any) => {
+      cell.getRow().toggleSelect();
+    }
+  }] : [];
   return [
     ...selectionColumn,
-    { title: 'Dec address', field: 'modbusRegisterDec', width: 105 },
-    { title: 'Hex address', field: 'modbusRegisterHex', width: 105 },
-    { title: 'Nums Reg', field: 'registerCount', width: 88 },
-    { title: 'Description', field: 'description', minWidth: 150, widthGrow: 2 },
-    { title: 'Format', field: 'format', width: 90 },
-    { title: 'Comment', field: 'comment', minWidth: 125, widthGrow: 1 },
-    { title: 'End-user Default', field: 'endUserDefault', minWidth: 130, widthGrow: 1 },
+    { title: 'Modbus Register (Decimal)', field: 'modbusRegisterDec', width: 175 },
+    { title: 'Modbus Register (Hex)', field: 'modbusRegisterHex', width: 160 },
+    { title: '# of Registers', field: 'registerCount', width: 115 },
+    { title: 'Description', field: 'description', minWidth: 200, widthGrow: 2 },
+    { title: 'Format', field: 'format', width: 100 },
+    { title: 'Comment', field: 'comment', minWidth: 140, widthGrow: 1 },
+    { title: 'End-user Default', field: 'endUserDefault', minWidth: 140, widthGrow: 1 },
     {
       title: 'Input config',
       field: 'inputConfig',
-      minWidth: 130,
+      minWidth: 140,
       widthGrow: 1,
       editor: editable ? 'input' : false,
       cellEdited: (cell: any) => updateConfig(cell.getRow())
@@ -536,7 +545,7 @@ function registerColumns(editable: boolean) {
     {
       title: 'Check',
       field: 'configCheck',
-      width: 80,
+      width: 85,
       formatter: (cell: any) => `<span class="check-${cell.getValue() === 'PASS' ? 'pass' : 'fail'}">${cell.getValue()}</span>`
     }
   ] as any[];
@@ -554,10 +563,10 @@ function renderRegisters() {
       selectableRows: true,
       selectableRowsPersistence: false,
       columns: registerColumns(true) as any,
-      rowSelectionChanged: (selected: any[]) => {
-        const selectedRows = new Set(selected.map((row: any) => row.getData()));
+      rowSelectionChanged: (selectedData: any[]) => {
+        const selectedDecs = new Set((selectedData || []).map((d: any) => d?.modbusRegisterDec));
         registers.value.forEach(item => {
-          item.selected = selectedRows.has(item);
+          item.selected = selectedDecs.has(item.modbusRegisterDec);
         });
       },
       rowFormatter: (row: any) => {

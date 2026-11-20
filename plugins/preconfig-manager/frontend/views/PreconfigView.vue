@@ -389,20 +389,29 @@ function filterProfiles() {
 }
 
 function registerColumns(editable: boolean) {
-  const selectionColumn = editable ? [{ formatter: 'rowSelection', titleFormatter: 'rowSelection', width: 42, hozAlign: 'center', headerSort: false }] : [];
+  const selectionColumn = editable ? [{
+    formatter: 'rowSelection',
+    titleFormatter: 'rowSelection',
+    width: 45,
+    hozAlign: 'center',
+    headerSort: false,
+    cellClick: (_e: any, cell: any) => {
+      cell.getRow().toggleSelect();
+    }
+  }] : [];
   return [
     ...selectionColumn,
-    { title: 'Dec address', field: 'modbusRegisterDec', width: 105 },
-    { title: 'Hex address', field: 'modbusRegisterHex', width: 105 },
-    { title: 'Nums Reg', field: 'registerCount', width: 88 },
-    { title: 'Description', field: 'description', minWidth: 150, widthGrow: 2 },
-    { title: 'Format', field: 'format', width: 90 },
-    { title: 'Comment', field: 'comment', minWidth: 125, widthGrow: 1 },
-    { title: 'End-user Default', field: 'endUserDefault', minWidth: 130, widthGrow: 1 },
+    { title: 'Modbus Register (Decimal)', field: 'modbusRegisterDec', width: 175 },
+    { title: 'Modbus Register (Hex)', field: 'modbusRegisterHex', width: 160 },
+    { title: '# of Registers', field: 'registerCount', width: 115 },
+    { title: 'Description', field: 'description', minWidth: 200, widthGrow: 2 },
+    { title: 'Format', field: 'format', width: 100 },
+    { title: 'Comment', field: 'comment', minWidth: 140, widthGrow: 1 },
+    { title: 'End-user Default', field: 'endUserDefault', minWidth: 140, widthGrow: 1 },
     {
       title: 'Input config',
       field: 'inputConfig',
-      minWidth: 130,
+      minWidth: 140,
       widthGrow: 1,
       editor: editable ? 'input' : false,
       cellEdited: (cell: any) => updateConfig(cell.getRow())
@@ -410,7 +419,7 @@ function registerColumns(editable: boolean) {
     {
       title: 'Check',
       field: 'configCheck',
-      width: 80,
+      width: 85,
       formatter: (cell: any) => `<span class="badge badge-xs font-mono font-bold ${cell.getValue() === 'PASS' ? 'badge-success text-success-content' : 'badge-error text-error-content'}">${cell.getValue()}</span>`
     }
   ] as any[];
@@ -428,10 +437,10 @@ function renderRegisters() {
       selectableRows: true,
       selectableRowsPersistence: false,
       columns: registerColumns(true) as any,
-      rowSelectionChanged: (selected: any[]) => {
-        const selectedRows = new Set(selected.map((row: any) => row.getData()));
+      rowSelectionChanged: (selectedData: any[]) => {
+        const selectedDecs = new Set((selectedData || []).map((d: any) => d?.modbusRegisterDec));
         registers.value.forEach(item => {
-          item.selected = selectedRows.has(item);
+          item.selected = selectedDecs.has(item.modbusRegisterDec);
         });
       },
     });
@@ -558,19 +567,21 @@ async function createProfile() {
       soNumber: form.value.soNumber,
       waNumber: form.value.waNumber,
       itemCode: form.value.itemCode,
-      registers: registers.value.map(r => ({
-        rowNumber: r.rowNumber,
-        modbusRegisterDec: r.modbusRegisterDec,
-        modbusRegisterHex: r.modbusRegisterHex,
-        registerCount: r.registerCount,
-        description: r.description,
-        format: r.format,
-        comment: r.comment,
-        endUserDefault: r.endUserDefault,
-        inputConfig: r.inputConfig,
-        configCheck: r.configCheck,
-        selected: r.selected
-      }))
+      registers: registers.value
+        .filter(r => r.selected === true)
+        .map(r => ({
+          rowNumber: r.rowNumber,
+          modbusRegisterDec: r.modbusRegisterDec,
+          modbusRegisterHex: r.modbusRegisterHex,
+          registerCount: r.registerCount,
+          description: r.description,
+          format: r.format,
+          comment: r.comment,
+          endUserDefault: r.endUserDefault,
+          inputConfig: r.inputConfig,
+          configCheck: r.configCheck,
+          selected: true
+        }))
     };
     await request(API, '/profiles', { method: 'POST', body: JSON.stringify(payload) });
     cyberToast.success('Đã tạo Preconfig Profile thành công');
