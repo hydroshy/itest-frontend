@@ -953,6 +953,49 @@
       </div>
       <div class="modal-backdrop bg-black/60" @click="editSoDialogVisible = false"></div>
     </dialog>
+
+    <!-- Modal Sửa Mã WA -->
+    <dialog class="modal" :class="{ 'modal-open': editWaDialogVisible }">
+      <div class="modal-box max-w-md bg-base-100 border border-base-300">
+        <h3 class="font-bold text-lg text-base-content flex items-center gap-2">
+          <Pencil class="w-5 h-5 text-primary" /> Sửa Mã Work Assignment (WA)
+        </h3>
+        <p class="text-xs text-base-content/70 mt-1">
+          Cập nhật mã WA mới cho phân công công việc hiện tại.
+        </p>
+
+        <div class="form-control mt-4 space-y-1">
+          <label class="label py-0"><span class="label-text text-xs font-semibold">Mã WA hiện tại</span></label>
+          <input
+            :value="editingWaData?.waNumber || editingWaData?.code"
+            type="text"
+            disabled
+            class="input input-sm input-bordered w-full font-mono bg-base-200 opacity-70"
+          />
+        </div>
+
+        <div class="form-control mt-3 space-y-1">
+          <label class="label py-0"><span class="label-text text-xs font-semibold">Mã WA mới <span class="text-error">*</span></span></label>
+          <input
+            v-model="newWaNumberInput"
+            type="text"
+            placeholder="Ví dụ: WA/2026/01527"
+            class="input input-sm input-bordered w-full font-mono"
+            @keyup.enter="handleSaveEditWa"
+          />
+        </div>
+
+        <div class="modal-action border-t border-base-300 pt-3 mt-4">
+          <button class="btn btn-sm btn-ghost" :disabled="savingEditWa" @click="editWaDialogVisible = false">Hủy</button>
+          <button class="btn btn-sm btn-primary gap-1" :disabled="savingEditWa || !newWaNumberInput.trim()" @click="handleSaveEditWa">
+            <span v-if="savingEditWa" class="loading loading-spinner loading-xs"></span>
+            <Check v-else class="w-4 h-4" />
+            Lưu thay đổi
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="editWaDialogVisible = false"></div>
+    </dialog>
   </div>
 </template>
 
@@ -1911,6 +1954,12 @@ const initSoTreeTable = () => {
           },
         });
         menu.push({
+          label: '✏️ Sửa mã WA...',
+          action: () => {
+            openEditWaDialog(data);
+          },
+        });
+        menu.push({
           label: '❌ Xóa WA này...',
           action: () => {
             handleDeleteWa(data.id, data.waNumber || data.code);
@@ -2457,6 +2506,40 @@ const editSoDialogVisible = ref(false);
 const editingSoData = ref<any>(null);
 const newSoNumberInput = ref('');
 const savingEditSo = ref(false);
+
+const editWaDialogVisible = ref(false);
+const editingWaData = ref<any>(null);
+const newWaNumberInput = ref('');
+const savingEditWa = ref(false);
+
+const openEditWaDialog = (waData: any) => {
+  editingWaData.value = waData;
+  newWaNumberInput.value = waData.waNumber || waData.code || '';
+  editWaDialogVisible.value = true;
+};
+
+const handleSaveEditWa = async () => {
+  if (!newWaNumberInput.value.trim() || savingEditWa.value) return;
+  savingEditWa.value = true;
+  try {
+    const res = await fetch(`/api/plugins/device-traceability/wa/${editingWaData.value.id}`, {
+      method: 'PUT',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ waNumber: newWaNumberInput.value.trim() }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+    ElMessage.success('Đã cập nhật mã WA thành công.');
+    editWaDialogVisible.value = false;
+    loadSoTreeData();
+  } catch (err: any) {
+    ElMessage.error(`Lỗi khi cập nhật WA: ${err.message}`);
+  } finally {
+    savingEditWa.value = false;
+  }
+};
 
 const openEditSoDialog = (soData: any) => {
   editingSoData.value = soData;
