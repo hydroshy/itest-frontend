@@ -910,6 +910,49 @@
       </div>
       <div class="modal-backdrop bg-black/60" @click="disSyncDialogVisible = false"></div>
     </dialog>
+
+    <!-- Dialog Sửa Mã SO -->
+    <dialog class="modal" :class="{ 'modal-open': editSoDialogVisible }">
+      <div class="modal-box max-w-md bg-base-100 border border-base-300">
+        <h3 class="font-bold text-lg text-base-content flex items-center gap-2">
+          <Pencil class="w-5 h-5 text-primary" /> Sửa Mã Sale Order
+        </h3>
+        <p class="text-xs text-base-content/70 mt-1">
+          Cập nhật mã SO mới cho đơn hàng hiện tại.
+        </p>
+
+        <div class="form-control mt-4 space-y-1">
+          <label class="label py-0"><span class="label-text text-xs font-semibold">Mã SO hiện tại</span></label>
+          <input
+            :value="editingSoData?.soNumber || editingSoData?.code"
+            type="text"
+            disabled
+            class="input input-sm input-bordered w-full font-mono bg-base-200 opacity-70"
+          />
+        </div>
+
+        <div class="form-control mt-3 space-y-1">
+          <label class="label py-0"><span class="label-text text-xs font-semibold">Mã SO mới <span class="text-error">*</span></span></label>
+          <input
+            v-model="newSoNumberInput"
+            type="text"
+            placeholder="Ví dụ: SO/2026/01527"
+            class="input input-sm input-bordered w-full font-mono"
+            @keyup.enter="handleSaveEditSo"
+          />
+        </div>
+
+        <div class="modal-action border-t border-base-300 pt-3 mt-4">
+          <button class="btn btn-sm btn-ghost" :disabled="savingEditSo" @click="editSoDialogVisible = false">Hủy</button>
+          <button class="btn btn-sm btn-primary gap-1" :disabled="savingEditSo || !newSoNumberInput.trim()" @click="handleSaveEditSo">
+            <span v-if="savingEditSo" class="loading loading-spinner loading-xs"></span>
+            <Check v-else class="w-4 h-4" />
+            Lưu thay đổi
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="editSoDialogVisible = false"></div>
+    </dialog>
   </div>
 </template>
 
@@ -936,6 +979,7 @@ import {
   Loader2,
   ArrowLeft,
   Ticket,
+  Pencil,
 } from 'lucide-vue-next';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
@@ -1835,16 +1879,28 @@ const initSoTreeTable = () => {
           },
         });
         menu.push({
-          label: '🔍 Xem chi tiết Sale Order...',
-          action: () => {
-            viewSoDetail(data.id);
-          },
+          label: '✏️ Sửa mã Sale Order...',
+          action: () => openEditSoDialog(data),
         });
-      } else if (data.type === 'ITEM' || data.type === 'ITEM_CODE' || data.type === 'SKU') {
+        menu.push({
+          label: '🔄 Sync DIS Odoo...',
+          action: () => handleSyncDis(data.id),
+        });
+        menu.push({
+          label: '❌ Xóa Sale Order...',
+          action: () => handleDeleteSo(data.id, data.soNumber || data.code),
+        });
+      } else if (data.type === 'ITEM' || data.type === 'ITEM_CODE' || data.type === 'ITEM-CODE' || data.type === 'SKU') {
         menu.push({
           label: '📥 Import CSV Thiết Bị vào Sản Phẩm này...',
           action: () => {
             openImportCsvForSo(data.soId || data.id);
+          },
+        });
+        menu.push({
+          label: '❌ Xóa Item Code thuộc SO...',
+          action: () => {
+            handleDeleteItemCode(data.soId, data.itemCode || data.code);
           },
         });
       } else if (data.type === 'WA') {
@@ -1852,6 +1908,12 @@ const initSoTreeTable = () => {
           label: '📥 Import CSV Thiết Bị vào WA này...',
           action: () => {
             openImportCsvForWa(data.soId, data.id);
+          },
+        });
+        menu.push({
+          label: '❌ Xóa WA này...',
+          action: () => {
+            handleDeleteWa(data.id, data.waNumber || data.code);
           },
         });
       } else if (data.type === 'DEVICE') {
@@ -2391,10 +2453,98 @@ const handleDeleteDevice = async (deviceId: string, identifier: string) => {
   }
 };
 
-// ==========================================
-// TAB CHANGE & REFRESH LOGIC
-// ==========================================
+const editSoDialogVisible = ref(false);
+const editingSoData = ref<any>(null);
+const newSoNumberInput = ref('');
+const savingEditSo = ref(false);
 
+const openEditSoDialog = (soData: any) => {
+  editingSoData.value = soData;
+  newSoNumberInput.value = soData.soNumber || soData.code || '';
+  editSoDialogVisible.value = true;
+};
+
+const handleSaveEditSo = async () => {
+  if (!newSoNumberInput.value.trim() || savingEditSo.value) return;
+  savingEditSo.value = true;
+  try {
+    const res = await fetch(`/api/plugins/device-traceability/so/${editingSoData.value.id}`, {
+      method: 'PUT',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ soNumber: newSoNumberInput.value.trim() }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+    ElMessage.success('Đã cập nhật mã SO thành công.');
+    editSoDialogVisible.value = false;
+    loadSoTreeData();
+  } catch (err: any) {
+    ElMessage.error(`Lỗi khi cập nhật SO: ${err.message}`);
+  } finally {
+    savingEditSo.value = false;
+  }
+};
+
+const handleDeleteSo = async (soId: string, soNumber: string) => {
+  try {
+    await ElMessageBox.confirm(`Bạn có chắc chắn muốn xóa SO "${soNumber}" và tất cả WA/thiết bị liên quan không? Thao tác này không thể hoàn tác.`, 'Xác nhận xóa SO', {
+      confirmButtonText: 'Xóa ngay',
+      cancelButtonText: 'Hủy bỏ',
+      type: 'error',
+    });
+    const res = await fetch(`/api/plugins/device-traceability/so/${soId}`, { method: 'DELETE', headers: getAuthHeaders() });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || `HTTP ${res.status}`);
+    ElMessage.success(`Đã xóa SO ${soNumber} thành công.`);
+    loadSoTreeData();
+  } catch (err: any) {
+    if (err !== 'cancel') ElMessage.error(`Lỗi khi xóa SO: ${err.message}`);
+  }
+};
+
+const handleDeleteWa = async (waId: string, waNumber: string) => {
+  try {
+    await ElMessageBox.confirm(`Bạn có chắc chắn muốn xóa WA "${waNumber}" và tất cả thiết bị liên quan không?`, 'Xác nhận xóa WA', {
+      confirmButtonText: 'Xóa ngay',
+      cancelButtonText: 'Hủy bỏ',
+      type: 'error',
+    });
+    const res = await fetch(`/api/plugins/device-traceability/wa/${waId}`, { method: 'DELETE', headers: getAuthHeaders() });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || `HTTP ${res.status}`);
+    ElMessage.success(`Đã xóa WA ${waNumber} thành công.`);
+    loadSoTreeData();
+  } catch (err: any) {
+    if (err !== 'cancel') ElMessage.error(`Lỗi khi xóa WA: ${err.message}`);
+  }
+};
+
+const handleDeleteItemCode = async (soId: string, itemCode: string) => {
+  try {
+    await ElMessageBox.confirm(`Bạn có chắc chắn muốn xóa tất cả thiết bị có Item Code "${itemCode}" thuộc SO này không?`, 'Xác nhận xóa Item Code', {
+      confirmButtonText: 'Xóa ngay',
+      cancelButtonText: 'Hủy bỏ',
+      type: 'error',
+    });
+    const res = await fetch(`/api/plugins/device-traceability/so/${soId}/item-code/${encodeURIComponent(itemCode)}`, { method: 'DELETE', headers: getAuthHeaders() });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || `HTTP ${res.status}`);
+    ElMessage.success(`Đã xóa Item Code ${itemCode} thành công.`);
+    loadSoTreeData();
+  } catch (err: any) {
+    if (err !== 'cancel') ElMessage.error(`Lỗi khi xóa Item Code: ${err.message}`);
+  }
+};
+
+const handleSyncDis = async (soId: string) => {
+  try {
+    const res = await fetch(`/api/plugins/device-traceability/so/${soId}/sync-dis`, { method: 'POST', headers: getAuthHeaders() });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || `HTTP ${res.status}`);
+    ElMessage.success('Đã đồng bộ lại dữ liệu từ DIS thành công.');
+    loadSoTreeData();
+  } catch (err: any) {
+    ElMessage.error(`Lỗi sync DIS: ${err.message}`);
+  }
+};
 const onTabChange = (tabName: any) => {
   nextTick(() => {
     if (tabName === 'sale-orders' || tabName === 'so-item-device') {
