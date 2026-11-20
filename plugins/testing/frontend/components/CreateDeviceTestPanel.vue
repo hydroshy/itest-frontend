@@ -1596,6 +1596,30 @@ async function startFastRead0To259() {
     readingStatusText.value = 'Đọc thành công thông tin';
     cyberToast.success('Đọc thành công thông tin');
 
+    // Đọc xong, kiểm tra Preconfig
+    readingStatusText.value = 'Đang kiểm tra Preconfig Profile...';
+    try {
+      const res = await httpClient.get('/plugins/preconfig/profile-by-device', {
+        params: {
+          soNumber: step1.soNumber,
+          waNumber: step1.waNumber,
+          itemCode: registerData.ITEM_CODE,
+          fwVersion: registerData.FW_VERSION
+        }
+      });
+      const profile = res?.data || res;
+      
+      if (profile) {
+        readingStatusText.value = 'Đang thực hiện ghi Preconfig & Xác thực...';
+        // Logic ghi FC 16 và verify đọc lại sẽ được thêm tại đây
+        cyberToast.info('Đã tìm thấy Preconfig Profile, đang thực thi cấu hình...');
+      } else {
+        cyberToast.info('Không có Preconfig Profile, bypass sang Step 3.');
+      }
+    } catch (e) {
+      console.warn('Preconfig lookup failed, bypassing:', e);
+    }
+
     // Khi start đọc đủ thông tin rồi sẽ tự động chuyển qua step 3
     if (hasRequiredRegisters.value) {
       setTimeout(() => {

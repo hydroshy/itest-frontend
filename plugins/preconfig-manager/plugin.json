@@ -1,0 +1,23 @@
+{
+  "id": "preconfig-manager",
+  "name": "PRECONFIG MANAGER",
+  "version": "1.0.0",
+  "sdkVersion": "^1.0.0",
+  "type": "FRONTEND",
+  "description": "Quản lý và tạo cấu hình thiết bị trước khi đăng ký (Preconfig) và xác thực thanh ghi (Write-Verify) cho thiết bị LoRaWAN.",
+  "author": "ITEST IoT Platform Team",
+  "frontend": "frontend/index.ts",
+  "enabledByDefault": true,
+  "permissions": [
+    {
+      "namespace": "preconfig",
+      "resource": "profile",
+      "action": "manage"
+    },
+    {
+      "namespace": "preconfig",
+      "resource": "profile",
+      "action": "create"
+    }
+  ]
+}
