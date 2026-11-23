@@ -2119,6 +2119,16 @@ const initTestingTable = () => {
         },
       },
       {
+        title: 'APP_KEY',
+        field: 'appKey',
+        widthGrow: 2.2,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const val = cell.getValue() || row.APP_KEY || row.app_key || row.test_raw_data?.app_key || row.testRawData?.app_key || row.test_raw_data?.final_config_audit?.app_key || '-';
+          return val && val !== '-' ? `<span class="mono-font text-xs font-bold text-accent tracking-wider select-all">${val}</span>` : '<span class="text-muted">-</span>';
+        },
+      },
+      {
         title: 'SO_NUMBER',
         field: 'soNumber',
         widthGrow: 1.2,
@@ -2325,10 +2335,30 @@ const initConfigTable = () => {
         formatter: (cell) => `<span class="mono-font">${cell.getValue() || '-'}</span>`,
       },
       {
+        title: 'AppKey',
+        field: 'appKey',
+        widthGrow: 2.2,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const val = cell.getValue() || row.app_key || row.test_raw_data?.app_key || row.testRawData?.app_key || row.test_raw_data?.final_config_audit?.app_key || '-';
+          return val && val !== '-' ? `<span class="mono-font text-xs font-bold text-accent tracking-wider select-all">${val}</span>` : '<span class="text-muted">-</span>';
+        },
+      },
+      {
         title: 'SKU / Model',
         field: 'sku',
         widthGrow: 1.5,
         formatter: (cell) => cell.getValue() || cell.getRow().getData().itemCode || '<span class="text-muted">-</span>',
+      },
+      {
+        title: 'Người Cấu Hình',
+        field: 'configPerson',
+        widthGrow: 1.4,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const person = cell.getValue() || row.config_person || row.configPerson || row.test_raw_data?.config_person || row.test_raw_data?.final_config_audit?.config_person || row.operator || '-';
+          return person !== '-' ? `<span class="font-medium">${person}</span>` : '<span class="text-muted">-</span>';
+        },
       },
       {
         title: 'Trạng Thái Cấu Hình',

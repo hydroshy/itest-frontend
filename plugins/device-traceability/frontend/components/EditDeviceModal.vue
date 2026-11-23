@@ -23,6 +23,11 @@
           </div>
         </div>
 
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text font-semibold">LoRaWAN AppKey (32 hex):</span></label>
+          <input v-model="form.appKey" placeholder="Nhập AppKey..." class="input input-bordered input-sm font-mono font-bold text-accent" />
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="form-control">
             <label class="label py-1"><span class="label-text font-semibold">Mã Sản Phẩm (Item):</span></label>

@@ -45,7 +45,18 @@ const copyText = async (text: string) => {
   }
 };
 
-const currentUser = ref({ username: 'operator' });
+const getLoggedInUsername = (): string => {
+  try {
+    const raw = localStorage.getItem('user');
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u.username) return u.username;
+    }
+  } catch {}
+  return localStorage.getItem('username') || 'admin';
+};
+
+const currentUser = ref({ username: getLoggedInUsername() });
 const activeFeature = ref({ id: 'final-config-device' });
 
   
@@ -2169,23 +2180,37 @@ const activeFeature = ref({ id: 'final-config-device' });
       }
 
       // Persist results asynchronously (non-blocking for UI & Serial)
-      const operator = currentUser?.value?.username || 'admin';
+      const operator = getLoggedInUsername();
       const savePayload = {
         serial_number: fcHardwareInfo.value.serialNumber,
+        serialNumber: fcHardwareInfo.value.serialNumber,
         item_code: selectedItemCode.value,
+        itemCode: selectedItemCode.value,
         so: selectedSo.value,
+        so_number: selectedSo.value,
+        soNumber: selectedSo.value,
         preset_id: currentPreset.value?.id,
         sku: fcHardwareInfo.value.sku || currentPreset.value?.sku || 'WSLRW',
         firmware_version: fcHardwareInfo.value.firmwareVersion,
         short_fw: fcHardwareInfo.value.shortFw,
         status: verdict,
+        verdict: verdict,
         dev_eui: fcHardwareInfo.value.devEui,
+        devEui: fcHardwareInfo.value.devEui,
         app_key: appKeyInput.value,
+        appKey: appKeyInput.value,
         configured_regs_count: fcWrittenRegsCount.value,
         total_regs_count: fcAuditRegisters.value.length,
         tested_at: new Date().toISOString(),
+        configured_at: new Date().toISOString(),
         operator,
+        configured_by: operator,
+        config_person: operator,
+        configuredBy: operator,
+        configPerson: operator,
         metadata: {
+          operator,
+          configured_by: operator,
           traceability: fcTraceabilityData.value || null,
           client_environment: {
             app_version: '1.0.0',
