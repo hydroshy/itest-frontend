@@ -1190,9 +1190,9 @@ const activeFeature = ref({ id: 'final-config-device' });
             format: r.format || 'uint',
             endianness: r.endianness || 'Big-Endian',
             reg_num: Number(r.reg_num || r.registerCount || r.numreg) || 1,
-            fn_write: 'FC 16',
+            fn_write: addr === 9 ? '-' : 'FC 16',
             default_value: r.default_value || r.endUserDefault || r.value_on_memmap || '',
-            value_to_write: r.value_to_write !== undefined ? String(r.value_to_write) : (r.inputConfig !== undefined ? String(r.inputConfig) : ''),
+            value_to_write: addr === 9 ? '' : (r.value_to_write !== undefined ? String(r.value_to_write) : (r.inputConfig !== undefined ? String(r.inputConfig) : '')),
             value_read_back: (ex && ex.value_read_back) ? ex.value_read_back : '',
             status: (ex && ex.status && ex.status !== 'NONE') ? ex.status : 'NONE',
           };
@@ -1520,7 +1520,7 @@ const activeFeature = ref({ id: 'final-config-device' });
       fcHardwareInfo.value.hwVersion = readHw || '';
       const row9 = fcAuditRegisters.value.find(r => Number(r.address) === 9);
       if (row9) {
-        row9.value_to_write = readHw || '';
+        row9.value_to_write = '';
         row9.value_read_back = readHw || '';
         row9.status = resReg9.success ? 'PASS' : 'FAIL';
         updateTabulatorData();
@@ -1932,7 +1932,7 @@ const activeFeature = ref({ id: 'final-config-device' });
       const TRACE_DEFS = [
         { address: 0, modbus_reg_hex: '0x0000', parameter_name: 'Firmware Code', format: 'string', reg_num: 5, endianness: 'Big-Endian', fn_read: 'FC 03', default_value: '-', value_to_write: '' },
         { address: 5, modbus_reg_hex: '0x0005', parameter_name: 'Firmware Version', format: 'string', reg_num: 4, endianness: 'Big-Endian', fn_read: 'FC 03', default_value: '-', value_to_write: '' },
-        { address: 9, modbus_reg_hex: '0x0009', parameter_name: 'HW Version', format: 'string', reg_num: 2, endianness: 'Big-Endian', fn_read: 'FC 03', default_value: '-', value_to_write: fcHardwareInfo.value.hwVersion || '' },
+        { address: 9, modbus_reg_hex: '0x0009', parameter_name: 'HW Version', format: 'string', reg_num: 2, endianness: 'Big-Endian', fn_read: 'FC 03', default_value: '-', value_to_write: '' },
         { address: 11, modbus_reg_hex: '0x000B', parameter_name: 'LoRaWAN Protocol Version', format: 'string', reg_num: 4, endianness: 'Big-Endian', fn_read: 'FC 03', default_value: '-', value_to_write: '' },
         { address: 15, modbus_reg_hex: '0x000F', parameter_name: 'Spare Data', format: 'hex', reg_num: 12, endianness: 'Big-Endian', fn_read: 'FC 03', default_value: '-', value_to_write: '' },
         { address: 27, modbus_reg_hex: '0x001B', parameter_name: 'Device EUI', format: 'hex', reg_num: 4, endianness: 'Big-Endian', fn_read: 'FC 03', default_value: '-', value_to_write: '' },
