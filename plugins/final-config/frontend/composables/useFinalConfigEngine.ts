@@ -1176,8 +1176,8 @@ const activeFeature = ref({ id: 'final-config-device' });
       });
       if (res.ok) {
         const json = await res.json();
-        if (json.success && json.data) {
-          const record = json.data;
+        const record = json.data || json.record;
+        if (json.success && record) {
           if (record.so && !selectedSo.value) {
             selectedSo.value = record.so;
             fcSelectedSo.value = record.so;
@@ -1615,7 +1615,7 @@ const activeFeature = ref({ id: 'final-config-device' });
         throw new Error('QA Check Failed: ' + (verifyJson.message || 'Device not verified in device_tested table'));
       }
 
-      const record = verifyJson.data;
+      const record = verifyJson.data || verifyJson.record;
 
       // Auto-map / match Sales Order (SO)
       const mappedSo = (record && (record.so_number || record.so)) || selectedSo.value;
