@@ -32,7 +32,10 @@ const showToast = (msg: string, type: 'success' | 'error' | 'warning' | 'info' =
 };
 
 const authHeaders = () => {
-  const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+  const token =
+    localStorage.getItem('itest_token') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('access_token');
   return token ? { Authorization: 'Bearer ' + token } : {};
 };
 
@@ -47,10 +50,24 @@ const copyText = async (text: string) => {
 
 const getLoggedInUsername = (): string => {
   try {
+    const rawItest = localStorage.getItem('itest_user');
+    if (rawItest) {
+      const u = JSON.parse(rawItest);
+      if (u.username) return u.username;
+      if (u.fullName) return u.fullName;
+    }
     const raw = localStorage.getItem('user');
     if (raw) {
       const u = JSON.parse(raw);
       if (u.username) return u.username;
+      if (u.fullName) return u.fullName;
+    }
+    const token = localStorage.getItem('itest_token') || localStorage.getItem('token');
+    if (token && token.includes('.')) {
+      const payloadBase64 = token.split('.')[1];
+      const decodedJson = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
+      if (decodedJson.username) return decodedJson.username;
+      if (decodedJson.sub) return decodedJson.sub;
     }
   } catch {}
   return localStorage.getItem('username') || 'admin';
