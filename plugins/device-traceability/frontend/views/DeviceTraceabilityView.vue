@@ -2010,6 +2010,13 @@ const initSoTreeTable = () => {
             handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED', status: 'UNCONFIGURED', statusType: 'config_status' });
           },
         });
+        menu.push({
+          label: '🔬 Xem Bảng MemMap Read-Back...',
+          action: () => {
+            selectedSessionDevice.value = data;
+            sessionAuditDialogVisible.value = true;
+          },
+        });
         menu.push({ separator: true });
         menu.push({
           label: '🗑️ Xóa thiết bị này',
@@ -2254,6 +2261,13 @@ const initTestingTable = () => {
             rawTestDialogVisible.value = true;
           },
         },
+        {
+          label: '🔬 Xem Bảng MemMap Read-Back...',
+          action: () => {
+            selectedSessionDevice.value = data;
+            sessionAuditDialogVisible.value = true;
+          },
+        },
         { separator: true },
         {
           label: '🗑️ Xóa Thiết Bị Này',
@@ -2420,7 +2434,7 @@ const initConfigTable = () => {
         },
         { separator: true },
         {
-          label: '📊 Xem Chi Tiết Session & Audit...',
+          label: '📊 Xem Bảng MemMap Read-Back & Session...',
           action: () => {
             selectedSessionDevice.value = data;
             sessionAuditDialogVisible.value = true;
