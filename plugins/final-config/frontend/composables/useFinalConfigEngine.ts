@@ -1893,10 +1893,10 @@ const activeFeature = ref({ id: 'final-config-device' });
       addSerialLog('INFO', null, 'Handshake verified for AppKey Reg 274 via safe anchor in ' + res.elapsedMs + 'ms (' + res.attempts + ' probes)');
       fcStatusMessage.value = 'Verified AppKey Reg 274 (' + res.elapsedMs + 'ms). Stage 2 completed.';
 
-      if (!timingOpts.enableProbe) {
-        fcStatusMessage.value = 'Hardware settling for Flash / EEPROM storage (' + INTER_WRITE_SETTLING_DELAY_MS + 'ms)...';
-        await new Promise(r => setTimeout(r, INTER_WRITE_SETTLING_DELAY_MS));
-      }
+      // Stage 2 Settling: delay 2.5s cho MCU hoàn tất ghi Flash và ổn định UART
+      fcStatusMessage.value = 'Hardware settling for Flash / EEPROM storage (2500ms)...';
+      await new Promise(r => setTimeout(r, 2500));
+      await flushUartRxBuffer(60);
       stage2Settled.value = true;
       stage2Status.value = 'PASS';
       if (abortRequested.value) return;
@@ -1988,9 +1988,9 @@ const activeFeature = ref({ id: 'final-config-device' });
       // Split rows: cached (Stage 1 reuse, skip Modbus) vs need-to-read.
       // For need-to-read, compute covering range; issue one FC03 per 100-reg
       // chunk instead of one request per register.
-      // ponytail: STAGE3_BATCH_CHUNK=100 (FC03 limit); raise to 125 if firmware allows
-      const STAGE3_READ_TIMEOUT_MS = 400;
-      const STAGE3_BATCH_CHUNK = 100;
+      // Chunk size an toàn (32 regs) và timeout 4000ms tránh MCU timeout sau ghi Flash
+      const STAGE3_READ_TIMEOUT_MS = 4000;
+      const STAGE3_BATCH_CHUNK = 32;
 
       const cachedRows = [];
       const readRows = [];
@@ -2128,9 +2128,10 @@ const activeFeature = ref({ id: 'final-config-device' });
         const target = String(row.value_to_write || '').trim();
         const read = String(row.value_read_back || '').trim();
 
+        // Theo yêu cầu: Chỉ thanh ghi nào có input config (target khác rỗng) thì mới ghi và read-back kiểm tra.
+        // Các thanh ghi không input config (target rỗng): chỉ đọc, không readback để kiểm tra so sánh.
         if (target === '') {
-          row.status = row.value_read_back !== 'READ_ERR' ? 'PASS' : 'FAIL';
-          if (row.status === 'FAIL') mismatchCount++;
+          row.status = row.value_read_back !== 'READ_ERR' ? 'PASS' : 'NONE';
           continue;
         }
 
