@@ -1102,52 +1102,85 @@ const activeFeature = ref({ id: 'final-config-device' });
       return;
     }
     try {
-      const res = await fetch('/api/c-modules/final-config-manager/presets/by-so-item?so=' + encodeURIComponent(so) + '&item_code=' + encodeURIComponent(itemCode), {
+      let presetData: any = null;
+      let res = await fetch('/api/c-modules/final-config-manager/presets/by-so-item?so=' + encodeURIComponent(so) + '&item_code=' + encodeURIComponent(itemCode), {
         headers: authHeaders ? authHeaders() : {},
       });
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          currentPreset.value = json.data;
-          // Seed audit table from preset, preserving any Stage 1 read-back cache (Spec Section 4.3.1)
-          const regs = json.data.registers || [];
-          const sortedRegs = [...regs].sort((a, b) => Number(a.address) - Number(b.address));
-          const existingMap = new Map();
-          for (const ex of fcAuditRegisters.value) {
-            existingMap.set(Number(ex.address), ex);
+          presetData = json.data;
+        }
+      }
+      if (!presetData) {
+        res = await fetch('/api/plugins/final-config/presets/by-so-item?so=' + encodeURIComponent(so) + '&item_code=' + encodeURIComponent(itemCode), {
+          headers: authHeaders ? authHeaders() : {},
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            presetData = json.data;
           }
-          const mergedList = sortedRegs.map((r, i) => {
-            const addr = Number(r.address);
-            const ex = existingMap.get(addr);
-            return {
-              order_no: i + 1,
-              address: addr,
-              modbus_reg_hex: r.modbus_reg_hex || ('0x' + addr.toString(16).padStart(4, '0').toUpperCase()),
-              parameter_name: r.parameter_name || ('Register ' + addr),
-              format: r.format || 'uint',
-              endianness: r.endianness || 'Big-Endian',
-              reg_num: Number(r.reg_num || r.numreg) || 1,
-              fn_write: 'FC 16',
-              default_value: r.default_value || r.value_on_memmap || '',
-              value_to_write: r.value_to_write !== undefined ? String(r.value_to_write) : '',
-              value_read_back: (ex && ex.value_read_back) ? ex.value_read_back : '',
-              status: (ex && ex.status && ex.status !== 'NONE') ? ex.status : 'NONE',
-            };
-          });
-          // Also retain any Stage 1 scanned hardware registers that are not in preset
-          for (const [addr, ex] of existingMap.entries()) {
-            if (!mergedList.some(r => Number(r.address) === addr)) {
-              mergedList.push({ ...ex });
+        }
+      }
+      if (!presetData) {
+        // Fallback: search profiles list
+        const pRes = await fetch('/api/plugins/final-config/profiles', {
+          headers: authHeaders ? authHeaders() : {},
+        });
+        if (pRes.ok) {
+          const profiles = await pRes.json();
+          const matched = Array.isArray(profiles) ? profiles.find((p: any) => p.soNumber === so && p.itemCode === itemCode) : null;
+          if (matched && matched.id) {
+            const dRes = await fetch('/api/plugins/final-config/profiles/' + matched.id, {
+              headers: authHeaders ? authHeaders() : {},
+            });
+            if (dRes.ok) {
+              const dJson = await dRes.json();
+              presetData = dJson;
             }
           }
-          mergedList.sort((a, b) => Number(a.address) - Number(b.address));
-          mergedList.forEach((r, idx) => { r.order_no = idx + 1; });
-          fcAuditRegisters.value = mergedList;
-          updateTabulatorData();
-        } else {
-          currentPreset.value = null;
-          fcAuditRegisters.value = [];
         }
+      }
+
+      if (presetData) {
+        currentPreset.value = presetData;
+        const regs = presetData.registers || [];
+        const sortedRegs = [...regs].sort((a, b) => Number(a.address ?? a.modbusRegisterDec) - Number(b.address ?? b.modbusRegisterDec));
+        const existingMap = new Map();
+        for (const ex of fcAuditRegisters.value) {
+          existingMap.set(Number(ex.address), ex);
+        }
+        const mergedList = sortedRegs.map((r: any, i: number) => {
+          const addr = Number(r.address ?? r.modbusRegisterDec);
+          const ex = existingMap.get(addr);
+          return {
+            order_no: i + 1,
+            address: addr,
+            modbus_reg_hex: r.modbus_reg_hex || r.modbusRegisterHex || ('0x' + addr.toString(16).padStart(4, '0').toUpperCase()),
+            parameter_name: r.parameter_name || r.description || ('Register ' + addr),
+            format: r.format || 'uint',
+            endianness: r.endianness || 'Big-Endian',
+            reg_num: Number(r.reg_num || r.registerCount || r.numreg) || 1,
+            fn_write: 'FC 16',
+            default_value: r.default_value || r.endUserDefault || r.value_on_memmap || '',
+            value_to_write: r.value_to_write !== undefined ? String(r.value_to_write) : (r.inputConfig !== undefined ? String(r.inputConfig) : ''),
+            value_read_back: (ex && ex.value_read_back) ? ex.value_read_back : '',
+            status: (ex && ex.status && ex.status !== 'NONE') ? ex.status : 'NONE',
+          };
+        });
+        for (const [addr, ex] of existingMap.entries()) {
+          if (!mergedList.some(r => Number(r.address) === addr)) {
+            mergedList.push({ ...ex });
+          }
+        }
+        mergedList.sort((a, b) => Number(a.address) - Number(b.address));
+        mergedList.forEach((r, idx) => { r.order_no = idx + 1; });
+        fcAuditRegisters.value = mergedList;
+        updateTabulatorData();
+      } else {
+        currentPreset.value = null;
+        fcAuditRegisters.value = [];
       }
     } catch (e) {
       console.warn('Failed to load preset by SO & Item:', e);
@@ -1694,7 +1727,14 @@ const activeFeature = ref({ id: 'final-config-device' });
       };
 
       // Registers to write: address >= 303
-      const writeRegs = (currentPreset.value.registers || []).filter(r => Number(r.address) >= 303 && r.value_to_write !== undefined && r.value_to_write !== '');
+      const writeRegs = (currentPreset.value.registers || [])
+        .map((r: any) => ({
+          ...r,
+          address: Number(r.address ?? r.modbusRegisterDec),
+          value_to_write: r.value_to_write !== undefined ? String(r.value_to_write) : (r.inputConfig !== undefined ? String(r.inputConfig) : ''),
+          reg_num: Number(r.reg_num || r.registerCount || r.numreg) || 1,
+        }))
+        .filter((r: any) => r.address >= 303 && r.value_to_write !== '');
       fcTotalWriteRegsCount.value = writeRegs.length + 1; // +1 for AppKey 274
       fcWrittenRegsCount.value = 0;
 
