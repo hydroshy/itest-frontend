@@ -1794,7 +1794,7 @@ async function startFastRead0To259() {
           cIdx++;
           readingStatusText.value = `Đang ghi Preconfig Chunk ${cIdx}/${chunks.length} (Reg ${chunk.startAddress}, ${chunk.registerCount} regs)...`;
           await writeModbusRegisters(activeSlave, chunk.startAddress, chunk.values, 6000);
-          await new Promise((r) => setTimeout(r, 1500)); // Delay 1.5s cho MCU commit flash và mở khóa thanh ghi
+          await new Promise((r) => setTimeout(r, 6000)); // Delay 6.0s cho MCU commit flash và mở khóa thanh ghi
           await flushUartRxBuffer(60);
         }
 
