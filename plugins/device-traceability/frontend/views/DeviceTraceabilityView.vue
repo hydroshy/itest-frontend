@@ -2126,6 +2126,16 @@ const initTestingTable = () => {
         },
       },
       {
+        title: 'APP_EUI',
+        field: 'appEui',
+        widthGrow: 1.6,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const val = cell.getValue() || row.APP_EUI || row.app_eui || row.test_raw_data?.app_eui || row.testRawData?.app_eui || '-';
+          return `<span class="mono-font">${val}</span>`;
+        },
+      },
+      {
         title: 'APP_KEY',
         field: 'appKey',
         widthGrow: 2.2,
@@ -2347,6 +2357,16 @@ const initConfigTable = () => {
         field: 'devEui',
         widthGrow: 1.8,
         formatter: (cell) => `<span class="mono-font">${cell.getValue() || '-'}</span>`,
+      },
+      {
+        title: 'AppEUI',
+        field: 'appEui',
+        widthGrow: 1.6,
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
+          const val = cell.getValue() || row.app_eui || row.test_raw_data?.app_eui || row.testRawData?.app_eui || '-';
+          return `<span class="mono-font">${val}</span>`;
+        },
       },
       {
         title: 'AppKey',
