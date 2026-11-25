@@ -866,7 +866,7 @@ async function fetchGatewayConfig() {
       try {
         const proxyRes: any = await httpClient.get(`/plugins/testing/gateway-proxy/config`, {
           params: { ip, endpoint: ep },
-          timeout: 15000,
+          timeout: 60000,
         });
         const resObj = proxyRes?.data || proxyRes;
         const resData =
@@ -890,7 +890,7 @@ async function fetchGatewayConfig() {
         try {
           const directRes = await fetch(`http://${ip}:4050${ep}`, {
             headers: { Accept: 'application/json' },
-            signal: AbortSignal.timeout(15000),
+            signal: AbortSignal.timeout(60000),
           });
           if (directRes.ok) {
             const rawJson = await directRes.json();
