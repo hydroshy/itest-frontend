@@ -849,7 +849,15 @@ async function submitRegistration() {
   progressError.value = '';
 
   const selectedServer = serverList.value.find((s) => s.id === form.networkServerId);
-  const forwarderServerHost = selectedServer?.apiUrl ? new URL(selectedServer.apiUrl).hostname : '127.0.0.1';
+  let forwarderServerHost = 'localhost';
+  if (selectedServer?.apiUrl) {
+    try {
+      const url = selectedServer.apiUrl.includes('://') ? selectedServer.apiUrl : `http://${selectedServer.apiUrl}`;
+      forwarderServerHost = new URL(url).hostname || 'localhost';
+    } catch {
+      forwarderServerHost = selectedServer.apiUrl.split(':')[0] || 'localhost';
+    }
+  }
 
   try {
     // BƯỚC 1: Validate thông số [25%]
@@ -865,13 +873,28 @@ async function submitRegistration() {
     activeStepIdx.value = 1;
     progressPercentage.value = 50;
 
+    const matchedWa = waOptions.value.find((w) => w.waNumber === form.waNumber);
     const changeConfigPayload = {
       gatewayIp: form.gatewayIp,
-      internetTestType: form.internetTestType,
-      regionTest: form.regionTest,
-      serverAddress: forwarderServerHost,
-      servPortUp: 1700,
-      servPortDown: 1700,
+      gatewayConfig: {
+        serial_number: form.confirmedSerialNumber || gatewayConfig.value?.serial_number || '',
+        item_code: matchedWa?.itemCode || '',
+        sku: '',
+        gateway_notes: `SO: ${form.soNumber || ''}, WA: ${form.waNumber || ''}`,
+        lte_module_imei: gatewayConfig.value?.lte_module_imei || '',
+        lte_module_serial_number: gatewayConfig.value?.lte_module_serial_number || '',
+        ethernet_metric: form.internetTestType === 'ETHERNET' ? '100' : '102',
+        lte_metric: form.internetTestType === 'ETHERNET' ? '102' : '100',
+        wifi_metric: '101',
+        is_reboot: 'false',
+        lorawan_frequency_plan: (form.regionTest || 'eu868').toLowerCase(),
+        network_server_host: forwarderServerHost,
+        ns_uplink_port: '1700',
+        ns_downlink_port: '1700',
+        antenna_gain: '0',
+        gps_tty_device_path: '/dev/ttyAMA5',
+        timezone: 'UTC',
+      },
     };
 
     let configSent = false;
@@ -886,7 +909,7 @@ async function submitRegistration() {
       const directPostRes = await fetch(`http://${form.gatewayIp}:4050/api/gateway-config/changeGatewayConfig`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(changeConfigPayload),
+        body: JSON.stringify({ gatewayConfig: changeConfigPayload.gatewayConfig }),
       });
       if (!directPostRes.ok) {
         throw new Error(`Gửi lệnh changeGatewayConfig thất bại (HTTP ${directPostRes.status})`);
@@ -916,7 +939,6 @@ async function submitRegistration() {
     activeStepIdx.value = 3;
     progressPercentage.value = 100;
 
-    const matchedWa = waOptions.value.find((w) => w.waNumber === form.waNumber);
     const sessionPayload = {
       gatewayId: gatewayConfig.value.eui,
       serialNumber: form.confirmedSerialNumber,
