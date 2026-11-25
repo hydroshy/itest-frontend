@@ -216,21 +216,112 @@
           <!-- STEP 3: EXTRACT HARDWARE CONFIG & VERIFY SERIAL -->
           <!-- ========================================== -->
           <div v-show="currentWizardStep === 2" class="wizard-step-pane space-y-4">
-            <div class="form-section-title flex items-center justify-between pb-2 border-b border-base-content/10">
+            <div class="form-section-title flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-base-content/10">
               <div class="flex items-center gap-2 font-bold text-sm text-primary">
                 <span class="badge badge-primary badge-sm font-mono">03</span>
                 <span>Trích Xuất Phần Cứng Cổng 4050 &amp; Xác Nhận Serial</span>
               </div>
-              <button
-                type="button"
-                class="btn btn-primary btn-sm gap-2"
-                :disabled="fetchingConfig || !form.gatewayIp || !ipv4Regex.test(form.gatewayIp)"
-                @click="fetchGatewayConfig"
-              >
-                <span v-if="fetchingConfig" class="loading loading-spinner loading-xs"></span>
-                <Cpu v-else class="w-4 h-4" />
-                Đọc Cấu Hình Từ IP: {{ form.gatewayIp || '...' }}
-              </button>
+              <div class="flex items-center gap-2">
+                <div class="join">
+                  <button
+                    type="button"
+                    class="btn btn-xs join-item font-medium"
+                    :class="!manualEntryMode ? 'btn-primary' : 'btn-ghost border border-base-300'"
+                    @click="manualEntryMode = false"
+                  >
+                    <Cpu class="w-3.5 h-3.5 mr-1" />
+                    Đọc Tự Động (IP:4050)
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-xs join-item font-medium"
+                    :class="manualEntryMode ? 'btn-primary' : 'btn-ghost border border-base-300'"
+                    @click="manualEntryMode = true"
+                  >
+                    <RefreshCw class="w-3.5 h-3.5 mr-1" />
+                    Nhập Thủ Công (Dockge / Offline)
+                  </button>
+                </div>
+                <button
+                  v-if="!manualEntryMode"
+                  type="button"
+                  class="btn btn-primary btn-sm gap-2"
+                  :disabled="fetchingConfig || !form.gatewayIp || !ipv4Regex.test(form.gatewayIp)"
+                  @click="fetchGatewayConfig"
+                >
+                  <span v-if="fetchingConfig" class="loading loading-spinner loading-xs"></span>
+                  <Cpu v-else class="w-4 h-4" />
+                  Đọc Cấu Hình Từ IP: {{ form.gatewayIp || '...' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Manual Entry Form (when manualEntryMode is active) -->
+            <div v-if="manualEntryMode" class="card border border-primary/30 bg-primary/5 p-4 space-y-3 rounded-lg">
+              <div class="flex items-center justify-between pb-2 border-b border-primary/20">
+                <span class="font-bold text-sm text-primary flex items-center gap-1.5">
+                  <Cpu class="w-4 h-4" />
+                  Nhập Thông Số Phần Cứng Gateway Thủ Công
+                </span>
+                <span class="text-xs text-base-content/60">Dành cho môi trường Docker / Dockge không thông mạng LAN</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div class="form-control">
+                  <label class="label py-0.5"><span class="label-text text-xs font-semibold">Gateway EUI <span class="text-error">*</span></span></label>
+                  <input
+                    v-model="manualForm.eui"
+                    type="text"
+                    placeholder="VD: 0016C001FF123456"
+                    class="input input-bordered input-sm font-mono uppercase text-xs"
+                  />
+                </div>
+                <div class="form-control">
+                  <label class="label py-0.5"><span class="label-text text-xs font-semibold">Serial Number <span class="text-error">*</span></span></label>
+                  <input
+                    v-model="manualForm.serialNumber"
+                    type="text"
+                    placeholder="VD: GW26000001"
+                    class="input input-bordered input-sm font-mono text-xs"
+                  />
+                </div>
+                <div class="form-control">
+                  <label class="label py-0.5"><span class="label-text text-xs font-semibold">Model Name</span></label>
+                  <input
+                    v-model="manualForm.modelName"
+                    type="text"
+                    placeholder="VD: GW-ETH-01"
+                    class="input input-bordered input-sm text-xs"
+                  />
+                </div>
+                <div class="form-control">
+                  <label class="label py-0.5"><span class="label-text text-xs font-semibold">Firmware Version</span></label>
+                  <input
+                    v-model="manualForm.firmwareVersion"
+                    type="text"
+                    placeholder="VD: 1.0.0"
+                    class="input input-bordered input-sm text-xs font-mono"
+                  />
+                </div>
+                <div class="form-control">
+                  <label class="label py-0.5"><span class="label-text text-xs font-semibold">Hardware Version</span></label>
+                  <input
+                    v-model="manualForm.hardwareVersion"
+                    type="text"
+                    placeholder="VD: 1.0"
+                    class="input input-bordered input-sm text-xs font-mono"
+                  />
+                </div>
+                <div class="flex items-end">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-success text-white w-full gap-1.5"
+                    @click="applyManualHardware"
+                  >
+                    <Check class="w-4 h-4" />
+                    Áp Dụng Thông Số
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Hardware Specs Grid -->
@@ -270,11 +361,11 @@
             </div>
 
             <!-- Empty State when config not fetched yet -->
-            <div v-else class="text-center py-8 border border-dashed border-base-content/20 rounded-lg">
+            <div v-else-if="!manualEntryMode" class="text-center py-8 border border-dashed border-base-content/20 rounded-lg">
               <Cpu class="w-10 h-10 mx-auto text-base-content/40 mb-2" />
               <div class="text-sm font-semibold">Chưa có thông số phần cứng Gateway</div>
               <div class="text-xs text-base-content/60 mt-1 max-w-md mx-auto">
-                Bấm nút "Đọc Cấu Hình Từ IP" phía trên để kết nối tới cổng 4050 của Gateway và trích xuất Serial Number, Gateway EUI cùng phiên bản phần cứng.
+                Bấm nút "Đọc Cấu Hình Từ IP" phía trên để kết nối tới cổng 4050 của Gateway. Nếu môi trường Docker / Dockge bị cô lập mạng không gọi được tới IP LAN, hãy chọn <b>"Nhập Thủ Công"</b>.
               </div>
             </div>
 
@@ -518,6 +609,41 @@ const form = reactive({
 // Gateway config retrieved from port 4050
 const gatewayConfig = ref<any>(null);
 const fetchingConfig = ref(false);
+const manualEntryMode = ref(false);
+const manualForm = reactive({
+  eui: '',
+  serialNumber: '',
+  modelName: 'GW-ETH-01',
+  firmwareVersion: '1.0.0',
+  hardwareVersion: '1.0',
+});
+
+function applyManualHardware() {
+  const cleanEui = manualForm.eui.trim().toUpperCase();
+  const cleanSn = manualForm.serialNumber.trim();
+  if (!cleanEui || cleanEui.length < 8) {
+    cyberToast.warning('Vui lòng nhập Gateway EUI hợp lệ (tối thiểu 8-16 ký tự Hex)!');
+    return;
+  }
+  if (!cleanSn) {
+    cyberToast.warning('Vui lòng nhập Serial Number của Gateway!');
+    return;
+  }
+
+  gatewayConfig.value = {
+    eui: cleanEui,
+    serial_number: cleanSn,
+    model_name: manualForm.modelName.trim() || 'GW-MANUAL',
+    firmware_version: manualForm.firmwareVersion.trim() || '1.0.0',
+    hardware_version: manualForm.hardwareVersion.trim() || '1.0',
+    mechanical_version: '1.0',
+    lte_module_imei: 'N/A',
+    mac_address: 'N/A',
+    manual_entry: true,
+  };
+  form.confirmedSerialNumber = cleanSn;
+  cyberToast.success('Đã lưu thông số phần cứng Gateway thủ công thành công!');
+}
 
 // Traceability SO & WA State
 const soOptions = ref<{ label: string; value: string; customer?: string; soId?: string; workAuthorizations?: any[] }[]>([]);
@@ -723,42 +849,78 @@ async function fetchGatewayConfig() {
   fetchingConfig.value = true;
   gatewayConfig.value = null;
 
+  const candidateEndpoints = [
+    '/api/gateway-config/getGatewayConfigInfo',
+    '/api/gateway-config/getConfigGateway',
+    '/api/gateway-config',
+    '/api/gateway-config/config',
+    '/getGatewayConfigInfo',
+    '/getConfigGateway',
+  ];
+
   try {
     let data: any = null;
 
-    try {
-      const proxyRes: any = await httpClient.get(`/plugins/testing/gateway-proxy/config`, {
-        params: { ip },
-        timeout: 8000,
-      });
-      data = proxyRes?.data || proxyRes;
-    } catch (proxyErr) {
-      console.warn('Backend proxy gateway config failed, trying direct LAN call...', proxyErr);
-    }
-
-    if (!data || !data.eui) {
-      const directRes = await fetch(`http://${ip}:4050/api/gateway-config/getConfigGateway`, {
-        headers: { Accept: 'application/json' },
-      });
-      if (!directRes.ok) {
-        throw new Error(`HTTP ${directRes.status}: ${directRes.statusText}`);
+    // 1. First probe via Backend Proxy (helps bypass CORS if backend is on host network)
+    for (const ep of candidateEndpoints) {
+      try {
+        const proxyRes: any = await httpClient.get(`/plugins/testing/gateway-proxy/config`, {
+          params: { ip, endpoint: ep },
+          timeout: 4000,
+        });
+        const resData = proxyRes?.data || proxyRes;
+        if (resData && (resData.eui || resData.serial_number || resData.gateway_id)) {
+          data = resData;
+          break;
+        }
+      } catch {
+        // Continue trying next candidate endpoint
       }
-      data = await directRes.json();
     }
 
-    if (data && (data.eui || data.serial_number)) {
-      gatewayConfig.value = data;
-      cyberToast.success(`Đã đọc thành công thông số Gateway (EUI: ${data.eui || 'N/A'})!`);
-      if (data.serial_number && !form.confirmedSerialNumber) {
-        form.confirmedSerialNumber = data.serial_number;
+    // 2. Direct browser fetch fallback (for local LAN when backend runs in Docker container)
+    if (!data || (!data.eui && !data.serial_number && !data.gateway_id)) {
+      for (const ep of candidateEndpoints) {
+        try {
+          const directRes = await fetch(`http://${ip}:4050${ep}`, {
+            headers: { Accept: 'application/json' },
+            signal: AbortSignal.timeout(3000),
+          });
+          if (directRes.ok) {
+            const rawJson = await directRes.json();
+            const resData = rawJson?.data || rawJson?.config || rawJson;
+            if (resData && (resData.eui || resData.serial_number || resData.gateway_id)) {
+              data = resData;
+              break;
+            }
+          }
+        } catch {
+          // Continue trying next candidate endpoint
+        }
+      }
+    }
+
+    if (data && (data.eui || data.serial_number || data.gateway_id)) {
+      const normalizedData = {
+        ...data,
+        eui: data.eui || data.gateway_id || data.gatewayId || '',
+        serial_number: data.serial_number || data.serialNumber || '',
+      };
+      gatewayConfig.value = normalizedData;
+      cyberToast.success(`Đã đọc thành công thông số Gateway (EUI: ${normalizedData.eui || 'N/A'})!`);
+      if (normalizedData.serial_number && !form.confirmedSerialNumber) {
+        form.confirmedSerialNumber = normalizedData.serial_number;
       }
     } else {
-      throw new Error('Dữ liệu trả về từ Gateway không chứa EUI hoặc Serial Number hợp lệ.');
+      manualEntryMode.value = true;
+      throw new Error(
+        `Không tìm thấy endpoint cấu hình hợp lệ trên cổng 4050 (đã thử getGatewayConfigInfo, getConfigGateway,...). Đã chuyển sang chế độ Nhập Thủ Công để không gián đoạn quá trình đăng ký.`
+      );
     }
   } catch (err: any) {
-    console.error('Fetch gateway config error:', err);
+    console.warn('Fetch gateway config notice:', err);
     cyberToast.error(
-      `Không thể đọc cấu hình từ ${ip}:4050. Chi tiết: ${err.message || 'Hết thời gian chờ kết nối'}`
+      `Không thể đọc cấu hình từ ${ip}:4050. ${err.message || ''}`
     );
   } finally {
     fetchingConfig.value = false;

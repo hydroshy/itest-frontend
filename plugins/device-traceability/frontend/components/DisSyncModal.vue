@@ -169,10 +169,17 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="wa in orderWas" :key="wa.wa_number || wa.id">
-                      <td class="font-bold text-warning font-mono">{{ wa.wa_number || wa.name }}</td>
-                      <td class="font-bold text-primary">{{ wa.item_code || wa.product_code || '-' }}</td>
-                      <td class="text-right font-mono">{{ wa.quantity || wa.product_uom_qty || 0 }}</td>
+                    <tr v-for="wa in orderWas" :key="wa.wa_number || wa.wa_code || wa.id">
+                      <td class="font-bold text-warning font-mono">{{ wa.wa_number || wa.wa_code || wa.name }}</td>
+                      <td class="font-bold text-primary">
+                        <span v-if="wa.lines && wa.lines.length > 0">
+                          {{ wa.lines.map((l: any) => `${l.item_code || l.product_name || 'Item'} (${l.quantity || l.product_uom_qty || 1})`).join(', ') }}
+                        </span>
+                        <span v-else>{{ wa.item_code || wa.product_code || '-' }}</span>
+                      </td>
+                      <td class="text-right font-mono">
+                        {{ (wa.lines && wa.lines.length > 0) ? wa.lines.reduce((acc: number, l: any) => acc + Number(l.product_uom_qty || l.quantity || 0), 0) : (wa.quantity || wa.product_uom_qty || 0) }}
+                      </td>
                       <td class="text-center"><span class="badge badge-success badge-xs">{{ wa.state || 'active' }}</span></td>
                     </tr>
                   </tbody>
