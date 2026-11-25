@@ -82,6 +82,9 @@ function resolveIcon(card: any): string {
   if (id.includes('create-test-batch') || title.includes('create test batch')) return 'folder-plus';
   if (id.includes('list-test-batch') || title.includes('list test batch')) return 'boxes-stacked';
   if (id.includes('so-test-batch') || title.includes('so test batch')) return 'file-invoice';
+  if (id.includes('gateway-test-batch') || title.includes('gateway test batch')) return 'boxes-stacked';
+  if (id.includes('create-gateway') || title.includes('create gateway')) return 'circle-plus';
+  if (id.includes('list-gateway') || title.includes('list gateway')) return 'list-check';
   if (id.includes('test-batch') || title.includes('test batch')) return 'boxes-stacked';
   if (id.includes('gateway') || title.includes('gateway')) return 'tower-broadcast';
   if (id.includes('packet') || title.includes('packet')) return 'satellite-dish';

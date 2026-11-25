@@ -873,18 +873,12 @@ async function submitRegistration() {
     activeStepIdx.value = 1;
     progressPercentage.value = 50;
 
-    const matchedWa = waOptions.value.find((w) => w.waNumber === form.waNumber);
     const changeConfigPayload = {
       gatewayIp: form.gatewayIp,
       gatewayConfig: {
         serial_number: form.confirmedSerialNumber || gatewayConfig.value?.serial_number || '',
-        item_code: matchedWa?.itemCode || '',
-        sku: '',
-        gateway_notes: `SO: ${form.soNumber || ''}, WA: ${form.waNumber || ''}`,
-        lte_module_imei: gatewayConfig.value?.lte_module_imei || '',
-        lte_module_serial_number: gatewayConfig.value?.lte_module_serial_number || '',
         ethernet_metric: form.internetTestType === 'ETHERNET' ? '100' : '102',
-        lte_metric: form.internetTestType === 'ETHERNET' ? '102' : '100',
+        lte_metric: form.internetTestType === '4G' ? '100' : '102',
         wifi_metric: '101',
         is_reboot: 'false',
         lorawan_frequency_plan: (form.regionTest || 'eu868').toLowerCase(),
@@ -939,6 +933,7 @@ async function submitRegistration() {
     activeStepIdx.value = 3;
     progressPercentage.value = 100;
 
+    const matchedWa = waOptions.value.find((w) => w.waNumber === form.waNumber);
     const sessionPayload = {
       gatewayId: gatewayConfig.value.eui,
       serialNumber: form.confirmedSerialNumber,

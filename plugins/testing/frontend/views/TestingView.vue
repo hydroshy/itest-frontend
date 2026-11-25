@@ -16,12 +16,20 @@
       </div>
       <div class="header-actions flex items-center gap-2 flex-wrap">
         <button
-          v-if="activeTab === 'gateway-sessions'"
-          class="btn btn-primary btn-sm gap-2 shadow-sm"
-          @click="openCreateSessionDialog"
+          v-if="activeTab === 'list-gateway-testing'"
+          class="btn btn-primary btn-sm gap-2 shadow-sm font-bold"
+          @click="selectTab('create-gateway-testing')"
         >
           <Plus class="w-4 h-4" />
-          Tạo Phiên Test Mới
+          Tạo Gateway Mới
+        </button>
+        <button
+          v-else-if="activeTab === 'create-gateway-testing'"
+          class="btn btn-outline btn-sm gap-2 font-bold"
+          @click="selectTab('list-gateway-testing')"
+        >
+          <Radio class="w-4 h-4" />
+          Danh Sách Gateway
         </button>
         <button class="btn btn-outline btn-sm gap-2" :disabled="loading" @click="refreshActiveTab">
           <span v-if="loading" class="loading loading-spinner loading-xs"></span>
@@ -47,105 +55,25 @@
       </button>
     </div>
 
-    <!-- TAB 1: Gateway Test Sessions -->
-    <div v-if="activeTab === 'gateway-sessions'">
-      <div class="card bg-base-200/60 border border-base-300 rounded-xl shadow-sm backdrop-blur-md p-4">
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-base-content/10">
-          <h3 class="font-bold text-base">Lịch Sử Phiên Test Gateway (ChirpStack)</h3>
-          <button class="btn btn-primary btn-sm gap-1" @click="openCreateSessionDialog">
-            <Plus class="w-4 h-4" />
-            Tạo Phiên Mới
-          </button>
-        </div>
+    <!-- TAB: Create Gateway Testing -->
+    <div v-if="activeTab === 'create-gateway-testing'">
+      <CreateGatewayTestPanel
+        @switch-tab="selectTab"
+        @success="handleGatewayRegistrationSuccess"
+      />
+    </div>
 
-        <div class="overflow-x-auto relative">
-          <div v-if="loadingSessions" class="absolute inset-0 bg-base-100/60 backdrop-blur-xs flex items-center justify-center z-10">
-            <span class="loading loading-spinner loading-md text-primary"></span>
-          </div>
+    <!-- TAB: List Gateway Testing -->
+    <div v-if="activeTab === 'list-gateway-testing' || activeTab === 'gateway-sessions'">
+      <ListGatewayTestPanel @switch-tab="onSwitchTabWithPayload" />
+    </div>
 
-          <table class="table table-zebra table-sm w-full">
-            <thead>
-              <tr class="text-xs uppercase bg-base-200/50">
-                <th>Session ID</th>
-                <th>Gateway EUI / Serial</th>
-                <th>SO / WA</th>
-                <th>Mạng / IP / Region</th>
-                <th class="text-center">Trạng Thái</th>
-                <th>Thống Kê Gói Tin</th>
-                <th>Bắt Đầu</th>
-                <th>Kết Thúc</th>
-                <th class="text-center">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="sessionList.length === 0 && !loadingSessions">
-                <td colspan="9" class="text-center py-8 text-base-content/50 italic">
-                  Chưa có phiên kiểm thử Gateway nào. Nhấn "Tạo Phiên Mới" để bắt đầu.
-                </td>
-              </tr>
-              <tr v-for="row in sessionList" :key="row.id" class="hover">
-                <td>
-                  <span class="font-mono text-xs font-semibold">{{ row.id }}</span>
-                </td>
-                <td>
-                  <div class="font-mono font-bold text-primary text-xs">{{ row.gatewayId || row.gateway_id || '—' }}</div>
-                  <div v-if="row.serialNumber || row.serial_number" class="text-xs text-base-content/70">
-                    SN: <span class="font-mono">{{ row.serialNumber || row.serial_number }}</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="text-xs font-semibold">{{ row.soNumber || row.so_number || '—' }}</div>
-                  <div class="text-xs text-base-content/60">WA: {{ row.waNumber || row.wa_number || '—' }}</div>
-                </td>
-                <td>
-                  <div class="flex items-center gap-1">
-                    <span
-                      class="badge badge-xs font-mono"
-                      :class="(row.internetTestType === 'lte_4g' || row.internet_test_type === 'lte_4g') ? 'badge-warning' : 'badge-primary'"
-                    >
-                      {{ row.internetTestType || row.internet_test_type || 'ETH' }}
-                    </span>
-                    <span v-if="row.region" class="badge badge-xs badge-info font-mono">
-                      {{ row.region }}
-                    </span>
-                  </div>
-                  <div v-if="row.gatewayIp || row.gateway_ip" class="text-[11px] font-mono text-base-content/60 mt-0.5">
-                    {{ row.gatewayIp || row.gateway_ip }}
-                  </div>
-                </td>
-                <td class="text-center">
-                  <span class="badge badge-sm font-mono font-semibold" :class="getStatusBadgeClass(row.status)">
-                    {{ row.status || 'UNKNOWN' }}
-                  </span>
-                </td>
-                <td>
-                  <div class="flex items-center gap-1 text-xs">
-                    <span class="badge badge-xs badge-ghost">Total: {{ row.totalPackets ?? row.total_packets ?? 0 }}</span>
-                    <span class="badge badge-xs badge-success text-success-content">↑ {{ row.uplinkCount ?? row.uplink_count ?? 0 }}</span>
-                    <span class="badge badge-xs badge-info text-info-content">↓ {{ row.downlinkCount ?? row.downlink_count ?? 0 }}</span>
-                  </div>
-                </td>
-                <td class="text-xs text-base-content/70">
-                  {{ formatDateTime(row.startedAt || row.started_at) }}
-                </td>
-                <td class="text-xs text-base-content/70">
-                  {{ formatDateTime(row.endedAt || row.ended_at) }}
-                </td>
-                <td class="text-center">
-                  <button
-                    class="btn btn-ghost btn-xs text-primary gap-1"
-                    title="Xem Gói Tin Của Session"
-                    @click="viewSessionPackets(row)"
-                  >
-                    <Eye class="w-3.5 h-3.5" />
-                    Xem Gói
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <!-- TAB: Gateway Test Batch (Treo 12 Giờ) -->
+    <div v-if="activeTab === 'gateway-test-batch'">
+      <GatewayTestBatchPanel
+        :initial-payload="selectedBatchPayload"
+        @switch-tab="selectTab"
+      />
     </div>
 
     <!-- TAB: Device Payload (ChirpStack Ingestion & Dynamic Sensor Telemetry) -->
@@ -327,6 +255,9 @@ import {
 import { cyberToast } from '@/services/cyberToast';
 import { httpClient } from '@/api/client';
 import GatewayRegistrationModal from '../components/GatewayRegistrationModal.vue';
+import CreateGatewayTestPanel from '../components/CreateGatewayTestPanel.vue';
+import ListGatewayTestPanel from '../components/ListGatewayTestPanel.vue';
+import GatewayTestBatchPanel from '../components/GatewayTestBatchPanel.vue';
 import DeviceSimulationPanel from '../components/DeviceSimulationPanel.vue';
 import DeviceAutoCheckPanel from '../components/DeviceAutoCheckPanel.vue';
 import SimulationDevicesPanel from '../components/SimulationDevicesPanel.vue';
@@ -345,6 +276,9 @@ const isIsolatedView = computed(() => route.query.from === 'menu' || route.query
 const router = useRouter();
 
 const VALID_TABS = [
+  'create-gateway-testing',
+  'list-gateway-testing',
+  'gateway-test-batch',
   'gateway-sessions',
   'device-payload',
   'create-device-testing',
@@ -365,7 +299,9 @@ const VALID_TABS = [
 ];
 
 const tabList = [
-  { name: 'gateway-sessions', label: 'Gateway Test Sessions', icon: Activity },
+  { name: 'create-gateway-testing', label: 'CREATE GATEWAY TESTING', icon: Gauge },
+  { name: 'list-gateway-testing', label: 'LIST GATEWAY TESTING', icon: Radio },
+  { name: 'gateway-test-batch', label: 'GATEWAY TEST BATCH', icon: Boxes },
   { name: 'device-payload', label: 'Device Payload (ChirpStack)', icon: Radio },
   { name: 'create-device-testing', label: 'Create Device Testing', icon: FlaskConical },
   { name: 'list-device-testing', label: 'List Device Testing', icon: List },
@@ -380,7 +316,7 @@ const tabList = [
   { name: 'list-device-simulation', label: 'List Device Simulation', icon: Radio },
 ];
 
-const activeTab = ref('gateway-sessions');
+const activeTab = ref('create-gateway-testing');
 const loading = ref(false);
 const autoCheckPanelRef = ref<any>(null);
 const listDevicePanelRef = ref<any>(null);
@@ -402,6 +338,7 @@ function onSwitchTabWithPayload(tabName: string, payload?: any) {
 }
 
 function normalizeTab(tabName: string): string {
+  if (tabName === 'gateway-sessions' || tabName === 'gateway') return 'create-gateway-testing';
   if (tabName === 'device-test-batch') return 'test-batch';
   if (tabName === 'simulation-devices') return 'list-device-simulation';
   if (tabName === 'simulation-flow') return 'list-flow-simulation';
