@@ -520,7 +520,7 @@ const gatewayConfig = ref<any>(null);
 const fetchingConfig = ref(false);
 
 // Traceability SO & WA State
-const soOptions = ref<{ label: string; value: string; customer?: string }[]>([]);
+const soOptions = ref<{ label: string; value: string; customer?: string; soId?: string; workAuthorizations?: any[] }[]>([]);
 const loadingSo = ref(false);
 const waOptions = ref<{ waNumber: string; itemCode?: string; plannedQuantity?: number }[]>([]);
 const loadingWa = ref(false);
@@ -636,11 +636,11 @@ async function searchSoList(keyword: string = '') {
   try {
     let res: any;
     try {
-      res = await httpClient.get('/plugins/device-traceability/so', {
-        params: { soNumber: keyword, limit: 50 },
+      res = await httpClient.get('/plugins/testing/lookup/so', {
+        params: { search: keyword, limit: 50 },
       });
     } catch {
-      res = await httpClient.get('/device-traceability/so', {
+      res = await httpClient.get('/plugins/device-traceability/so', {
         params: { soNumber: keyword, limit: 50 },
       }).catch(() => []);
     }
@@ -648,7 +648,7 @@ async function searchSoList(keyword: string = '') {
     const items = Array.isArray(res) ? res : res?.data || res?.items || [];
     soOptions.value = items.map((so: any) => ({
       value: so.soNumber || so.so_number || so.name,
-      label: `${so.soNumber || so.so_number || so.name} ${so.customerName ? `(${so.customerName})` : ''}`,
+      label: `${so.soNumber || so.so_number || so.name} ${so.customerName || so.customer_name ? `(${so.customerName || so.customer_name})` : ''}`,
       customer: so.customerName || so.customer_name,
     }));
   } catch (err) {
@@ -658,7 +658,7 @@ async function searchSoList(keyword: string = '') {
   }
 }
 
-async function onSoChange(e: Event) {
+async function onSoChange(e?: Event) {
   form.waNumber = '';
   waOptions.value = [];
   if (!form.soNumber) return;
@@ -667,13 +667,13 @@ async function onSoChange(e: Event) {
   try {
     let res: any;
     try {
-      res = await httpClient.get(
-        `/plugins/device-traceability/so/${encodeURIComponent(form.soNumber)}/wa`
-      );
+      res = await httpClient.get('/plugins/testing/lookup/wa', {
+        params: { soNumber: form.soNumber, limit: 100 },
+      });
     } catch {
-      res = await httpClient.get(
-        `/device-traceability/so/${encodeURIComponent(form.soNumber)}/wa`
-      ).catch(() => []);
+      res = await httpClient.get('/plugins/device-traceability/wa', {
+        params: { soNumber: form.soNumber, limit: 100 },
+      }).catch(() => []);
     }
 
     const waList = Array.isArray(res) ? res : res?.data || [];
@@ -852,11 +852,13 @@ async function submitRegistration() {
     activeStepIdx.value = 3;
     progressPercentage.value = 100;
 
+    const matchedWa = waOptions.value.find((w) => w.waNumber === form.waNumber);
     const sessionPayload = {
       gatewayId: gatewayConfig.value.eui,
       serialNumber: form.confirmedSerialNumber,
       soNumber: form.soNumber,
       waNumber: form.waNumber,
+      itemCode: matchedWa?.itemCode || null,
       networkServerId: form.networkServerId,
       gatewayIp: form.gatewayIp,
       regionTest: form.regionTest,
