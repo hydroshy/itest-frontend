@@ -868,7 +868,13 @@ async function fetchGatewayConfig() {
           params: { ip, endpoint: ep },
           timeout: 4000,
         });
-        const resData = proxyRes?.data || proxyRes;
+        const resObj = proxyRes?.data || proxyRes;
+        const resData =
+          resObj?.['gateway-config-info'] ||
+          resObj?.['gateway_config_info'] ||
+          resObj?.data ||
+          resObj?.config ||
+          resObj;
         if (resData && (resData.eui || resData.serial_number || resData.gateway_id)) {
           data = resData;
           break;
@@ -888,7 +894,12 @@ async function fetchGatewayConfig() {
           });
           if (directRes.ok) {
             const rawJson = await directRes.json();
-            const resData = rawJson?.data || rawJson?.config || rawJson;
+            const resData =
+              rawJson?.['gateway-config-info'] ||
+              rawJson?.['gateway_config_info'] ||
+              rawJson?.data ||
+              rawJson?.config ||
+              rawJson;
             if (resData && (resData.eui || resData.serial_number || resData.gateway_id)) {
               data = resData;
               break;
@@ -905,6 +916,12 @@ async function fetchGatewayConfig() {
         ...data,
         eui: data.eui || data.gateway_id || data.gatewayId || '',
         serial_number: data.serial_number || data.serialNumber || '',
+        model_name: data.model_name || data.model || 'GW-ETH',
+        firmware_version: data.firmware_version || data.firmware || '1.0.0',
+        hardware_version: data.hardware_version || data.hardware || '1.0',
+        mechanical_version: data.mechanical_version || '1.0',
+        lte_module_imei: data.lte_module_imei || 'N/A',
+        mac_address: data.eth_mac_address || data.mac_address || data.mac || 'N/A',
       };
       gatewayConfig.value = normalizedData;
       cyberToast.success(`Đã đọc thành công thông số Gateway (EUI: ${normalizedData.eui || 'N/A'})!`);
