@@ -901,19 +901,14 @@ async function submitRegistration() {
 
     const chirpstackPayload = {
       networkServerId: form.networkServerId,
-      gateway: {
-        gatewayId: gatewayConfig.value.eui,
-        name: `GW-${form.confirmedSerialNumber}`,
-        description: `Registered via iTest Testing Plugin. SO: ${form.soNumber}, WA: ${form.waNumber}`,
-        statsInterval: 30,
-      },
+      gatewayId: gatewayConfig.value.eui,
+      name: `GW-${form.confirmedSerialNumber}`,
+      description: `Registered via iTest Testing Plugin. SO: ${form.soNumber}, WA: ${form.waNumber}`,
+      statsInterval: 30,
+      ...(form.regionTest === 'EU868' ? { tenantId: '775836fd-1e66-4b9b-a30d-25cc02a18c3c' } : {}),
     };
 
-    try {
-      await httpClient.post('/plugins/lorawan-chirpstack/gateways', chirpstackPayload);
-    } catch (csErr: any) {
-      console.warn('Register gateway to ChirpStack returned error/warning:', csErr);
-    }
+    await httpClient.post('/plugins/lorawan-chirpstack/gateways', chirpstackPayload);
 
     await delay(500);
 
@@ -944,13 +939,8 @@ async function submitRegistration() {
       startedAt: new Date().toISOString(),
     };
 
-    let createdSession: any;
-    try {
-      const sessionRes: any = await httpClient.post('/plugins/testing/gateway-sessions', sessionPayload);
-      createdSession = sessionRes?.data || sessionRes;
-    } catch {
-      createdSession = { id: `gw-session-${Date.now()}`, ...sessionPayload };
-    }
+    const sessionRes: any = await httpClient.post('/plugins/testing/gateway-sessions', sessionPayload);
+    const createdSession = sessionRes?.data || sessionRes;
 
     await delay(500);
 
