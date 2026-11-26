@@ -198,16 +198,35 @@
                 <li
                   v-for="wa in filteredWas"
                   :key="wa.id || wa.waNumber"
-                  class="px-3 py-1.5 cursor-pointer rounded hover:bg-primary hover:text-primary-content transition-colors"
+                  class="px-3 py-1.5 cursor-pointer rounded hover:bg-primary hover:text-primary-content transition-colors flex items-center justify-between gap-2"
                   @mousedown.prevent="selectWa(wa.waNumber)"
                 >
-                  {{ wa.waNumber }}
+                  <span class="font-bold">{{ wa.waNumber }}</span>
+                  <span v-if="wa.itemCode" class="badge badge-xs badge-neutral font-mono opacity-80">{{ wa.itemCode }}</span>
                 </li>
                 <li v-if="filteredWas.length === 0" class="px-3 py-2 text-base-content/50 italic text-center">
                   {{ workAssignments.length === 0 ? 'Không có WA cho SO này' : 'Không tìm thấy WA phù hợp' }}
                 </li>
               </ul>
             </div>
+          </div>
+
+          <!-- Tự Động Nhận Diện ITEM_CODE Thuộc WA -->
+          <div class="form-control md:col-span-2">
+            <label class="label py-1">
+              <span class="label-text text-xs font-semibold flex items-center gap-1.5">
+                <span>ITEM_CODE</span>
+                <span v-if="step1.itemCode" class="badge badge-xs badge-success font-mono">Tự động nhận</span>
+              </span>
+            </label>
+            <input
+              :value="step1.itemCode || '—'"
+              type="text"
+              readonly
+              placeholder=""
+              class="input input-bordered input-sm w-full text-xs font-mono font-bold bg-base-300/40 text-base-content cursor-not-allowed select-all"
+              title="Mã sản phẩm (ITEM_CODE) tự động xác định từ WA đã chọn"
+            />
           </div>
         </div>
 
@@ -1137,11 +1156,27 @@ async function onSoChange() {
       params: { soNumber: step1.soNumber },
     });
     const items = Array.isArray(res?.data) ? res.data : (res?.data?.items || []);
-    workAssignments.value = items.map((w: any) => ({
-      ...w,
-      waNumber: cleanWaNumber(w.waNumber || w.wa_number),
-      itemCode: w.itemCode || w.item_code || '',
-    }));
+    // Gom WA duy nhất theo waNumber và ưu tiên lấy item_code hợp lệ
+    const waMap = new Map<string, any>();
+    items.forEach((w: any) => {
+      const waNum = cleanWaNumber(w.waNumber || w.wa_number);
+      if (!waNum) return;
+      const itemCode = (w.itemCode || w.item_code || '').trim();
+      if (!waMap.has(waNum)) {
+        waMap.set(waNum, {
+          ...w,
+          waNumber: waNum,
+          itemCode,
+        });
+      } else if (!waMap.get(waNum).itemCode && itemCode) {
+        waMap.get(waNum).itemCode = itemCode;
+      }
+    });
+    workAssignments.value = Array.from(waMap.values());
+    if (workAssignments.value.length === 1) {
+      step1.waNumber = workAssignments.value[0].waNumber;
+      step1.itemCode = workAssignments.value[0].itemCode || '';
+    }
   } catch {
     workAssignments.value = [];
   } finally {
