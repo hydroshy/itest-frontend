@@ -1706,9 +1706,17 @@ const initSoTreeTable = () => {
           let label = rowData.code || rowData.soNumber || '';
 
           if (type === 'SO') {
-            const waCount = rowData.waCount ?? (Array.isArray(rowData.workAuthorizations) ? rowData.workAuthorizations.length : (Array.isArray(rowData.was) ? rowData.was.length : 0));
-            const waList = Array.isArray(rowData.workAuthorizations) ? rowData.workAuthorizations : (Array.isArray(rowData.was) ? rowData.was : []);
-            const waNumbers = waList.map((w: any) => w.waNumber || w.wa_number).filter(Boolean);
+            const waList = Array.isArray(rowData.workAuthorizations)
+              ? rowData.workAuthorizations
+              : Array.isArray(rowData.was)
+              ? rowData.was
+              : Array.isArray(rowData._children) && rowData._children.length > 0 && rowData._children[0].type === 'WA'
+              ? rowData._children
+              : [];
+            const waNumbers = Array.from(
+              new Set(waList.map((w: any) => (w.waNumber || w.wa_number || (w.type === 'WA' ? w.code : null))).filter(Boolean))
+            );
+            const waCount = waNumbers.length > 0 ? waNumbers.length : (rowData.waCount ?? 0);
             const waTooltip = waNumbers.length > 0 ? `Danh sách WA:\n- ${waNumbers.join('\n- ')}\n(Nhấp đúp hoặc chuột phải để xem chi tiết)` : 'Chưa có lệnh WA';
             const waBadge = `<span class="badge-so-wa-count" title="${waTooltip}">📑 ${waCount} WA</span>`;
 
@@ -1788,7 +1796,17 @@ const initSoTreeTable = () => {
           if (type === 'SO') {
             const count = rowData.totalDevices != null ? rowData.totalDevices : (rowData.deviceCount ?? rowData.plannedQuantity ?? 0);
             const items = rowData.itemCount != null ? ` (${rowData.itemCount} items)` : '';
-            const waCount = rowData.waCount ?? (Array.isArray(rowData.workAuthorizations) ? rowData.workAuthorizations.length : (Array.isArray(rowData.was) ? rowData.was.length : 0));
+            const waList = Array.isArray(rowData.workAuthorizations)
+              ? rowData.workAuthorizations
+              : Array.isArray(rowData.was)
+              ? rowData.was
+              : Array.isArray(rowData._children) && rowData._children.length > 0 && rowData._children[0].type === 'WA'
+              ? rowData._children
+              : [];
+            const waNumbers = Array.from(
+              new Set(waList.map((w: any) => (w.waNumber || w.wa_number || (w.type === 'WA' ? w.code : null))).filter(Boolean))
+            );
+            const waCount = waNumbers.length > 0 ? waNumbers.length : (rowData.waCount ?? 0);
             return `<div class="d-flex align-items-center gap-1">
               <span class="quantity-badge so">${count} thiết bị${items}</span>
               <span class="badge-so-wa-pill" title="Tổng số lệnh Work Authorization">${waCount} WA</span>
