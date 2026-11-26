@@ -33,7 +33,7 @@
           >
             <option value="" disabled selected>Chọn batch đang chạy...</option>
             <option v-for="rb in runningBatches" :key="rb.id" :value="rb.id">
-              {{ rb.batch_code || rb.id }} {{ rb.so_number ? `(${rb.so_number})` : '' }}
+              {{ rb.batchCode || rb.id }} {{ rb.soNumber ? `(${rb.soNumber})` : '' }}
             </option>
           </select>
         </div>
@@ -67,7 +67,7 @@
             <button
               v-if="!isTesting && !testFinished"
               class="btn btn-sm btn-primary gap-1.5 px-4 font-bold shadow-sm"
-              :disabled="selectedGateways.length === 0"
+              :disabled="selectedGateways.length === 0 || startingBatch"
               @click="startBatchTest"
             >
               <Play class="w-4 h-4 fill-current" />
@@ -76,7 +76,7 @@
 
             <!-- Nút Hoàn Thành Test Batch -->
             <button
-              v-if="isTesting || testFinished"
+              v-if="(isTesting || testFinished) && activeBatchId"
               class="btn btn-sm btn-success gap-1.5 px-3 font-bold text-success-content"
               :disabled="completingBatch"
               @click="openCompleteModal"
@@ -125,7 +125,7 @@
               list="gw-so-datalist"
               placeholder=""
               class="input input-sm input-bordered w-full text-xs font-mono font-bold bg-base-100 pr-8"
-              :disabled="isTesting || loadingSos"
+              :disabled="isTesting || !!activeBatchId || loadingSos"
               @change="onSoChange"
               @input="onSoInput"
             />
@@ -485,8 +485,8 @@ const elapsedSeconds = ref(0);
 const isTesting = ref(false);
 const testFinished = ref(false);
 const batchVerdict = ref<'PASS' | 'FAIL' | ''>('');
-let timerInterval: any = null;
-
+const activeBatchId = ref('');
+const startingBatch = ref(false);
 const runningBatches = ref<any[]>([]);
 const selectedSoNumber = ref('');
 const uniqueSoNumbers = ref<string[]>([]);
@@ -514,7 +514,7 @@ const formattedRemaining = computed(() =>
 );
 
 const totalUplinkPacketsInBatch = computed(() => {
-  return selectedGateways.value.reduce((acc, gw) => acc + (gw.uplink_count || 0), 0);
+  return selectedGateways.value.reduce((acc, gw) => acc + Number(gw.uplink_count || 0), 0);
 });
 
 const passCount = computed(() => {
@@ -559,7 +559,7 @@ async function loadGateways() {
     });
     uniqueSoNumbers.value = Array.from(soSet);
 
-    if (!selectedSoNumber.value && uniqueSoNumbers.value.length > 0) {
+    if (!selectedSoNumber.value && !activeBatchId.value && uniqueSoNumbers.value.length > 0) {
       selectedSoNumber.value = uniqueSoNumbers.value[0];
     }
 
@@ -567,6 +567,7 @@ async function loadGateways() {
     filterGatewaysBySo(items);
   } catch (err: any) {
     console.warn('Failed to load gateways for batch:', err);
+    cyberToast.error('Không thể tải danh sách Gateway.');
   } finally {
     loadingSos.value = false;
   }
@@ -590,6 +591,7 @@ function filterGatewaysBySo(allItems: any[]) {
 }
 
 function onSoChange() {
+  if (activeBatchId.value) return;
   selectedGateways.value = [];
   selectedAvailableKeys.value.clear();
   selectedBatchKeys.value.clear();
@@ -665,78 +667,95 @@ function moveSelectedFromBatch() {
   selectedBatchKeys.value.clear();
 }
 
-// Polling and packet counting
-let packetPollInterval: any = null;
+// Batch status is authoritative: browser timer and session totals are not packet counters.
+let packetPollInterval: ReturnType<typeof setInterval> | null = null;
+
+function stopPolling() {
+  if (packetPollInterval) clearInterval(packetPollInterval);
+  packetPollInterval = null;
+}
+
+async function loadRunningBatches() {
+  const res: any = await httpClient.get('/plugins/testing/gateway-test-batches/running');
+  runningBatches.value = res?.data || [];
+}
 
 async function pollGatewayUplinks() {
-  if (!isTesting.value || selectedGateways.value.length === 0) return;
+  if (!activeBatchId.value) return;
   try {
-    // Poll updated stats from gateway-sessions
-    const res: any = await httpClient.get('/plugins/testing/gateway-sessions', {
-      params: { limit: 100 },
+    const res: any = await httpClient.get(`/plugins/testing/gateway-test-batches/${activeBatchId.value}/status`);
+    const batch = res?.data;
+    if (!batch || batch.batchId !== activeBatchId.value) return;
+    elapsedSeconds.value = Math.max(0, Number(batch.elapsedSeconds) || 0);
+    totalDurationSeconds.value = Number(batch.flowDurationSeconds) || 43200;
+    isTesting.value = batch.status === 'RUNNING';
+    testFinished.value = batch.status === 'COMPLETED';
+    batchVerdict.value = batch.verdict === 'PASS' || batch.verdict === 'FAIL' ? batch.verdict : '';
+    const gatewayMap = new Map((batch.gateways || []).map((gw: any) => [String(gw.gatewayId).toLowerCase(), gw]));
+    selectedGateways.value = selectedGateways.value.map((gw) => {
+      const live: any = gatewayMap.get(String(gw.gateway_id || gw.gatewayId || gw.eui || '').toLowerCase());
+      return live ? {
+        ...gw,
+        uplink_count: Number(live.uplinkCount ?? live.rxPackets ?? 0),
+        last_uplink_at: live.lastUplinkAt,
+        avg_rssi: live.lastRssi,
+        avg_snr: live.lastSnr,
+        status: live.verdict === 'PASS' || live.verdict === 'FAIL' ? live.verdict : live.status,
+      } : gw;
     });
-    const items: any[] = Array.isArray(res) ? res : res?.data || [];
-    const itemMap = new Map<string, any>();
-    items.forEach((it) => {
-      const id = (it.gateway_id || it.eui || '').toLowerCase();
-      if (id) itemMap.set(id, it);
-    });
-
-    selectedGateways.value.forEach((gw) => {
-      const id = (gw.gateway_id || gw.eui || '').toLowerCase();
-      const updated = itemMap.get(id);
-      if (updated) {
-        gw.uplink_count = updated.total_packets ?? updated.uplink_packets ?? updated.summary?.uplink_count ?? gw.uplink_count;
-        if (gw.uplink_count > 0) {
-          gw.status = 'RECEIVING';
-          gw.last_uplink_at = updated.last_packet_at || new Date().toISOString();
-        }
-      }
-    });
-  } catch {
-    // silent poll failure
+    if (!isTesting.value) {
+      stopPolling();
+      await loadRunningBatches().catch(() => {});
+      if (testFinished.value) cyberToast.info('Batch đã hoàn tất. Xác nhận kết quả để kết thúc phiên test.');
+    }
+  } catch (err: any) {
+    console.warn('Không thể cập nhật trạng thái Gateway Test Batch:', err);
   }
 }
 
-function startBatchTest() {
-  if (selectedGateways.value.length === 0) {
-    cyberToast.warning('Vui lòng chọn ít nhất 1 Gateway vào Batch trước khi bắt đầu!');
-    return;
-  }
-
-  isTesting.value = true;
-  testFinished.value = false;
-  batchVerdict.value = '';
-  elapsedSeconds.value = 0;
-
-  selectedGateways.value.forEach((gw) => {
-    gw.status = 'RECEIVING';
-  });
-
-  cyberToast.success('Đã bắt đầu phiên kiểm thử Gateway Test Batch (Treo 12 giờ)!');
-
-  // Start 12h countdown timer
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    elapsedSeconds.value++;
-    if (elapsedSeconds.value >= totalDurationSeconds.value) {
-      clearInterval(timerInterval);
-      finishBatchAuto();
-    }
-  }, 1000);
-
-  // Start polling gateway uplinks every 5s
-  clearInterval(packetPollInterval);
+function watchBatch() {
+  stopPolling();
+  void pollGatewayUplinks();
   packetPollInterval = setInterval(pollGatewayUplinks, 5000);
 }
 
-function finishBatchAuto() {
-  isTesting.value = false;
-  testFinished.value = true;
-  const allPassed = selectedGateways.value.every((gw) => (gw.uplink_count || 0) > 0);
-  batchVerdict.value = allPassed ? 'PASS' : 'FAIL';
-  cyberToast.info('Đã hoàn thành thời gian treo 12 giờ của Gateway Test Batch!');
-  openCompleteModal();
+async function startBatchTest() {
+  if (selectedGateways.value.length === 0 || startingBatch.value) return;
+  startingBatch.value = true;
+  try {
+    const first = selectedGateways.value[0];
+    const created: any = await httpClient.post('/plugins/testing/gateway-test-batches', {
+      batchName: activeBatchDisplayName.value,
+      soNumber: selectedSoNumber.value,
+      waNumber: first.wa_number || first.waNumber,
+      itemCode: filterItemCode.value === '—' ? null : filterItemCode.value,
+      gateways: selectedGateways.value.map((gw) => ({
+        gatewayId: gw.gateway_id || gw.gatewayId || gw.eui,
+        serialNumber: gw.serial_number || gw.serialNumber,
+        gatewayIp: gw.gateway_ip || gw.gatewayIp,
+      })),
+    });
+    if (!created?.data?.id) throw new Error('Máy chủ không trả về mã batch.');
+    const batchId = created.data.id;
+    try {
+      await httpClient.post(`/plugins/testing/gateway-test-batches/${batchId}/start`);
+    } catch (err) {
+      await httpClient.delete(`/plugins/testing/gateway-test-batches/${batchId}`).catch(() => {});
+      throw err;
+    }
+    activeBatchId.value = batchId;
+    isTesting.value = true;
+    testFinished.value = false;
+    batchVerdict.value = '';
+    elapsedSeconds.value = 0;
+    watchBatch();
+    await loadRunningBatches().catch(() => {});
+    cyberToast.success('Đã bắt đầu Gateway Test Batch trên máy chủ.');
+  } catch (err: any) {
+    cyberToast.error(err.message || 'Không thể bắt đầu Gateway Test Batch.');
+  } finally {
+    startingBatch.value = false;
+  }
 }
 
 function openCompleteModal() {
@@ -745,32 +764,22 @@ function openCompleteModal() {
 }
 
 async function confirmCompleteBatch() {
+  if (!activeBatchId.value || confirmationText.value.trim().toUpperCase() !== 'OK') return;
   completingBatch.value = true;
   try {
-    clearInterval(timerInterval);
-    clearInterval(packetPollInterval);
+    const res: any = await httpClient.post(`/plugins/testing/gateway-test-batches/${activeBatchId.value}/complete`);
+    if (res?.success === false) throw new Error(res?.message || 'Không thể hoàn tất batch.');
+    await pollGatewayUplinks();
+    stopPolling();
     isTesting.value = false;
     testFinished.value = true;
-    batchVerdict.value = passCount.value === selectedGateways.value.length ? 'PASS' : 'FAIL';
-
-    // Update status of all gateways in batch
-    for (const gw of selectedGateways.value) {
-      if (gw.id) {
-        await httpClient.put(`/plugins/testing/gateway-sessions/${gw.id}`, {
-          status: (gw.uplink_count || 0) > 0 ? 'COMPLETED' : 'FAILED',
-          endedAt: new Date().toISOString(),
-          summary: {
-            uplink_count: gw.uplink_count || 0,
-            batch_code: activeBatchDisplayName.value,
-            verdict: (gw.uplink_count || 0) > 0 ? 'PASS' : 'FAIL',
-            duration_seconds: elapsedSeconds.value,
-          },
-        }).catch(() => {});
-      }
-    }
-
-    cyberToast.success('Đã hoàn thành và lưu kết quả Gateway Test Batch!');
+    batchVerdict.value = res?.data?.verdict || batchVerdict.value;
     completeModalVisible.value = false;
+    activeBatchId.value = '';
+    selectedGateways.value = [];
+    testFinished.value = false;
+    cyberToast.success('Đã hoàn tất Gateway Test Batch.');
+    await Promise.allSettled([loadGateways(), loadRunningBatches()]);
   } catch (err: any) {
     cyberToast.error(err.message || 'Lỗi khi hoàn tất batch.');
   } finally {
@@ -778,34 +787,62 @@ async function confirmCompleteBatch() {
   }
 }
 
-function cancelSelectedBatch() {
-  clearInterval(timerInterval);
-  clearInterval(packetPollInterval);
-  isTesting.value = false;
-  selectedGateways.value.forEach((gw) => {
-    gw.status = 'CANCELLED';
-  });
-  cyberToast.warning('Đã hủy phiên Gateway Test Batch.');
+async function cancelSelectedBatch() {
+  if (!activeBatchId.value || cancellingBatch.value) return;
+  cancellingBatch.value = true;
+  try {
+    await httpClient.post(`/plugins/testing/gateway-test-batches/${activeBatchId.value}/cancel`);
+    stopPolling();
+    isTesting.value = false;
+    activeBatchId.value = '';
+    selectedGateways.value = [];
+    cyberToast.warning('Đã hủy Gateway Test Batch.');
+    await Promise.allSettled([loadRunningBatches(), loadGateways()]);
+  } catch (err: any) {
+    cyberToast.error(err.message || 'Không thể hủy Gateway Test Batch.');
+  } finally {
+    cancellingBatch.value = false;
+  }
 }
 
-function onSelectRunningBatch(batchId: string) {
-  // restore running batch state if needed
+async function onSelectRunningBatch(batchId: string) {
+  if (!batchId) return;
+  try {
+    const res: any = await httpClient.get(`/plugins/testing/gateway-test-batches/${batchId}`);
+    const batch = res?.data;
+    if (!batch) throw new Error('Không tìm thấy batch.');
+    activeBatchId.value = batchId;
+    selectedSoNumber.value = batch.so_number || '';
+    filterItemCode.value = batch.item_code || '';
+    selectedGateways.value = (batch.gateways || []).map((gw: any) => ({
+      ...gw,
+      gateway_id: gw.gatewayId,
+      serial_number: gw.serialNumber,
+      uplink_count: gw.uplinkCount ?? gw.rxPackets ?? 0,
+    }));
+    isTesting.value = true;
+    testFinished.value = false;
+    await loadGateways();
+    watchBatch();
+  } catch (err: any) {
+    cyberToast.error(err.message || 'Không thể mở batch đang chạy.');
+  }
 }
 
 onMounted(() => {
-  loadGateways();
+  void loadGateways();
+  void loadRunningBatches().catch(() => cyberToast.error('Không thể tải batch đang chạy.'));
   if (props.initialPayload?.selectedGateway) {
     const gw = props.initialPayload.selectedGateway;
     selectedGateways.value.push({
       ...gw,
-      uplink_count: gw.uplink_packets ?? 0,
+      uplink_count: 0,
       status: 'IDLE',
     });
   }
 });
 
 onUnmounted(() => {
-  clearInterval(timerInterval);
-  clearInterval(packetPollInterval);
+  stopPolling();
 });
 </script>
