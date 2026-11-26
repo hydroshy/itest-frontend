@@ -733,6 +733,7 @@ async function startBatchTest() {
         gatewayId: gw.gateway_id || gw.gatewayId || gw.eui,
         serialNumber: gw.serial_number || gw.serialNumber,
         gatewayIp: gw.gateway_ip || gw.gatewayIp,
+        regionTest: gw.region_test || gw.regionTest || filterRegion.value,
       })),
     });
     if (!created?.data?.id) throw new Error('Máy chủ không trả về mã batch.');
