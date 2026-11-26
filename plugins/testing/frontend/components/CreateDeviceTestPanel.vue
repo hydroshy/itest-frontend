@@ -198,35 +198,16 @@
                 <li
                   v-for="wa in filteredWas"
                   :key="wa.id || wa.waNumber"
-                  class="px-3 py-1.5 cursor-pointer rounded hover:bg-primary hover:text-primary-content transition-colors flex items-center justify-between gap-2"
+                  class="px-3 py-1.5 cursor-pointer rounded hover:bg-primary hover:text-primary-content transition-colors font-bold"
                   @mousedown.prevent="selectWa(wa.waNumber)"
                 >
-                  <span class="font-bold">{{ wa.waNumber }}</span>
-                  <span v-if="wa.itemCode" class="badge badge-xs badge-neutral font-mono opacity-80">{{ wa.itemCode }}</span>
+                  {{ wa.waNumber }}
                 </li>
                 <li v-if="filteredWas.length === 0" class="px-3 py-2 text-base-content/50 italic text-center">
                   {{ workAssignments.length === 0 ? 'Không có WA cho SO này' : 'Không tìm thấy WA phù hợp' }}
                 </li>
               </ul>
             </div>
-          </div>
-
-          <!-- Tự Động Nhận Diện ITEM_CODE Thuộc WA -->
-          <div class="form-control md:col-span-2">
-            <label class="label py-1">
-              <span class="label-text text-xs font-semibold flex items-center gap-1.5">
-                <span>ITEM_CODE</span>
-                <span v-if="step1.itemCode" class="badge badge-xs badge-success font-mono">Tự động nhận</span>
-              </span>
-            </label>
-            <input
-              :value="step1.itemCode || '—'"
-              type="text"
-              readonly
-              placeholder=""
-              class="input input-bordered input-sm w-full text-xs font-mono font-bold bg-base-300/40 text-base-content cursor-not-allowed select-all"
-              title="Mã sản phẩm (ITEM_CODE) tự động xác định từ WA đã chọn"
-            />
           </div>
         </div>
 
