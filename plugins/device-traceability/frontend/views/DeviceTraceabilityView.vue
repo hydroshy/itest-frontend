@@ -996,6 +996,42 @@
       </div>
       <div class="modal-backdrop bg-black/60" @click="editWaDialogVisible = false"></div>
     </dialog>
+
+    <!-- Modal Xác Thực Mật Khẩu Thao Tác (Admin/Engineering) -->
+    <dialog class="modal" :class="{ 'modal-open': authPasswordDialogVisible }">
+      <div class="modal-box max-w-sm bg-base-100 border border-base-300 shadow-xl">
+        <h3 class="font-bold text-base text-base-content flex items-center gap-2">
+          <ShieldAlert class="w-5 h-5 text-warning" /> Xác Thực Kỹ Thuật Viên
+        </h3>
+        <p class="text-xs text-base-content/70 mt-1">
+          Thao tác: <strong class="text-primary">{{ pendingActionLabel }}</strong>
+        </p>
+        <p class="text-xs text-base-content/60 mt-0.5">
+          Vui lòng nhập mật khẩu xác thực để thực hiện thay đổi.
+        </p>
+
+        <div class="form-control mt-4 space-y-1">
+          <label class="label py-0"><span class="label-text text-xs font-semibold">Mật khẩu xác thực <span class="text-error">*</span></span></label>
+          <input
+            v-model="actionPasswordInput"
+            type="password"
+            placeholder="Nhập mật khẩu..."
+            class="input input-sm input-bordered w-full font-mono"
+            :class="{ 'input-error': passwordError }"
+            @keyup.enter="confirmPasswordProtectedAction"
+          />
+          <span v-if="passwordError" class="text-xs text-error mt-1">{{ passwordError }}</span>
+        </div>
+
+        <div class="modal-action border-t border-base-300 pt-3 mt-4">
+          <button class="btn btn-sm btn-ghost" @click="cancelPasswordDialog">Hủy</button>
+          <button class="btn btn-sm btn-primary gap-1" :disabled="!actionPasswordInput" @click="confirmPasswordProtectedAction">
+            <Check class="w-4 h-4" /> Xác nhận
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop bg-black/60" @click="cancelPasswordDialog"></div>
+    </dialog>
   </div>
 </template>
 
@@ -1023,6 +1059,7 @@ import {
   ArrowLeft,
   Ticket,
   Pencil,
+  ShieldAlert,
 } from 'lucide-vue-next';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import 'tabulator-tables/dist/css/tabulator.min.css';
@@ -1985,61 +2022,70 @@ const initSoTreeTable = () => {
         });
       } else if (data.type === 'DEVICE') {
         menu.push({
-          label: '✏️ Xem Chi Tiết & Chỉnh Sửa Thông Tin...',
-          action: () => {
-            openEditDeviceDialog(data);
-          },
-        });
-        menu.push({ separator: true });
-        menu.push({
           label: '🧪 Đặt Test Status: PASS',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { testResult: 'PASS', status: 'PASS', statusType: 'test_result' });
+            requestProtectedAction('Đặt Test Status: PASS', () =>
+              handleUpdateDeviceStatus(data.id, { testResult: 'PASS', status: 'PASS', statusType: 'test_result' })
+            );
           },
         });
         menu.push({
           label: '❌ Đặt Test Status: FAIL',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { testResult: 'FAIL', status: 'FAIL', statusType: 'test_result' });
+            requestProtectedAction('Đặt Test Status: FAIL', () =>
+              handleUpdateDeviceStatus(data.id, { testResult: 'FAIL', status: 'FAIL', statusType: 'test_result' })
+            );
           },
         });
         menu.push({
           label: '⚪ Đặt Test Status: NONE',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { testResult: 'NONE', status: 'NONE', statusType: 'test_result' });
+            requestProtectedAction('Đặt Test Status: NONE', () =>
+              handleUpdateDeviceStatus(data.id, { testResult: 'NONE', status: 'NONE', statusType: 'test_result' })
+            );
           },
         });
         menu.push({ separator: true });
         menu.push({
           label: '⚙️ Đặt Final Config: CONFIGURED_PASS',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS', status: 'CONFIGURED_PASS', statusType: 'config_status' });
+            requestProtectedAction('Đặt Final Config: CONFIGURED_PASS', () =>
+              handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS', status: 'CONFIGURED_PASS', statusType: 'config_status' })
+            );
           },
         });
         menu.push({
           label: '⚙️ Đặt Final Config: CONFIG_FAILED',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED', status: 'CONFIG_FAILED', statusType: 'config_status' });
+            requestProtectedAction('Đặt Final Config: CONFIG_FAILED', () =>
+              handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED', status: 'CONFIG_FAILED', statusType: 'config_status' })
+            );
           },
         });
         menu.push({
           label: '⚙️ Đặt Final Config: UNCONFIGURED (NONE)',
           action: () => {
-            handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED', status: 'UNCONFIGURED', statusType: 'config_status' });
+            requestProtectedAction('Đặt Final Config: UNCONFIGURED (NONE)', () =>
+              handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED', status: 'UNCONFIGURED', statusType: 'config_status' })
+            );
           },
         });
         menu.push({
           label: '🔬 Xem Bảng MemMap Read-Back...',
           action: () => {
-            selectedSessionDevice.value = data;
-            sessionAuditDialogVisible.value = true;
+            requestProtectedAction('Xem Bảng MemMap Read-Back', () => {
+              selectedSessionDevice.value = data;
+              sessionAuditDialogVisible.value = true;
+            });
           },
         });
         menu.push({ separator: true });
         menu.push({
           label: '🗑️ Xóa thiết bị này',
           action: () => {
-            handleDeleteDevice(data.id, data.serialNumber || data.code);
+            requestProtectedAction(`Xóa thiết bị ${data.serialNumber || data.code}`, () =>
+              handleDeleteDevice(data.id, data.serialNumber || data.code)
+            );
           },
         });
       }
@@ -2050,8 +2096,6 @@ const initSoTreeTable = () => {
       const data = row.getData();
       if (data.type === 'SO') {
         viewSoDetail(data.id);
-      } else if (data.type === 'DEVICE') {
-        openEditDeviceDialog(data);
       }
     },
   });
@@ -2260,46 +2304,55 @@ const initTestingTable = () => {
       const data = row.getData();
       return [
         {
-          label: '📊 Xem Chi Tiết Báo Cáo Đo Kiểm (Metrics & RF)...',
-          action: () => openMetricsReport(data),
-        },
-        { separator: true },
-        {
-          label: '✏️ Xem Chi Tiết & Chỉnh Sửa Thông Tin...',
-          action: () => openEditDeviceDialog(data),
-        },
-        { separator: true },
-        {
           label: '🧪 Đặt Test Status: PASS',
-          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'PASS', status: 'PASS', statusType: 'test_result' }),
+          action: () =>
+            requestProtectedAction('Đặt Test Status: PASS', () =>
+              handleUpdateDeviceStatus(data.id, { testResult: 'PASS', status: 'PASS', statusType: 'test_result' })
+            ),
         },
         {
           label: '❌ Đặt Test Status: FAIL',
-          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'FAIL', status: 'FAIL', statusType: 'test_result' }),
+          action: () =>
+            requestProtectedAction('Đặt Test Status: FAIL', () =>
+              handleUpdateDeviceStatus(data.id, { testResult: 'FAIL', status: 'FAIL', statusType: 'test_result' })
+            ),
         },
         {
           label: '⚪ Đặt Test Status: NONE',
-          action: () => handleUpdateDeviceStatus(data.id, { testResult: 'NONE', status: 'NONE', statusType: 'test_result' }),
+          action: () =>
+            requestProtectedAction('Đặt Test Status: NONE', () =>
+              handleUpdateDeviceStatus(data.id, { testResult: 'NONE', status: 'NONE', statusType: 'test_result' })
+            ),
         },
         { separator: true },
         {
+          label: '📊 Xem Chi Tiết Báo Cáo Đo Kiểm (Metrics & RF)...',
+          action: () =>
+            requestProtectedAction('Xem Báo Cáo Đo Kiểm', () => openMetricsReport(data)),
+        },
+        {
           label: '📋 Xem Dữ Liệu Raw Test...',
-          action: () => {
-            selectedRawDevice.value = data;
-            rawTestDialogVisible.value = true;
-          },
+          action: () =>
+            requestProtectedAction('Xem Dữ Liệu Raw Test', () => {
+              selectedRawDevice.value = data;
+              rawTestDialogVisible.value = true;
+            }),
         },
         {
           label: '🔬 Xem Bảng MemMap Read-Back...',
-          action: () => {
-            selectedSessionDevice.value = data;
-            sessionAuditDialogVisible.value = true;
-          },
+          action: () =>
+            requestProtectedAction('Xem Bảng MemMap Read-Back', () => {
+              selectedSessionDevice.value = data;
+              sessionAuditDialogVisible.value = true;
+            }),
         },
         { separator: true },
         {
           label: '🗑️ Xóa Thiết Bị Này',
-          action: () => handleDeleteDevice(data.id, data.serialNumber),
+          action: () =>
+            requestProtectedAction(`Xóa thiết bị ${data.serialNumber}`, () =>
+              handleDeleteDevice(data.id, data.serialNumber)
+            ),
         },
       ];
     },
@@ -2454,34 +2507,42 @@ const initConfigTable = () => {
       const data = row.getData();
       return [
         {
-          label: '✏️ Xem Chi Tiết & Chỉnh Sửa Thông Tin...',
-          action: () => openEditDeviceDialog(data),
-        },
-        { separator: true },
-        {
           label: '⚙️ Đặt Config Status: CONFIGURED_PASS',
-          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS', status: 'CONFIGURED_PASS', statusType: 'config_status' }),
+          action: () =>
+            requestProtectedAction('Đặt Config Status: CONFIGURED_PASS', () =>
+              handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIGURED_PASS', status: 'CONFIGURED_PASS', statusType: 'config_status' })
+            ),
         },
         {
           label: '⚙️ Đặt Config Status: CONFIG_FAILED',
-          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED', status: 'CONFIG_FAILED', statusType: 'config_status' }),
+          action: () =>
+            requestProtectedAction('Đặt Config Status: CONFIG_FAILED', () =>
+              handleUpdateDeviceStatus(data.id, { configStatus: 'CONFIG_FAILED', status: 'CONFIG_FAILED', statusType: 'config_status' })
+            ),
         },
         {
           label: '⚙️ Đặt Config Status: UNCONFIGURED (NONE)',
-          action: () => handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED', status: 'UNCONFIGURED', statusType: 'config_status' }),
+          action: () =>
+            requestProtectedAction('Đặt Config Status: UNCONFIGURED (NONE)', () =>
+              handleUpdateDeviceStatus(data.id, { configStatus: 'UNCONFIGURED', status: 'UNCONFIGURED', statusType: 'config_status' })
+            ),
         },
         { separator: true },
         {
           label: '📊 Xem Bảng MemMap Read-Back & Session...',
-          action: () => {
-            selectedSessionDevice.value = data;
-            sessionAuditDialogVisible.value = true;
-          },
+          action: () =>
+            requestProtectedAction('Xem Bảng MemMap Read-Back & Session', () => {
+              selectedSessionDevice.value = data;
+              sessionAuditDialogVisible.value = true;
+            }),
         },
         { separator: true },
         {
           label: '🗑️ Xóa Thiết Bị Này',
-          action: () => handleDeleteDevice(data.id, data.serialNumber),
+          action: () =>
+            requestProtectedAction(`Xóa thiết bị ${data.serialNumber}`, () =>
+              handleDeleteDevice(data.id, data.serialNumber)
+            ),
         },
       ];
     },
@@ -2527,8 +2588,42 @@ const resetConfigFilters = () => {
 };
 
 // ==========================================
-// SHARED DEVICE MUTATION ACTIONS
+// SHARED DEVICE MUTATION ACTIONS & PASSWORD PROTECTION
 // ==========================================
+
+const REQUIRED_ACTION_PASSWORD = 'daviteqengineering';
+const authPasswordDialogVisible = ref(false);
+const actionPasswordInput = ref('');
+const passwordError = ref('');
+const pendingActionLabel = ref('');
+let pendingActionCallback: (() => Promise<void> | void) | null = null;
+
+const requestProtectedAction = (label: string, callback: () => Promise<void> | void) => {
+  pendingActionLabel.value = label;
+  pendingActionCallback = callback;
+  actionPasswordInput.value = '';
+  passwordError.value = '';
+  authPasswordDialogVisible.value = true;
+};
+
+const cancelPasswordDialog = () => {
+  authPasswordDialogVisible.value = false;
+  pendingActionCallback = null;
+  actionPasswordInput.value = '';
+  passwordError.value = '';
+};
+
+const confirmPasswordProtectedAction = async () => {
+  if (actionPasswordInput.value !== REQUIRED_ACTION_PASSWORD) {
+    passwordError.value = 'Mật khẩu xác thực không đúng!';
+    return;
+  }
+  const callback = pendingActionCallback;
+  cancelPasswordDialog();
+  if (callback) {
+    await callback();
+  }
+};
 
 const handleUpdateDeviceStatus = async (
   deviceId: string,
