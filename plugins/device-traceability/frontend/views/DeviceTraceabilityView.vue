@@ -3252,107 +3252,117 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-family: var(--cyber-font-body);
 }
 
 .tree-type-tag {
   font-size: 10px;
-  font-weight: bold;
-  padding: 2px 6px;
+  font-weight: 600;
+  padding: 1.5px 5px;
   border-radius: 4px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.02em;
+  font-family: var(--cyber-font-mono);
+}
+
+.tree-label {
+  font-weight: 550;
+  letter-spacing: -0.01em;
 }
 
 .badge-so .tree-type-tag {
-  background: #e6f7ff;
-  color: #1890ff;
-  border: 1px solid #91d5ff;
+  background: rgba(37, 99, 235, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .badge-item .tree-type-tag {
-  background: #fff7e6;
-  color: #d46b08;
-  border: 1px solid #ffd591;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-wa .tree-type-tag {
-  background: #f6ffed;
-  color: #52c41a;
-  border: 1px solid #b7eb8f;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .badge-device .tree-type-tag {
-  background: #f9f0ff;
-  color: #722ed1;
-  border: 1px solid #d3adf7;
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
 }
 
 .badge-so-sm {
-  background: #e6f7ff;
-  color: #1890ff;
-  padding: 2px 6px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 2px 7px;
   border-radius: 4px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 550;
+  font-family: var(--cyber-font-mono);
 }
 
 .badge-item-sub {
-  background: #fffbe6;
-  color: #d48806;
-  padding: 1px 6px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  padding: 1px 7px;
   border-radius: 4px;
   font-size: 11px;
-  border: 1px solid #ffe58f;
+  border: 1px solid rgba(245, 158, 11, 0.25);
   margin-left: 6px;
+  font-weight: 500;
 }
 
 .badge-wa-sm {
-  background: #f6ffed;
-  color: #52c41a;
-  padding: 2px 6px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 2px 7px;
   border-radius: 4px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 550;
   margin-left: 6px;
+  font-family: var(--cyber-font-mono);
 }
 
 .badge-so-wa-count {
-  background: rgba(230, 162, 60, 0.15);
-  color: #e6a23c;
-  border: 1px solid rgba(230, 162, 60, 0.4);
-  padding: 1px 7px;
-  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 8px;
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 600;
   margin-left: 6px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  transition: all 0.2s ease;
+  gap: 4px;
+  transition: all 0.15s ease;
 }
 
 .badge-so-wa-count:hover {
-  background: rgba(230, 162, 60, 0.25);
-  border-color: #e6a23c;
-  transform: translateY(-1px);
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
 }
 
 .badge-so-wa-pill {
-  background: #fdf6ec;
-  color: #d48806;
-  border: 1px solid #f5dab1;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .badge-so-wa-pill:hover {
-  background: #faecd8;
-  border-color: #e6a23c;
-  transform: translateY(-1px);
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
 }
 
 .customer-cell {
@@ -3373,35 +3383,38 @@ onBeforeUnmount(() => {
 }
 
 .deveui-code {
-  color: #fa8c16;
-  font-weight: 600;
+  color: #38bdf8;
+  font-weight: 550;
+  font-family: var(--cyber-font-mono);
+  font-size: 12px;
 }
 
 .quantity-badge {
-  background: #f4f4f5;
-  color: #606266;
+  background: var(--owl-bg-card);
+  color: var(--owl-text-primary);
+  border: 1px solid var(--owl-border);
   padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
+  border-radius: 9999px;
+  font-size: 11px;
   font-weight: 500;
 }
 
 .quantity-badge.so {
-  background: #e6f7ff;
-  color: #096dd9;
-  border: 1px solid #bae7ff;
+  background: rgba(37, 99, 235, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .quantity-badge.item {
-  background: #fff7e6;
-  color: #d46b08;
-  border: 1px solid #ffd591;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .quantity-badge.wa {
-  background: #f6ffed;
-  color: #389e0d;
-  border: 1px solid #b7eb8f;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .progress-cell-wrapper {
@@ -3454,56 +3467,69 @@ onBeforeUnmount(() => {
 }
 
 .count-badge.pass {
-  background: #f0f9eb;
-  color: #67c23a;
-  padding: 2px 8px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  padding: 2px 7px;
   border-radius: 4px;
   font-size: 11px;
-  font-weight: 500;
-  border: 1px solid #e1f3d8;
+  font-weight: 550;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  font-family: var(--cyber-font-mono);
 }
 
 .count-badge.fail {
-  background: #fef0f0;
-  color: #f56c6c;
-  padding: 2px 8px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  padding: 2px 7px;
   border-radius: 4px;
   font-size: 11px;
-  font-weight: 500;
-  border: 1px solid #fde2e2;
+  font-weight: 550;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  font-family: var(--cyber-font-mono);
 }
 
 .status-pill {
   display: inline-block;
-  padding: 2px 10px;
-  border-radius: 12px;
+  padding: 2px 8px;
+  border-radius: 9999px;
   font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-family: var(--cyber-font-mono);
 }
 
 .status-pill.pass {
-  background: #67c23a;
-  color: #ffffff;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .status-pill.fail {
-  background: #f56c6c;
-  color: #ffffff;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .status-pill.pending {
-  background: #909399;
-  color: #ffffff;
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.25);
 }
 
 .sku-cell {
-  color: #303133;
+  color: var(--owl-text-primary);
   font-weight: 500;
 }
 
 .text-muted {
-  color: #c0c4cc;
+  color: var(--owl-text-muted);
+}
+
+.serial-text {
+  color: #38bdf8;
+  font-family: var(--cyber-font-mono);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .json-code-box {

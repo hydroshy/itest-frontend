@@ -1,31 +1,22 @@
 <template>
-  <div class="launcher-view flex-1 flex flex-col justify-start w-full max-w-[1720px] mx-auto px-4 sm:px-8 xl:px-12 pt-2 sm:pt-4 pb-4 select-none min-h-[calc(100vh-4rem)]">
-    <!-- Main Content Area: 4-Column x 3-Row Grid -->
-    <div class="flex-1 flex flex-col justify-start w-full pt-1 pb-4 sm:pt-2 sm:pb-6">
-      <div class="w-full min-w-0 overflow-hidden py-1">
+  <div class="launcher-view flex-1 flex flex-col justify-between w-full max-w-[1720px] mx-auto px-3 sm:px-6 xl:px-8 py-2 select-none h-full overflow-hidden">
+    <!-- Main Content Area: 4-Column x 3-Row Grid Auto-Fitted -->
+    <div class="flex-1 flex flex-col justify-center w-full min-h-0 overflow-hidden py-1">
+      <div class="w-full h-full min-w-0 flex flex-col justify-center overflow-hidden">
         <transition :name="slideDirection === 'next' ? 'slide-left' : 'slide-right'" mode="out-in">
-          <!-- Loading Skeleton Grid -->
+          <!-- Loading Skeleton Grid (3 cột x 3 hàng giãn đều) -->
           <div
             v-if="loading"
             :key="'loading'"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 w-full h-full auto-rows-fr max-w-[1560px] mx-auto py-3 px-2 sm:px-4"
           >
             <div
               v-for="i in cardsPerPage"
               :key="i"
-              class="card bg-[var(--owl-bg-card)] border border-[var(--owl-border)] rounded-2xl p-5 min-h-[180px] flex flex-col justify-between animate-pulse"
+              class="card bg-[var(--owl-bg-card)] border border-[var(--owl-border)] rounded-2xl p-4 flex flex-col items-center justify-center animate-pulse"
             >
-              <div class="flex items-center justify-between">
-                <div class="w-10 h-10 rounded-xl bg-[var(--owl-bg-surface)]"></div>
-                <div class="w-16 h-5 rounded-md bg-[var(--owl-bg-surface)]"></div>
-              </div>
-              <div class="space-y-2">
-                <div class="w-3/4 h-4 rounded bg-[var(--owl-bg-surface)]"></div>
-                <div class="w-full h-3 rounded bg-[var(--owl-bg-surface)]/80"></div>
-              </div>
-              <div class="flex justify-end pt-2 border-t border-[var(--owl-border-light)]">
-                <div class="w-16 h-3 rounded bg-[var(--owl-bg-surface)]/80"></div>
-              </div>
+              <div class="w-11 h-11 rounded-xl bg-[var(--owl-bg-surface)] mb-2"></div>
+              <div class="w-2/3 h-4 rounded bg-[var(--owl-bg-surface)]"></div>
             </div>
           </div>
 
@@ -33,29 +24,29 @@
           <div
             v-else-if="filteredCards.length === 0"
             :key="'empty'"
-            class="flex flex-col items-center justify-center p-12 text-center rounded-3xl bg-[var(--owl-bg-surface)] border border-dashed border-[var(--owl-border)] my-6"
+            class="flex flex-col items-center justify-center p-8 text-center rounded-2xl bg-[var(--owl-bg-surface)] border border-dashed border-[var(--owl-border)] my-auto"
           >
-            <div class="w-16 h-16 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-500 flex items-center justify-center mb-4 text-2xl">
+            <div class="w-14 h-14 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-500 flex items-center justify-center mb-3 text-xl">
               <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
             </div>
-            <h3 class="text-base font-bold font-display text-[var(--owl-text-primary)]">Không tìm thấy phân hệ phù hợp</h3>
-            <p class="text-xs font-semibold text-[var(--owl-text-secondary)] mt-1.5 max-w-sm leading-relaxed">
+            <h3 class="text-sm font-bold font-display text-[var(--owl-text-primary)]">Không tìm thấy phân hệ phù hợp</h3>
+            <p class="text-xs font-semibold text-[var(--owl-text-secondary)] mt-1 max-w-sm leading-relaxed">
               Vui lòng kiểm tra lại từ khóa tìm kiếm hoặc chuyển sang bộ lọc danh mục khác.
             </p>
             <button
               type="button"
-              class="btn btn-sm mt-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white border-none font-bold text-xs"
+              class="btn btn-xs mt-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white border-none font-bold text-xs px-3 py-1.5"
               @click="resetFilters"
             >
               Đặt lại bộ lọc
             </button>
           </div>
 
-          <!-- Cards Grid: 4 Cột 3 Hàng (12 cards) -->
+          <!-- Cards Grid: Cố định 3 Cột x 3 Hàng, khoảng cách giãn rộng rãi (gap-8 đến gap-10), dàn đều canvas -->
           <div
             v-else
             :key="currentPage"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 w-full h-full auto-rows-fr max-w-[1560px] mx-auto py-3 px-2 sm:px-4"
           >
             <MenuCardItem
               v-for="card in paginatedCards"
@@ -69,10 +60,10 @@
       </div>
     </div>
 
-    <!-- Pagination Controls -->
+    <!-- Pagination Controls - Compact Bar fixed at bottom -->
     <div
       v-if="!loading && totalPages > 1"
-      class="flex flex-wrap items-center justify-between gap-4 py-3 px-4 sm:px-6 bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-2xl"
+      class="flex flex-wrap items-center justify-between gap-3 py-2 px-4 sm:px-6 bg-[var(--owl-bg-surface)] border border-[var(--owl-border)] rounded-xl shrink-0 mt-1"
     >
       <div class="text-xs font-semibold text-[var(--owl-text-secondary)]">
         Trang <span class="font-bold text-[var(--owl-text-primary)] font-mono">{{ currentPage }}</span> / {{ totalPages }}
@@ -167,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useCtosTransition } from '@/composables/useCtosTransition';
@@ -175,7 +166,9 @@ import { httpClient } from '@/api/client';
 import MenuCardItem from './components/MenuCardItem.vue';
 import MenuDetailModal from './components/MenuDetailModal.vue';
 
-interface MenuCardItemDef {
+export type MenuSectionGroup = 'testing' | 'devices' | 'connectors' | 'system';
+
+export interface MenuCardItemDef {
   id: string;
   title: string;
   description: string;
@@ -185,6 +178,7 @@ interface MenuCardItemDef {
   pluginId?: string;
   tab?: string;
   category: 'system' | 'plugin';
+  group?: MenuSectionGroup;
   order: number;
 }
 
@@ -192,11 +186,47 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const searchQuery = ref('');
-const selectedCategory = ref('all');
+const selectedCategory = ref<'all' | MenuSectionGroup>('all');
 const loading = ref(false);
 const currentPage = ref(1);
 const slideDirection = ref<'next' | 'prev'>('next');
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+function resolveCardGroup(c: any): MenuSectionGroup {
+  const id = (c.id || '').toLowerCase();
+  const pluginId = (c.pluginId || '').toLowerCase();
+  const route = (c.route || c.path || '').toLowerCase();
+
+  // 1. Quản trị hệ thống
+  if (c.category === 'system' || ['dashboard', 'users', 'roles', 'plugins'].includes(id) || route.startsWith('/users') || route.startsWith('/roles') || route === '/dashboard') {
+    return 'system';
+  }
+
+  // 2. Kiểm thử & Đo đạc IoT (Testing Suite)
+  if (
+    pluginId === 'testing' ||
+    id.startsWith('testing:') ||
+    route.includes('/plugins/testing')
+  ) {
+    return 'testing';
+  }
+
+  // 3. Cấu hình phần cứng & Thiết bị (Device Config)
+  if (
+    pluginId === 'final-config' ||
+    pluginId === 'memmap-manager' ||
+    id.startsWith('final-config:') ||
+    id.startsWith('memmap-payload:') ||
+    id.startsWith('preconfig:') ||
+    route.includes('/plugins/final-config') ||
+    route.includes('/plugins/memmap-manager')
+  ) {
+    return 'devices';
+  }
+
+  // 4. Giao tiếp, Mạng IoT & Phân loại dữ liệu (Connectors & Decoders)
+  return 'connectors';
+}
 
 const defaultStaticCards: MenuCardItemDef[] = [
   {
@@ -312,7 +342,7 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'memmap-payload:main',
-    title: 'MEMMAP PAYLOAD',
+    title: 'Memmap Payload',
     description: 'Quản lý danh sách bản đồ bộ nhớ (Memmap) và tải lên bảng thanh ghi thiết bị.',
     icon: 'layer-group',
     route: '/plugins/memmap-manager?tab=manager',
@@ -323,7 +353,7 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'decoder:scripts',
-    title: 'DECODER',
+    title: 'Decoder',
     description: 'Quản lý kịch bản giải mã Uplink payload thiết bị IoT, liên kết Item Code và FW Code.',
     icon: 'file-code',
     route: '/plugins/decoder?tab=list',
@@ -334,7 +364,7 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'lorawan-chirpstack:integration',
-    title: 'CHIRPSTACK',
+    title: 'ChirpStack',
     description: 'Giám sát trạm Gateway LoRaWAN, thiết bị Node và tích hợp ChirpStack v4.',
     icon: 'tower-broadcast',
     route: '/plugins/lorawan-chirpstack?tab=servers',
@@ -345,7 +375,7 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:device-payload',
-    title: 'DEVICE PAYLOAD',
+    title: 'Device Payload',
     description: 'Giám sát trực tiếp dữ liệu thô và payload đã giải mã từ trạm testing.',
     icon: 'chart-line',
     route: '/plugins/testing?tab=device-payload',
@@ -356,8 +386,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:create-device-testing',
-    title: 'CREATE DEVICE TESTING',
-    description: 'Tạo mới phiên kiểm thử thiết bị (DUT), gắn kịch bản Flow và kích hoạt Auto Check.',
+    title: 'Create Device Testing',
+    description: 'Quy trình khởi tạo thông tin thiết bị, gán cấu hình và sẵn sàng cho bài test.',
     icon: 'circle-plus',
     route: '/plugins/testing?tab=create-device-testing',
     pluginId: 'testing',
@@ -367,8 +397,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:list-device-testing',
-    title: 'LIST DEVICE TESTING',
-    description: 'Danh sách các thiết bị kiểm thử được tạo ra bởi Testing Suite.',
+    title: 'List Device Testing',
+    description: 'Tra cứu, lọc và theo dõi trạng thái các thiết bị trong đợt kiểm tra.',
     icon: 'list-check',
     route: '/plugins/testing?tab=list-device-testing',
     pluginId: 'testing',
@@ -378,8 +408,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:list-test-batch',
-    title: 'LIST TEST BATCH',
-    description: 'Tra cứu, theo dõi tiến độ và quản lý lịch sử các đợt kiểm thử hàng loạt.',
+    title: 'List Test Batch',
+    description: 'Quản lý danh sách các lô kiểm thử (Batch) sản phẩm công nghiệp.',
     icon: 'boxes-stacked',
     route: '/plugins/testing?tab=list-test-batch',
     pluginId: 'testing',
@@ -389,8 +419,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:list-flow-simulation',
-    title: 'LIST FLOW SIMULATION',
-    description: 'Quản lý danh sách các kịch bản mô phỏng kiểm thử Flow.',
+    title: 'List Flow Simulation',
+    description: 'Danh mục luồng mô phỏng chu trình truyền thông và cảm biến.',
     icon: 'diagram-project',
     route: '/plugins/testing?tab=list-flow-simulation',
     pluginId: 'testing',
@@ -400,8 +430,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:list-device-simulation',
-    title: 'LIST DEVICE SIMULATION',
-    description: 'Danh sách thiết bị giả lập phục vụ kiểm thử mô phỏng tải.',
+    title: 'List Device Simulation',
+    description: 'Xem các thiết bị ảo phục vụ kiểm thử và mô phỏng tải gói tin.',
     icon: 'microchip',
     route: '/plugins/testing?tab=list-device-simulation',
     pluginId: 'testing',
@@ -411,8 +441,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:so-test-batch',
-    title: 'SO TEST BATCH',
-    description: 'Kiểm thử lô thiết bị theo đơn hàng Sale Order & Work Authorization.',
+    title: 'So Test Batch',
+    description: 'Liên kết đợt kiểm thử lô sản phẩm trực tiếp với Sales Order (SO).',
     icon: 'file-invoice',
     route: '/plugins/testing?tab=so-test-batch',
     pluginId: 'testing',
@@ -422,8 +452,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:create-test-batch',
-    title: 'CREATE TEST BATCH',
-    description: 'Thiết lập cấu hình đợt kiểm thử hàng loạt và gán kịch bản Simulation Flow.',
+    title: 'Create Test Batch',
+    description: 'Tạo đợt kiểm tra mới, thiết lập số lượng mẫu và tiêu chí đánh giá.',
     icon: 'folder-plus',
     route: '/plugins/testing?tab=create-test-batch',
     pluginId: 'testing',
@@ -433,8 +463,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:device-simulation',
-    title: 'CREATE SIMULATION FLOW',
-    description: 'Tạo kịch bản mô phỏng kiểm thử kết hợp Auto Check: Downlink, Delay, Cửa sổ đo.',
+    title: 'Create Simulation Flow',
+    description: 'Xây dựng kịch bản mô phỏng kiểm thử hành vi thiết bị linh hoạt.',
     icon: 'wand-magic-sparkles',
     route: '/plugins/testing?tab=device-simulation',
     pluginId: 'testing',
@@ -444,9 +474,9 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:create-gateway-testing',
-    title: 'CREATE GATEWAY TESTING',
-    description: 'Khởi tạo cấu hình và đăng ký Gateway LoRaWAN kiểm thử.',
-    icon: 'circle-plus',
+    title: 'Create Gateway Testing',
+    description: 'Thiết lập bài đo kiểm thu phát tín hiệu cho trạm thu Gateway LoRaWAN.',
+    icon: 'tower-broadcast',
     route: '/plugins/testing?tab=create-gateway-testing',
     pluginId: 'testing',
     tab: 'create-gateway-testing',
@@ -455,8 +485,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:list-gateway-testing',
-    title: 'LIST GATEWAY TESTING',
-    description: 'Quản lý danh sách Gateway và lịch sử các phiên test ChirpStack.',
+    title: 'List Gateway Testing',
+    description: 'Lịch sử và báo cáo kết quả kiểm định chất lượng các Gateway.',
     icon: 'list-check',
     route: '/plugins/testing?tab=list-gateway-testing',
     pluginId: 'testing',
@@ -466,8 +496,8 @@ const defaultStaticCards: MenuCardItemDef[] = [
   },
   {
     id: 'testing:gateway-test-batch',
-    title: 'GATEWAY TEST BATCH',
-    description: 'Đo kiểm Gateway hàng loạt treo 12 giờ, đếm gói uplink qua webhook.',
+    title: 'Gateway Test Batch',
+    description: 'Quản lý lô kiểm tra và đánh giá hàng loạt trạm thu Gateway.',
     icon: 'boxes-stacked',
     route: '/plugins/testing?tab=gateway-test-batch',
     pluginId: 'testing',
@@ -492,13 +522,7 @@ async function initCardsForUser() {
         if (key && !seen.has(key)) {
           seen.add(key);
           let title = c.title;
-          if (title === 'Bộ giải mã Payload (Decoder)' || title === 'Bộ Giải Mã (Decoder)') {
-            title = 'DECODER';
-          } else if (title === 'LoRaWAN Testing' || title === 'LoRaWan Testing') {
-            title = 'LORAWAN TESTING';
-          } else if (title === 'ChirpStack LoRaWAN' || title === 'Chirpstack lorawan' || title === 'LoRaWAN ChirpStack Integration' || title === 'ChirpStack Integration') {
-            title = 'CHIRPSTACK';
-          }
+          const group = resolveCardGroup(c);
           list.push({
             id: c.id,
             title,
@@ -508,6 +532,7 @@ async function initCardsForUser() {
             pluginId: c.pluginId,
             tab: c.tab,
             category: c.category || 'plugin',
+            group,
             order: c.order || 99,
           });
         }
@@ -530,7 +555,8 @@ async function initCardsForUser() {
     const key = (c.route || c.path || c.id || '').toLowerCase().trim();
     if (key && !seen.has(key)) {
       seen.add(key);
-      list.push(c);
+      const group = resolveCardGroup(c);
+      list.push({ ...c, group });
     }
   }
   cards.value = list;
@@ -539,7 +565,7 @@ async function initCardsForUser() {
 const filteredCards = computed(() => {
   let list = cards.value;
   if (selectedCategory.value !== 'all') {
-    list = list.filter((c) => c.category === selectedCategory.value);
+    list = list.filter((c) => c.group === selectedCategory.value);
   }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
@@ -554,11 +580,8 @@ const filteredCards = computed(() => {
 });
 
 const cardsPerPage = computed(() => {
-  // 4 cột x 3 hàng = 12 cards cho màn hình desktop
-  if (windowWidth.value >= 1024) return 12;
-  if (windowWidth.value >= 768) return 9;
-  if (windowWidth.value >= 640) return 6;
-  return 4;
+  // 3 cột x 3 hàng = 9 cards cố định cho mỗi trang
+  return 9;
 });
 
 const totalPages = computed(() => {
@@ -572,9 +595,11 @@ const paginatedCards = computed(() => {
 
 const categoryCounts = computed(() => {
   const all = cards.value.length;
-  const system = cards.value.filter((c) => c.category === 'system').length;
-  const plugin = cards.value.filter((c) => c.category === 'plugin').length;
-  return { all, system, plugin };
+  const testing = cards.value.filter((c) => c.group === 'testing').length;
+  const devices = cards.value.filter((c) => c.group === 'devices').length;
+  const connectors = cards.value.filter((c) => c.group === 'connectors').length;
+  const system = cards.value.filter((c) => c.group === 'system').length;
+  return { all, testing, devices, connectors, system };
 });
 
 function resetFilters() {
@@ -582,6 +607,14 @@ function resetFilters() {
   selectedCategory.value = 'all';
   currentPage.value = 1;
 }
+
+watch(selectedCategory, () => {
+  currentPage.value = 1;
+});
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
 
 function setPage(page: number) {
   slideDirection.value = page > currentPage.value ? 'next' : 'prev';

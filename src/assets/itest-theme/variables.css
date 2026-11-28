@@ -175,16 +175,16 @@ html.light,
 
   /* ==========================================================================
      3. HIGH-CONTRAST BOLD TYPOGRAPHY TOKENS
-     "system-ui, -apple-system, 'Segoe UI', sans-serif in đậm giúp nịnh mắt hơn"
+     Linear / High-Tech font hierarchy with Inter & JetBrains Mono
      ========================================================================== */
-  --cyber-font-display: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --cyber-font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --cyber-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --cyber-font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cyber-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cyber-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --font-family-mono: var(--cyber-font-mono);
 
-  --memphis-font-display: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --memphis-font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --memphis-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --memphis-font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --memphis-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --memphis-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --memphis-radius-box: 1.25rem;
   --memphis-radius-card: 1rem;
   --memphis-radius-field: 0.625rem;

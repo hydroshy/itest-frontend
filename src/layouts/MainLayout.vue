@@ -8,6 +8,7 @@
       :can-access-dashboard="canAccessDashboard"
       :can-access-admin="canAccessAdmin"
       :filtered-plugin-menus="filteredPluginMenus"
+      @toggle-collapse="toggleSidebar"
     />
 
     <!-- Main Content Wrapper -->
@@ -26,7 +27,7 @@
       <main
         class="layout-content relative flex-1 overflow-y-auto p-4 sm:p-6"
         :class="{
-          'menu-layout-mode p-2 sm:p-4': route.path === '/menu',
+          '!overflow-hidden !p-2 sm:!p-3 flex flex-col': route.path === '/menu',
           'from-menu': route.query.from === 'menu' || isFromMenu
         }"
       >
@@ -141,15 +142,30 @@ const canAccessAdmin = computed(() => {
   return authStore.isAdmin || authStore.roles.some((r: string) => ['ADMIN', 'SUPER_ADMIN'].includes(r));
 });
 
+function toTitleCase(str: string): string {
+  if (!str) return '';
+  const raw = String(str).trim();
+  const hasMultipleUpper = (raw.match(/[A-Z]/g) || []).length > 3;
+  if (!hasMultipleUpper) {
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+  return raw
+    .toLowerCase()
+    .split(' ')
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 const filteredPluginMenus = computed(() => {
   let list = (pluginStore.menus || []).map((m: any) => ({
     ...m,
-    title: m.title || m.label || m.id,
+    title: toTitleCase(m.title || m.label || m.id),
     path: m.path || m.route || '',
     children: Array.isArray(m.children)
       ? m.children.map((c: any) => ({
           ...c,
-          title: c.title || c.label || c.id,
+          title: toTitleCase(c.title || c.label || c.id),
           path: c.path || c.route || '',
           icon: c.icon,
         }))
@@ -182,20 +198,20 @@ const filteredPluginMenus = computed(() => {
       children: [
         {
           id: 'dis-menu-diagnostics',
-          title: 'KIỂM TRA KẾT NỐI',
-          icon: 'link',
+          title: 'Kiểm tra kết nối',
+          icon: 'circle-check',
           path: '/plugins/dis-manager?tab=diagnostics',
         },
         {
           id: 'dis-menu-orders',
-          title: 'SALES ORDERS (DIS ODOO)',
+          title: 'Sales Orders (DIS Odoo)',
           icon: 'list-check',
           path: '/plugins/dis-manager?tab=orders',
         },
         {
           id: 'dis-menu-sandbox',
-          title: 'SANDBOX THỬ NGHIỆM',
-          icon: 'flask',
+          title: 'Sandbox thử nghiệm',
+          icon: 'vial',
           path: '/plugins/dis-manager?tab=sandbox',
         },
       ],
@@ -226,6 +242,11 @@ async function handleUserCommand(cmd: string) {
 <style scoped>
 .layout-container {
   font-family: var(--cyber-font-body);
+}
+
+.layout-content:has(.launcher-view) {
+  overflow: hidden !important;
+  padding: 8px 16px !important;
 }
 
 .fade-transform-enter-active,

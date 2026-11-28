@@ -1,57 +1,25 @@
 <template>
   <div
-    class="menu-card bg-[var(--owl-bg-surface)] hover:bg-[var(--owl-bg-card-hover)] border border-[var(--owl-border)] hover:border-blue-500/50 rounded-2xl p-5 sm:p-6 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden min-h-[185px] shadow-sm hover:shadow-md hover:shadow-blue-500/10"
+    class="menu-card bg-[var(--owl-bg-surface)] hover:bg-[var(--owl-bg-card-hover)] border border-[var(--owl-border)] hover:border-blue-500/50 rounded-2xl p-3 sm:p-4 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden h-full w-full max-w-[360px] max-h-[150px] mx-auto shadow-sm hover:shadow-md hover:shadow-blue-500/10"
     @click="$emit('navigate', card)"
     @contextmenu.prevent="$emit('contextmenu', $event, card)"
   >
-    <!-- Top Row: Icon + Category Badge -->
-    <div class="flex items-center justify-between">
-      <div
-        class="w-11 h-11 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-blue-600/20 group-hover:border-blue-500/40 transition-all duration-200 shadow-none text-lg"
-      >
-        <CyberIcon :name="resolveIcon(card)" :size="20" />
-      </div>
-      <div class="flex items-center gap-1.5">
-        <button
-          type="button"
-          class="btn btn-ghost btn-xs btn-circle text-[var(--owl-text-muted)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-          title="Tùy chọn & chi tiết"
-          @click.stop="$emit('contextmenu', $event, card)"
-        >
-          <font-awesome-icon :icon="['fas', 'ellipsis-vertical']" class="text-xs" />
-        </button>
-        <span
-          class="badge badge-sm font-mono text-[10px] font-bold border"
-          :class="card.category === 'system'
-            ? 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/30'
-            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30'"
-        >
-          {{ card.category === 'system' ? 'Hệ thống' : 'Plugin' }}
-        </span>
-      </div>
+    <!-- Centered Clean Icon (Kích thước thanh thoát) -->
+    <div
+      class="w-11 h-11 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-blue-600/20 group-hover:border-blue-500/40 transition-all duration-200 shadow-none text-xl mb-2.5 shrink-0"
+    >
+      <CyberIcon :name="resolveIcon(card)" :size="20" />
     </div>
 
-    <!-- Middle: Title & Description -->
-    <div class="my-3">
-      <h3 class="text-sm font-black font-display text-[var(--owl-text-primary)] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
-        {{ card.title }}
-      </h3>
-      <p class="text-xs font-semibold text-[var(--owl-text-secondary)] mt-1 line-clamp-2 leading-relaxed">
-        {{ card.description || 'Chức năng kiểm thử thiết bị và tiện ích vận hành hệ thống' }}
-      </p>
-    </div>
-
-    <!-- Bottom Row: Launch Arrow -->
-    <div class="pt-2 border-t border-[var(--owl-border-light)] flex items-center justify-end text-[11px] text-[var(--owl-text-muted)]">
-      <span class="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform font-bold text-xs flex items-center gap-1.5">
-        <span>Truy cập</span>
-        <font-awesome-icon :icon="['fas', 'arrow-right']" class="text-[10px]" />
-      </span>
-    </div>
+    <!-- Main Title: Capitalized First Letter / Title Case, Clean & Minimal -->
+    <h3 class="text-xs sm:text-sm font-semibold font-display text-[var(--owl-text-primary)] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors tracking-tight line-clamp-2 px-2 leading-snug">
+      {{ formattedTitle }}
+    </h3>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import CyberIcon from '@/components/shared/CyberIcon.vue';
 
 const props = defineProps<{
@@ -62,6 +30,34 @@ defineEmits<{
   (e: 'navigate', card: any): void;
   (e: 'contextmenu', ev: MouseEvent, card: any): void;
 }>();
+
+/**
+ * Format string: Capitalize first letter of each word (Title Case)
+ * and normalize ALL-CAPS words (e.g. "DECODER" -> "Decoder", "SO TEST BATCH" -> "So Test Batch")
+ */
+function toTitleCase(str: string): string {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .split(' ')
+    .filter(Boolean)
+    .map(word => {
+      // Keep special acronyms readable if needed, or capitalize first letter
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
+const formattedTitle = computed(() => {
+  const raw = props.card?.title || '';
+  // Check if string is predominantly uppercase or needs capitalization normalization
+  const hasMultipleUpper = (raw.match(/[A-Z]/g) || []).length > 3;
+  if (hasMultipleUpper) {
+    return toTitleCase(raw);
+  }
+  // Otherwise ensure at least first letter is capitalized
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+});
 
 function resolveIcon(card: any): string {
   const icon = card.icon;

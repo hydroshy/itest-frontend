@@ -90,8 +90,9 @@
     </div>
 
     <!-- TAB 3: Device Simulation (Giả Lập Thiết Bị & Tạo Flow) -->
-    <div v-if="activeTab === 'device-simulation'">
+    <div v-show="activeTab === 'device-simulation'">
       <DeviceSimulationPanel
+        ref="deviceSimulationPanelRef"
         :edit-flow-data="selectedFlowToEdit"
         @packet-emitted="onDevicePacketEmitted"
         @switch-tab="selectTab"
@@ -226,12 +227,51 @@
       v-model="createSessionDialogVisible"
       @success="handleGatewayRegistrationSuccess"
     />
+
+    <!-- Modal Xác Nhận Rời Tab Device Simulation Khi Chưa Lưu -->
+    <dialog class="modal" :class="{ 'modal-open': showTestingViewUnsavedModal }">
+      <div class="modal-box max-w-md bg-base-100 border border-base-content/10 shadow-2xl rounded-2xl p-6">
+        <div class="flex items-center gap-3 text-warning pb-3 border-b border-base-content/10">
+          <div class="w-10 h-10 rounded-xl bg-warning/15 border border-warning/30 flex items-center justify-center text-warning text-lg shrink-0">
+            ⚠️
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-base-content">Chưa lưu kịch bản kiểm thử!</h3>
+            <p class="text-xs text-base-content/60">Bạn đang chuyển sang phân hệ kiểm thử khác.</p>
+          </div>
+        </div>
+
+        <p class="py-4 text-xs text-base-content/80 leading-relaxed">
+          Kịch bản Simulation Flow hiện tại của bạn có các thay đổi chưa được lưu. Nếu rời đi, toàn bộ các bước flow vừa thiết lập sẽ không được lưu lại.
+        </p>
+
+        <div class="modal-action flex items-center justify-end gap-2 pt-2 border-t border-base-content/10">
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost font-semibold text-xs"
+            @click="cancelLeaveTestingTab"
+          >
+            Ở lại lưu kịch bản
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-error font-bold text-xs gap-1 shadow-sm"
+            @click="confirmLeaveTestingTab"
+          >
+            <span>Rời đi &amp; Bỏ qua</span>
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button type="button" @click="cancelLeaveTestingTab">close</button>
+      </form>
+    </dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import {
   Gauge,
   Search,
@@ -320,6 +360,9 @@ const activeTab = ref('create-gateway-testing');
 const loading = ref(false);
 const autoCheckPanelRef = ref<any>(null);
 const listDevicePanelRef = ref<any>(null);
+const deviceSimulationPanelRef = ref<any>(null);
+const pendingSwitchTab = ref<string | null>(null);
+const showTestingViewUnsavedModal = ref(false);
 const selectedBatchPayload = ref<any>(null);
 const selectedFlowToEdit = ref<any>(null);
 
@@ -348,12 +391,53 @@ function normalizeTab(tabName: string): string {
 
 function selectTab(tabName: string) {
   const normalizedTab = normalizeTab(tabName);
+  // Nếu đang ở tab device-simulation và người dùng chuyển sang tab khác
+  if (activeTab.value === 'device-simulation' && normalizedTab !== 'device-simulation') {
+    if (deviceSimulationPanelRef.value?.checkIsDirty && deviceSimulationPanelRef.value.checkIsDirty()) {
+      pendingSwitchTab.value = normalizedTab;
+      showTestingViewUnsavedModal.value = true;
+      return;
+    }
+  }
+
+  doSwitchTab(normalizedTab);
+}
+
+function doSwitchTab(normalizedTab: string) {
   activeTab.value = normalizedTab;
   handleTabChange(normalizedTab);
   if (!isIsolatedView.value) {
     router.replace({ query: { ...route.query, tab: normalizedTab } }).catch(() => {});
   }
 }
+
+function confirmLeaveTestingTab() {
+  showTestingViewUnsavedModal.value = false;
+  if (pendingSwitchTab.value) {
+    const nextTab = pendingSwitchTab.value;
+    pendingSwitchTab.value = null;
+    doSwitchTab(nextTab);
+  }
+}
+
+function cancelLeaveTestingTab() {
+  showTestingViewUnsavedModal.value = false;
+  pendingSwitchTab.value = null;
+}
+
+onBeforeRouteLeave((to, from, next) => {
+  if (activeTab.value === 'device-simulation') {
+    if (deviceSimulationPanelRef.value?.checkIsDirty && deviceSimulationPanelRef.value.checkIsDirty()) {
+      pendingSwitchTab.value = null;
+      const answer = window.confirm('Kịch bản Simulation Flow của bạn chưa được lưu! Bạn có chắc chắn muốn rời khỏi trang này?');
+      if (!answer) {
+        next(false);
+        return;
+      }
+    }
+  }
+  next();
+});
 
 function onSelectDeviceForFlow(device?: any) {
   selectTab('device-simulation');

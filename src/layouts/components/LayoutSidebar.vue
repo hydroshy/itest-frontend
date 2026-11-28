@@ -6,21 +6,38 @@
       'bg-[var(--owl-bg-aside)] border-[var(--owl-border)]'
     ]"
   >
-    <!-- Logo Box -->
-    <div class="logo-box h-16 flex items-center justify-center gap-3 border-b border-[var(--owl-border)] bg-[var(--owl-bg-aside)] flex-shrink-0 overflow-hidden px-4">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-400 flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
-        <span class="text-white text-xs font-black font-mono tracking-tighter">iT</span>
-      </div>
+    <!-- Logo & Sidebar Toggle Box -->
+    <div class="logo-box h-16 flex items-center justify-between border-b border-[var(--owl-border)] bg-[var(--owl-bg-aside)] flex-shrink-0 overflow-hidden px-3.5">
       <div
-        class="flex flex-col truncate transition-opacity duration-200"
-        :class="isCollapse ? 'opacity-0 w-0 pointer-events-none hidden' : 'opacity-100'"
+        class="flex items-center gap-3 min-w-0 cursor-pointer group"
+        :title="isCollapse ? 'Mở rộng sidebar' : 'iTEST 2.0'"
+        @click="emit('toggleCollapse')"
       >
-        <div class="flex items-center gap-1.5">
-          <span class="font-extrabold text-sm tracking-wide text-[var(--owl-text-primary)] font-display">iTEST</span>
-          <span class="text-blue-500 dark:text-blue-400 font-mono text-[11px] font-bold px-1.5 py-0.2 rounded-full bg-blue-500/10 border border-blue-500/30">2.0</span>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-400 flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
+          <span class="text-white text-xs font-black font-mono tracking-tighter">iT</span>
         </div>
-        <span class="text-[10px] text-[var(--owl-text-muted)] font-medium tracking-tight">Industrial Test Suite</span>
+        <div
+          class="flex flex-col truncate transition-opacity duration-200"
+          :class="isCollapse ? 'opacity-0 w-0 pointer-events-none hidden' : 'opacity-100'"
+        >
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-sm tracking-wide text-[var(--owl-text-primary)] font-display group-hover:text-blue-500 transition-colors">iTEST</span>
+            <span class="text-blue-500 dark:text-blue-400 font-mono text-[11px] font-bold px-1.5 py-0.2 rounded-full bg-blue-500/10 border border-blue-500/30">2.0</span>
+          </div>
+          <span class="text-[10px] text-[var(--owl-text-muted)] font-medium tracking-tight">Industrial Test Suite</span>
+        </div>
       </div>
+
+      <!-- Toggle Button inside Sidebar header (Visible when expanded) -->
+      <button
+        v-if="!isCollapse"
+        type="button"
+        class="w-7 h-7 rounded-lg border border-[var(--owl-border)] bg-[var(--owl-bg-card)] hover:bg-[var(--owl-bg-card-hover)] hover:border-blue-500/40 text-[var(--owl-text-muted)] hover:text-blue-500 flex items-center justify-center transition-all cursor-pointer shadow-none shrink-0"
+        title="Thu gọn sidebar"
+        @click="emit('toggleCollapse')"
+      >
+        <font-awesome-icon :icon="['fas', 'bars-staggered']" class="text-xs" />
+      </button>
     </div>
 
     <!-- Navigation Menu -->
@@ -55,8 +72,8 @@
 
         <!-- System Administration Group (ADMIN / SUPER_ADMIN) -->
         <template v-if="canAccessAdmin">
-          <li v-show="!isCollapse" class="menu-title px-3 pt-4 pb-1 text-[11px] font-bold text-[var(--owl-text-muted)] uppercase tracking-wider">
-            SYSTEM
+          <li v-show="!isCollapse" class="menu-title px-3 pt-4 pb-1 text-[11px] font-bold text-[var(--owl-text-muted)] tracking-wider">
+            Hệ thống
           </li>
           <div v-show="isCollapse" class="divider my-1 border-[var(--owl-border-light)]"></div>
 
@@ -105,8 +122,8 @@
 
         <!-- Dynamic Plugin Navigation Items -->
         <template v-if="filteredPluginMenus.length > 0">
-          <li v-show="!isCollapse" class="menu-title px-3 pt-4 pb-1 text-[11px] font-bold text-[var(--owl-text-muted)] uppercase tracking-wider">
-            PLUGINS
+          <li v-show="!isCollapse" class="menu-title px-3 pt-4 pb-1 text-[11px] font-bold text-[var(--owl-text-muted)] tracking-wider">
+            Phân hệ mở rộng
           </li>
           <div v-show="isCollapse" class="divider my-1 border-[var(--owl-border-light)]"></div>
 
@@ -188,6 +205,10 @@ defineProps<{
   canAccessDashboard: boolean;
   canAccessAdmin: boolean;
   filteredPluginMenus: any[];
+}>();
+
+const emit = defineEmits<{
+  (e: 'toggleCollapse'): void;
 }>();
 
 const router = useRouter();

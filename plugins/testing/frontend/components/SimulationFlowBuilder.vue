@@ -26,6 +26,28 @@
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
+          <!-- View Mode Toggle: Node Canvas (Node-Red) vs Classic Form List -->
+          <div class="join bg-base-300 p-0.5 rounded-lg border border-base-content/10 mr-1">
+            <button
+              type="button"
+              class="btn btn-xs join-item font-bold gap-1 transition-all"
+              :class="viewMode === 'node-red' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70'"
+              @click="viewMode = 'node-red'"
+              title="Giao diện dạng khối nối Node-RED trực quan"
+            >
+              <span>🔗 Node Canvas</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-xs join-item font-bold gap-1 transition-all"
+              :class="viewMode === 'classic' ? 'btn-primary shadow-xs' : 'btn-ghost text-base-content/70'"
+              @click="viewMode = 'classic'"
+              title="Giao diện danh sách tuần tự truyền thống"
+            >
+              <span>📋 Classic List</span>
+            </button>
+          </div>
+
           <button
             v-if="blocks.length > 0"
             type="button"
@@ -35,6 +57,16 @@
           >
             <Trash2 class="w-3.5 h-3.5 mr-1" />
             Xóa Hết
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost gap-1 font-mono text-xs"
+            @click="showJsonModal = true"
+            title="Xem và chỉnh sửa cấu hình dạng JSON thô"
+          >
+            <Code class="w-3.5 h-3.5" />
+            <span>JSON</span>
           </button>
 
           <!-- Add Function Block Dropdown / Quick Buttons -->
@@ -95,8 +127,509 @@
       </div>
     </div>
 
-    <!-- Sequential Block Chain -->
-    <div v-else class="space-y-3">
+    <!-- Node-RED Graph Canvas View -->
+    <div
+      v-if="viewMode === 'node-red' && blocks.length > 0"
+      class="card bg-base-300/40 border border-base-content/10 rounded-2xl overflow-hidden shadow-inner flex flex-col min-h-[580px]"
+    >
+      <!-- Top Pipeline Quick-Navigator Bar -->
+      <div class="bg-base-200/90 border-b border-base-content/10 px-4 py-2.5 flex items-center justify-between gap-3 overflow-x-auto select-none">
+        <div class="flex items-center gap-2 text-xs font-semibold shrink-0">
+          <span class="text-base-content/60">Giai đoạn thực thi ({{ timelineSegments.filter(s => s.type === 'column').length }} Cột, {{ blocks.length }} bước):</span>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <template v-for="(seg, idx) in timelineSegments" :key="idx">
+              <!-- Stage Column Tag -->
+              <span
+                v-if="seg.type === 'column'"
+                class="badge badge-sm badge-outline font-mono font-bold text-primary border-primary/40 px-2 py-0.5 flex items-center gap-1"
+              >
+                <span>Cột {{ seg.stageIndex }}</span>
+                <span class="badge badge-xs badge-primary text-[9px]">{{ seg.items.length }} func</span>
+              </span>
+
+              <!-- Delay Arrow Tag -->
+              <span
+                v-else-if="seg.type === 'delay'"
+                class="badge badge-sm badge-warning font-mono font-bold text-[10px] cursor-pointer hover:scale-105 transition-transform"
+                :class="selectedNodeIndex === seg.originalIndex ? 'ring-2 ring-warning' : ''"
+                @click="selectNode(seg.originalIndex)"
+              >
+                ⏱️ {{ seg.delaySeconds }}s →
+              </span>
+            </template>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0 text-xs font-mono text-base-content/60">
+          <span>Tổng: {{ (totalDurationSeconds / 60).toFixed(1) }} phút</span>
+        </div>
+      </div>
+
+      <!-- Main Canvas Area: Interactive Node-Red Flow & Properties Drawer -->
+      <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative min-h-[500px]">
+        <!-- Node Palette Sidebar (Left) -->
+        <div class="w-full lg:w-48 bg-base-200/50 border-b lg:border-b-0 lg:border-r border-base-content/10 p-3 flex flex-col gap-2 shrink-0 select-none">
+          <div class="text-[10px] font-bold text-primary uppercase tracking-wider px-1">Node Palette</div>
+          
+          <div class="grid grid-cols-2 lg:grid-cols-1 gap-1.5 overflow-y-auto max-h-[160px] lg:max-h-none">
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 text-[11px] font-medium"
+              @click="addBlock('downlink')"
+            >
+              <span>📡</span>
+              <span class="truncate">Downlink</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[11px] font-medium"
+              @click="addBlock('delay')"
+            >
+              <span>⏱️</span>
+              <span class="truncate">Delay</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 text-[11px] font-medium"
+              @click="addBlock('wait_until_offset')"
+            >
+              <span>🎯</span>
+              <span class="truncate">Wait Offset</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-medium"
+              @click="addBlock('start_measurement')"
+            >
+              <span>🟢</span>
+              <span class="truncate">Start Measure</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 text-[11px] font-medium"
+              @click="addBlock('stop_measurement')"
+            >
+              <span>🔴</span>
+              <span class="truncate">Stop Measure</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/20 text-[11px] font-medium"
+              @click="addBlock('average')"
+            >
+              <span>📊</span>
+              <span class="truncate">Average</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20 text-[11px] font-medium"
+              @click="addBlock('calculate_linear')"
+            >
+              <span>📐</span>
+              <span class="truncate">Linear Math</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 text-[11px] font-medium"
+              @click="addBlock('convert_to_hex')"
+            >
+              <span>🔢</span>
+              <span class="truncate">Convert HEX</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-xs justify-start gap-1.5 rounded-lg border border-base-content/20 bg-base-100 text-base-content/80 hover:bg-base-200 text-[11px] font-medium"
+              @click="addBlock('clear_downlink')"
+            >
+              <span>🧹</span>
+              <span class="truncate">Clear Downlink</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Flow Visual Workspace: Multi-Column Concurrent Time-Slot Stage View -->
+        <div class="flex-1 p-6 overflow-auto bg-[radial-gradient(#8882_1px,transparent_1px)] [background-size:16px_16px] relative select-none min-h-[380px]">
+          <!-- Canvas Columns & Delay Transitions -->
+          <div class="flex items-start gap-4 min-w-max py-2 px-1">
+            <template v-for="(seg, segIdx) in timelineSegments" :key="segIdx">
+              <!-- CASE 1: Stage Column (Các function thực thi cùng thời điểm) -->
+              <div
+                v-if="seg.type === 'column'"
+                class="stage-column flex flex-col bg-base-200/60 border border-base-content/10 rounded-2xl p-3 w-[220px] shrink-0 shadow-sm transition-all"
+              >
+                <!-- Stage Header: Time Slot & Step Counter -->
+                <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-base-content/10">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-6 h-6 rounded-lg bg-primary/10 text-primary font-bold font-mono text-xs flex items-center justify-center">
+                      C{{ seg.stageIndex }}
+                    </span>
+                    <span class="text-xs font-bold text-base-content">Giai Đoạn {{ seg.stageIndex }}</span>
+                  </div>
+                  <span class="badge badge-xs font-mono font-bold text-[10px] badge-neutral">
+                    {{ seg.timeLabel }}
+                  </span>
+                </div>
+
+                <!-- Function Nodes in this Stage Column -->
+                <div class="space-y-2.5">
+                  <div
+                    v-for="item in seg.items"
+                    :key="item.block.id"
+                    class="node-card relative group flex flex-col rounded-xl p-2.5 border shadow-xs transition-all duration-150 cursor-pointer"
+                    :class="selectedNodeIndex === item.originalIndex
+                      ? 'bg-base-100 border-primary ring-2 ring-primary/40 shadow-md -translate-y-0.5'
+                      : 'bg-base-100/90 hover:bg-base-100 border-base-content/15 hover:border-primary/40'"
+                    @click="selectNode(item.originalIndex)"
+                  >
+                    <!-- Node Header -->
+                    <div class="flex items-center justify-between gap-1 pb-1 mb-1 border-b border-base-content/10">
+                      <div class="flex items-center gap-1 min-w-0">
+                        <span class="text-[10px] font-mono font-bold text-base-content/50">#{{ item.originalIndex + 1 }}</span>
+                        <span class="text-xs font-bold truncate text-base-content">
+                          {{ getFunctionLabel(item.block.functionType) }}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 text-error hover:bg-error/15 h-5 w-5 min-h-0"
+                        @click.stop="removeBlock(item.originalIndex)"
+                        title="Xóa node này"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <!-- Summary Parameter -->
+                    <div class="text-[11px] font-mono text-base-content/75 leading-tight">
+                      <div v-if="item.block.functionType === 'downlink'" class="truncate text-blue-600 dark:text-blue-400">
+                        Port: {{ item.block.fPort || 1 }} | {{ item.block.payloadHex || 'EMPTY' }}
+                      </div>
+                      <div v-else-if="item.block.functionType === 'start_measurement'" class="truncate text-emerald-600 dark:text-emerald-400">
+                        Win: {{ item.block.windowId || 'WIN_01' }}
+                      </div>
+                      <div v-else-if="item.block.functionType === 'stop_measurement'" class="truncate text-rose-600 dark:text-rose-400">
+                        Stop: {{ item.block.windowId || 'WIN_01' }}
+                      </div>
+                      <div v-else-if="item.block.functionType === 'average'" class="truncate text-yellow-600 dark:text-yellow-400">
+                        Avg → {{ item.block.outputVar || 'x' }}
+                      </div>
+                      <div v-else-if="item.block.functionType === 'calculate_linear'" class="truncate text-cyan-600 dark:text-cyan-400">
+                        y = a*x + b
+                      </div>
+                      <div v-else-if="item.block.functionType === 'convert_to_hex'" class="truncate text-indigo-600 dark:text-indigo-400">
+                        {{ item.block.sourceVar || 'a' }} → {{ item.block.dataType || 'HEX' }}
+                      </div>
+                      <div v-if="item.block.targetDevice" class="text-[10px] text-primary font-bold truncate">
+                        🎯 {{ formatTargetDevice(item.block.targetDevice) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Add Function Directly into this Column (Chèn tại thời điểm này) -->
+                <div class="dropdown dropdown-top dropdown-end mt-3 pt-2 border-t border-dashed border-base-content/10">
+                  <label
+                    tabindex="0"
+                    role="button"
+                    class="btn btn-xs btn-outline btn-primary w-full border-dashed rounded-lg gap-1 font-semibold text-[11px]"
+                  >
+                    <span>+ Thêm tại cột này</span>
+                  </label>
+                  <ul tabindex="0" class="dropdown-content z-[20] menu p-1.5 shadow-xl bg-base-100 rounded-xl w-52 border border-base-300 text-xs space-y-0.5">
+                    <li class="menu-title text-[9px] uppercase font-bold text-primary px-2 py-1">Thêm vào giai đoạn này</li>
+                    <li><a @click="addBlock('downlink', seg.items[seg.items.length - 1].originalIndex + 1)">📡 Downlink</a></li>
+                    <li><a @click="addBlock('start_measurement', seg.items[seg.items.length - 1].originalIndex + 1)">🟢 Start Measure</a></li>
+                    <li><a @click="addBlock('stop_measurement', seg.items[seg.items.length - 1].originalIndex + 1)">🔴 Stop Measure</a></li>
+                    <li><a @click="addBlock('average', seg.items[seg.items.length - 1].originalIndex + 1)">📊 Average</a></li>
+                    <li><a @click="addBlock('calculate_linear', seg.items[seg.items.length - 1].originalIndex + 1)">📐 Linear Math</a></li>
+                    <li><a @click="addBlock('convert_to_hex', seg.items[seg.items.length - 1].originalIndex + 1)">🔢 Convert HEX</a></li>
+                    <li><a @click="addBlock('clear_downlink', seg.items[seg.items.length - 1].originalIndex + 1)">🧹 Clear Downlink</a></li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- CASE 2: Delay Arrow Transition (Mũi tên Delay nối 2 cột) -->
+              <div
+                v-else-if="seg.type === 'delay'"
+                class="delay-arrow-connector flex flex-col items-center justify-center shrink-0 self-center px-1 group cursor-pointer"
+                @click="selectNode(seg.originalIndex)"
+              >
+                <!-- Delay Badge on Arrow -->
+                <div
+                  class="badge badge-sm font-mono font-bold py-2 px-2.5 rounded-lg border transition-all mb-1 gap-1"
+                  :class="selectedNodeIndex === seg.originalIndex
+                    ? 'badge-warning shadow-md ring-2 ring-warning/40 scale-105'
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'"
+                  title="Bấm để chỉnh thời gian delay"
+                >
+                  <span>⏱️</span>
+                  <span>{{ seg.delaySeconds }}s</span>
+                  <button
+                    type="button"
+                    class="opacity-0 group-hover:opacity-100 ml-1 text-error hover:font-black text-xs"
+                    @click.stop="removeBlock(seg.originalIndex)"
+                    title="Xóa delay này"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <!-- SVG Arrow Line -->
+                <svg class="w-16 h-6 text-amber-500/70 group-hover:text-amber-500 transition-colors" viewBox="0 0 64 24" fill="none">
+                  <path d="M0 12 H56" stroke="currentColor" stroke-width="2.5" stroke-dasharray="4 2" />
+                  <polygon points="54,6 64,12 54,18" fill="currentColor" />
+                </svg>
+
+                <span class="text-[9px] font-mono text-base-content/40 tracking-tighter">
+                  {{ (seg.delaySeconds / 60).toFixed(1) }}m
+                </span>
+              </div>
+            </template>
+
+            <!-- Nút thêm Cột Mới (Tạo Delay mới để tách sang cột tiếp theo) -->
+            <div class="flex flex-col items-center justify-center self-center shrink-0 pl-2">
+              <button
+                type="button"
+                class="btn btn-sm btn-circle btn-outline btn-warning border-dashed shadow-xs hover:scale-105"
+                @click="addBlock('delay')"
+                title="Thêm bước Delay để mở sang Cột thời điểm mới"
+              >
+                ⏱️+
+              </button>
+              <span class="text-[10px] font-semibold text-warning mt-1">Tạo Cột Mới</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Node Property Drawer Panel (Right Side Inspector) -->
+        <div
+          v-if="selectedNodeIndex !== null && blocks[selectedNodeIndex]"
+          class="w-full lg:w-96 bg-base-100 border-t lg:border-t-0 lg:border-l border-base-content/10 p-4 flex flex-col gap-3 shrink-0 shadow-lg overflow-y-auto max-h-[500px]"
+        >
+          <div class="flex items-center justify-between pb-2 border-b border-base-content/10">
+            <div class="flex items-center gap-2">
+              <span class="badge badge-primary font-bold">#{{ selectedNodeIndex + 1 }}</span>
+              <h4 class="font-bold text-sm text-base-content">
+                {{ getFunctionLabel(blocks[selectedNodeIndex].functionType) }}
+              </h4>
+            </div>
+
+            <div class="flex items-center gap-1">
+              <button
+                type="button"
+                class="btn btn-xs btn-ghost btn-square"
+                :disabled="selectedNodeIndex === 0"
+                @click="moveBlockUp(selectedNodeIndex)"
+                title="Di chuyển sang trái / lên trước"
+              >
+                <ChevronUp class="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                class="btn btn-xs btn-ghost btn-square"
+                :disabled="selectedNodeIndex === blocks.length - 1"
+                @click="moveBlockDown(selectedNodeIndex)"
+                title="Di chuyển sang phải / ra sau"
+              >
+                <ChevronDown class="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                class="btn btn-xs btn-ghost btn-square"
+                @click="duplicateBlock(selectedNodeIndex)"
+                title="Nhân bản node"
+              >
+                <Copy class="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                class="btn btn-xs btn-ghost btn-square text-error"
+                @click="removeBlock(selectedNodeIndex)"
+                title="Xóa node"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Configuration Fields for Selected Node -->
+          <div class="space-y-3 text-xs">
+            <!-- Target Device Selector -->
+            <div v-if="hasDeviceTarget(blocks[selectedNodeIndex].functionType)">
+              <div class="flex items-center justify-between py-1">
+                <label class="text-xs font-semibold">Thiết Bị Đích (Target Device):</label>
+                <span
+                  v-if="blocks[selectedNodeIndex].targetDevice"
+                  class="badge badge-xs badge-info font-mono font-semibold"
+                >
+                  {{ formatTargetDevice(blocks[selectedNodeIndex].targetDevice) }}
+                </span>
+              </div>
+              <select
+                :value="getTargetSelectValue(blocks[selectedNodeIndex].targetDevice)"
+                class="select select-sm select-bordered w-full font-mono text-xs"
+                @change="onTargetSelectChange(blocks[selectedNodeIndex], ($event.target as HTMLSelectElement).value)"
+              >
+                <optgroup label="Thiết Bị Cần Test (DUT)">
+                  <option value="DUT">
+                    🎯 {{ props.dutName && props.dutName !== 'DUT' ? `${props.dutName} (DUT)` : 'DUT (Thiết Bị Cần Test)' }}
+                  </option>
+                </optgroup>
+
+                <optgroup v-if="availableRefDeviceNames.length > 0" label="Thiết Bị Tham Chiếu Đã Khai Báo (REF)">
+                  <option
+                    v-for="refName in availableRefDeviceNames"
+                    :key="refName"
+                    :value="refName"
+                  >
+                    ⭐ {{ refName }}
+                  </option>
+                </optgroup>
+                <optgroup v-else label="Thiết Bị Tham Chiếu / Mô Phỏng">
+                  <option value="REF">⭐ REF (Thiết Bị Chuẩn)</option>
+                  <option value="SIMU">🤖 SIMU (Mô Phỏng Tự Do)</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <!-- Downlink Parameters -->
+            <template v-if="blocks[selectedNodeIndex].functionType === 'downlink'">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="label py-1 text-xs font-semibold">FPort:</label>
+                  <input
+                    v-model.number="blocks[selectedNodeIndex].fPort"
+                    type="number"
+                    min="1"
+                    max="223"
+                    class="input input-sm input-bordered w-full font-mono"
+                    @input="emitUpdate"
+                  />
+                </div>
+                <div>
+                  <label class="label py-1 text-xs font-semibold">Loại Downlink:</label>
+                  <select
+                    v-model="blocks[selectedNodeIndex].confirmed"
+                    class="select select-sm select-bordered w-full font-mono text-xs"
+                    @change="emitUpdate"
+                  >
+                    <option :value="false">Unconfirmed (Mặc định)</option>
+                    <option :value="true">Confirmed (Có ACK)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="label py-1 text-xs font-semibold">Payload HEX:</label>
+                <input
+                  v-model="blocks[selectedNodeIndex].payloadHex"
+                  type="text"
+                  placeholder="01 02 A3..."
+                  class="input input-sm input-bordered w-full font-mono text-xs"
+                  @input="emitUpdate"
+                />
+              </div>
+            </template>
+
+            <!-- Delay Parameters -->
+            <template v-else-if="blocks[selectedNodeIndex].functionType === 'delay'">
+              <div>
+                <label class="label py-1 text-xs font-semibold">Thời Gian Chờ (Giây):</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model.number="blocks[selectedNodeIndex].delaySeconds"
+                    type="number"
+                    min="1"
+                    class="input input-sm input-bordered flex-1 font-mono font-bold"
+                    @input="emitUpdate"
+                  />
+                  <span class="text-base-content/60 font-mono text-xs">s</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Wait Until Offset -->
+            <template v-else-if="blocks[selectedNodeIndex].functionType === 'wait_until_offset'">
+              <div>
+                <label class="label py-1 text-xs font-semibold">Mốc Thời Gian Offset (Giây):</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model.number="blocks[selectedNodeIndex].offsetSeconds"
+                    type="number"
+                    min="1"
+                    class="input input-sm input-bordered flex-1 font-mono font-bold"
+                    @input="emitUpdate"
+                  />
+                  <span class="text-base-content/60 font-mono text-xs">s</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Measurement Window (Start/Stop) -->
+            <template v-else-if="blocks[selectedNodeIndex].functionType === 'start_measurement' || blocks[selectedNodeIndex].functionType === 'stop_measurement'">
+              <div>
+                <label class="label py-1 text-xs font-semibold">Mã Cửa Sổ Đo (Window ID):</label>
+                <input
+                  v-model="blocks[selectedNodeIndex].windowId"
+                  type="text"
+                  placeholder="WINDOW_01"
+                  class="input input-sm input-bordered w-full font-mono font-bold"
+                  @input="emitUpdate"
+                />
+              </div>
+
+              <div v-if="blocks[selectedNodeIndex].functionType === 'start_measurement'">
+                <label class="label py-1 text-xs font-semibold">Trường Dữ Liệu Đo:</label>
+                <input
+                  v-model="blocks[selectedNodeIndex].metric"
+                  type="text"
+                  placeholder="gas_raw / rssi / snr"
+                  class="input input-sm input-bordered w-full font-mono"
+                  @input="emitUpdate"
+                />
+              </div>
+            </template>
+
+            <!-- Average Block -->
+            <template v-else-if="blocks[selectedNodeIndex].functionType === 'average'">
+              <div>
+                <label class="label py-1 text-xs font-semibold">Biến Đầu Ra (Output Var):</label>
+                <input
+                  v-model="blocks[selectedNodeIndex].outputVar"
+                  type="text"
+                  placeholder="x1"
+                  class="input input-sm input-bordered w-full font-mono font-bold text-primary"
+                  @input="emitUpdate"
+                />
+              </div>
+            </template>
+
+            <!-- Description -->
+            <div>
+              <label class="label py-1 text-xs font-semibold">Ghi Chú Bước Này:</label>
+              <input
+                v-model="blocks[selectedNodeIndex].description"
+                type="text"
+                placeholder="Ghi chú bước thực thi..."
+                class="input input-sm input-bordered w-full"
+                @input="emitUpdate"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sequential Block Chain (Classic Mode) -->
+    <div v-else-if="viewMode === 'classic' && blocks.length > 0" class="space-y-3">
       <div
         v-for="(block, index) in blocks"
         :key="block.id"
@@ -1026,6 +1559,82 @@ const emit = defineEmits<{
 }>();
 
 const blocks = ref<FlowBlock[]>([]);
+const viewMode = ref<'node-red' | 'classic'>('node-red');
+const selectedNodeIndex = ref<number | null>(0);
+
+interface StageItem {
+  type: 'column';
+  stageIndex: number;
+  timeLabel: string;
+  items: Array<{ block: FlowBlock; originalIndex: number }>;
+}
+
+interface DelayTransition {
+  type: 'delay';
+  block: FlowBlock;
+  originalIndex: number;
+  delaySeconds: number;
+}
+
+type TimelineSegment = StageItem | DelayTransition;
+
+/**
+ * Phân chia toàn bộ luồng FlowBlock tuần tự thành các Cột thời điểm (Stage Columns),
+ * các function cùng một thời điểm được gom chung vào 1 cột đứng.
+ * Chỉ chuyển sang Cột mới khi gặp khối Delay hoặc Wait Until Offset.
+ */
+const timelineSegments = computed<TimelineSegment[]>(() => {
+  const segments: TimelineSegment[] = [];
+  let currentStageBlocks: Array<{ block: FlowBlock; originalIndex: number }> = [];
+  let currentStageIndex = 1;
+  let accumulatedTime = 0;
+
+  function pushCurrentStage() {
+    if (currentStageBlocks.length > 0) {
+      segments.push({
+        type: 'column',
+        stageIndex: currentStageIndex++,
+        timeLabel: `T + ${accumulatedTime}s`,
+        items: [...currentStageBlocks],
+      });
+      currentStageBlocks = [];
+    }
+  }
+
+  blocks.value.forEach((block, index) => {
+    if (block.functionType === 'delay') {
+      pushCurrentStage();
+      const dur = block.delaySeconds || 0;
+      accumulatedTime += dur;
+      segments.push({
+        type: 'delay',
+        block,
+        originalIndex: index,
+        delaySeconds: dur,
+      });
+    } else if (block.functionType === 'wait_until_offset') {
+      pushCurrentStage();
+      const targetOffset = block.offsetSeconds || accumulatedTime;
+      const waitDur = Math.max(0, targetOffset - accumulatedTime);
+      accumulatedTime = targetOffset;
+      segments.push({
+        type: 'delay',
+        block,
+        originalIndex: index,
+        delaySeconds: waitDur,
+      });
+    } else {
+      currentStageBlocks.push({ block, originalIndex: index });
+    }
+  });
+
+  pushCurrentStage();
+  return segments;
+});
+
+function selectNode(index: number) {
+  selectedNodeIndex.value = index;
+}
 const showJsonModal = ref(false);
 const rawJsonInput = ref('');
 const draggedIndex = ref<number | null>(null);
@@ -1051,6 +1660,7 @@ function onDrop(dropIndex: number, event: DragEvent) {
   if (sourceIndex !== null && sourceIndex !== dropIndex && !isNaN(sourceIndex)) {
     const item = blocks.value.splice(sourceIndex, 1)[0];
     blocks.value.splice(dropIndex, 0, item);
+    selectedNodeIndex.value = dropIndex;
     emitUpdate();
     cyberToast.info(`Đã di chuyển block #${sourceIndex + 1} tới vị trí #${dropIndex + 1}`);
   }
@@ -1154,6 +1764,27 @@ const availableRefDeviceNames = computed<string[]>(() => {
   }
   return result;
 });
+
+function formatTargetDevice(target?: string): string {
+  if (!target) return 'DUT';
+  const t = target.trim();
+  if (t === 'DUT' || t === props.dutName) {
+    return props.dutName && props.dutName !== 'DUT' ? props.dutName : 'DUT';
+  }
+  if (t === 'REF') {
+    if (availableRefDeviceNames.value.length > 0) {
+      return availableRefDeviceNames.value[0];
+    }
+    return 'Thiết Bị Chuẩn (REF)';
+  }
+  if (t === 'SIMU') {
+    return 'Thiết Bị Mô Phỏng (SIMU)';
+  }
+  // Nếu target khớp với một tên trong danh sách tham chiếu
+  const found = availableRefDeviceNames.value.find((name) => name.toLowerCase() === t.toLowerCase());
+  if (found) return found;
+  return t;
+}
 
 function getTargetSelectValue(target?: string): string {
   const t = (target || 'DUT').trim();
@@ -1493,7 +2124,7 @@ function getFunctionLabel(type: string) {
 }
 
 // Block Actions
-function addBlock(type: string) {
+function addBlock(type: string, insertAtIndex?: number) {
   const lastWin = availableMeasurementWindows.value[availableMeasurementWindows.value.length - 1];
   const newBlock: FlowBlock = {
     id: `block-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -1525,12 +2156,26 @@ function addBlock(type: string) {
     confirmed: false,
     description: '',
   };
-  blocks.value.push(newBlock);
+
+  if (typeof insertAtIndex === 'number' && insertAtIndex >= 0 && insertAtIndex <= blocks.value.length) {
+    blocks.value.splice(insertAtIndex, 0, newBlock);
+    selectedNodeIndex.value = insertAtIndex;
+  } else {
+    blocks.value.push(newBlock);
+    selectedNodeIndex.value = blocks.value.length - 1;
+  }
   emitUpdate();
 }
 
 function removeBlock(index: number) {
   blocks.value.splice(index, 1);
+  if (selectedNodeIndex.value !== null) {
+    if (blocks.value.length === 0) {
+      selectedNodeIndex.value = null;
+    } else if (selectedNodeIndex.value >= blocks.value.length) {
+      selectedNodeIndex.value = blocks.value.length - 1;
+    }
+  }
   emitUpdate();
 }
 
@@ -1550,6 +2195,9 @@ function moveBlockUp(index: number) {
   if (index <= 0) return;
   const item = blocks.value.splice(index, 1)[0];
   blocks.value.splice(index - 1, 0, item);
+  if (selectedNodeIndex.value === index) {
+    selectedNodeIndex.value = index - 1;
+  }
   emitUpdate();
 }
 
@@ -1557,6 +2205,9 @@ function moveBlockDown(index: number) {
   if (index >= blocks.value.length - 1) return;
   const item = blocks.value.splice(index, 1)[0];
   blocks.value.splice(index + 1, 0, item);
+  if (selectedNodeIndex.value === index) {
+    selectedNodeIndex.value = index + 1;
+  }
   emitUpdate();
 }
 

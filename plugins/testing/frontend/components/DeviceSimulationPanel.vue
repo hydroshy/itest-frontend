@@ -19,8 +19,8 @@
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="btn btn-sm btn-ghost gap-1.5 text-base-content/80"
-            @click="$emit('switch-tab', 'list-flow-simulation')"
+            class="btn btn-sm btn-ghost gap-1.5"
+            @click="handleNavigation('list-flow-simulation')"
           >
             <List class="w-3.5 h-3.5" />
             <span>Danh Sách Flow</span>
@@ -29,7 +29,7 @@
           <button
             type="button"
             class="btn btn-sm btn-ghost gap-1"
-            @click="resetForm"
+            @click="handleResetFormWithConfirm"
           >
             <RotateCcw class="w-3.5 h-3.5" />
             Làm Mới
@@ -63,7 +63,7 @@
       <button
         type="button"
         class="btn btn-xs btn-outline btn-neutral"
-        @click="cancelEditMode"
+        @click="handleCancelEditWithConfirm"
       >
         Tạo Mới Kịch Bản
       </button>
@@ -714,6 +714,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Xác Nhận Rời Đi / Chưa Lưu Dữ Liệu -->
+    <dialog class="modal" :class="{ 'modal-open': showUnsavedModal }">
+      <div class="modal-box max-w-md bg-base-100 border border-base-content/10 shadow-2xl rounded-2xl p-6">
+        <div class="flex items-center gap-3 text-warning pb-3 border-b border-base-content/10">
+          <div class="w-10 h-10 rounded-xl bg-warning/15 border border-warning/30 flex items-center justify-center text-warning text-lg shrink-0">
+            ⚠️
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-base-content">Cảnh báo chưa lưu dữ liệu</h3>
+            <p class="text-xs text-base-content/60">Kịch bản kiểm thử của bạn có thay đổi chưa được lưu!</p>
+          </div>
+        </div>
+
+        <p class="py-4 text-xs text-base-content/80 leading-relaxed">
+          Bạn đang có dữ liệu cấu hình kịch bản (Flow blocks, thông số thiết bị). Nếu tiếp tục thoát hoặc làm mới mà không lưu, các thay đổi vừa thực hiện sẽ bị mất vĩnh viễn.
+        </p>
+
+        <div class="modal-action flex items-center justify-end gap-2 pt-2 border-t border-base-content/10">
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost font-semibold text-xs"
+            @click="cancelLeave"
+          >
+            Ở lại chỉnh sửa
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-error font-bold text-xs gap-1 shadow-sm"
+            @click="confirmLeave"
+          >
+            <span>Bỏ qua &amp; Thoát</span>
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button type="button" @click="cancelLeave">close</button>
+      </form>
+    </dialog>
   </div>
 </template>
 
@@ -1237,6 +1276,57 @@ function addComparisonRule() {
   });
 }
 
+const showUnsavedModal = ref(false);
+const pendingAction = ref<(() => void) | null>(null);
+
+function checkIsDirty(): boolean {
+  if (flowBlocks.value.length > 0) return true;
+  if (profileForm.name.trim() || profileForm.itemCode.trim() || profileForm.fwVersion.trim()) return true;
+  if (referenceDevices.value.length > 0) return true;
+  return false;
+}
+
+function handleNavigation(targetTab: string) {
+  if (checkIsDirty()) {
+    pendingAction.value = () => emit('switch-tab', targetTab);
+    showUnsavedModal.value = true;
+  } else {
+    emit('switch-tab', targetTab);
+  }
+}
+
+function handleResetFormWithConfirm() {
+  if (checkIsDirty()) {
+    pendingAction.value = () => resetForm();
+    showUnsavedModal.value = true;
+  } else {
+    resetForm();
+  }
+}
+
+function handleCancelEditWithConfirm() {
+  if (checkIsDirty()) {
+    pendingAction.value = () => cancelEditMode();
+    showUnsavedModal.value = true;
+  } else {
+    cancelEditMode();
+  }
+}
+
+function confirmLeave() {
+  showUnsavedModal.value = false;
+  if (pendingAction.value) {
+    const act = pendingAction.value;
+    pendingAction.value = null;
+    act();
+  }
+}
+
+function cancelLeave() {
+  showUnsavedModal.value = false;
+  pendingAction.value = null;
+}
+
 function resetForm() {
   profileForm.name = '';
   profileForm.sensorConnectivity = 'LoRaWAN';
@@ -1413,5 +1503,8 @@ async function saveSimulationProfile() {
 
 onMounted(() => {
   fetchSimulationDevices();
+});
+defineExpose({
+  checkIsDirty,
 });
 </script>

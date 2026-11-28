@@ -6,7 +6,7 @@
 div.tabulator {
   background-color: var(--owl-bg-surface) !important;
   border: 1px solid var(--owl-border) !important;
-  border-radius: var(--cyber-radius) !important;
+  border-radius: var(--cyber-radius-sm) !important;
   font-family: var(--cyber-font-body) !important;
   color: var(--owl-text-primary) !important;
   position: relative;
@@ -16,10 +16,12 @@ div.tabulator {
 .tabulator .tabulator-header,
 div.tabulator .tabulator-header {
   background-color: var(--owl-bg-aside) !important;
-  border-bottom: 2px solid var(--owl-border) !important;
-  color: var(--owl-teal) !important;
+  border-bottom: 1px solid var(--owl-border) !important;
+  color: var(--owl-text-secondary) !important;
   font-family: var(--cyber-font-display) !important;
   font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  font-size: 12.5px !important;
   border-top: none !important;
 }
 
@@ -27,15 +29,15 @@ div.tabulator .tabulator-header {
 div.tabulator .tabulator-header .tabulator-col {
   background-color: var(--owl-bg-aside) !important;
   border-right: 1px solid var(--owl-border-light) !important;
-  color: var(--owl-teal) !important;
+  color: var(--owl-text-secondary) !important;
 }
 
 .tabulator .tabulator-header .tabulator-col .tabulator-col-content {
-  padding: 8px 10px !important;
+  padding: 10px 12px !important;
 }
 
 .tabulator .tabulator-header .tabulator-col .tabulator-col-content .tabulator-col-title {
-  color: var(--owl-teal) !important;
+  color: var(--owl-text-secondary) !important;
   font-weight: 600 !important;
 }
 
@@ -122,8 +124,12 @@ div.tabulator .tabulator-row.tabulator-selected:hover {
 .tabulator .tabulator-row .tabulator-cell,
 div.tabulator .tabulator-row .tabulator-cell {
   border-right: 1px solid var(--owl-border-light) !important;
-  padding: 8px 10px !important;
+  padding: 8px 12px !important;
   color: var(--owl-text-primary) !important;
+  font-size: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
 }
 
 .tabulator .tabulator-row .tabulator-cell.tabulator-editing {

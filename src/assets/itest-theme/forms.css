@@ -59,6 +59,38 @@
   transition: all 0.2s ease !important;
 }
 
+/* DaisyUI Inputs normalization */
+.input,
+.select,
+.textarea {
+  border-radius: var(--cyber-radius-sm) !important;
+  border-color: var(--owl-border) !important;
+  background-color: var(--owl-bg-card) !important;
+  color: var(--owl-text-primary) !important;
+  font-family: var(--cyber-font-body) !important;
+  font-size: 13px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus,
+.input:focus-within,
+.select:focus-within,
+.textarea:focus-within {
+  outline: none !important;
+  border-color: var(--owl-border-focus) !important;
+  box-shadow: 0 0 0 2px var(--owl-primary-soft) !important;
+}
+
+.btn {
+  border-radius: var(--cyber-radius-sm) !important;
+  letter-spacing: -0.01em;
+  font-family: var(--cyber-font-body) !important;
+  font-size: 13px !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
 .el-input__inner {
   color: var(--owl-text-primary) !important;
   font-family: var(--cyber-font-body) !important;

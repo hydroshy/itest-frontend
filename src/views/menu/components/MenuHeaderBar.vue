@@ -52,37 +52,65 @@
         </button>
       </div>
 
-      <!-- Category Filter Buttons -->
-      <div class="join bg-[var(--owl-bg-card)] p-1 rounded-xl border border-[var(--owl-border)]">
+      <!-- Functional Groups Pill Tabs -->
+      <div class="inline-flex p-1 rounded-xl bg-[var(--owl-bg-card)] border border-[var(--owl-border)] gap-1">
         <button
           type="button"
-          class="btn btn-xs join-item px-3 h-8 text-xs font-bold rounded-lg border-none transition-all cursor-pointer"
+          class="btn btn-xs px-2.5 sm:px-3 h-7 text-xs font-semibold rounded-lg border-none transition-all cursor-pointer"
           :class="selectedCategory === 'all'
             ? 'bg-blue-600 text-white shadow-sm'
-            : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)]'"
+            : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'"
           @click="$emit('update:selectedCategory', 'all')"
         >
           Tất cả ({{ counts.all }})
         </button>
+
         <button
           type="button"
-          class="btn btn-xs join-item px-3 h-8 text-xs font-bold rounded-lg border-none transition-all cursor-pointer"
+          class="btn btn-xs px-2.5 sm:px-3 h-7 text-xs font-semibold rounded-lg border-none transition-all cursor-pointer flex items-center gap-1.5"
+          :class="selectedCategory === 'testing'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'"
+          @click="$emit('update:selectedCategory', 'testing')"
+        >
+          <span>Kiểm Thử</span>
+          <span class="opacity-75 text-[10px] font-mono">({{ counts.testing || 0 }})</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-xs px-2.5 sm:px-3 h-7 text-xs font-semibold rounded-lg border-none transition-all cursor-pointer flex items-center gap-1.5"
+          :class="selectedCategory === 'devices'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'"
+          @click="$emit('update:selectedCategory', 'devices')"
+        >
+          <span>Cấu Hình</span>
+          <span class="opacity-75 text-[10px] font-mono">({{ counts.devices || 0 }})</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-xs px-2.5 sm:px-3 h-7 text-xs font-semibold rounded-lg border-none transition-all cursor-pointer flex items-center gap-1.5"
+          :class="selectedCategory === 'connectors'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'"
+          @click="$emit('update:selectedCategory', 'connectors')"
+        >
+          <span>Mạng & Dữ Liệu</span>
+          <span class="opacity-75 text-[10px] font-mono">({{ counts.connectors || 0 }})</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-xs px-2.5 sm:px-3 h-7 text-xs font-semibold rounded-lg border-none transition-all cursor-pointer flex items-center gap-1.5"
           :class="selectedCategory === 'system'
             ? 'bg-blue-600 text-white shadow-sm'
-            : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)]'"
+            : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)] hover:bg-black/5 dark:hover:bg-white/5'"
           @click="$emit('update:selectedCategory', 'system')"
         >
-          Hệ thống ({{ counts.system }})
-        </button>
-        <button
-          type="button"
-          class="btn btn-xs join-item px-3 h-8 text-xs font-bold rounded-lg border-none transition-all cursor-pointer"
-          :class="selectedCategory === 'plugin'
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'bg-transparent text-[var(--owl-text-secondary)] hover:text-[var(--owl-text-primary)]'"
-          @click="$emit('update:selectedCategory', 'plugin')"
-        >
-          Plugin ({{ counts.plugin }})
+          <span>Hệ Thống</span>
+          <span class="opacity-75 text-[10px] font-mono">({{ counts.system || 0 }})</span>
         </button>
       </div>
     </div>
@@ -95,7 +123,7 @@ import { useRouter } from 'vue-router';
 defineProps<{
   searchQuery: string;
   selectedCategory: string;
-  counts: { all: number; system: number; plugin: number };
+  counts: { all: number; testing?: number; devices?: number; connectors?: number; system?: number };
 }>();
 
 defineEmits<{
